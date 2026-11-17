@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 from collections.abc import AsyncIterator
@@ -25,6 +26,7 @@ from .conftest import T0
 from .fakes.llm import ScriptedProvider
 from .fakes.metaculus import FAKE_TOKEN, MINIBENCH_NUMERIC, FakeMetaculus, binary_post
 from .fakes.search import FixedSearcher
+from .helpers import binary_question
 
 
 def _fast_limiter() -> RateLimiter:
@@ -216,7 +218,7 @@ async def test_a_failing_searcher_degrades_research_only(tmp_path: Path) -> None
     ledger.close()
 
 
-async def test_the_question_cap_and_the_cost_cap(
+async def test_the_question_cap(
     tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
 ) -> None:
     fake.add_post(binary_post(520, 521, title="Another open one"), "minibench")
@@ -224,14 +226,6 @@ async def test_the_question_cap_and_the_cost_cap(
     assert report.count("forecast") == 1
     assert any("over the cap of 1" in r.reason for r in report.reports)
     ledger.close()
-
-    costly = ScriptedProvider(cost_per_call=0.2)
-    report2, ledger2 = await _run(
-        tmp_path / "b", client=_client(http), provider=costly, max_cost_per_run=0.5
-    )
-    assert any("run budget" in r.reason for r in report2.reports)
-    assert report2.cost_usd <= 0.5 + 0.2
-    ledger2.close()
 
 
 async def test_no_token_reaches_the_logs_during_a_live_run(
@@ -266,3 +260,51 @@ def test_code_version_names_this_checkout_not_the_environment(
     monkeypatch.setenv("GITHUB_SHA", "f" * 40)
     assert "ffffffffffff" not in code_version()
     assert code_version().startswith("0.1.0")
+
+
+async def test_concurrent_draws_cannot_overspend_the_cap(tmp_path: Path) -> None:
+    """Five draws start at once; reservations keep the total under the cap."""
+    from augur.agents.calls import Budget, CallContext, CallRecorder, estimate_cost
+    from augur.llm.base import LlmRequest, Message
+    from augur.llm.registry import priced
+
+    model = "an-unpriced-model"
+    request = LlmRequest(model=model, messages=(Message(role="user", content="x" * 300),))
+    one = estimate_cost(request, priced(model, "scripted"))
+    assert one > 0, "an unknown model on a non-local provider must not be free"
+
+    report, ledger = await _run(
+        tmp_path,
+        client=None,
+        model=model,
+        max_cost_per_question=1.0,
+        max_cost_per_run=0.20,
+    )
+    first = report.reports[0]
+    assert first.status == "failed"
+    assert "run budget" in first.reason
+    assert report.cost_usd <= 0.20
+    assert all(r.status != "forecast" for r in report.reports)
+    assert ledger.count("submissions") == 0
+    ledger.close()
+
+    budget = Budget(max_per_question=one * 2.5, max_per_run=100)
+    led = Ledger.open(tmp_path / "c.sqlite", FixedClock(T0))
+    run_id = led.start_run(
+        mode=RunMode.DRY_RUN,
+        tournament="t",
+        provider="scripted",
+        model=model,
+        settings={},
+        code_version="test",
+    )
+    q, post = binary_question(T0)
+    led.record_question(run_id, q, T0, post)
+    calls = CallRecorder(ScriptedProvider(), led, FixedClock(T0), budget)
+    ctx = CallContext(run_id, q.question_id, "forecaster", 0)
+    results = await asyncio.gather(
+        *(calls.complete(ctx, request, []) for _ in range(5)), return_exceptions=True
+    )
+    assert sum(1 for r in results if not isinstance(r, BaseException)) == 2
+    assert budget.spent_question[q.question_id] <= one * 2.5
+    led.close()

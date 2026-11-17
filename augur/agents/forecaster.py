@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from augur.agents.calls import CallContext, CallRecorder
+from augur.agents.calls import BudgetExceededError, CallContext, CallRecorder
 from augur.agents.researcher import ResearchResult, question_text
 from augur.errors import AugurError, ForecastParseError
 from augur.llm.base import LlmRequest, Message
@@ -90,6 +90,7 @@ async def draw_forecasts(
     """``n`` independent draws (distinct seeds), at most ``concurrency`` at a time."""
     slots = asyncio.Semaphore(concurrency)
     errors: list[str] = []
+    refused: list[BudgetExceededError] = []
     cited = [s.source_id for s in research.sources]
 
     async def one(member: int) -> MemberForecast | None:
@@ -99,6 +100,9 @@ async def draw_forecasts(
             try:
                 response, call_id = await calls.complete(ctx, request, source_ids=cited)
                 probability = parse_probability(response.text)
+            except BudgetExceededError as exc:
+                refused.append(exc)
+                return None
             except AugurError as exc:
                 errors.append(f"member {member}: {exc}")
                 log.warning("forecaster failed", member=member, error=str(exc))
@@ -106,4 +110,7 @@ async def draw_forecasts(
             return MemberForecast(member, probability, reasoning_of(response.text), call_id)
 
     results = await asyncio.gather(*(one(m) for m in range(n)))
+    if refused:
+        # Never submit an ensemble the budget cut short; the run stops here.
+        raise refused[0]
     return [r for r in results if r is not None], errors

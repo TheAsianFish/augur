@@ -14,7 +14,7 @@ from pydantic import SecretStr
 
 from augur.errors import ProviderError
 from augur.llm.base import LlmRequest, LlmResponse
-from augur.llm.registry import lookup
+from augur.llm.registry import priced
 from augur.ratelimit import RateLimiter
 
 _MAX_RETRIES = 3
@@ -95,7 +95,7 @@ class MetaculusProxyProvider:
             model=request.model,
             input_tokens=in_tok,
             output_tokens=out_tok,
-            cost_usd=lookup(request.model).cost(in_tok, out_tok),
+            cost_usd=priced(request.model, self.name).cost(in_tok, out_tok),
         )
 
     async def aclose(self) -> None:

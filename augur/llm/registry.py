@@ -20,6 +20,7 @@ class ModelInfo(BaseModel):
     usd_per_million_input: float = 0.0
     usd_per_million_output: float = 0.0
     source: str = ""
+    known: bool = True
 
     def cost(self, input_tokens: int | None, output_tokens: int | None) -> float:
         return (
@@ -44,9 +45,29 @@ _REGISTRY: dict[str, ModelInfo] = {
 }
 
 
+# What an unpriced model is assumed to cost on a paid or sponsored provider, so
+# that budget caps still bind: above the list price of current frontier models.
+UNPRICED_INPUT_PER_MILLION = 15.0
+UNPRICED_OUTPUT_PER_MILLION = 75.0
+LOCAL_PROVIDERS = frozenset({"ollama", "replay"})
+
+
 def lookup(model: str) -> ModelInfo:
     """The registry entry for ``model``; an unknown model has no release date and costs 0."""
-    return _REGISTRY.get(model, ModelInfo(name=model, release_date=None))
+    return _REGISTRY.get(model, ModelInfo(name=model, release_date=None, known=False))
+
+
+def priced(model: str, provider: str) -> ModelInfo:
+    """``lookup``, but an unknown model on a non-local provider gets conservative prices."""
+    info = lookup(model)
+    if info.known or provider in LOCAL_PROVIDERS:
+        return info
+    return info.model_copy(
+        update={
+            "usd_per_million_input": UNPRICED_INPUT_PER_MILLION,
+            "usd_per_million_output": UNPRICED_OUTPUT_PER_MILLION,
+        }
+    )
 
 
 def known_models() -> list[ModelInfo]:
