@@ -75,7 +75,7 @@ async def test_ollama_body_and_response() -> None:
         "model": "qwen2.5:7b",
         "messages": [{"role": "system", "content": "s"}, {"role": "user", "content": "u"}],
         "stream": False,
-        "options": {"temperature": 0.3, "seed": 7, "num_predict": 50},
+        "options": {"temperature": 0.3, "seed": 7, "num_predict": 50, "num_ctx": 8192},
     }
     assert out == LlmResponse(
         text="hi", model="qwen2.5:7b", input_tokens=11, output_tokens=5, cost_usd=0.0

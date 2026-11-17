@@ -17,7 +17,11 @@ class OllamaProvider:
         http: httpx.AsyncClient,
         base_url: str,
         limiter: RateLimiter | None = None,
+        num_ctx: int = 8192,
     ) -> None:
+        # Ollama's default window (4096 here) silently drops the start of a longer
+        # prompt, so the window is set on every call.
+        self._num_ctx = num_ctx
         self._http = http
         self._base_url = base_url.rstrip("/")
         self._limiter = limiter or RateLimiter(10, burst=10, max_concurrent=1)
@@ -30,6 +34,7 @@ class OllamaProvider:
         options: dict[str, Any] = {
             "temperature": request.temperature,
             "num_predict": request.max_tokens,
+            "num_ctx": self._num_ctx,
         }
         if request.seed is not None:
             options["seed"] = request.seed
