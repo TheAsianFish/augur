@@ -1,0 +1,92 @@
+# Contributing
+
+Read `PLAN.md` first: it is the source of truth for scope, milestones and the
+predictions each experiment is judged against.
+
+## Setup
+
+```sh
+uv sync                 # Python 3.12, from uv.lock
+cp .env.example .env    # optional; nothing is required for tests
+ollama pull qwen2.5:7b  # optional; local model for dry runs and backtests
+```
+
+Python 3.12 is pinned (`.python-version`). The optional `baseline` extra
+installs Metaculus's template bot and does not support 3.14.
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `make check` | The quality gate: `ruff format --check`, `ruff check`, `mypy --strict`, unit tests. Offline, under two minutes. This is all CI runs on a pull request. |
+| `make test` | Unit tests only. |
+| `make test-integration` | Tests that need a local Ollama or live credentials; each skips with its reason when the requirement is missing. |
+| `make eval` | Replays the committed backtest ledgers and recordings and re-scores them. Offline, free. |
+| `make backtest ARGS=...` | Runs a new backtest (local model by default). Manual; never in per-PR CI. |
+| `make results` | Renders RESULTS.md from the ledger and result files. A test fails if the committed file differs. |
+| `augur forecast --tournament minibench` | Dry run. Add `--submit` with `METACULUS_TOKEN` set to post. |
+
+## Configuration
+
+Everything is an environment variable; nothing secret is ever written to a
+file, a log line, the ledger or a commit.
+
+| Variable | Purpose |
+|----------|---------|
+| `METACULUS_TOKEN` | Metaculus API and the sponsored LLM proxy. |
+| `ASKNEWS_CLIENT_ID`, `ASKNEWS_CLIENT_SECRET` (or `ASKNEWS_SECRET`) | News search. |
+| `AUGUR_PROVIDER`, `AUGUR_MODEL` | `ollama`, `metaculus_proxy` or `replay`, and the model name. |
+| `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
+| `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. |
+| `AUGUR_LOG_LEVEL` | Structured JSON logs to stderr. |
+
+## Conventions
+
+- **Types.** `mypy --strict` with no ignores that lack a reason. Pydantic
+  models at every boundary (API payloads, model outputs, ledger rows).
+- **Time.** Every datetime is timezone-aware UTC. Code never calls
+  `datetime.now()` directly: it takes a `Clock`, which backtests pin.
+- **Sources.** A source is written to the ledger before a model sees it, with
+  the evidence for its date. Research code takes an `as_of` instant and must
+  not return anything it cannot date at or before it.
+- **Ledger.** Append-only. No `UPDATE`, no `DELETE`; a correction is a new
+  row. Schema changes are numbered migrations.
+- **Async.** All I/O is `async`; every provider call goes through its rate
+  limiter; no unbounded `gather`.
+- **Tests.** Unit tests are offline, deterministic and fast: HTTP is mocked,
+  models are the `replay` provider. Mocks never produce a reported number.
+- **Logging.** `structlog`, JSON, with the run id and question id bound. A
+  test asserts that tokens and secrets are redacted.
+- **Errors.** Typed exceptions with a message that says what to do next; one
+  failing forecaster or searcher degrades the question, it does not abort the
+  run.
+
+## Rules that fail the build
+
+1. **Leakage.** `tests/test_leakage.py` scans every committed backtest ledger.
+   A source dated after its question's cutoff, an undated source in a
+   backtest, or a model released after the question opened fails the suite.
+2. **Results drift.** RESULTS.md must equal a fresh render.
+3. **Pre-stated predictions.** A hypothesis and its decision rule are
+   committed before the run that tests it. Do not edit a prediction after
+   seeing the result; record the result as held or failed.
+
+## Numbers
+
+Every number in the README or RESULTS.md comes from a command in this
+repository, with the dataset, model, date, cost and raw output recorded. If
+something cannot be measured in the current environment, it goes under
+"To measure" in RESULTS.md with the exact command.
+
+## Commits and pull requests
+
+One logical step per commit, each passing `make check`, with an imperative
+subject ("Add release-date gate to backtest loader") and a body only when the
+reason is not obvious. One milestone per pull request; tick its box in
+PLAN.md only when its definition of done is met.
+
+## Tournament conduct
+
+One bot account. Forecast and comment only through the documented API, within
+its rate limits. Comments must reflect the reasoning that produced the
+forecast. Never run `--submit` from a branch that has not passed `make check`.
