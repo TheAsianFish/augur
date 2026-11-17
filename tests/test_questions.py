@@ -48,6 +48,18 @@ def test_already_forecast_reads_my_forecasts() -> None:
     assert not question_from_post(_post(my_forecasts=withdrawn)).already_forecast(at)
 
 
+def test_my_forecasts_times_are_epoch_seconds_in_the_live_api() -> None:
+    # Shape observed on 2026-11-17 after a real submission.
+    at = datetime(2026, 11, 17, 21, tzinfo=UTC)
+    latest = {"start_time": 1794946058.250325, "end_time": None, "forecast_values": [0.95, 0.05]}
+    q = question_from_post(_post(my_forecasts={"latest": latest}))
+    assert q.my_latest_forecast is not None
+    assert q.my_latest_forecast.start_time == datetime.fromtimestamp(1794946058.250325, tz=UTC)
+    assert q.already_forecast(at)
+    withdrawn = latest | {"end_time": 1794946100.0}
+    assert not question_from_post(_post(my_forecasts={"latest": withdrawn})).already_forecast(at)
+
+
 def test_unknown_type_is_other_and_group_posts_are_refused() -> None:
     assert question_from_post(_post(type="conditional_thing")).type == "other"
     with pytest.raises(ValueError, match="group or conditional"):

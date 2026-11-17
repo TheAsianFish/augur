@@ -6,7 +6,7 @@ listed and skipped with a reason.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -62,6 +62,11 @@ class Question(BaseModel):
 
 
 def _time(value: Any) -> datetime | None:
+    """ISO 8601 text, or Unix seconds (``my_forecasts`` uses epoch floats)."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return datetime.fromtimestamp(value, tz=UTC)
     return parse_iso(value) if isinstance(value, str) and value else None
 
 
