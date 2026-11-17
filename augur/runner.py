@@ -170,8 +170,11 @@ class ForecastRun:
             if reason is None and len(chosen) >= max_questions:
                 reason = f"over the cap of {max_questions} questions per run"
             if reason:
-                reports.append(QuestionReport(q, "skipped", reason))
-                log.info("question skipped", question_id=q.question_id, reason=reason)
+                skipped = QuestionReport(q, "skipped", reason)
+                if mode is RunMode.LIVE and q.already_forecast(self._clock.now()):
+                    await self._repair_comment(run_id, q, post, skipped)
+                reports.append(skipped)
+                log.info("question skipped", question_id=q.question_id, reason=skipped.reason)
             else:
                 chosen.append((q, post))
 
@@ -369,10 +372,10 @@ class ForecastRun:
         report: QuestionReport,
     ) -> None:
         client = self._live_client()
-        if report.probability is None:
-            raise AugurError("internal: submitting a question with no forecast")
         try:
             if kind == "forecast":
+                if report.probability is None:
+                    raise AugurError("internal: submitting a question with no forecast")
                 result = await client.submit_binary(q.question_id, report.probability)
             else:
                 result = await client.create_private_comment(q.post_id, report.comment)
@@ -398,6 +401,24 @@ class ForecastRun:
             http_status=result.status_code,
             response_excerpt=result.response_excerpt,
         )
+
+    async def _repair_comment(
+        self, run_id: str, q: Question, post: dict[str, Any], report: QuestionReport
+    ) -> None:
+        """Post the comment an earlier run failed to post after its forecast went in."""
+        text = self._ledger.unposted_comment(q.question_id)
+        if text is None:
+            return
+        self._ledger.record_question(run_id, q, self._clock.now(), post)
+        report.comment = text
+        try:
+            await self._submit(
+                run_id, q, "comment", MetaculusClient.comment_payload(q.post_id, text), report
+            )
+        except MetaculusError as exc:
+            report.reason += f"; its missing comment failed again ({exc})"
+            return
+        report.reason += "; posted the comment an earlier run could not"
 
     def _live_client(self) -> MetaculusClient:
         if self._client is None:

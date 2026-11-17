@@ -221,7 +221,7 @@ class MetaculusClient:
     async def create_private_comment(self, post_id: int, text: str) -> SubmitResult:
         payload = self.comment_payload(post_id, text)
         self._require_token()
-        response = await self._request("POST", "/comments/create/", json=payload)
+        response = await self._request("POST", "/comments/create/", json=payload, idempotent=False)
         _log.info(
             "metaculus.comment_created",
             post_id=post_id,
@@ -275,8 +275,13 @@ class MetaculusClient:
         *,
         params: dict[str, str | int] | None = None,
         json: Any = None,
+        idempotent: bool = True,
     ) -> httpx.Response:
+        """Send with retries. A non-idempotent write retries only on 429, which
+        means the server refused it; a 503 may have been processed, and retrying
+        would post the same comment twice."""
         url = f"{self._base}{path}"
+        retry_on = _RETRYABLE if idempotent else frozenset({429})
         attempt = 0
         while True:
             async with self._limiter.acquire():
@@ -291,7 +296,7 @@ class MetaculusClient:
                         None,
                     ) from None
             status = response.status_code
-            if status in _RETRYABLE and attempt < self._max_retries:
+            if status in retry_on and attempt < self._max_retries:
                 attempt += 1
                 delay = _retry_after(response)
                 _log.warning(

@@ -343,6 +343,34 @@ class Ledger:
 
     # -- reads ----------------------------------------------------------
 
+    def unposted_comment(self, question_id: int) -> str | None:
+        """The text of a comment that failed after its forecast was submitted.
+
+        ``None`` when the question has no submitted forecast, or already has a
+        submitted comment. Lets a later run post what an earlier one could not.
+        """
+        posted = self._conn.execute(
+            "SELECT count(*) FROM submissions WHERE question_id = ? AND kind = 'comment' "
+            "AND status = 'submitted'",
+            (question_id,),
+        ).fetchone()[0]
+        forecast = self._conn.execute(
+            "SELECT count(*) FROM submissions WHERE question_id = ? AND kind = 'forecast' "
+            "AND status = 'submitted'",
+            (question_id,),
+        ).fetchone()[0]
+        if posted or not forecast:
+            return None
+        row = self._conn.execute(
+            "SELECT payload_json FROM submissions WHERE question_id = ? AND kind = 'comment' "
+            "ORDER BY recorded_at DESC LIMIT 1",
+            (question_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        text = json.loads(row[0]).get("text")
+        return text if isinstance(text, str) and text.strip() else None
+
     def count(self, table: str, run_id: str | None = None) -> int:
         if table not in APPEND_ONLY_TABLES:
             raise LedgerError(f"unknown table {table!r}")
