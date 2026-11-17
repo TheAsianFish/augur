@@ -1,0 +1,7 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "normalized": [{"fromencoded": false, "from": "Nonexistent_page", "to": "Nonexistent page"}],
+    "pages": [{"ns": 0, "title": "Nonexistent page", "missing": true}]
+  }
+}
