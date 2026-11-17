@@ -60,3 +60,8 @@ def test_short_secret_values_do_not_redact_ordinary_text() -> None:
 def test_bad_level_says_what_to_use() -> None:
     with pytest.raises(ValueError, match="DEBUG, INFO or WARNING"):
         configure_logging("LOUD")
+
+
+def test_a_token_with_surrounding_whitespace_is_still_redacted() -> None:
+    redactor = Redactor(environ={"METACULUS_TOKEN": f"  {TOKEN}\n"})
+    assert TOKEN not in redactor(None, "info", {"event": f"raw {TOKEN} value"})["event"]

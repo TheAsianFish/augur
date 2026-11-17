@@ -28,7 +28,8 @@ _AUTH_VALUE = re.compile(r"\b(Token|Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}", re.
 
 
 def _secret_values(environ: Mapping[str, str]) -> list[str]:
-    values = [environ.get(name, "") for name in SECRET_ENV_VARS]
+    # Settings strip whitespace, so a padded value must be matched stripped too.
+    values = [environ.get(name, "").strip() for name in SECRET_ENV_VARS]
     # Short values would redact ordinary words; real tokens are long.
     return sorted({v for v in values if len(v) >= 8}, key=len, reverse=True)
 
