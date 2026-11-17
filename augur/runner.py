@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import math
-import os
+import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -84,9 +84,30 @@ def _display(path: Path) -> str:
         return str(path)
 
 
+def _git(root: Path, *args: str) -> str:
+    # Fixed arguments, no shell, no user input.
+    done = subprocess.run(  # noqa: S603
+        ["git", "-C", str(root), *args],  # noqa: S607
+        capture_output=True,
+        text=True,
+        timeout=5,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
 def code_version() -> str:
-    sha = os.environ.get("GITHUB_SHA", "")
-    return f"{augur.__version__}+{sha[:12]}" if sha else augur.__version__
+    """The package version plus this checkout's commit (``.dirty`` with local changes)."""
+    root = Path(__file__).resolve().parent.parent
+    sha = ""
+    if (root / ".git").exists():
+        try:
+            sha = _git(root, "rev-parse", "--short=12", "HEAD")
+            if _git(root, "status", "--porcelain", "--untracked-files=no"):
+                sha += ".dirty"
+        except (OSError, subprocess.SubprocessError):
+            sha = ""
+    return f"{augur.__version__}+{sha}" if sha else augur.__version__
 
 
 class ForecastRun:

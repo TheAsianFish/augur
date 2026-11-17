@@ -256,3 +256,13 @@ async def test_no_token_reaches_the_logs_during_a_live_run(
     assert any(e.get("question_id") == 501 for e in events)
     ledger_bytes = (tmp_path / "l.sqlite").read_bytes()
     assert FAKE_TOKEN.encode() not in ledger_bytes
+
+
+def test_code_version_names_this_checkout_not_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from augur.runner import code_version
+
+    monkeypatch.setenv("GITHUB_SHA", "f" * 40)
+    assert "ffffffffffff" not in code_version()
+    assert code_version().startswith("0.1.0")
