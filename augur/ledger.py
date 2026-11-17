@@ -61,6 +61,9 @@ class Ledger:
     def open(cls, path: Path | str, clock: Clock) -> Self:
         conn = sqlite3.connect(str(path), isolation_level=None)
         conn.execute("PRAGMA foreign_keys = ON")
+        # Without this, INSERT OR REPLACE deletes the old row without firing the
+        # DELETE guard, and a run's mode could be rewritten in place.
+        conn.execute("PRAGMA recursive_triggers = ON")
         if str(path) != ":memory:":
             conn.execute("PRAGMA journal_mode = WAL")
         ledger = cls(conn, clock)

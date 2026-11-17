@@ -74,7 +74,9 @@ def _ledger_with_question(tmp: Path, mode: RunMode) -> tuple[Ledger, str, int]:
         settings={},
         code_version="test",
     )
-    q, post = binary_question(T0 - timedelta(days=30))
+    # A backtest's cutoff is its question's open time; live, it is now.
+    opened = T0 if mode is RunMode.BACKTEST else T0 - timedelta(days=30)
+    q, post = binary_question(opened)
     ledger.record_question(run_id, q, CUTOFF, post)
     return ledger, run_id, q.question_id
 
@@ -197,13 +199,58 @@ def test_a_ledger_holding_a_violation_fails_the_scan(
     path = tmp_path / f"{mode.value}.sqlite"
     _plant(path, mode, kind)
     violations = scan_ledger(path)
-    assert [v.kind for v in violations] == [kind]
+    # _plant drops the triggers, as a foreign writer might; that is reported too.
+    assert [v.kind for v in violations if v.kind != "missing_guard"] == [kind]
+    assert {v.kind for v in violations} >= {"missing_guard"}
+
+
+def test_a_ledger_without_its_guards_fails_the_scan(tmp_path: Path) -> None:
+    path = tmp_path / "live.sqlite"
+    ledger, _, _ = _ledger_with_question(tmp_path, RunMode.LIVE)
+    ledger.close()
+    assert scan_ledger(path) == []
+    conn = sqlite3.connect(path)
+    conn.execute("DROP TRIGGER call_sources_admitted_only")
+    conn.close()
+    assert [v.kind for v in scan_ledger(path)] == ["missing_guard"]
+
+
+def test_insert_or_replace_cannot_rewrite_a_row(tmp_path: Path) -> None:
+    ledger, run_id, _ = _ledger_with_question(tmp_path, RunMode.BACKTEST)
+    with pytest.raises(sqlite3.DatabaseError, match="append-only"):
+        ledger.connection.execute(
+            "INSERT OR REPLACE INTO runs SELECT run_id, started_at, 'live', tournament, "
+            "provider, model, settings_json, code_version FROM runs WHERE run_id = ?",
+            (run_id,),
+        )
+    ledger.close()
+
+
+@pytest.mark.parametrize(
+    ("mode", "cutoff_shift", "open_shift"),
+    [
+        (RunMode.LIVE, timedelta(hours=1), timedelta(days=-30)),
+        (RunMode.BACKTEST, timedelta(0), timedelta(days=-1)),
+    ],
+)
+def test_a_cutoff_the_scan_cannot_trust_is_a_violation(
+    tmp_path: Path, mode: RunMode, cutoff_shift: timedelta, open_shift: timedelta
+) -> None:
+    """A future cutoff (live) or one after the open time (backtest) would admit leaks."""
+    ledger = Ledger.open(tmp_path / "l.sqlite", FixedClock(T0))
+    run_id = ledger.start_run(
+        mode=mode, tournament="t", provider="p", model="m", settings={}, code_version="t"
+    )
+    q, post = binary_question(T0 + open_shift)
+    ledger.record_question(run_id, q, T0 + cutoff_shift, post)
+    ledger.close()
+    assert [v.kind for v in scan_ledger(tmp_path / "l.sqlite")] == ["bad_cutoff"]
 
 
 def test_undated_sources_in_live_ledgers_are_not_violations(tmp_path: Path) -> None:
     path = tmp_path / "live.sqlite"
     _plant(path, RunMode.LIVE, "undated_source")
-    assert scan_ledger(path) == []
+    assert [v.kind for v in scan_ledger(path)] == ["missing_guard"] * 3
 
 
 @pytest.mark.parametrize("path", COMMITTED_LEDGERS, ids=lambda p: str(p.relative_to(REPO)))

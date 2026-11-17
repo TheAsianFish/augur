@@ -10,6 +10,7 @@ ledger written by buggy code (or edited by hand) still fails the build.
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
@@ -75,16 +76,51 @@ def scan_ledger(path: Path) -> list[Violation]:
     Kinds: ``late_source`` (an admitted source dated after its cutoff),
     ``undated_source`` (an admitted undated or unproven source in a backtest),
     ``unadmitted_use`` (a model call cited a source the gate did not admit for
-    that question), and ``model_too_new`` (a backtest call by a model not
-    released before the question opened).
+    that question), ``model_too_new`` (a backtest call by a model not
+    released before the question opened), ``bad_cutoff`` (a cutoff later than
+    the moment the question was recorded, or in a backtest later than the
+    question's open time: every other check trusts the cutoff, so it is
+    checked too), and ``missing_guard`` (the ledger's leakage triggers are
+    gone, so rows were not checked when written).
     """
     uri = f"file:{path}?mode=ro"
-    with sqlite3.connect(uri, uri=True) as conn:
+    with closing(sqlite3.connect(uri, uri=True)) as conn:
         return _scan(conn)
+
+
+GUARD_TRIGGERS = (
+    "source_uses_no_late_source",
+    "source_uses_no_undated_in_backtest",
+    "call_sources_admitted_only",
+)
 
 
 def _scan(conn: sqlite3.Connection) -> list[Violation]:
     found: list[Violation] = []
+    present = {
+        name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'")
+    }
+    for name in GUARD_TRIGGERS:
+        if name not in present:
+            found.append(Violation("missing_guard", "", 0, f"trigger {name} is missing"))
+    cutoffs = conn.execute(
+        """
+        SELECT q.run_id, q.question_id, q.cutoff, q.recorded_at, q.open_time
+        FROM questions q JOIN runs r ON r.run_id = q.run_id
+        WHERE q.cutoff > q.recorded_at OR (r.mode = 'backtest' AND q.cutoff > q.open_time)
+        """
+    )
+    for run_id, qid, cutoff, recorded, opened in cutoffs:
+        found.append(
+            Violation(
+                "bad_cutoff",
+                run_id,
+                qid,
+                f"cutoff {cutoff} is after the question was recorded ({recorded})"
+                if cutoff > recorded
+                else f"backtest cutoff {cutoff} is after the question opened ({opened})",
+            )
+        )
     late = conn.execute(
         """
         SELECT u.run_id, u.question_id, s.source_id, s.published_at, q.cutoff
