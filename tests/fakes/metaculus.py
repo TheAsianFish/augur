@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 
 import httpx
 
-from augur.clock import Clock, SystemClock, to_iso
+from augur.clock import Clock, SystemClock
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "metaculus"
 BINARY_DETAIL = "post_43327_binary_detail.json"
@@ -213,7 +213,7 @@ class FakeMetaculus:
             if isinstance(p, bool) or not isinstance(p, int | float) or not 0.001 <= p <= 0.999:
                 return _error(400, {"probability_yes": ["Must be between 0.001 and 0.999."]})
             accepted.append((q, float(p)))
-        now = to_iso(self.clock.now())
+        now = self.clock.now().timestamp()  # the live API sends epoch seconds here
         for (q, p), item in zip(accepted, body, strict=True):
             latest = {"start_time": now, "end_time": None, "forecast_values": [1 - p, p]}
             mine = q.setdefault("my_forecasts", {"history": [], "latest": None, "score_data": {}})
