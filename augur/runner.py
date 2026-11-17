@@ -335,7 +335,9 @@ class ForecastRun:
         await self._submit(run_id, q, "forecast", forecast_payload, report)
         await self._submit(run_id, q, "comment", comment_payload, report)
         report.submitted = True
-        self._print(f"   submitted {report.probability * 100:.1f}% and a private comment")
+        self._print(f"   submitted {report.probability * 100:.1f}%; posted this private comment:")
+        for line in report.comment.splitlines():
+            self._print("   | " + line)
 
     async def _submit(
         self,

@@ -132,8 +132,10 @@ async def test_dry_run_on_samples_ledgers_everything_and_prints_the_comment(
 async def test_live_run_submits_once_with_a_private_comment_and_skips_next_time(
     tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
 ) -> None:
-    report, ledger = await _run(tmp_path, client=_client(http), submit=True)
+    out = io.StringIO()
+    report, ledger = await _run(tmp_path, client=_client(http), submit=True, out=out)
     assert report.mode is RunMode.LIVE
+    assert "posted this private comment:\n   | **Forecast: 40%**" in out.getvalue()
     forecast = [r for r in report.reports if r.status == "forecast"]
     assert [r.question.question_id for r in forecast] == [501]
     assert forecast[0].submitted
