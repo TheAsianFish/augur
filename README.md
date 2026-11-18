@@ -137,10 +137,11 @@ measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
 
 ## Roadmap
 
-M2 live on MiniBench with every question type and the shadow template; M3
-resolutions and scoring; M4 the leakage-proof backtest and what leakage is
-worth; M5-M6 ablations; M7 calibration; M8 standings and going public; M9
-"does it know when it does not know"; M10 release. Details in
+M2 live on MiniBench with every question type and the shadow template, and
+the repository public; M3 resolutions and scoring, against the template and
+the community prediction; M4 the leakage-proof backtest and what leakage is
+worth; M5-M6 ablations; M7 calibration; M8 standings; M9 "does it know when
+it does not know"; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 
 ## Development
