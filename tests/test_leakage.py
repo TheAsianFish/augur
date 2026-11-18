@@ -247,6 +247,28 @@ def test_a_cutoff_the_scan_cannot_trust_is_a_violation(
     assert [v.kind for v in scan_ledger(tmp_path / "l.sqlite")] == ["bad_cutoff"]
 
 
+@pytest.mark.parametrize("published", ["'2024-10-01 18:00:00'", "1730000000"])
+def test_a_timestamp_not_in_the_ledgers_own_form_fails_the_scan(
+    tmp_path: Path, published: str
+) -> None:
+    """Times compare as text, so a late time in another form slips past the triggers."""
+    ledger, run_id, qid = _ledger_with_question(tmp_path, RunMode.LIVE)
+    ok = source(BEFORE, retrieved_at=BEFORE)
+    ledger.record_source(ok)
+    conn = ledger.connection
+    columns = [row[1] for row in conn.execute("PRAGMA table_info(sources)")]
+    picked = ", ".join(
+        "'foreign'" if c == "source_id" else published if c == "published_at" else c
+        for c in columns
+    )
+    conn.execute(f"INSERT INTO sources SELECT {picked} FROM sources")
+    # A late source in another format: the guard's text comparison lets it in.
+    ledger.record_admission(run_id, qid, Admission("foreign", True, "a foreign writer"))
+    ledger.close()
+    kinds = [v.kind for v in scan_ledger(tmp_path / "live.sqlite")]
+    assert kinds == ["bad_timestamp"]
+
+
 def test_undated_sources_in_live_ledgers_are_not_violations(tmp_path: Path) -> None:
     path = tmp_path / "live.sqlite"
     _plant(path, RunMode.LIVE, "undated_source")

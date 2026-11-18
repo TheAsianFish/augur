@@ -80,8 +80,11 @@ def scan_ledger(path: Path) -> list[Violation]:
     released before the question opened), ``bad_cutoff`` (a cutoff later than
     the moment the question was recorded, or in a backtest later than the
     question's open time: every other check trusts the cutoff, so it is
-    checked too), and ``missing_guard`` (the ledger's leakage triggers are
-    gone, so rows were not checked when written).
+    checked too), ``bad_timestamp`` (a cutoff, open, recorded or source time
+    not in ``clock.to_iso``'s fixed-width form: the triggers and the checks
+    here compare times as text, which is only time order in that form), and
+    ``missing_guard`` (the ledger's leakage triggers are gone, so rows were not
+    checked when written).
     """
     uri = f"file:{path}?mode=ro"
     with closing(sqlite3.connect(uri, uri=True)) as conn:
@@ -95,8 +98,41 @@ GUARD_TRIGGERS = (
 )
 
 
+# The shape ``clock.to_iso`` writes. Text comparison is time order only here.
+ISO_GLOB = (
+    "[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-6][0-9]"
+    ".[0-9][0-9][0-9][0-9][0-9][0-9]Z"
+)
+
+_TIMESTAMP_COLUMNS = (
+    # (table, column, nullable, how to name the row)
+    ("questions", "cutoff", False, "run_id, question_id"),
+    ("questions", "open_time", False, "run_id, question_id"),
+    ("questions", "recorded_at", False, "run_id, question_id"),
+    ("sources", "published_at", True, "'', 0"),
+)
+
+
 def _scan(conn: sqlite3.Connection) -> list[Violation]:
     found: list[Violation] = []
+    for table, column, nullable, ident in _TIMESTAMP_COLUMNS:
+        null_ok = f"{column} IS NOT NULL AND " if nullable else ""
+        rows = conn.execute(
+            f"SELECT {ident}, quote({column}) FROM {table} "  # noqa: S608 - fixed names
+            f"WHERE {null_ok}({column} IS NULL OR typeof({column}) != 'text' "
+            f"OR {column} NOT GLOB ?)",
+            (ISO_GLOB,),
+        )
+        for run_id, qid, value in rows:
+            found.append(
+                Violation(
+                    "bad_timestamp",
+                    run_id,
+                    qid,
+                    f"{table}.{column} = {value} is not a fixed-width UTC timestamp, "
+                    "so text order is not time order and the other checks cannot be trusted",
+                )
+            )
     present = {
         name for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'")
     }
