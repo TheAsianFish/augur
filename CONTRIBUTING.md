@@ -54,7 +54,7 @@ file, a log line, the ledger or a commit.
 | `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
 | `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. The run prints its worst-case cost estimate before the first question. |
 | `AUGUR_CLOSE_MARGIN_MINUTES`, `AUGUR_MIN_FORECAST_MINUTES`, `AUGUR_RUN_DEADLINE_MINUTES` | Deadlines (defaults 5, 4, 30): work on a question stops this long before it closes; a question with less time than the minimum before that is missed, not started; the run starts no question after its own deadline. |
-| `AUGUR_SCHEDULE`, `AUGUR_SUBMIT` (repository variables) | The scheduled workflow's switches: `off` (or unset), `minibench` or `all`; and `true` to post from scheduled runs on `main` (otherwise they are dry runs). |
+| `AUGUR_SCHEDULE`, `AUGUR_SUBMIT` (repository variables) | The scheduled workflow's switches: `off` (or unset), `minibench` or `all`; and `true` to post from scheduled runs on `main` (otherwise scheduled runs only poll; dry runs are manual dispatches). |
 | `AUGUR_LOG_LEVEL` | Structured JSON logs to stderr. |
 
 ## Conventions

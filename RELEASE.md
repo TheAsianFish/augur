@@ -70,9 +70,10 @@ until the variables below are set: unset `AUGUR_SCHEDULE` is the kill switch.
      `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free,openrouter:inclusionai/ling-3.2-flash:free`.
    - `AUGUR_MAX_COST_PER_RUN`: `1.00` to start (a question costs at most
      about $0.35 at GPT-5.4's listed price).
-   - `AUGUR_SCHEDULE=minibench`, and leave `AUGUR_SUBMIT` unset for the
-     first day: scheduled runs are then dry runs whose output and ledger
-     land on the `ledger` branch.
+   - `AUGUR_SCHEDULE=minibench`. While `AUGUR_SUBMIT` is unset, scheduled
+     runs only poll: a dry run posts nothing, so every tick would forecast
+     the same questions again. For a dry run, dispatch one by hand:
+     `gh workflow run tournament.yml --ref main -f tournament=minibench`.
 3. Check one manual run first:
    `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f submit=true`;
    it posts only in the practice area, and its export appears on the
@@ -82,5 +83,5 @@ until the variables below are set: unset `AUGUR_SCHEDULE` is the kill switch.
    scheduler was measured to drop most ticks (RESULTS.md M3), and the chain
    dispatches each next run itself. While private, its waiting would bill
    about 43,000 minutes a month (a 60-minute job, 24 times a day), so leave
-   it unset.
+   it unset (the workflow also refuses to chain on a private repository).
 6. Kill switch: set `AUGUR_SCHEDULE=off`.

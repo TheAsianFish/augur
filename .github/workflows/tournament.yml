@@ -3,7 +3,9 @@ name: Tournament
 # A cheap standard-library poll first; the forecast job (install, models,
 # Metaculus) runs only when an open question has not been forecast yet.
 # Repository variables: AUGUR_SCHEDULE (off | minibench | all; unset = off),
-# AUGUR_SUBMIT ('true' to post from scheduled runs; otherwise a dry run),
+# AUGUR_SUBMIT ('true' to post from scheduled runs; scheduled and chained runs
+# forecast only when it is set, since a dry run posts nothing, so every later
+# tick would forecast the same questions again; dry runs are manual dispatches),
 # AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS, AUGUR_MAX_QUESTIONS_PER_RUN,
 # AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the fallback trigger below; unset = off).
 #
@@ -75,7 +77,12 @@ jobs:
 
   forecast:
     needs: poll
-    if: needs.poll.outputs.has_work == 'true'
+    # A scheduled dry run would never leave a forecast on Metaculus, so the
+    # poll would find the same questions on every tick and bill a forecast job
+    # each time: scheduled and chained runs forecast only when they post.
+    if: >-
+      needs.poll.outputs.has_work == 'true' &&
+      ((github.event_name == 'workflow_dispatch' && !inputs.chained) || vars.AUGUR_SUBMIT == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
@@ -83,10 +90,6 @@ jobs:
     env:
       AUGUR_LEDGER: run.sqlite
       AUGUR_LOG_LEVEL: INFO
-      METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      ASKNEWS_CLIENT_ID: ${{ secrets.ASKNEWS_CLIENT_ID }}
-      ASKNEWS_CLIENT_SECRET: ${{ secrets.ASKNEWS_CLIENT_SECRET }}
       AUGUR_FORECAST_MODELS: ${{ vars.AUGUR_FORECAST_MODELS }}
       AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_RESEARCH_MODELS }}
       AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
@@ -106,6 +109,11 @@ jobs:
         id: forecast
         continue-on-error: true
         env:
+          # Secrets only on this step, not while dependencies install.
+          METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ASKNEWS_CLIENT_ID: ${{ secrets.ASKNEWS_CLIENT_ID }}
+          ASKNEWS_CLIENT_SECRET: ${{ secrets.ASKNEWS_CLIENT_SECRET }}
           TOURNAMENTS: ${{ needs.poll.outputs.tournaments }}
           # Posting needs the switch for this kind of run, and main (which passed make check).
           SUBMIT: ${{ github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && !inputs.chained && inputs.submit) || ((github.event_name == 'schedule' || inputs.chained) && vars.AUGUR_SUBMIT == 'true')) }}
@@ -147,10 +155,12 @@ jobs:
   # The fallback trigger: GitHub's scheduler drops most ticks (RESULTS.md M3),
   # but a workflow_dispatch sent with the job's own token always starts a run.
   # At most one chain: nothing is dispatched while another run is queued.
+  # Never on a private repository, where the wait would bill all day.
   chain:
     needs: [poll, forecast]
     if: >-
       always() && vars.AUGUR_CHAIN_MINUTES != '' &&
+      github.event.repository.private == false &&
       (vars.AUGUR_SCHEDULE == 'minibench' || vars.AUGUR_SCHEDULE == 'all') &&
       github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.chained)
     runs-on: ubuntu-latest
