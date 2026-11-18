@@ -176,3 +176,17 @@ def test_a_discrete_summary_names_outcomes_not_points_inside_buckets() -> None:
     text = summary(q, parse_prediction(q, lines))
     assert text.startswith("median 0 Officials (80% between 0 and ")
     assert "-0." not in text
+
+
+def test_numeric_option_labels_do_not_match_each_other() -> None:
+    probs = parse_choice("0: 10%\n10: 30%\n20: 60%", ["0", "10", "20"])
+    assert probs == pytest.approx({"0": 0.1, "10": 0.3, "20": 0.6}, abs=1e-3)
+    listed = parse_choice("1. 2: 40%\n2. 2-3: 50%\n- 4+: 10%", ["2", "2-3", "4+"])
+    assert listed == pytest.approx({"2": 0.4, "2-3": 0.5, "4+": 0.1}, abs=1e-3)
+
+
+def test_a_percentile_with_a_magnitude_word_is_dropped() -> None:
+    lines = "\n".join(f"Percentile {lv}: {lv / 10} billion" for lv in (10, 20, 40, 60, 80, 90))
+    with pytest.raises(ForecastParseError, match="magnitude"):
+        parse_percentiles(lines)
+    assert parse_percentiles(lines.replace(" billion", ""))[0] == (0.1, 1.0)

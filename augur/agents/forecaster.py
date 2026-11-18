@@ -64,9 +64,14 @@ NUMERIC_SYSTEM = (
 )
 
 _PROBABILITY = re.compile(r"probability\s*[:=]?\s*\**\s*(\d{1,3}(?:\.\d+)?)\s*%", re.I)
+# Where an answer line may start: markdown marks, then at most one bullet or
+# list number ("- ", "2. ", "3) "). Not bare digits: an option named "0" must
+# not match the line "10: 30%".
+_LINE_START = r"^[\s*_#>]*(?:[-\u2022]\s+|\d+[.)]\s+)?[\s*_]*"
 _NUMBER = r"[-\u2212]?\d[\d,]*(?:\.\d+)?(?:[eE][-+]?\d+)?"
 _PERCENTILE = re.compile(
-    r"percentile\s*(\d{1,2})\s*\**\s*[:=]\s*\**\s*[$\u20ac\u00a3]?\s*(" + _NUMBER + r")",
+    r"percentile\s*(\d{1,2})\s*\**\s*[:=]\s*\**\s*[$\u20ac\u00a3]?\s*(" + _NUMBER + r")"
+    r"(\s*(?:thousand|million|billion|trillion|bn|[kmb])\b)?",
     re.I,
 )
 
@@ -103,7 +108,7 @@ def parse_choice(text: str, options: list[str]) -> dict[str, float]:
     found: dict[str, float] = {}
     for option in options:
         pattern = re.compile(
-            r"^[\s*_#>\-\d.)]*[\"']?" + re.escape(option) + r"[\"']?\s*\**\s*[:=\-\u2013]\s*\**\s*"
+            _LINE_START + r"[\"']?" + re.escape(option) + r"[\"']?\s*\**\s*[:=\-\u2013]\s*\**\s*"
             r"(\d{1,3}(?:\.\d+)?)\s*%",
             re.I | re.M,
         )
@@ -128,7 +133,12 @@ def _to_float(raw: str) -> float:
 def parse_percentiles(text: str) -> list[tuple[float, float]]:
     """The last value given for each of the six percentiles, as (level, value)."""
     values: dict[int, float] = {}
-    for level, raw in _PERCENTILE.findall(text):
+    for level, raw, magnitude in _PERCENTILE.findall(text):
+        if magnitude.strip():
+            raise ForecastParseError(
+                f"percentile {level} is written with a magnitude word ({raw}{magnitude}); "
+                "the question's units are plain numbers, so the draw is dropped"
+            )
         try:
             values[int(level)] = _to_float(raw)
         except ValueError:
@@ -169,7 +179,8 @@ def reasoning_of(text: str, options: list[str] | None = None) -> str:
     lines = text.strip().splitlines()
     option_line = (
         re.compile(
-            r"^[\s*_#>\-\d.)]*[\"']?(?:"
+            _LINE_START
+            + r"[\"']?(?:"
             + "|".join(re.escape(o) for o in options)
             + r")[\"']?\s*\**\s*[:=\-\u2013]\s*\**\s*\d{1,3}(?:\.\d+)?\s*%",
             re.I,
