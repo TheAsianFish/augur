@@ -50,3 +50,26 @@ def test_submit_to_minibench_with_a_local_model_is_refused_before_any_call(
     assert code == 2
     assert "frontier-2026-11" in err
     assert "not-a-real-token" not in err
+
+
+def test_a_replay_run_never_fetches_the_model_list(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import augur.cli
+
+    from .fakes.search import FixedSearcher
+
+    async def no_network(*args: object, **kwargs: object) -> None:
+        raise AssertionError("a replay fetched OpenRouter's model list")
+
+    monkeypatch.setattr(augur.cli, "fetch_catalog", no_network)
+    monkeypatch.setattr(augur.cli, "WikipediaSearcher", lambda http, clock: FixedSearcher())
+    recording = tmp_path / "empty.jsonl"
+    recording.write_text("")
+    monkeypatch.delenv("METACULUS_TOKEN", raising=False)
+    monkeypatch.setenv("AUGUR_PROVIDER", "replay")
+    monkeypatch.setenv("AUGUR_REPLAY_PATH", str(recording))
+    code = main(["forecast", "--ledger", str(tmp_path / "l.sqlite")])
+    out = capsys.readouterr().out
+    assert code == 1, "every draw misses the empty recording, so the question fails"
+    assert "1 failed" in out

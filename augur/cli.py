@@ -18,6 +18,7 @@ from augur.ledger import Ledger
 from augur.llm.catalog import (
     SNAPSHOT_PATH,
     fetch_catalog,
+    load_snapshot,
     price_for,
     release_bound,
     snapshot_text,
@@ -124,7 +125,8 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     if args.submit and not settings.has_metaculus_token:
         raise MissingCredentialsError("--submit", ("METACULUS_TOKEN",))
     async with default_http_client() as http:
-        catalog = await fetch_catalog(http, clock.now())
+        # A replay must not depend on the network, prices included.
+        catalog = load_snapshot() if settings.is_replay else await fetch_catalog(http, clock.now())
         router = build_router(settings, http, catalog, clock)
         probe_providers = None
         if settings.probe and not args.no_probe and not settings.is_replay:
