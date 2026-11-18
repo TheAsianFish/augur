@@ -208,7 +208,7 @@ class OpenAICompatProvider:
             model=request.model,
             input_tokens=in_tok if isinstance(in_tok, int) else None,
             output_tokens=out_tok if isinstance(out_tok, int) else None,
-            cost_usd=float(reported) if isinstance(reported, int | float) else None,
+            cost_usd=max(0.0, float(reported)) if isinstance(reported, int | float) else None,
             served_model=served if isinstance(served, str) else None,
             reasoning=trace if isinstance(trace, str) and trace.strip() else None,
             limit_headers=limit_headers(resp),

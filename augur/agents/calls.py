@@ -243,9 +243,13 @@ class CallRecorder:
             failure = exc
         finally:
             if response is None:
-                self.budget.settle(ctx.question_id, reserved, 0.0)
+                # An empty answer was generated and billed (a reasoning model can
+                # spend all of max_tokens thinking), so it is charged the worst
+                # case; a refused or failed request cost nothing.
+                spent = reserved if isinstance(failure, EmptyAnswerError) else 0.0
+                self.budget.settle(ctx.question_id, reserved, spent)
         latency_ms = int((time.perf_counter() - t0) * 1000)
-        cost = 0.0
+        cost = reserved if isinstance(failure, EmptyAnswerError) else 0.0
         if response is not None:
             if response.cost_usd is not None:
                 cost = response.cost_usd

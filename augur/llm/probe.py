@@ -122,11 +122,16 @@ async def probe_routes(
             continue
         provider = providers[route.endpoint.name]
         t0 = time.perf_counter()
+        request = probe_request(route.model)
         try:
-            response = await provider.complete(probe_request(route.model))
+            response = await provider.complete(request)
         except ProviderError as exc:
             result.latency_ms = int((time.perf_counter() - t0) * 1000)
             result.outcome = _outcome(exc)
+            if isinstance(exc, EmptyAnswerError):
+                # Generated and billed, just not shown: charge the worst case.
+                chars = sum(len(m.content) for m in request.messages)
+                result.cost_usd = price.cost(chars // 3 + 1, request.max_tokens)
             result.detail = str(exc)[:300]
             if isinstance(exc, FallbackError):
                 result.http_status = exc.status_code

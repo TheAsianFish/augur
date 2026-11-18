@@ -499,3 +499,19 @@ async def test_an_upstream_429_without_a_wait_still_rests_the_route(tmp_path: Pa
     await calls.complete(CallContext(run_id, qid, "forecaster", 0), forecast_request(), [])
     assert "until 18:00:30 UTC" in str(r.unavailable(GEMMA)), "at least MIN_COOL_S"
     led.close()
+
+
+async def test_an_empty_answer_is_charged_the_worst_case(tmp_path: Path) -> None:
+    """The tokens a reasoning model spent thinking were billed, so the caps must see them."""
+    r, p = router([GPT, CLAUDE])
+    p.failures[GPT.model] = EmptyAnswerError("no text (finish_reason 'length')")
+    led, run_id, qid = ledger_with_question(tmp_path)
+    budget = Budget(1.0, 1.0)
+    calls = CallRecorder(r, led, FixedClock(T0), budget)
+    await calls.complete(CallContext(run_id, qid, "forecaster", 0), forecast_request(), [])
+    [empty_cost] = led.connection.execute(
+        "SELECT cost_usd FROM llm_calls WHERE model = ?", (GPT.model,)
+    ).fetchone()
+    assert empty_cost > 0
+    assert budget.spent_run >= empty_cost
+    led.close()
