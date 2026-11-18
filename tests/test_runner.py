@@ -262,6 +262,7 @@ async def test_the_question_cap(
     report, ledger = await _run(tmp_path, client=_client(http), max_questions=1)
     assert report.count("forecast") == 1
     assert any("over the cap of 1" in r.reason for r in report.reports)
+    assert report.coverage()["reasons"]["skipped"]["over the cap of N questions per run"] == 1
     ledger.close()
 
 

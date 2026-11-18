@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import re
 import subprocess
 import time
 from collections.abc import Mapping, Sequence
@@ -147,7 +148,7 @@ class RunReport:
 def _reason_key(reason: str) -> str:
     """Reasons grouped for the summary: the text before any detail in parentheses."""
     head = reason.split(" (", 1)[0].split(";", 1)[0]
-    return "".join(ch for ch in head if not ch.isdigit()).strip() or "unspecified"
+    return re.sub(r"\d+(?:\.\d+)?", "N", head).strip() or "unspecified"
 
 
 def load_samples(directory: Path) -> list[tuple[Question, dict[str, Any]]]:

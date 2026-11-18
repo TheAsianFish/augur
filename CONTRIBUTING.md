@@ -30,6 +30,9 @@ installs Metaculus's template bot and does not support 3.14.
 | `augur models probe [--route E:M ...] [--burst N]` | One short call per route, recorded in the ledger; `--burst N` then measures each free route's real rate limit (stops at the first refusal; free routes only). Prints the OpenRouter key's credit and daily free allowance. |
 | `augur models snapshot` | Refreshes the committed copy of OpenRouter's model list (`augur/llm/openrouter_models.json`), used when the live list cannot be fetched. |
 | `augur ledger check PATH...` | Scans ledgers for leakage and for forecasts submitted below the floor; exits 1 on any violation. |
+| `augur ledger export DB OUT` | Writes a ledger as JSONL, one row per line, byte-stable; the scheduled workflow pushes one per run to the `ledger` branch. |
+| `augur forecast ... --coverage PATH` | Also writes the run's coverage report as JSON: each question forecast in time, missed, skipped or failed, and why (also in the ledger's `question_outcomes`). |
+| `python3 scripts/poll.py` | The scheduled workflow's first job: standard library only, lists open questions this account has not forecast and sets `has_work`. Needs `METACULUS_TOKEN` and `AUGUR_SCHEDULE`. |
 
 ## Configuration
 
@@ -47,9 +50,11 @@ file, a log line, the ledger or a commit.
 | `OLLAMA_HOST` | Where the local model lives. |
 | `AUGUR_PROBE` | `0` skips the opening probe. |
 | `AUGUR_RECORD_PATH`, `AUGUR_REPLAY_PATH` | Record every model call to a JSONL file; replay one (with `AUGUR_PROVIDER=replay`). |
-| `AUGUR_FORECASTERS` | Forecaster draws per question (default 5), combined by the median. |
+| `AUGUR_FORECASTERS` | Forecaster draws per question (default 5), combined by the median (binary), the per-option median normalised (multiple choice) or the mean of their CDFs (numeric, discrete). |
 | `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
-| `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. |
+| `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. The run prints its worst-case cost estimate before the first question. |
+| `AUGUR_CLOSE_MARGIN_MINUTES`, `AUGUR_MIN_FORECAST_MINUTES`, `AUGUR_RUN_DEADLINE_MINUTES` | Deadlines (defaults 5, 4, 30): work on a question stops this long before it closes; a question with less time than the minimum before that is missed, not started; the run starts no question after its own deadline. |
+| `AUGUR_SCHEDULE`, `AUGUR_SUBMIT` (repository variables) | The scheduled workflow's switches: `off` (or unset), `minibench` or `all`; and `true` to post from scheduled runs on `main` (otherwise they are dry runs). |
 | `AUGUR_LOG_LEVEL` | Structured JSON logs to stderr. |
 
 ## Conventions
