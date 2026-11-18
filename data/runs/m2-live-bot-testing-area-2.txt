@@ -1,0 +1,39 @@
+run run_f18e2cb98e624da6bb6f (live) on metaculus:bot-testing-area
+models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free, openrouter:inclusionai/ling-3.2-flash:free, openrouter:google/gemma-4-31b-it:free; research: openrouter:google/gemma-4-26b-a4b-it:free, openrouter:inclusionai/ling-3.2-flash:free, openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+probe:
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered        697 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+  openrouter:inclusionai/ling-3.2-flash:free       answered       1389 ms  $0/$0 per M            listed 2026-11-13  below tier  [research+forecast]
+  openrouter:google/gemma-4-31b-it:free            rate_limited   1121 ms  $0/$0 per M            listed 2026-04-02  below tier  [forecast]
+  openrouter:google/gemma-4-26b-a4b-it:free        rate_limited   3005 ms  $0/$0 per M            listed 2026-04-03  below tier  [research]
+
+== Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
+   https://www.metaculus.com/questions/43327/
+   sources: 4 admitted, 0 rejected; members: 1% 1% 1% 1% 1%; median: 1.0%
+   submitted 1.0%; posted this private comment:
+   | **Forecast: 1%**, the median of 5 independent forecasts (1%, 1%, 1%, 1%, 1%) by nvidia/nemotron-3-ultra-550b-a55b:free.
+   | 
+   | **Research** (only sources dated at or before 2026-11-18 11:14 UTC):
+   | 
+   | **Current state of affairs:** The EU has 27 member states; the UK is the only state ever to have withdrawn (exit completed 31 Jan 2020) [S1][S2][S3]. No other member state has withdrawn or been suspended [S2]. As of the
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (1%) (a) **Time left:** 44 days (until 2026-12-31). (b) **Status quo:** No founding member has ever triggered Article 50. The UK remains the sole departure (2020). Current governments in all six states are pro-EU or EU-reformist; no parliament has mandated an exit referendum. (c) **Base rate:** 1 exit in 65 years across 27 members ≈ 0.06% per country-year. For a specific 44-day window across 6 founders: effectively 0%. (d) **Research adjustment:** Right-populist gains (Wilders NL, AfD DE, RN FR, Meloni IT) have *softened* exit rhetoric; all now prioritize reform or opt-outs. Treaty mechanics require parliamentary majorities and months of preparation—impossible in 44 days absent a catastrophic …
+   | 2. (1%) (a) Time left: 44 days until 2026-12-31. (b) Status quo: No founding member has ever triggered Article 50. Only the UK (non-founder) has left. Current governments in all six countries are either pro-EU or, where eurosceptic parties participate (Italy, Netherlands), they have explicitly ruled out exit. Triggering Article 50 requires a formal sovereign decision—typically parliamentary approval—which cannot happen overnight. (c) Base rate: 1 exit in 65+ years across 27+ members ≈ 0.06% per country-year. For a 44-day window across 6 founders: ~0.004%. (d) Research adjustment: Eurosceptic sentiment exists but no concrete steps toward notification. Recent Dutch, French, German, and Italian …
+   | 3. (1%) (a) **Time left:** 44 days until 2026-12-31. Triggering Article 50 requires a formal government decision and notification to the European Council—a process that typically follows a referendum or parliamentary vote and takes months to prepare. (b) **Status quo:** No founding member has ever triggered Article 50. All six currently have pro-EU governments or coalitions. No election, referendum, or parliamentary motion for exit is scheduled or imminent in any of them. (c) **Base rate:** In 65 years, only the UK (a non-founder) has left. The annual base rate for any member exiting is ~1.5%; for a founder in a 44-day window it is effectively 0%. (d) **Research adjustments:** Eurosceptic parties …
+   | 4. (1%) (a) **Time left:** 44 days until 2026-12-31. An Article 50 notification is a deliberate, high-profile executive act requiring cabinet/parliamentary backing; 44 days allows almost no time for a new crisis to mature into formal notification. (b) **Status quo:** No founding member has ever triggered Article 50. All six currently have pro-EU governments or coalitions where eurosceptic junior partners (e.g., Wilders in NL, AfD opposition in DE, Lega in IT) have explicitly deprioritised exit. No parliament has tabled a withdrawal motion. (c) **Base rate:** 1 exit (UK) in 65 years across 27 members ≈ 0.06% per country-year. For 6 founders over 0.12 years: ~0.04%. Tail-risk adjustment for “EU …
+   | 5. (1%) (a) **Time left:** 44 days until 2026-12-31. An Article 50 notification requires a formal government decision and typically parliamentary approval—processes that take months. (b) **Status quo:** No founding member has ever triggered Article 50. The UK’s exit (2016–2020) took 3.5 years from referendum to departure. Current governments in all six countries are pro-EU or pragmatic; none has exit on the agenda. (c) **Base rate:** 0/6 founding members have left in 65+ years. Only 1/28 members ever left (UK), after a multi-year cascade. (d) **Research adjustment:** Eurosceptic parties exist (e.g., Lega, RN, AfD, PVV) but are in opposition or coalition junior partners. No polls show majority …
+   | 
+   | **Sources**
+   | 
+   | - [S1] [Withdrawal from the European Union](https://en.wikipedia.org/w/index.php?oldid=1386162346) (wikipedia, revision of 2026-11-17)
+   | - [S2] [Member state of the European Union](https://en.wikipedia.org/w/index.php?oldid=1386331027) (wikipedia, revision of 2026-11-17)
+   | - [S3] [Brexit](https://en.wikipedia.org/w/index.php?oldid=1386108922) (wikipedia, revision of 2026-11-17)
+   | - [S4] [2026](https://en.wikipedia.org/w/index.php?oldid=1386400278) (wikipedia, revision of 2026-11-18)
+done: 1 forecast, 5 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/43321/ discrete questions are not forecast yet (binary only until M3)
+  skipped: https://www.metaculus.com/questions/46223/ multiple_choice questions are not forecast yet (binary only until M3)
+  skipped: https://www.metaculus.com/questions/46224/ numeric questions are not forecast yet (binary only until M3)
+  skipped: https://www.metaculus.com/questions/45517/ discrete questions are not forecast yet (binary only until M3)
+  skipped: https://www.metaculus.com/questions/43323/ numeric questions are not forecast yet (binary only until M3)
+ledger: data/ledgers/m2-live-bot-testing-area.sqlite (run run_f18e2cb98e624da6bb6f)

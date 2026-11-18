@@ -1,0 +1,9 @@
+model list: live, 478 models, fetched 2026-11-18 11:10 UTC; floor tier frontier-2026-11
+probe:
+  openrouter:google/gemma-4-31b-it:free            rate_limited    265 ms  $0/$0 per M            listed 2026-04-02  below tier  [forecast+research]
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered       1139 ms  $0/$0 per M            listed 2026-06-04  below tier  [forecast]
+  openrouter:google/gemma-4-26b-a4b-it:free        answered       2154 ms  $0/$0 per M            listed 2026-04-03  below tier  [research]
+  burst openrouter:nvidia/nemotron-3-ultra-550b-a55b:free: 23/24 accepted in 24.9 s (55/min); refused at request 24 (HTTP 429, rate_limited, retry after 18.7553927898407s)
+    headers: {'x-ratelimit-limit': '20', 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1795000260000'}
+  burst openrouter:google/gemma-4-26b-a4b-it:free: 0/1 accepted in 0.4 s (0/min); refused at request 1 (HTTP 429, rate_limited, retry after 1.0s)
+ledger: data/ledgers/m2-probe.sqlite (session probe_8b60932342a74ef8)

@@ -84,7 +84,10 @@ def scan_ledger(path: Path) -> list[Violation]:
     not in ``clock.to_iso``'s fixed-width form: the triggers and the checks
     here compare times as text, which is only time order in that form), and
     ``missing_guard`` (the ledger's leakage triggers are gone, so rows were not
-    checked when written).
+    checked when written), and ``below_floor`` (a forecast submitted to a scored
+    tournament after a member was answered by a model outside the frontier tier
+    or on a host not trusted to serve it: the submit floor, checked on what the
+    ledger says actually answered).
     """
     uri = f"file:{path}?mode=ro"
     with closing(sqlite3.connect(uri, uri=True)) as conn:
@@ -211,5 +214,46 @@ def _scan(conn: sqlite3.Connection) -> list[Violation]:
     for run_id, qid, model, release, opened in too_new:
         found.append(
             Violation("model_too_new", run_id, qid, f"{model} released {release}, opened {opened}")
+        )
+    found.extend(_scan_floor(conn))
+    return found
+
+
+def _scan_floor(conn: sqlite3.Connection) -> list[Violation]:
+    from augur.llm.registry import (
+        FRONTIER_HOSTS,
+        FRONTIER_TIER,
+        PRACTICE_TOURNAMENTS,
+        bare_model_name,
+    )
+
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(llm_calls)")}
+    host = "c.endpoint_host" if "endpoint_host" in columns else "NULL"
+    marks = ", ".join("?" for _ in PRACTICE_TOURNAMENTS)
+    rows = conn.execute(
+        f"""
+        SELECT DISTINCT s.run_id, s.question_id, c.model, {host}
+        FROM submissions s
+        JOIN runs r ON r.run_id = s.run_id
+        JOIN forecasts f ON f.run_id = s.run_id AND f.question_id = s.question_id
+            AND f.kind = 'member'
+        JOIN llm_calls c ON c.call_id = f.call_id
+        WHERE s.kind = 'forecast' AND s.status = 'submitted'
+          AND r.tournament NOT IN ({marks})
+        """,  # noqa: S608 - fixed column name and placeholders
+        tuple(sorted(PRACTICE_TOURNAMENTS)),
+    )
+    found = []
+    for run_id, qid, model, endpoint_host in rows:
+        if bare_model_name(model) in FRONTIER_TIER and endpoint_host in FRONTIER_HOSTS:
+            continue
+        found.append(
+            Violation(
+                "below_floor",
+                run_id,
+                qid,
+                f"submitted to a scored tournament from {model} "
+                f"on {endpoint_host or 'an unknown host'}",
+            )
         )
     return found

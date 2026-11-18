@@ -1,0 +1,35 @@
+run run_81cca95cb5a246538766 (live) on metaculus:bot-testing-area
+models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free, openrouter:inclusionai/ling-3.2-flash:free, openrouter:google/gemma-4-31b-it:free; research: openrouter:google/gemma-4-26b-a4b-it:free, openrouter:inclusionai/ling-3.2-flash:free, openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+probe:
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered       1368 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+  openrouter:inclusionai/ling-3.2-flash:free       answered       1332 ms  $0/$0 per M            listed 2026-11-13  below tier  [research+forecast]
+  openrouter:google/gemma-4-31b-it:free            rate_limited    520 ms  $0/$0 per M            listed 2026-04-02  below tier  [forecast]
+  openrouter:google/gemma-4-26b-a4b-it:free        rate_limited   2995 ms  $0/$0 per M            listed 2026-04-03  below tier  [research]
+
+== Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
+   https://www.metaculus.com/questions/43327/
+   sources: 2 admitted, 0 rejected; members: 1% 1% 1%; median: 1.0%
+   submitted 1.0%; posted this private comment:
+   | **Forecast: 1%**, the median of 3 independent forecasts (1%, 1%, 1%) by nvidia/nemotron-3-ultra-550b-a55b:free; 2 of 5 draws failed.
+   | 
+   | **Research** (only sources dated at or before 2026-11-18 11:13 UTC):
+   | 
+   | The provided sources contain little information relevant to the specific question of whether Belgium, France, Italy, Luxembourg, Netherlands, or Germany will leave the EU before 2027. Source [S1] discusses the history and contemporary trends of immigration to Europe, noting that there have been increases in negative attitudes toward immigration in recent decades [S1]. However, it does not provide information regarding political movements, scheduled elections, or any specific intent by the listed member states to trigger Article 50 of the Treaty of Lisbon. Source [S2] defines "exit tax" as a tax levied on individuals or corporations when they cease to be tax residents or relocate to another country [S2]. While it mentions that corporate exit taxes are mandated in all EU member states by the Anti-Tax Avoidance Directive (ATAD), it does not discuss the political process of a nation-state exiting the European Union [S2]. There are no scheduled events or relevant base rates regarding EU withdrawal mentioned in the sources.
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (1%) (a) Time left: 44 days until the 2027-01-01 deadline. (b) Status quo: No founding member has triggered Article 50; the EU is functioning normally with no dissolution process underway. (c) Base rate: Only one Article 50 notification ever (UK, 2017). Zero founding members have left in 70+ years. Probability of any single country initiating exit in a random 44-day window ≈ 0. (d) Research adds nothing: sources cover immigration attitudes and tax rules, not exit politics. No elections, referendums, or government crises in the six countries suggest an imminent Article 50 decision. Eurosceptic parties exist but none hold power with an exit mandate. (e) Yes scenario: Unforeseen catastrophic crisis …
+   | 4. (1%) 
+   | 5. (1%) The question resolves in 44 days (by 2026-12-31). Only the UK has ever triggered Article 50 (2017); no founding member has left or announced intent. Current governments in all six countries are pro-EU or in coalitions that would block exit. Far-right parties (e.g., RN in France, AfD in Germany, PVV in Netherlands) are in opposition or junior coalition partners without exit mandates. EU dissolution requires unanimous treaty change—no movement exists. The 44-day window is far too short for any Article 50 process (elections, coalition talks, parliamentary votes). Base rate: 0/6 founding members in 65 years. Status quo strongly favors No.
+   | 
+   | **Sources**
+   | 
+   | - [S1] [Immigration to Europe](https://en.wikipedia.org/w/index.php?oldid=1386085422) (wikipedia, revision of 2026-11-16)
+   | - [S2] [Exit tax](https://en.wikipedia.org/w/index.php?oldid=1382000754) (wikipedia, revision of 2026-10-26)
+done: 1 forecast, 5 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/43321/ discrete questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/46223/ multiple_choice questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/46224/ numeric questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/45517/ discrete questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/43323/ numeric questions are not forecast yet (binary only until M2)
+ledger: data/ledgers/m2-live-bot-testing-area.sqlite (run run_81cca95cb5a246538766)

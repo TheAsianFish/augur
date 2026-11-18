@@ -49,13 +49,14 @@ def render_comment(
     probability: float,
     members: Sequence[MemberForecast],
     research: ResearchResult,
-    model: str,
     cutoff: datetime,
     requested: int,
 ) -> str:
     """Markdown for the private comment. Pure: the same inputs give the same text."""
     ordered = sorted(members, key=lambda m: m.member)
     spread = ", ".join(_pct(m.probability) for m in ordered)
+    models = sorted({m.route.model for m in ordered})
+    model = " and ".join(models) if models else "no model"
     lines = [
         f"**Forecast: {_pct(probability)}**, the median of {len(ordered)} independent "
         f"forecasts ({spread}) by {model}"

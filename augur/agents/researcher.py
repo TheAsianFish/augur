@@ -114,7 +114,6 @@ class Researcher:
         calls: CallRecorder,
         ledger: Ledger,
         searchers: list[Searcher],
-        model: str,
         mode: RunMode,
         max_queries: int = 3,
         per_query: int = 2,
@@ -123,7 +122,6 @@ class Researcher:
         self._calls = calls
         self._ledger = ledger
         self._searchers = searchers
-        self._model = model
         self._mode = mode
         self._max_queries = max_queries
         self._per_query = per_query
@@ -156,20 +154,20 @@ class Researcher:
         self, run_id: str, q: Question, cutoff: datetime, result: ResearchResult
     ) -> list[str]:
         request = LlmRequest(
-            model=self._model,
+            model="",  # the router sets each route's model
             messages=(
                 Message(role="system", content=PLAN_SYSTEM.format(n=self._max_queries)),
                 Message(role="user", content=question_text(q, cutoff)),
             ),
             temperature=0.0,
             seed=0,
-            max_tokens=200,
+            max_tokens=600,  # a reasoning model emptied 200 on thinking (M2)
         )
         ctx = CallContext(run_id=run_id, question_id=q.question_id, role="planner")
         queries: list[str] = []
         try:
-            response, _ = await self._calls.complete(ctx, request, source_ids=[])
-            queries = parse_queries(response.text, self._max_queries)
+            done = await self._calls.complete(ctx, request, source_ids=[])
+            queries = parse_queries(done.response.text, self._max_queries)
         except ProviderError as exc:
             result.errors.append(f"query planning failed: {exc}")
         if not queries:
@@ -214,7 +212,7 @@ class Researcher:
             for i, s in enumerate(result.sources, start=1)
         ]
         request = LlmRequest(
-            model=self._model,
+            model="",  # the router sets each route's model
             messages=(
                 Message(role="system", content=BRIEF_SYSTEM),
                 Message(
@@ -224,15 +222,15 @@ class Researcher:
             ),
             temperature=0.0,
             seed=0,
-            max_tokens=500,
+            max_tokens=1000,
         )
         ctx = CallContext(run_id=run_id, question_id=q.question_id, role="researcher")
         try:
-            response, call_id = await self._calls.complete(
+            done = await self._calls.complete(
                 ctx, request, source_ids=[s.source_id for s in result.sources]
             )
-            result.brief = response.text.strip()
-            result.brief_call_id = call_id
+            result.brief = done.response.text.strip()
+            result.brief_call_id = done.call_id
         except ProviderError as exc:
             result.errors.append(f"brief failed: {exc}")
             result.brief = "The research brief could not be written."

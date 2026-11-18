@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, TextIO
@@ -13,18 +13,20 @@ from typing import Any, Literal, TextIO
 import structlog
 
 import augur
-from augur.agents.calls import Budget, BudgetExceededError, CallRecorder
+from augur.agents.calls import MIN_COOL_S, Budget, BudgetExceededError, CallRecorder
 from augur.agents.forecaster import MemberForecast, draw_forecasts
 from augur.agents.researcher import Researcher, ResearchResult
 from augur.aggregate import median
 from augur.clock import Clock
 from augur.comment import render_comment
 from augur.config import Settings
-from augur.errors import AugurError, MetaculusError, SubmitFloorError
+from augur.errors import AugurError, BelowFloorError, MetaculusError, SubmitFloorError
 from augur.leakage import RunMode
 from augur.ledger import Ledger
 from augur.llm.base import Provider
+from augur.llm.probe import ProbeResult, new_session_id, probe_routes, record_probes
 from augur.llm.registry import FRONTIER_TIER_NAME, PRACTICE_TOURNAMENTS, in_frontier_tier
+from augur.llm.router import Router
 from augur.log import get_logger
 from augur.metaculus import MetaculusClient
 from augur.questions import Question, question_from_post
@@ -118,15 +120,20 @@ class ForecastRun:
         settings: Settings,
         clock: Clock,
         ledger: Ledger,
-        provider: Provider,
+        router: Router,
         searchers: Sequence[Searcher],
         client: MetaculusClient | None,
         out: TextIO,
+        probe_providers: Mapping[str, Provider] | None = None,
     ) -> None:
         self._settings = settings
         self._clock = clock
         self._ledger = ledger
-        self._provider = provider
+        self._router = router
+        # Providers without retries for the opening probe; ``None`` skips it.
+        self._probe_providers = probe_providers
+        self._reforecast = False
+        self._scored = False
         self._searchers = list(searchers)
         self._client = client
         self._out = out
@@ -138,32 +145,66 @@ class ForecastRun:
         submit: bool,
         samples: Path | None,
         max_questions: int,
+        reforecast: bool = False,
     ) -> RunReport:
         slug = TOURNAMENTS.get(tournament, tournament)
         if submit and (self._client is None or not self._client.has_token):
             raise AugurError("--submit needs METACULUS_TOKEN; without it run a dry run")
         if submit and samples is not None:
             raise AugurError("--submit forecasts live questions only; drop --samples")
-        if submit:
+        if reforecast and slug not in PRACTICE_TOURNAMENTS:
+            raise AugurError(
+                f"--reforecast is for {', '.join(sorted(PRACTICE_TOURNAMENTS))} only; a scored "
+                "tournament is forecast once per question"
+            )
+        self._reforecast = reforecast
+        scored = submit and slug not in PRACTICE_TOURNAMENTS
+        self._scored = scored
+        if scored:
             self._check_submit_floor(slug)
         mode = RunMode.LIVE if submit else RunMode.DRY_RUN
         use_samples = samples is not None or self._client is None or not self._client.has_token
         source = (
             f"samples:{_display(samples or SAMPLES_DIR)}" if use_samples else f"metaculus:{slug}"
         )
+        answering = self._router.chain("forecast")[0]
+        catalog = self._router.catalog
         run_id = self._ledger.start_run(
             mode=mode,
             tournament=slug,
-            provider=self._provider.name,
-            model=self._settings.model,
-            settings=self._settings.public_dict() | {"question_source": source},
+            provider=self._router.provider(answering).name,
+            model=answering.model,
+            settings=self._settings.public_dict()
+            | {
+                "question_source": source,
+                "scored": scored,
+                "floor": FRONTIER_TIER_NAME if scored else None,
+                "reforecast": reforecast,
+                "catalog": f"{catalog.origin} {catalog.fetched_at:%Y-%m-%d}",
+            },
             code_version=code_version(),
         )
         structlog.contextvars.bind_contextvars(run_id=run_id)
         log.info("run started", mode=mode.value, source=source)
-        self._print(f"run {run_id} ({mode.value}) on {source}, model {self._settings.model}")
+        chains = "; ".join(
+            f"{role}: {', '.join(r.key for r in self._router.chain(role))}"
+            for role in ("forecast", "research")
+        )
+        self._print(f"run {run_id} ({mode.value}) on {source}")
+        self._print(f"models: {chains}")
         budget = Budget(self._settings.max_cost_per_question, self._settings.max_cost_per_run)
-        calls = CallRecorder(self._provider, self._ledger, self._clock, budget)
+        calls = CallRecorder(self._router, self._ledger, self._clock, budget)
+        if scored:
+            self._router.set_floor("forecast", FRONTIER_TIER_NAME, in_frontier_tier)
+        if self._probe_providers is not None:
+            budget.charge_run(await self._probe(run_id))
+        no_model = ""
+        if not self._router.usable("forecast"):
+            no_model = (
+                f"no {FRONTIER_TIER_NAME} model answered the probe, so nothing is forecast"
+                if scored
+                else "no forecasting model answered the probe"
+            )
 
         candidates = await self._candidates(slug, samples if use_samples else None, use_samples)
         reports: list[QuestionReport] = []
@@ -183,12 +224,15 @@ class ForecastRun:
 
         stop_reason = ""
         for q, post in chosen:
-            if stop_reason:
-                reports.append(QuestionReport(q, "skipped", stop_reason))
+            if stop_reason or no_model:
+                reports.append(QuestionReport(q, "skipped", stop_reason or no_model))
                 continue
             structlog.contextvars.bind_contextvars(question_id=q.question_id)
             try:
                 reports.append(await self._forecast(run_id, mode, calls, q, post))
+            except BelowFloorError as exc:
+                log.warning("question skipped by the floor", question_id=q.question_id)
+                reports.append(QuestionReport(q, "skipped", f"submit floor: {exc}"))
             except BudgetExceededError as exc:
                 stop_reason = str(exc)
                 reports.append(QuestionReport(q, "failed", stop_reason))
@@ -236,10 +280,10 @@ class ForecastRun:
     def _skip_reason(self, q: Question, *, live_listing: bool) -> str | None:
         now = self._clock.now()
         if q.type != "binary":
-            return f"{q.type} questions are not forecast yet (binary only until M2)"
+            return f"{q.type} questions are not forecast yet (binary only until M3)"
         if live_listing and not q.is_open(now):
             return "not open now"
-        if live_listing and q.already_forecast(now):
+        if live_listing and q.already_forecast(now) and not self._reforecast:
             return "already forecast by this account"
         return None
 
@@ -257,7 +301,6 @@ class ForecastRun:
             calls=calls,
             ledger=self._ledger,
             searchers=self._searchers,
-            model=self._settings.model,
             mode=mode,
         )
         research = await researcher.research(run_id, q, cutoff)
@@ -268,7 +311,6 @@ class ForecastRun:
             q=q,
             cutoff=cutoff,
             research=research,
-            model=self._settings.model,
             n=n,
             concurrency=n,
         )
@@ -304,7 +346,6 @@ class ForecastRun:
             probability=probability,
             members=members,
             research=research,
-            model=self._settings.model,
             cutoff=cutoff,
             requested=n,
         )
@@ -352,10 +393,33 @@ class ForecastRun:
                 self._print("   | " + line)
             return
 
+        below = self._below_floor(report)
+        if below:
+            # The router never lets a scored question fall below the tier; this
+            # is the last check, on the models that actually answered.
+            for route in below:
+                self._ledger.record_switch(
+                    run_id=run_id,
+                    question_id=q.question_id,
+                    call_role="forecaster",
+                    member=None,
+                    from_route=route,
+                    to_route=None,
+                    reason="below_floor_at_submit",
+                    outcome="refused_by_floor",
+                    detail=f"{route} answered but is below the {FRONTIER_TIER_NAME} tier",
+                )
+            report.status = "skipped"
+            report.reason = (
+                f"submit floor: {', '.join(below)} answered, below the {FRONTIER_TIER_NAME} "
+                "tier; nothing posted"
+            )
+            self._print(f"   not submitted: {report.reason}")
+            return
         client = self._live_client()
         # Re-read just before writing: another run may have forecast meanwhile.
         fresh, _ = await client.get_question(q.post_id)
-        if fresh.already_forecast(self._clock.now()):
+        if fresh.already_forecast(self._clock.now()) and not self._reforecast:
             report.status = "skipped"
             report.reason = "already forecast by this account (checked again before submitting)"
             return
@@ -440,19 +504,47 @@ class ForecastRun:
         report.reason += "; posted the comment an earlier run could not"
 
     def _check_submit_floor(self, slug: str) -> None:
-        """Refuse to post to a scored tournament from a model below the frontier tier."""
-        if slug in PRACTICE_TOURNAMENTS:
+        """Refuse before any model call if the first answering model is below the tier.
+
+        Later routes in the chain are fallbacks: a scored question that would
+        fall to one below the tier is skipped when it happens (the router's
+        floor), and :meth:`_below_floor` checks the models that answered.
+        """
+        first = self._router.chain("forecast")[0]
+        if in_frontier_tier(first):
             return
-        provider, model = self._provider.name, self._settings.model
-        if in_frontier_tier(model, provider):
-            return
-        log.warning("submit refused by the floor", tournament=slug, provider=provider, model=model)
+        log.warning("submit refused by the floor", tournament=slug, route=first.key)
         raise SubmitFloorError(
-            f"--submit to {slug} needs a hosted model in the {FRONTIER_TIER_NAME} tier, "
-            f"and {model} on {provider} is not one; a weak forecast costs peer points that "
-            "skipping does not. Drop --submit for a dry run, or submit to "
-            f"{', '.join(sorted(PRACTICE_TOURNAMENTS))} to test the live path."
+            f"--submit to {slug} needs a hosted model in the {FRONTIER_TIER_NAME} tier first "
+            f"in AUGUR_FORECAST_MODELS, and {first.key} ({first.endpoint.host}) is not one; a "
+            "weak forecast costs peer points that skipping does not. Drop --submit for a dry "
+            f"run, or submit to {', '.join(sorted(PRACTICE_TOURNAMENTS))} to test the live path."
         )
+
+    def _below_floor(self, report: QuestionReport) -> list[str]:
+        """Answering routes below the tier, when the run is scored (else nothing)."""
+        if not self._scored:
+            return []
+        return sorted({m.route.key for m in report.members if not in_frontier_tier(m.route)})
+
+    async def _probe(self, run_id: str) -> float:
+        """Probe every route once; disable the ones that do not answer. Returns the cost."""
+        assert self._probe_providers is not None
+        routes = self._router.routes()
+        roles = {r: list(self._router.roles_of(r)) for r in routes}
+        results = await probe_routes(routes, roles, self._probe_providers, self._router.catalog)
+        record_probes(self._ledger, results, new_session_id(), run_id)
+        for r in results:
+            if r.answers:
+                continue
+            if r.outcome == "rate_limited":
+                self._router.cool(
+                    r.route, max(r.retry_after or 0.0, MIN_COOL_S), "probe: rate_limited"
+                )
+            else:
+                self._router.disable(r.route, f"probe: {r.outcome}", r.outcome)
+        self._print(format_probe(results))
+        return sum(r.cost_usd for r in results)
 
     def _live_client(self) -> MetaculusClient:
         if self._client is None:
@@ -461,3 +553,21 @@ class ForecastRun:
 
     def _print(self, text: str) -> None:
         print(text, file=self._out, flush=True)
+
+
+def format_probe(results: Sequence[ProbeResult]) -> str:
+    """The probe as a short table: one line per route."""
+    lines = ["probe:"]
+    for r in results:
+        price = (
+            f"${r.price.usd_per_million_input:g}/${r.price.usd_per_million_output:g} per M"
+            if r.price
+            else "unpriced"
+        )
+        latency = f"{r.latency_ms} ms" if r.latency_ms is not None else "-"
+        tier = "frontier" if r.in_tier else "below tier"
+        lines.append(
+            f"  {r.route.key:<48} {r.outcome:<13} {latency:>8}  {price:<22} "
+            f"listed {r.listed_on or '?'}  {tier}  [{'+'.join(r.roles)}]"
+        )
+    return "\n".join(lines)

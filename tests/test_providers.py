@@ -9,12 +9,15 @@ import pytest
 from pydantic import SecretStr
 
 from augur.config import Settings
-from augur.errors import ConfigError, MissingCredentialsError, ProviderError, ReplayMissError
+from augur.errors import (
+    ConfigError,
+    ProviderError,
+    ReplayMissError,
+)
 from augur.llm.base import LlmRequest, LlmResponse, Message
-from augur.llm.factory import build_provider, default_http_client
-from augur.llm.metaculus_proxy import MetaculusProxyProvider
+from augur.llm.factory import build_providers, default_http_client
 from augur.llm.ollama import OllamaProvider
-from augur.llm.registry import priced
+from augur.llm.openai_compat import OpenAICompatProvider
 from augur.llm.replay import RecordingProvider, ReplayProvider
 from augur.ratelimit import RateLimiter
 
@@ -118,134 +121,6 @@ async def test_ollama_404() -> None:
 # Proxy
 
 
-def proxy_ok(request: httpx.Request) -> httpx.Response:
-    return httpx.Response(
-        200,
-        json={
-            "choices": [{"message": {"content": "answer"}}],
-            "usage": {"prompt_tokens": 100, "completion_tokens": 20},
-        },
-    )
-
-
-async def test_proxy_request_and_usage() -> None:
-    seen: list[httpx.Request] = []
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        seen.append(request)
-        return proxy_ok(request)
-
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(handler)), "http://p/v1/", SecretStr("sekret"), fast_limiter()
-    )
-    out = await p.complete(REQ)
-    assert str(seen[0].url) == "http://p/v1/chat/completions"
-    assert seen[0].headers["Authorization"] == "Token sekret"
-    assert json.loads(seen[0].content) == {
-        "model": "qwen2.5:7b",
-        "messages": [{"role": "system", "content": "s"}, {"role": "user", "content": "u"}],
-        "temperature": 0.3,
-        "max_tokens": 50,
-        "seed": 7,
-    }
-    assert (out.text, out.input_tokens, out.output_tokens, out.cost_usd) == ("answer", 100, 20, 0.0)
-    assert p.name == "metaculus_proxy"
-
-
-async def test_proxy_retries_429_with_retry_after() -> None:
-    calls = 0
-    time = FakeTime()
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal calls
-        calls += 1
-        if calls == 1:
-            return httpx.Response(429, headers={"Retry-After": "3"})
-        return proxy_ok(request)
-
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(handler)), "http://p", SecretStr("t"), fast_limiter(time)
-    )
-    out = await p.complete(REQ)
-    assert out.text == "answer"
-    assert calls == 2
-    assert time.now >= 3.0  # the limiter held the call for Retry-After
-
-
-@pytest.mark.parametrize("header", ["inf", "nan", "86400", "-5"])
-async def test_proxy_clamps_an_unreasonable_retry_after(header: str) -> None:
-    calls = 0
-    time = FakeTime()
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal calls
-        calls += 1
-        if calls == 1:
-            return httpx.Response(429, headers={"Retry-After": header})
-        return proxy_ok(request)
-
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(handler)), "http://p", SecretStr("t"), fast_limiter(time)
-    )
-    assert (await p.complete(REQ)).text == "answer"
-    assert time.now <= 120.0, "a hostile or broken Retry-After must not stall the run"
-
-
-async def test_proxy_without_usage_is_charged_the_worst_case() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={"choices": [{"message": {"content": "answer"}}]})
-
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(handler)), "http://p", SecretStr("t"), fast_limiter()
-    )
-    unknown = REQ.model_copy(update={"model": "some-new-model"})
-    out = await p.complete(unknown)
-    worst = priced("some-new-model", "metaculus_proxy").cost(1, unknown.max_tokens)
-    assert out.input_tokens is None
-    assert out.cost_usd >= worst > 0, "a host that omits usage must not read as free"
-
-
-async def test_proxy_gives_up_without_leaking_token() -> None:
-    calls = 0
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        nonlocal calls
-        calls += 1
-        return httpx.Response(503)
-
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(handler)), "http://p", SecretStr("sekret"), fast_limiter()
-    )
-    with pytest.raises(ProviderError) as info:
-        await p.complete(REQ)
-    assert calls == 4
-    assert "sekret" not in str(info.value)
-
-
-async def test_proxy_connect_error_mentions_override() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        raise httpx.ConnectError("dns")
-
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(handler)), "http://p", SecretStr("sekret"), fast_limiter()
-    )
-    with pytest.raises(ProviderError, match="AUGUR_PROXY_BASE_URL") as info:
-        await p.complete(REQ)
-    assert "sekret" not in str(info.value)
-
-
-async def test_proxy_auth_error_hides_token() -> None:
-    p = MetaculusProxyProvider(
-        client(httpx.MockTransport(lambda r: httpx.Response(401))),
-        "http://p",
-        SecretStr("sekret"),
-        fast_limiter(),
-    )
-    with pytest.raises(ProviderError, match="METACULUS_TOKEN") as info:
-        await p.complete(REQ)
-    assert "sekret" not in str(info.value)
-
-
 # Replay
 
 
@@ -319,29 +194,39 @@ def test_replay_missing_file(tmp_path: Path) -> None:
 # Factory
 
 
+def ok_handler(request: httpx.Request) -> httpx.Response:
+    return httpx.Response(200, json={"choices": [{"message": {"content": "answer"}}]})
+
+
 async def test_factory_selection(tmp_path: Path) -> None:
-    http = client(httpx.MockTransport(proxy_ok))
-    assert build_provider(Settings(), http).name == "ollama"
-    proxy = build_provider(
-        Settings(provider="metaculus_proxy", metaculus_token=SecretStr("t")), http
+    http = client(httpx.MockTransport(ok_handler))
+    ollama = build_providers(Settings(), http)
+    assert list(ollama) == ["ollama"]
+    assert isinstance(ollama["ollama"], OllamaProvider)
+    settings = Settings(
+        forecast_models="openrouter:openai/gpt-5,groq:llama-3.3-70b-versatile",
+        research_models="ollama:qwen2.5:7b",
+        keys={"OPENROUTER_API_KEY": SecretStr("k")},
     )
-    assert proxy.name == "metaculus_proxy"
+    built = build_providers(settings, http)
+    assert sorted(built) == ["groq", "ollama", "openrouter"]
+    assert isinstance(built["openrouter"], OpenAICompatProvider)
     rec = tmp_path / "r.jsonl"
-    wrapped = build_provider(Settings(record_path=rec), http)
+    wrapped = build_providers(Settings(record_path=rec), http)["ollama"]
     assert isinstance(wrapped, RecordingProvider)
     assert wrapped.name == "ollama"
     rec.write_text("")
-    replay = build_provider(Settings(provider="replay", replay_path=rec, record_path=rec), http)
-    assert isinstance(replay, ReplayProvider)
+    replay = build_providers(
+        settings.model_copy(update={"provider": "replay", "replay_path": rec}), http
+    )
+    assert {type(p) for p in replay.values()} == {ReplayProvider}
     await http.aclose()
 
 
 async def test_factory_errors() -> None:
-    http = client(httpx.MockTransport(proxy_ok))
-    with pytest.raises(MissingCredentialsError, match="METACULUS_TOKEN"):
-        build_provider(Settings(provider="metaculus_proxy"), http)
+    http = client(httpx.MockTransport(ok_handler))
     with pytest.raises(ConfigError, match="AUGUR_REPLAY_PATH"):
-        build_provider(Settings(provider="replay"), http)
+        build_providers(Settings(provider="replay"), http)
     await http.aclose()
 
 
