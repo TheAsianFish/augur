@@ -5,11 +5,21 @@ name: Tournament
 # Repository variables: AUGUR_SCHEDULE (off | minibench | all; unset = off),
 # AUGUR_SUBMIT ('true' to post from scheduled runs; otherwise a dry run),
 # AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS, AUGUR_MAX_QUESTIONS_PER_RUN,
-# AUGUR_MAX_COST_PER_RUN.
+# AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the fallback trigger below; unset = off).
+#
+# Cadence (RESULTS.md M3): every 90 minutes on two offset lines, which caught
+# 99.25% of 3-hour MiniBench windows in simulation against the measured delays,
+# for about 979 billed minutes a month while the repository is private. GitHub's
+# scheduler was measured to drop most ticks on public bot repositories (median
+# 6 h between scheduled runs), so the cron cannot be the only trigger: with
+# AUGUR_CHAIN_MINUTES set, each run on main dispatches the next one itself after
+# that many minutes. Turn it on once the repository is public (its minutes are
+# then free); the cron restarts the chain if it ever breaks.
 
 on:
   schedule:
-    - cron: '17 */2 * * *' # cadence: see RESULTS.md M3
+    - cron: '0 0,3,6,9,12,15,18,21 * * *' # cadence: see RESULTS.md M3
+    - cron: '30 1,4,7,10,13,16,19,22 * * *'
   workflow_dispatch:
     inputs:
       tournament:
@@ -29,6 +39,10 @@ on:
         description: Questions per run at most
         type: string
         default: '6'
+      chained:
+        description: Dispatched by the previous run (behaves like a scheduled run)
+        type: boolean
+        default: false
 
 concurrency:
   group: tournament
@@ -55,8 +69,8 @@ jobs:
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
           # Scheduled runs obey the variable (unset or 'off' is the kill switch);
           # a manual run polls the tournament it was asked for.
-          AUGUR_SCHEDULE: ${{ github.event_name == 'workflow_dispatch' && 'all' || vars.AUGUR_SCHEDULE || 'off' }}
-          AUGUR_POLL_TOURNAMENTS: ${{ github.event_name == 'workflow_dispatch' && (inputs.tournament == 'futureeval' && '33121' || inputs.tournament) || '' }}
+          AUGUR_SCHEDULE: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && 'all' || vars.AUGUR_SCHEDULE || 'off' }}
+          AUGUR_POLL_TOURNAMENTS: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && (inputs.tournament == 'futureeval' && '33121' || inputs.tournament) || '' }}
         run: python3 scripts/poll.py
 
   forecast:
@@ -93,7 +107,7 @@ jobs:
         env:
           TOURNAMENTS: ${{ needs.poll.outputs.tournaments }}
           # Posting needs the switch for this kind of run, and main (which passed make check).
-          SUBMIT: ${{ github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.submit) || (github.event_name == 'schedule' && vars.AUGUR_SUBMIT == 'true')) }}
+          SUBMIT: ${{ github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && !inputs.chained && inputs.submit) || ((github.event_name == 'schedule' || inputs.chained) && vars.AUGUR_SUBMIT == 'true')) }}
         run: |
           set -o pipefail
           args=()
@@ -111,7 +125,7 @@ jobs:
           done
           exit "$status"
       - name: Push the ledger export to the ledger branch
-        if: always() && (github.event_name == 'schedule' || inputs.push_ledger)
+        if: always() && (github.event_name == 'schedule' || inputs.chained || inputs.push_ledger)
         run: bash scripts/push_ledger.sh run.sqlite run.txt
       - name: Summary
         if: always()
@@ -127,3 +141,32 @@ jobs:
         run: |
           echo "the forecast step failed; its output is in the step summary"
           exit 1
+
+  # The fallback trigger: GitHub's scheduler drops most ticks (RESULTS.md M3),
+  # but a workflow_dispatch sent with the job's own token always starts a run.
+  # At most one chain: nothing is dispatched while another run is queued.
+  chain:
+    needs: [poll, forecast]
+    if: >-
+      always() && vars.AUGUR_CHAIN_MINUTES != '' && vars.AUGUR_SCHEDULE != 'off' &&
+      github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.chained)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MINUTES: ${{ vars.AUGUR_CHAIN_MINUTES }}
+    steps:
+      - name: Wait, then dispatch the next run unless one is already waiting
+        run: |
+          case "$MINUTES" in ''|*[!0-9]*) echo "AUGUR_CHAIN_MINUTES must be whole minutes"; exit 1 ;; esac
+          if [ "$MINUTES" -lt 10 ] || [ "$MINUTES" -gt 110 ]; then echo "AUGUR_CHAIN_MINUTES must be 10 to 110"; exit 1; fi
+          sleep $((MINUTES * 60))
+          # A run held by the concurrency group is "pending"; one not yet started is "queued".
+          for status in queued pending waiting; do
+            n=$(gh run list -R "$GITHUB_REPOSITORY" --workflow tournament.yml --status "$status" --json databaseId --jq length)
+            if [ "$n" != "0" ]; then echo "a run is already $status; it continues the chain"; exit 0; fi
+          done
+          gh workflow run tournament.yml -R "$GITHUB_REPOSITORY" --ref main -f chained=true
+          echo "dispatched the next run"
