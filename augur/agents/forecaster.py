@@ -71,7 +71,9 @@ _LINE_START = r"^[\s*_#>]*(?:[-\u2022]\s+|\d+[.)]\s+)?[\s*_]*"
 _NUMBER = r"[-\u2212]?\d[\d,]*(?:\.\d+)?(?:[eE][-+]?\d+)?"
 _PERCENTILE = re.compile(
     r"percentile\s*(\d{1,2})\s*\**\s*[:=]\s*\**\s*[$\u20ac\u00a3]?\s*(" + _NUMBER + r")"
-    r"(\s*(?:thousand|million|billion|trillion|bn|[kmb])\b)?",
+    # A magnitude word, or digits after a space ("1 500"), would be misread as
+    # a smaller number, so either is captured and the draw dropped.
+    r"(\s*(?:thousand|million|billion|trillion|bn|[kmb])\b|[ \t\u00a0\u202f]+\d)?",
     re.I,
 )
 
@@ -136,8 +138,8 @@ def parse_percentiles(text: str) -> list[tuple[float, float]]:
     for level, raw, magnitude in _PERCENTILE.findall(text):
         if magnitude.strip():
             raise ForecastParseError(
-                f"percentile {level} is written with a magnitude word ({raw}{magnitude}); "
-                "the question's units are plain numbers, so the draw is dropped"
+                f"percentile {level} is not a plain number ({raw}{magnitude}...): a magnitude "
+                "word or a spaced thousands separator would be misread, so the draw is dropped"
             )
         try:
             values[int(level)] = _to_float(raw)

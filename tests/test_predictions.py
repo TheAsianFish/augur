@@ -190,3 +190,11 @@ def test_a_percentile_with_a_magnitude_word_is_dropped() -> None:
     with pytest.raises(ForecastParseError, match="magnitude"):
         parse_percentiles(lines)
     assert parse_percentiles(lines.replace(" billion", ""))[0] == (0.1, 1.0)
+
+
+def test_a_percentile_with_a_spaced_thousands_separator_is_dropped() -> None:
+    lines = "\n".join(f"Percentile {lv}: {lv} 500" for lv in (10, 20, 40, 60, 80, 90))
+    with pytest.raises(ForecastParseError, match="not a plain number"):
+        parse_percentiles(lines)
+    comma = "\n".join(f"Percentile {lv}: {lv},500 (high)" for lv in (10, 20, 40, 60, 80, 90))
+    assert parse_percentiles(comma)[0] == (0.1, 10500.0)
