@@ -194,6 +194,18 @@ def member_reasoning(response: LlmResponse, options: list[str] | None = None) ->
     return "(from the model's reasoning trace) " + response.reasoning.strip()
 
 
+# Reasoning models spend part of the budget before the answer. At 600, two of
+# five binary draws stopped before their probability line (M2). At 1,500, 5 of
+# 25 multiple-choice, numeric and discrete draws stopped before their last
+# option or percentile line (M3 bot-testing-area run), so they get more.
+BINARY_MAX_TOKENS = 1500
+SHAPED_MAX_TOKENS = 2500
+
+
+def max_tokens(q: Question) -> int:
+    return BINARY_MAX_TOKENS if q.type == "binary" else SHAPED_MAX_TOKENS
+
+
 def _bound(value: float | None, unit: str) -> str:
     if value is None:
         return "?"
@@ -255,10 +267,7 @@ def forecaster_request(
         ),
         temperature=0.7,
         seed=member,
-        # Reasoning models spend part of this before the answer: at 600, two of
-        # five draws from a free reasoning model stopped before their
-        # probability line (M2 bot-testing-area run).
-        max_tokens=1500,
+        max_tokens=max_tokens(q),
     )
 
 
