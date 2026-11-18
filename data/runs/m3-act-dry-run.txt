@@ -1,0 +1,412 @@
+# M3: act dry runs of .github/workflows/tournament.yml, 2026-11-18
+# act 0.2.98, image catthehacker/ubuntu:act-latest, Docker 29.4.2. No real secrets: METACULUS_TOKEN=dummy
+# is a literal fake (Metaculus answers 403). Runs 1-2: workflow_dispatch on bot-testing-area with
+# push_ledger=false (the push step is skipped). Runs 3-4: schedule, with AUGUR_SCHEDULE unset (the kill
+# switch) and =all. In run 4 the push step runs and fails before any network call, because act copies the
+# git worktree whose .git file points outside the container; on GitHub the checkout is a full repository.
+
+## run 1
+$ act workflow_dispatch -W .github/workflows/tournament.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false --input tournament=bot-testing-area --input submit=false --input push_ledger=false
+time="2026-11-18T18:23:16Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Tournament/poll] ⭐ Run Set up job
+[Tournament/poll] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/poll]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/poll]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/poll]   ✅  Success - Set up job
+[Tournament/poll] ⭐ Run Main actions/checkout@v4
+[Tournament/poll]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/. dst=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/poll]   ✅  Success - Main actions/checkout@v4 [25.076725ms]
+[Tournament/poll] ⭐ Run Main Poll for open questions not yet forecast
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/poll] user= workdir=
+[Tournament/poll]   | no METACULUS_TOKEN: cannot see this account's forecasts; set the secret
+[Tournament/poll]   | has_work=false tournaments=
+[Tournament/poll]   ✅  Success - Main Poll for open questions not yet forecast [101.554666ms]
+[Tournament/poll]   ⚙  ::set-output:: has_work=false
+[Tournament/poll]   ⚙  ::set-output:: tournaments=
+[Tournament/poll] ⭐ Run Complete job
+[Tournament/poll] Cleaning up container for job poll
+[Tournament/poll]   ✅  Success - Complete job
+[Tournament/poll] 🏁  Job succeeded
+exit=0
+
+## run 2
+$ act workflow_dispatch -W .github/workflows/tournament.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false --input tournament=bot-testing-area --input submit=false --input push_ledger=false --var AUGUR_SCHEDULE=minibench -s METACULUS_TOKEN=dummy
+time="2026-11-18T18:23:19Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Tournament/poll] ⭐ Run Set up job
+[Tournament/poll] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/poll]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/poll]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/poll]   ✅  Success - Set up job
+[Tournament/poll] ⭐ Run Main actions/checkout@v4
+[Tournament/poll]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/. dst=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/poll]   ✅  Success - Main actions/checkout@v4 [23.096224ms]
+[Tournament/poll] ⭐ Run Main Poll for open questions not yet forecast
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/poll] user= workdir=
+[Tournament/poll]   | warning: bot-testing-area: GET /api/posts/ returned HTTP 403; the forecast job will run and report
+[Tournament/poll]   | has_work=true tournaments=bot-testing-area
+[Tournament/poll]   ✅  Success - Main Poll for open questions not yet forecast [206.252812ms]
+[Tournament/poll]   ⚙  ::set-output:: has_work=true
+[Tournament/poll]   ⚙  ::set-output:: tournaments=bot-testing-area
+[Tournament/poll] ⭐ Run Complete job
+[Tournament/poll] Cleaning up container for job poll
+[Tournament/poll]   ✅  Success - Complete job
+[Tournament/poll] 🏁  Job succeeded
+[Tournament/forecast] ⭐ Run Set up job
+[Tournament/forecast] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/forecast]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/forecast]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/forecast]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/forecast]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/forecast]   ✅  Success - Set up job
+[Tournament/forecast]   ☁  git clone 'https://github.com/astral-sh/setup-uv' # ref=v10.3.0
+[Tournament/forecast] ⭐ Run Main actions/checkout@v4
+[Tournament/forecast]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/. dst=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/forecast]   ✅  Success - Main actions/checkout@v4 [24.950775ms]
+[Tournament/forecast] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+[Tournament/forecast]   🐳  docker cp src=/home/runner/.cache/act/astral-sh-setup-uv@v10.3.0/ dst=/var/run/act/actions/astral-sh-setup-uv@v10.3.0/
+[Tournament/forecast]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/setup/index.cjs] user= workdir=
+[Tournament/forecast]   | Trying to find version for uv in: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.toml
+[Tournament/forecast]   | Could not find file: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.toml
+[Tournament/forecast]   | Trying to find version for uv in: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/pyproject.toml
+[Tournament/forecast]   | Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+[Tournament/forecast]   | Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+[Tournament/forecast]   | Found uv in tool-cache for 0.13.9
+[Tournament/forecast]   | Added /root/.local/bin to the path
+[Tournament/forecast]   | Added /opt/hostedtoolcache/uv/0.13.9/x86_64 to the path
+[Tournament/forecast]   | Set UV_PYTHON_INSTALL_DIR to /root/.local/share/uv/python
+[Tournament/forecast]   | Added /root/.local/share/uv/python to the path
+[Tournament/forecast]   ❓ add-matcher /run/act/actions/astral-sh-setup-uv@v10.3.0/.github/python.json
+[Tournament/forecast]   | Set UV_CACHE_DIR to /root/.cache/uv
+[Tournament/forecast]   | Successfully installed uv version 0.13.9
+[Tournament/forecast]   | Searching files using cache dependency glob: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.lock
+[Tournament/forecast]   | /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.lock
+[Tournament/forecast]   | Found 1 files to hash.
+[Tournament/forecast]   | Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-361232ecb64f9945ee8583761b4e8deebf45c133aa643bef49374481744c0ee3
+[Tournament/forecast]   | No GitHub Actions cache found for key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-361232ecb64f9945ee8583761b4e8deebf45c133aa643bef49374481744c0ee3
+[Tournament/forecast]   ✅  Success - Main astral-sh/setup-uv@v10.3.0 [699.885427ms]
+[Tournament/forecast]   ⚙  ::set-env:: UV_PYTHON_INSTALL_DIR=/root/.local/share/uv/python
+[Tournament/forecast]   ⚙  ::set-env:: UV_CACHE_DIR=/root/.cache/uv
+[Tournament/forecast]   ⚙  ::set-output:: python-runtime-id=
+[Tournament/forecast]   ⚙  ::set-output:: cache-key=setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-361232ecb64f9945ee8583761b4e8deebf45c133aa643bef49374481744c0ee3
+[Tournament/forecast]   ⚙  ::set-output:: cache-hit=false
+[Tournament/forecast]   ⚙  ::set-output:: python-cache-hit=false
+[Tournament/forecast]   ⚙  ::set-output:: uv-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uv
+[Tournament/forecast]   ⚙  ::set-output:: uvx-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uvx
+[Tournament/forecast]   ⚙  ::set-output:: uv-version=0.13.9
+[Tournament/forecast]   ⚙  ::set-output:: python-version=unknown
+[Tournament/forecast]   ⚙  ::add-path:: /root/.local/bin
+[Tournament/forecast]   ⚙  ::add-path:: /opt/hostedtoolcache/uv/0.13.9/x86_64
+[Tournament/forecast]   ⚙  ::add-path:: /root/.local/share/uv/python
+[Tournament/forecast] ⭐ Run Main Install
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Tournament/forecast]   | Downloading cpython-3.12.16-linux-x86_64-gnu (download) (33.1MiB)
+[Tournament/forecast]   |  Downloaded cpython-3.12.16-linux-x86_64-gnu (download)
+[Tournament/forecast]   | Using CPython 3.12.16
+[Tournament/forecast]   | Creating virtual environment at: .venv
+[Tournament/forecast]   | Resolved 26 packages in 0.60ms
+[Tournament/forecast]   |    Building augur-forecast @ file:///home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/forecast]   | Downloading pydantic-core (2.2MiB)
+[Tournament/forecast]   |  Downloaded pydantic-core
+[Tournament/forecast]   |       Built augur-forecast @ file:///home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/forecast]   | Prepared 13 packages in 462ms
+[Tournament/forecast]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Tournament/forecast]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Tournament/forecast]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Tournament/forecast]   | Installed 13 packages in 53ms
+[Tournament/forecast]   |  + annotated-types==0.8.0
+[Tournament/forecast]   |  + anyio==4.16.0
+[Tournament/forecast]   |  + augur-forecast==0.1.0.dev0 (from file:///home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8)
+[Tournament/forecast]   |  + certifi==2026.10.23
+[Tournament/forecast]   |  + h11==0.16.0
+[Tournament/forecast]   |  + httpcore==1.0.9
+[Tournament/forecast]   |  + httpx==0.28.1
+[Tournament/forecast]   |  + idna==3.20
+[Tournament/forecast]   |  + pydantic==2.14.3
+[Tournament/forecast]   |  + pydantic-core==2.50.4
+[Tournament/forecast]   |  + structlog==26.1.0
+[Tournament/forecast]   |  + typing-extensions==4.16.0
+[Tournament/forecast]   |  + typing-inspection==0.4.5
+[Tournament/forecast]   ✅  Success - Main Install [1.275120317s]
+[Tournament/forecast] ⭐ Run Main Forecast
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/forecast] user= workdir=
+[Tournament/forecast]   | == augur forecast --tournament bot-testing-area 
+[Tournament/forecast]   | Downloading mypy (14.8MiB)
+[Tournament/forecast]   | Downloading ast-serialize (1.3MiB)
+[Tournament/forecast]   | Downloading ruff (10.1MiB)
+[Tournament/forecast]   | Downloading pygments (1.2MiB)
+[Tournament/forecast]   |  Downloaded pygments
+[Tournament/forecast]   |  Downloaded ast-serialize
+[Tournament/forecast]   |  Downloaded ruff
+[Tournament/forecast]   |  Downloaded mypy
+[Tournament/forecast]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Tournament/forecast]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Tournament/forecast]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Tournament/forecast]   | Installed 12 packages in 393ms
+[Tournament/forecast]   | {"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T18:23:25.761854Z"}
+[Tournament/forecast]   | {"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_f67d8d7bca404528b53b", "source": "metaculus:bot-testing-area", "timestamp": "2026-11-18T18:23:25.813559Z"}
+[Tournament/forecast]   | run run_f67d8d7bca404528b53b (dry_run) on metaculus:bot-testing-area
+[Tournament/forecast]   | models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+[Tournament/forecast]   | {"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_f67d8d7bca404528b53b", "timestamp": "2026-11-18T18:23:25.815230Z"}
+[Tournament/forecast]   | {"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_f67d8d7bca404528b53b", "timestamp": "2026-11-18T18:23:25.815671Z"}
+[Tournament/forecast]   | probe:
+[Tournament/forecast]   |   ollama:qwen2.5:7b                                error             1 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+[Tournament/forecast]   | augur: GET /posts/ returned 403: 'Permission Error: The API is only available to authenticated users. Please create an account and use your API token to access the API.'; check METACULUS_TOKEN (a bot account token is required) and its permissions
+[Tournament/forecast] Failed but continue next step
+[Tournament/forecast]   ❌  Failure - Main Forecast [1.675904628s]
+[Tournament/forecast] ⭐ Run Main Summary
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/5] user= workdir=
+[Tournament/forecast]   ✅  Success - Main Summary [55.158697ms]
+[Tournament/forecast]   ⚙  Summary - ### Tournament run (workflow_dispatch, forecast failure)
+```
+== augur forecast --tournament bot-testing-area 
+Downloading mypy (14.8MiB)
+Downloading ast-serialize (1.3MiB)
+Downloading ruff (10.1MiB)
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+ Downloaded ast-serialize
+ Downloaded ruff
+ Downloaded mypy
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 12 packages in 393ms
+{"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T18:23:25.761854Z"}
+{"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_f67d8d7bca404528b53b", "source": "metaculus:bot-testing-area", "timestamp": "2026-11-18T18:23:25.813559Z"}
+run run_f67d8d7bca404528b53b (dry_run) on metaculus:bot-testing-area
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+{"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_f67d8d7bca404528b53b", "timestamp": "2026-11-18T18:23:25.815230Z"}
+{"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_f67d8d7bca404528b53b", "timestamp": "2026-11-18T18:23:25.815671Z"}
+probe:
+  ollama:qwen2.5:7b                                error             1 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+augur: GET /posts/ returned 403: 'Permission Error: The API is only available to authenticated users. Please create an account and use your API token to access the API.'; check METACULUS_TOKEN (a bot account token is required) and its permissions
+```
+[Tournament/forecast] ⭐ Run Main Fail if the forecast failed
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/6] user= workdir=
+[Tournament/forecast]   | the forecast step failed; its output is in the step summary
+[Tournament/forecast]   ❌  Failure - Main Fail if the forecast failed [51.186365ms]
+[Tournament/forecast] exitcode '1': failure
+[Tournament/forecast] ⭐ Run Complete job
+[Tournament/forecast]   ✅  Success - Complete job
+[Tournament/forecast] 🏁  Job failed
+Error: Job 'forecast' failed
+exit=1
+
+## run 3
+$ act schedule -W .github/workflows/tournament.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false -s METACULUS_TOKEN=dummy
+time="2026-11-18T18:23:26Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Tournament/poll] ⭐ Run Set up job
+[Tournament/poll] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/poll]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/poll]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/poll]   ✅  Success - Set up job
+[Tournament/poll] ⭐ Run Main actions/checkout@v4
+[Tournament/poll]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/. dst=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/poll]   ✅  Success - Main actions/checkout@v4 [22.382253ms]
+[Tournament/poll] ⭐ Run Main Poll for open questions not yet forecast
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/poll] user= workdir=
+[Tournament/poll]   | schedule is off: nothing polled, no forecast job
+[Tournament/poll]   | has_work=false tournaments=
+[Tournament/poll]   ✅  Success - Main Poll for open questions not yet forecast [81.486805ms]
+[Tournament/poll]   ⚙  ::set-output:: has_work=false
+[Tournament/poll]   ⚙  ::set-output:: tournaments=
+[Tournament/poll] ⭐ Run Complete job
+[Tournament/poll] Cleaning up container for job poll
+[Tournament/poll]   ✅  Success - Complete job
+[Tournament/poll] 🏁  Job succeeded
+exit=0
+
+## run 4
+$ act schedule -W .github/workflows/tournament.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest --pull=false --var AUGUR_SCHEDULE=all -s METACULUS_TOKEN=dummy
+time="2026-11-18T18:24:13Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Tournament/poll] ⭐ Run Set up job
+[Tournament/poll] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/poll]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/poll]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/poll]   ✅  Success - Set up job
+[Tournament/poll] ⭐ Run Main actions/checkout@v4
+[Tournament/poll]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/. dst=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/poll]   ✅  Success - Main actions/checkout@v4 [26.684073ms]
+[Tournament/poll] ⭐ Run Main Poll for open questions not yet forecast
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/poll] user= workdir=
+[Tournament/poll]   | warning: minibench: GET /api/posts/ returned HTTP 429; the forecast job will run and report
+[Tournament/poll]   | warning: 33121: GET /api/posts/ returned HTTP 403; the forecast job will run and report
+[Tournament/poll]   | has_work=true tournaments=minibench,33121
+[Tournament/poll]   ✅  Success - Main Poll for open questions not yet forecast [1.251105073s]
+[Tournament/poll]   ⚙  ::set-output:: tournaments=minibench,33121
+[Tournament/poll]   ⚙  ::set-output:: has_work=true
+[Tournament/poll] ⭐ Run Complete job
+[Tournament/poll] Cleaning up container for job poll
+[Tournament/poll]   ✅  Success - Complete job
+[Tournament/poll] 🏁  Job succeeded
+[Tournament/forecast] ⭐ Run Set up job
+[Tournament/forecast] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/forecast]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/forecast]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/forecast]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/forecast]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/forecast]   ✅  Success - Set up job
+[Tournament/forecast]   ☁  git clone 'https://github.com/astral-sh/setup-uv' # ref=v10.3.0
+[Tournament/forecast] ⭐ Run Main actions/checkout@v4
+[Tournament/forecast]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/. dst=/home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/forecast]   ✅  Success - Main actions/checkout@v4 [27.676689ms]
+[Tournament/forecast] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+[Tournament/forecast]   🐳  docker cp src=/home/runner/.cache/act/astral-sh-setup-uv@v10.3.0/ dst=/var/run/act/actions/astral-sh-setup-uv@v10.3.0/
+[Tournament/forecast]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/setup/index.cjs] user= workdir=
+[Tournament/forecast]   | Trying to find version for uv in: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.toml
+[Tournament/forecast]   | Could not find file: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.toml
+[Tournament/forecast]   | Trying to find version for uv in: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/pyproject.toml
+[Tournament/forecast]   | Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+[Tournament/forecast]   | Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+[Tournament/forecast]   | Found uv in tool-cache for 0.13.9
+[Tournament/forecast]   | Added /root/.local/bin to the path
+[Tournament/forecast]   | Added /opt/hostedtoolcache/uv/0.13.9/x86_64 to the path
+[Tournament/forecast]   | Set UV_PYTHON_INSTALL_DIR to /root/.local/share/uv/python
+[Tournament/forecast]   | Added /root/.local/share/uv/python to the path
+[Tournament/forecast]   ❓ add-matcher /run/act/actions/astral-sh-setup-uv@v10.3.0/.github/python.json
+[Tournament/forecast]   | Set UV_CACHE_DIR to /root/.cache/uv
+[Tournament/forecast]   | Successfully installed uv version 0.13.9
+[Tournament/forecast]   | Searching files using cache dependency glob: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.lock
+[Tournament/forecast]   | /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/uv.lock
+[Tournament/forecast]   | Found 1 files to hash.
+[Tournament/forecast]   | Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-361232ecb64f9945ee8583761b4e8deebf45c133aa643bef49374481744c0ee3
+[Tournament/forecast]   | No GitHub Actions cache found for key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-361232ecb64f9945ee8583761b4e8deebf45c133aa643bef49374481744c0ee3
+[Tournament/forecast]   ✅  Success - Main astral-sh/setup-uv@v10.3.0 [779.617918ms]
+[Tournament/forecast]   ⚙  ::set-env:: UV_PYTHON_INSTALL_DIR=/root/.local/share/uv/python
+[Tournament/forecast]   ⚙  ::set-env:: UV_CACHE_DIR=/root/.cache/uv
+[Tournament/forecast]   ⚙  ::set-output:: uvx-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uvx
+[Tournament/forecast]   ⚙  ::set-output:: uv-version=0.13.9
+[Tournament/forecast]   ⚙  ::set-output:: python-version=unknown
+[Tournament/forecast]   ⚙  ::set-output:: python-runtime-id=
+[Tournament/forecast]   ⚙  ::set-output:: cache-key=setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-361232ecb64f9945ee8583761b4e8deebf45c133aa643bef49374481744c0ee3
+[Tournament/forecast]   ⚙  ::set-output:: cache-hit=false
+[Tournament/forecast]   ⚙  ::set-output:: python-cache-hit=false
+[Tournament/forecast]   ⚙  ::set-output:: uv-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uv
+[Tournament/forecast]   ⚙  ::add-path:: /root/.local/bin
+[Tournament/forecast]   ⚙  ::add-path:: /opt/hostedtoolcache/uv/0.13.9/x86_64
+[Tournament/forecast]   ⚙  ::add-path:: /root/.local/share/uv/python
+[Tournament/forecast] ⭐ Run Main Install
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Tournament/forecast]   | Downloading cpython-3.12.16-linux-x86_64-gnu (download) (33.1MiB)
+[Tournament/forecast]   |  Downloaded cpython-3.12.16-linux-x86_64-gnu (download)
+[Tournament/forecast]   | Using CPython 3.12.16
+[Tournament/forecast]   | Creating virtual environment at: .venv
+[Tournament/forecast]   | Resolved 26 packages in 0.58ms
+[Tournament/forecast]   |    Building augur-forecast @ file:///home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/forecast]   | Downloading pydantic-core (2.2MiB)
+[Tournament/forecast]   |  Downloaded pydantic-core
+[Tournament/forecast]   |       Built augur-forecast @ file:///home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8
+[Tournament/forecast]   | Prepared 13 packages in 497ms
+[Tournament/forecast]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Tournament/forecast]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Tournament/forecast]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Tournament/forecast]   | Installed 13 packages in 35ms
+[Tournament/forecast]   |  + annotated-types==0.8.0
+[Tournament/forecast]   |  + anyio==4.16.0
+[Tournament/forecast]   |  + augur-forecast==0.1.0.dev0 (from file:///home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8)
+[Tournament/forecast]   |  + certifi==2026.10.23
+[Tournament/forecast]   |  + h11==0.16.0
+[Tournament/forecast]   |  + httpcore==1.0.9
+[Tournament/forecast]   |  + httpx==0.28.1
+[Tournament/forecast]   |  + idna==3.20
+[Tournament/forecast]   |  + pydantic==2.14.3
+[Tournament/forecast]   |  + pydantic-core==2.50.4
+[Tournament/forecast]   |  + structlog==26.1.0
+[Tournament/forecast]   |  + typing-extensions==4.16.0
+[Tournament/forecast]   |  + typing-inspection==0.4.5
+[Tournament/forecast]   ✅  Success - Main Install [1.316189566s]
+[Tournament/forecast] ⭐ Run Main Forecast
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/forecast] user= workdir=
+[Tournament/forecast]   | == augur forecast --tournament minibench 
+[Tournament/forecast]   | Downloading pygments (1.2MiB)
+[Tournament/forecast]   | Downloading ast-serialize (1.3MiB)
+[Tournament/forecast]   | Downloading mypy (14.8MiB)
+[Tournament/forecast]   | Downloading ruff (10.1MiB)
+[Tournament/forecast]   |  Downloaded pygments
+[Tournament/forecast]   |  Downloaded ast-serialize
+[Tournament/forecast]   |  Downloaded ruff
+[Tournament/forecast]   |  Downloaded mypy
+[Tournament/forecast]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Tournament/forecast]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Tournament/forecast]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Tournament/forecast]   | Installed 12 packages in 442ms
+[Tournament/forecast]   | {"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T18:24:21.238297Z"}
+[Tournament/forecast]   | {"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_2fc09d3d2693446ea270", "source": "metaculus:minibench", "timestamp": "2026-11-18T18:24:21.253319Z"}
+[Tournament/forecast]   | run run_2fc09d3d2693446ea270 (dry_run) on metaculus:minibench
+[Tournament/forecast]   | models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+[Tournament/forecast]   | {"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_2fc09d3d2693446ea270", "timestamp": "2026-11-18T18:24:21.255205Z"}
+[Tournament/forecast]   | {"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_2fc09d3d2693446ea270", "timestamp": "2026-11-18T18:24:21.255819Z"}
+[Tournament/forecast]   | probe:
+[Tournament/forecast]   |   ollama:qwen2.5:7b                                error             1 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+[Tournament/forecast]   | augur: GET /posts/ returned 403: 'Permission Error: The API is only available to authenticated users. Please create an account and use your API token to access the API.'; check METACULUS_TOKEN (a bot account token is required) and its permissions
+[Tournament/forecast]   | == augur forecast --tournament 33121 
+[Tournament/forecast]   | {"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T18:24:21.701472Z"}
+[Tournament/forecast]   | {"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_b566175f87e14670a95c", "source": "metaculus:33121", "timestamp": "2026-11-18T18:24:21.705869Z"}
+[Tournament/forecast]   | run run_b566175f87e14670a95c (dry_run) on metaculus:33121
+[Tournament/forecast]   | models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+[Tournament/forecast]   | {"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_b566175f87e14670a95c", "timestamp": "2026-11-18T18:24:21.707751Z"}
+[Tournament/forecast]   | {"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_b566175f87e14670a95c", "timestamp": "2026-11-18T18:24:21.708280Z"}
+[Tournament/forecast]   | probe:
+[Tournament/forecast]   |   ollama:qwen2.5:7b                                error             1 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+[Tournament/forecast]   | {"attempt": 1, "event": "metaculus.retry", "level": "warning", "method": "GET", "path": "/posts/", "retry_after": 10.0, "run_id": "run_b566175f87e14670a95c", "status_code": 429, "timestamp": "2026-11-18T18:24:21.748647Z"}
+[Tournament/forecast]   | augur: GET /posts/ returned 403 after 1 retries: 'Permission Error: The API is only available to authenticated users. Please create an account and use your API token to access the API.'; check METACULUS_TOKEN (a bot account token is required) and its permissions
+[Tournament/forecast] Failed but continue next step
+[Tournament/forecast]   ❌  Failure - Main Forecast [12.29207257s]
+[Tournament/forecast] ⭐ Run Main Push the ledger export to the ledger branch
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[Tournament/forecast]   | fatal: gitfile does not point to a valid repository: /home/runner/work/job-finder/job-finder/work/.claude/worktrees/agent-ac928ee3ea66213c8/.git
+[Tournament/forecast]   | cannot reach origin to look for the ledger branch (git exit 128)
+[Tournament/forecast]   ❌  Failure - Main Push the ledger export to the ledger branch [67.980646ms]
+[Tournament/forecast] exitcode '1': failure
+[Tournament/forecast] ⭐ Run Main Summary
+[Tournament/forecast]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/5] user= workdir=
+[Tournament/forecast]   ✅  Success - Main Summary [59.477806ms]
+[Tournament/forecast]   ⚙  Summary - ### Tournament run (schedule, forecast failure)
+```
+== augur forecast --tournament minibench 
+Downloading pygments (1.2MiB)
+Downloading ast-serialize (1.3MiB)
+Downloading mypy (14.8MiB)
+Downloading ruff (10.1MiB)
+ Downloaded pygments
+ Downloaded ast-serialize
+ Downloaded ruff
+ Downloaded mypy
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 12 packages in 442ms
+{"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T18:24:21.238297Z"}
+{"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_2fc09d3d2693446ea270", "source": "metaculus:minibench", "timestamp": "2026-11-18T18:24:21.253319Z"}
+run run_2fc09d3d2693446ea270 (dry_run) on metaculus:minibench
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+{"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_2fc09d3d2693446ea270", "timestamp": "2026-11-18T18:24:21.255205Z"}
+{"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_2fc09d3d2693446ea270", "timestamp": "2026-11-18T18:24:21.255819Z"}
+probe:
+  ollama:qwen2.5:7b                                error             1 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+augur: GET /posts/ returned 403: 'Permission Error: The API is only available to authenticated users. Please create an account and use your API token to access the API.'; check METACULUS_TOKEN (a bot account token is required) and its permissions
+== augur forecast --tournament 33121 
+{"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T18:24:21.701472Z"}
+{"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_b566175f87e14670a95c", "source": "metaculus:33121", "timestamp": "2026-11-18T18:24:21.705869Z"}
+run run_b566175f87e14670a95c (dry_run) on metaculus:33121
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+{"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_b566175f87e14670a95c", "timestamp": "2026-11-18T18:24:21.707751Z"}
+{"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_b566175f87e14670a95c", "timestamp": "2026-11-18T18:24:21.708280Z"}
+probe:
+  ollama:qwen2.5:7b                                error             1 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+{"attempt": 1, "event": "metaculus.retry", "level": "warning", "method": "GET", "path": "/posts/", "retry_after": 10.0, "run_id": "run_b566175f87e14670a95c", "status_code": 429, "timestamp": "2026-11-18T18:24:21.748647Z"}
+augur: GET /posts/ returned 403 after 1 retries: 'Permission Error: The API is only available to authenticated users. Please create an account and use your API token to access the API.'; check METACULUS_TOKEN (a bot account token is required) and its permissions
+```
+[Tournament/forecast] ⭐ Run Complete job
+[Tournament/forecast]   ✅  Success - Complete job
+[Tournament/forecast] 🏁  Job failed
+Error: Job 'forecast' failed
+exit=1
