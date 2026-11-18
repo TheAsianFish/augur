@@ -2,8 +2,7 @@
 
 Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Nothing scored yet: the first scored
-number (ForecastBench, no retrieval) arrives in M2, and the first live score
-in M3.
+number (ForecastBench, no retrieval) and the first live score arrive in M4.
 
 ## M1: one question end to end (2026-11-17)
 
@@ -59,6 +58,6 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
-| A binary forecast on the current MiniBench round | No binary MiniBench question was open while M1 was built (see the PR); only numeric, discrete and multiple-choice ones, which M2 adds | `augur forecast --tournament minibench --submit` (needs `METACULUS_TOKEN`; skips anything already forecast) |
-| Proxy models (`metaculus_proxy`) | `llm-proxy.metaculus.com` returned NXDOMAIN from public DNS on 2026-11-17, and `www.metaculus.com/proxy/` answers with a bot challenge | `AUGUR_PROVIDER=metaculus_proxy AUGUR_MODEL=<model> AUGUR_PROXY_BASE_URL=<current address> augur forecast --tournament bot-testing-area` |
+| A binary forecast on the current MiniBench round | The submit floor refuses it: the only model available is `qwen2.5:7b` on Ollama, which is not in the frontier tier, and a small-model forecast would cost peer points (refusal recorded in `data/runs/m1-submit-floor-minibench.txt`, exit 2, no model call). Needs M2's provider and a frontier model from the sponsored key | `AUGUR_PROVIDER=<hosted> AUGUR_MODEL=<frontier-tier model> augur forecast --tournament minibench --submit` (needs `METACULUS_TOKEN`; skips anything already forecast) |
+| Hosted models | `llm-proxy.metaculus.com` returned NXDOMAIN from public DNS on 2026-11-17, and `www.metaculus.com/proxy/` answers with a bot challenge; the credits now come as an OpenRouter key, which M2's generic provider will use (no `OPENROUTER_API_KEY` in this environment) | `AUGUR_PROVIDER=metaculus_proxy AUGUR_MODEL=<model> AUGUR_PROXY_BASE_URL=<current address> augur forecast --tournament bot-testing-area` |
 | AskNews sources | No `ASKNEWS_CLIENT_ID`/`ASKNEWS_CLIENT_SECRET` in the build environment; the searcher is tested only against recorded payloads | `make test-integration` with both set, then `augur forecast --tournament minibench` |

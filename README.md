@@ -58,6 +58,11 @@ export METACULUS_TOKEN=...                               # the bot account's tok
 uv run augur forecast --tournament bot-testing-area --submit
 ```
 
+`--submit` to MiniBench or FutureEval refuses unless the answering model is a
+hosted model in the named frontier tier (`augur/llm/registry.py`): a weak
+forecast costs peer points that skipping does not. Small and local models are
+for dry runs, backtests and the bot-testing-area.
+
 ## Architecture
 
 ```mermaid
@@ -111,12 +116,13 @@ three times, so a bug in one layer is caught by the next:
 | Proxy provider | Plain `httpx` in the OpenAI format | The `openai` SDK | One HTTP stack to mock and record; the proxy speaks the same format. |
 | Source dates | Evidence only (revision, capture, bounded publish date) | Page metadata | Audits show self-reported dates leak. |
 | Ledger | SQLite, append-only by trigger | DuckDB, PostgreSQL | Tens of thousands of rows, one writer, ships with Python. |
-| Aggregation (M1) | Median of 5 draws | Mean | Robust to one wild draw; Q3 tests alternatives in M6. |
+| Aggregation (M1) | Median of 5 draws | Mean | Robust to one wild draw; Q3 tests alternatives in M7. |
+| Submit floor | Live tournaments need a frontier-tier hosted model | Submit whatever model answers | An expired key must never post small-model forecasts. |
 | Comments | Private, rendered from the members' own reasoning | Boilerplate | Prize rules require the reasoning that produced the forecast. |
 
 ## Results
 
-Nothing is scored yet; the first scored number arrives in M2. What M1
+Nothing is scored yet; the first scored number arrives in M4. What M1
 measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
 
 | Run (2026-11-17, `qwen2.5:7b`, $0) | Outcome |
@@ -130,18 +136,22 @@ measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
 - Wikipedia's search ranks today's index, so *which* pages are chosen can
   reflect later events even though each page's *text* is the revision as of
   the cutoff. Old revisions are also rendered with today's templates. Both
-  matter for backtests (M4), where the judge audit measures the residual.
-- The sponsored LLM proxy did not resolve on 2026-11-17, so live forecasts
-  come from a local 7B model. AskNews is wired but unverified without keys.
-- Binary questions only until M2.
+  matter for backtests (M6), where the judge audit measures the residual.
+- The sponsored LLM proxy did not resolve on 2026-11-17, and Metaculus now
+  issues its credits as an OpenRouter key; until M2's generic provider and a
+  frontier model, the bot runs a local 7B model and the submit floor keeps it
+  out of scored tournaments. AskNews is wired but unverified without keys.
+- Binary questions only until M3.
 
 ## Roadmap
 
-M2 live on MiniBench with every question type and the shadow template, and
-the repository public; M3 resolutions and scoring, against the template and
-the community prediction; M4 the leakage-proof backtest and what leakage is
-worth; M5-M6 ablations; M7 calibration; M8 standings; M9 "does it know when
-it does not know"; M10 release and a season postmortem. Details in
+M2 one OpenAI-compatible provider with a probed model list (the sponsored
+OpenRouter key and free tiers), and the repository public; M3 live on
+MiniBench with every question type, a scheduled workflow and a durable
+ledger; M4 the shadow template, scoring and the first standings; M5 market
+prices and the community prior, and a replay evaluation on the hosted
+models; M6 the leakage-proof backtest; M7 ablations; M8 calibration; M9
+"does it know when it does not know"; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 
 ## Development

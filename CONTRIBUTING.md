@@ -95,4 +95,7 @@ PLAN.md only when its definition of done is met.
 
 One bot account. Forecast and comment only through the documented API, within
 its rate limits. Comments must reflect the reasoning that produced the
-forecast. Never run `--submit` from a branch that has not passed `make check`.
+forecast. Never run `--submit` from a branch that has not passed `make check`. Outside the
+bot-testing-area, `--submit` refuses unless the answering model is a hosted
+model in the frontier tier (`augur/llm/registry.py`); do not widen the tier
+to get a run through.
