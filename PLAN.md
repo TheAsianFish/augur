@@ -414,7 +414,7 @@ documented ones.
   deadline, and a question too close to its close is *missed*, not started.
   Every question a run saw leaves a `question_outcomes` row (schema 4), so
   M4 can explain each missed question from the ledger.
-- *The frontier tier was reviewed* on the overseer's direction, under a
+- *The frontier tier was reviewed* against the hosted list, under a
   stated rule (an outside forecasting result must name the model): GPT-5.4
   and Claude Opus 5 were admitted and the rest of the newer hosted models
   listed but not admitted; the tier is now `frontier-2026-11b`.

@@ -38,9 +38,13 @@ CDF and every option set. What the runs found:
 - **Draws lost to the token cap.** Run 1 kept 19 of 25 draws. Five had used
   exactly the 1,500-token cap and stopped before their last percentile or
   option line (the ledger's `output_tokens` equals the request's
-  `max_tokens`); the sixth found every free model in the chain rate-limited.
-  Non-binary answers end in six lines rather than one, so run 2 gave them
-  2,500: 28 of 30 draws kept, none at the cap, both losses rate limits.
+  `max_tokens`); in the sixth, the first two models ran out of tokens with
+  no answer text and the third returned a 429. Non-binary answers end in six
+  lines rather than one, so run 2 gave them 2,500: 28 of 30 draws kept. No
+  kept or recorded call ended at exactly the cap, but in both lost draws the
+  first two models again ran out of tokens (reported as an error, so the
+  ledger has no token count) before the third returned a 429: the cap still
+  contributed to both losses.
 - **The same on a binary question, live.** A dry run on MiniBench question
   [46620](https://www.metaculus.com/questions/46620/) (open 18:43 to 21:43
   UTC, found by the workflow under `act`, below) failed at 1,500 tokens: 3 of
@@ -81,7 +85,7 @@ in 16 rounds from 2026-04-13.
 | Measure | Value |
 |---------|-------|
 | Types | binary 503, numeric 216, discrete 165, multiple choice 70: **47% are not binary** |
-| Window (scheduled close − open) | 3.00 h for all 729 questions since 2026-06-15; 1.50 h for the 225 before |
+| Window (scheduled close − open) | 3.00 h for all 729 questions from the 2026-06-05 change on (716 of them in rounds from 2026-06-15); 1.50 h for the 225 before |
 | Gap between consecutive opens in a round | median 0.67 h, p90 3.47 h, max 115.6 h |
 | Opens by UTC hour | every hour of the day; fewest 20 (22:00), most 58 (00:00) |
 | Share of a round open by day 2 | 22% to 100% (median round 92%) |
@@ -151,7 +155,12 @@ another run is queued, so there is never more than one chain, and the cron
 restarts the chain if it breaks. The chain's waiting bills minutes on a
 private repository, so it is off until the repository is public (RELEASE.md).
 That this repository's own runs fire on time is unmeasured until its first
-scheduled runs land on the `ledger` branch (M4).
+scheduled runs land on the `ledger` branch (M4). Until the chain is on, the
+cron is the only trigger, and the 99.25% rests on the delay tail of the only
+two on-time workflows found (174 delays); at 90 minutes no question gets a
+second tick in time, so a repository throttled like most forks would catch
+about 43%. The M4 check of this repository's own run times decides between
+those two numbers.
 
 ### The workflow, run under `act`
 
