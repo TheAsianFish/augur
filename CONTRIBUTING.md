@@ -8,6 +8,7 @@ predictions each experiment is judged against.
 ```sh
 uv sync                 # Python 3.12, from uv.lock
 cp .env.example .env    # optional; nothing is required for tests
+set -a; . ./.env; set +a  # Augur reads the environment only; it never loads .env itself
 ollama pull qwen2.5:7b  # optional; local model for dry runs and backtests
 ```
 
@@ -21,10 +22,11 @@ installs Metaculus's template bot and does not support 3.14.
 | `make check` | The quality gate: `ruff format --check`, `ruff check`, `mypy --strict`, unit tests. Offline, under two minutes. This is all CI runs on a pull request. |
 | `make test` | Unit tests only. |
 | `make test-integration` | Tests that need a local Ollama or live credentials; each skips with its reason when the requirement is missing. |
-| `make eval` | Replays the committed backtest ledgers and recordings and re-scores them. Offline, free. |
-| `make backtest ARGS=...` | Runs a new backtest (local model by default). Manual; never in per-PR CI. |
-| `make results` | Renders RESULTS.md from the ledger and result files. A test fails if the committed file differs. |
-| `augur forecast --tournament minibench` | Dry run. Add `--submit` with `METACULUS_TOKEN` set to post. |
+| `make eval` | (M3) Replays the committed backtest ledgers and recordings and re-scores them. Offline, free. |
+| `make backtest ARGS=...` | (M4) Runs a new backtest (local model by default). Manual; never in per-PR CI. |
+| `make results` | (M3) Renders RESULTS.md from the ledger and result files. A test fails if the committed file differs. |
+| `augur forecast --tournament minibench` | Dry run: the live listing with `METACULUS_TOKEN`, the committed samples in `data/samples/` without it. Add `--submit` to post. |
+| `augur ledger check PATH...` | Scans ledgers for leakage; exits 1 on any violation. |
 
 ## Configuration
 
@@ -36,6 +38,9 @@ file, a log line, the ledger or a commit.
 | `METACULUS_TOKEN` | Metaculus API and the sponsored LLM proxy. |
 | `ASKNEWS_CLIENT_ID`, `ASKNEWS_CLIENT_SECRET` (or `ASKNEWS_SECRET`) | News search. |
 | `AUGUR_PROVIDER`, `AUGUR_MODEL` | `ollama`, `metaculus_proxy` or `replay`, and the model name. |
+| `OLLAMA_HOST`, `AUGUR_PROXY_BASE_URL` | Where the local model and the proxy live. |
+| `AUGUR_RECORD_PATH`, `AUGUR_REPLAY_PATH` | Record every model call to a JSONL file; replay one (with `AUGUR_PROVIDER=replay`). |
+| `AUGUR_FORECASTERS` | Forecaster draws per question (default 5), combined by the median. |
 | `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
 | `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. |
 | `AUGUR_LOG_LEVEL` | Structured JSON logs to stderr. |
@@ -51,8 +56,9 @@ file, a log line, the ledger or a commit.
   not return anything it cannot date at or before it.
 - **Ledger.** Append-only. No `UPDATE`, no `DELETE`; a correction is a new
   row. Schema changes are numbered migrations.
-- **Async.** All I/O is `async`; every provider call goes through its rate
-  limiter; no unbounded `gather`.
+- **Async.** All network I/O is `async`; every provider call goes through its
+  rate limiter; no unbounded `gather`. The ledger is the exception: local
+  SQLite writes take microseconds, so it is synchronous.
 - **Tests.** Unit tests are offline, deterministic and fast: HTTP is mocked,
   models are the `replay` provider. Mocks never produce a reported number.
 - **Logging.** `structlog`, JSON, with the run id and question id bound. A
@@ -89,4 +95,7 @@ PLAN.md only when its definition of done is met.
 
 One bot account. Forecast and comment only through the documented API, within
 its rate limits. Comments must reflect the reasoning that produced the
-forecast. Never run `--submit` from a branch that has not passed `make check`.
+forecast. Never run `--submit` from a branch that has not passed `make check`. Outside the
+bot-testing-area, `--submit` refuses unless the answering model is a hosted
+model in the frontier tier (`augur/llm/registry.py`); do not widen the tier
+to get a run through.

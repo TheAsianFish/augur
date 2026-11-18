@@ -1,0 +1,5 @@
+$ augur forecast --tournament minibench --submit   # METACULUS_TOKEN set, AUGUR_PROVIDER=ollama, AUGUR_MODEL=qwen2.5:7b
+{"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-18T03:52:05.889189Z"}
+{"event": "submit refused by the floor", "level": "warning", "model": "qwen2.5:7b", "provider": "ollama", "timestamp": "2026-11-18T03:52:05.902697Z", "tournament": "minibench"}
+augur: --submit to minibench needs a hosted model in the frontier-2026-11 tier, and qwen2.5:7b on ollama is not one; a weak forecast costs peer points that skipping does not. Drop --submit for a dry run, or submit to bot-testing-area to test the live path.
+exit=2

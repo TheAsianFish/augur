@@ -1,0 +1,13 @@
+run run_1a8971bc5ba643e7bc18 (live) on metaculus:bot-testing-area, model qwen2.5:7b
+
+== Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
+   https://www.metaculus.com/questions/43327/
+   sources: 3 admitted, 0 rejected; members: 5% 5% 5% 7% 5%; median: 5.0%
+   submitted 5.0% and a private comment
+done: 1 forecast, 5 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/46223/ multiple_choice questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/46224/ numeric questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/43321/ discrete questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/45517/ discrete questions are not forecast yet (binary only until M2)
+  skipped: https://www.metaculus.com/questions/43323/ numeric questions are not forecast yet (binary only until M2)
+ledger: /tmp/run/bta.sqlite (run run_1a8971bc5ba643e7bc18)

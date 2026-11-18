@@ -1,0 +1,12 @@
+{
+  "batchcomplete": true,
+  "continue": {"sroffset": 3, "continue": "-||"},
+  "query": {
+    "searchinfo": {"totalhits": 178},
+    "search": [
+      {"ns": 0, "title": "Semaglutide", "pageid": 50133223, "size": 136908, "wordcount": 11708, "snippet": "sold under the brand names <span class=\"searchmatch\">Ozempic</span>", "timestamp": "2026-11-11T01:51:54Z"},
+      {"ns": 0, "title": "Orforglipron", "pageid": 76543210, "size": 20114, "wordcount": 1650, "snippet": "an oral <span class=\"searchmatch\">GLP-1</span> receptor agonist", "timestamp": "2026-10-02T09:12:40Z"},
+      {"ns": 0, "title": "Novo Nordisk", "pageid": 1057064, "size": 56317, "wordcount": 5074, "snippet": "The <span class=\"searchmatch\">Ozempic</span> Effect", "timestamp": "2026-11-11T06:58:46Z"}
+    ]
+  }
+}
