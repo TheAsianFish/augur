@@ -26,6 +26,7 @@ def _load(name: str) -> ModuleType:
 
 qw = _load("question_windows")
 cd = _load("cron_delay")
+cad = _load("cadence")
 
 
 def _t(s: str) -> datetime:
@@ -196,3 +197,63 @@ on:
     - cron: 15 4 * * *   # unquoted
 """
     assert cd.parse_workflow_crons(text) == ["7,27,47 * * * *", "30 3 * * *", "15 4 * * *"]
+
+
+# --- cadence ------------------------------------------------------------------
+
+
+def _q(open_min: float, close_min: float) -> Any:
+    return cad.Question(open_min, close_min, round((close_min - open_min) / 60, 2))
+
+
+def test_cadence_cron_lines_round_trip() -> None:
+    for c in (
+        cad.Cadence.every(90, 7),
+        cad.Cadence.every(120, 17, fallback=True),
+        cad.Cadence.every(30, 0),
+    ):
+        sched = cd.Schedule([cd.Cron.parse(e) for e in c.cron_lines()])
+        assert tuple(sched.day) == c.day_ticks
+    assert cad.Cadence.every(60, 7).cron_lines() == ["7 * * * *"]
+    assert cad.Cadence.every(60, 7, fallback=True).day_ticks[:2] == (7, 37)
+
+
+def test_simulation_on_a_toy_case() -> None:
+    qs = [_q(10, 190), _q(130, 220), _q(170, 200)]
+    every_hour = cad.Cadence.every(60, 0)
+    res = cad.simulate_on_time(
+        qs, every_hour, [5.0], 0.0, epoch_minute_of_day=0, job=8, margin=15, reps=3, seed=1
+    )
+    # Runs at 65 and 185: left 117, 27 and 7 minutes.
+    assert res.caught == pytest.approx(2 / 3)
+    assert res.worst_left == 7.0
+    assert res.runs_with_work_per_rep == 2.0
+    assert res.caught_by_window == {0.5: 0.0, 1.5: 1.0, 3.0: 1.0}
+    robust = cad.robust_share(qs, every_hour, epoch_minute_of_day=0, job=8, margin=15, delay=5)
+    assert robust == pytest.approx(1 / 3)
+    polls, forecast = cad.billed_per_month(every_hour, 0.0, 2.0, 30.0, 7.5)
+    assert (polls, forecast) == (720.0, 16.0)
+
+
+def test_simulation_drops_every_tick() -> None:
+    res = cad.simulate_on_time(
+        [_q(10, 190)],
+        cad.Cadence.every(30, 0),
+        [0.0],
+        1.0,
+        epoch_minute_of_day=0,
+        job=8,
+        margin=15,
+        reps=2,
+        seed=1,
+    )
+    assert res.caught == 0.0
+    assert res.no_run == 1.0
+
+
+def test_throttled_simulation_with_tiny_gaps_catches_everything() -> None:
+    res = cad.simulate_throttled(
+        [_q(10, 190), _q(500, 590)], [1.0], job=8, margin=15, reps=5, seed=3
+    )
+    assert res.caught == 1.0
+    assert res.worst_left >= 90 - 8 - 1
