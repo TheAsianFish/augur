@@ -99,6 +99,15 @@ def test_price_for_local_and_free() -> None:
     assert free.cost(5_000, 5_000) == 0
 
 
+def test_a_frontier_model_on_a_free_host_is_priced_from_the_list() -> None:
+    """A billing-enabled Gemini key on the "free" preset must still count against the caps."""
+    cat = _catalog()
+    on_gemini = price_for(_route(EPS["gemini"], "gpt-5.1"), cat)
+    assert on_gemini is not None
+    assert on_gemini.cost(1_000_000, 1_000_000) == pytest.approx(11.25)
+    assert price_for(_route(EPS["gemini"], "gemini-2.5-pro"), cat) is None, "unlisted: not called"
+
+
 def test_price_for_openrouter() -> None:
     cat = _catalog()
     price = price_for(_route(EPS["openrouter"], "openai/gpt-5.1"), cat)

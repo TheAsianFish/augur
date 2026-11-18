@@ -32,7 +32,7 @@ from pydantic import BaseModel, ConfigDict
 from augur.clock import parse_iso, to_iso
 from augur.errors import ProviderError
 from augur.llm.endpoints import Route
-from augur.llm.registry import bare_model_name, local_release_date
+from augur.llm.registry import FRONTIER_TIER, bare_model_name, local_release_date
 from augur.log import get_logger
 
 log = get_logger(__name__)
@@ -209,7 +209,19 @@ def price_for(route: Route, catalog: Catalog) -> Price | None:
     if endpoint.is_local:
         return LOCAL
     if endpoint.billing == "free":
-        return FREE
+        if bare_model_name(route.model) not in FRONTIER_TIER:
+            return FREE
+        # A frontier model on a "free" host (Gemini's free tier) bills once the
+        # key has billing on, so it is priced as OpenRouter lists it and the
+        # caps still bind; with no listing it is not called.
+        listed = [e for e in catalog.same_model(route.model) if e.priced]
+        if not listed:
+            return None
+        return Price(
+            usd_per_million_input=max(e.usd_per_million_input or 0.0 for e in listed),
+            usd_per_million_output=max(e.usd_per_million_output or 0.0 for e in listed),
+            basis=f"OpenRouter list, same model ({catalog.origin}, {catalog.fetched_at:%Y-%m-%d})",
+        )
     if endpoint.billing == "openrouter":
         entry = catalog.get(route.model)
         if entry is not None and entry.priced:
