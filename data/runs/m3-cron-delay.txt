@@ -1,0 +1,365 @@
+GitHub Actions scheduled-trigger delay on public forks of Metaculus/metac-bot-template
+command: python3 scripts/cron_delay.py
+fetched: 2026-11-18T19:38:16Z (API calls 54, cache hits 45, raw fetches 299; core remaining 57 -> 3)
+forks listed 439; recently pushed candidates 165; repos fetched 94; repos with recent schedule runs analysed 55 (99 workflow/cron groups, 2813 runs)
+
+delay, unambiguous (shortest interval >= 720 min; 7 repos, 22 workflows): n=144 p50 373.6 p90 553.4 p99 588.5 max 591.3 min
+delay, complete-coverage workflows (2 repos, 174 runs): n=174 p50 9.1 p90 59.5 p99 107.8 max 175.7 min
+  missed ticks there: 1 of 175 (0.57%)
+  workflows: andrew222651/metac-bot:.github/workflows/run_bot.yaml, BTCCtrl/metac-bot-template:.github/workflows/run_bot_on_tournament.yaml
+throttled short-interval workflows (shortest interval <= 60 min and coverage < 0.95; 51 repos, 64 workflows, 2329 runs):
+  time between consecutive schedule runs: n=2265 p50 346.6 p90 496.5 p99 619.6 max 20973.9 min
+  runs from other triggers between their schedule runs: 16938
+
+coverage by cron interval (ticks with a run / expected):
+   <=20 min: 47 repos, 56 workflows, 1971 runs, 1953/38937 = 5.0%; complete 3/56; gap between runs n=1915 p50 327.5 p90 491.1 p99 617.6 max 20973.9 min
+  30-60 min: 9 repos, 11 workflows, 460 runs, 460/3632 = 12.7%; complete 0/11; gap between runs n=449 p50 362.6 p90 513.9 p99 641.7 max 675.9 min
+     1-12 h: 7 repos, 10 workflows, 238 runs, 238/447 = 53.2%; complete 4/10; gap between runs n=228 p50 403.7 p90 643.2 p99 785.2 max 876.5 min
+     >=12 h: 7 repos, 22 workflows, 144 runs, 144/144 = 100.0%; complete 22/22; gap between runs n=122 p50 1426.7 p90 1566.4 p99 1643.2 max 1850.4 min
+
+trusted delay (unambiguous + complete) by UTC hour of the tick:
+  00: n=28 p50 377.8 p90 426.4 max 467.3
+  01: n=3 p50 3.3 p90 7.9 max 9.1
+  02: n=3 p50 3.7 p90 11.3 max 13.2
+  03: n=13 p50 42.3 p90 60.7 max 511.5
+  04: n=4 p50 6.3 p90 391.6 max 555.5
+  05: n=13 p50 387.8 p90 512.3 max 551.3
+  06: n=20 p50 73.7 p90 587.2 max 591.3
+  07: n=18 p50 481.7 p90 577.4 max 584.8
+  08: n=7 p50 535.0 p90 550.6 max 554.3
+  09: n=16 p50 39.9 p90 72.6 max 534.4
+  10: n=6 p50 3.4 p90 7.8 max 7.9
+  11: n=7 p50 3.3 p90 207.8 max 508.6
+  12: n=17 p50 53.0 p90 312.9 max 588.9
+  13: n=6 p50 3.2 p90 8.0 max 8.1
+  14: n=7 p50 3.5 p90 218.1 max 531.6
+  15: n=15 p50 30.4 p90 52.2 max 89.8
+  16: n=7 p50 3.6 p90 178.8 max 431.3
+  17: n=56 p50 250.7 p90 372.7 max 451.6
+  18: n=20 p50 43.2 p90 407.3 max 454.1
+  19: n=4 p50 4.4 p90 263.8 max 374.4
+  20: n=4 p50 5.7 p90 272.5 max 385.9
+  21: n=28 p50 204.3 p90 353.6 max 386.3
+  22: n=12 p50 43.2 p90 220.7 max 338.0
+  23: n=4 p50 4.7 p90 241.7 max 342.6
+
+per workflow:
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_avions_etat.yaml cron 37 2 * * * | 37 16 * * * (every 600 min) [complete]
+    runs 2 over 12.6h (2026-11-17T11:02:44Z .. 2026-11-17T23:38:11Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 463.5 p90 497.3 p99 504.9 max 505.7 min; gap between runs n=1 p50 755.5 p90 755.5 p99 755.5 max 755.5 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_avions_etat.yaml cron 37 2 * * * | 37 14 * * * (every 720 min) [stopped]
+    runs 1 over 0.0h (2026-11-16T23:28:37Z .. 2026-11-16T23:28:37Z); coverage 1/1 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=1 p50 531.6 p90 531.6 p99 531.6 max 531.6 min; gap between runs n/a; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_avis_navigation.yaml cron 41 5 * * * | 41 17 * * * (every 720 min) [complete]
+    runs 2 over 9.1h (2026-11-17T14:52:17Z .. 2026-11-17T23:56:04Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 463.2 p90 533.7 p99 549.5 max 551.3 min; gap between runs n=1 p50 543.8 p90 543.8 p99 543.8 max 543.8 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_calendrier_nbs.yaml cron 29 7 * * * | 29 19 * * * (every 720 min) [complete]
+    runs 2 over 8.7h (2026-11-17T16:58:46Z .. 2026-11-18T01:43:25Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 472.1 p90 550.2 p99 567.8 max 569.8 min; gap between runs n=1 p50 524.6 p90 524.6 p99 524.6 max 524.6 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_feux.yaml cron 17 6 * * * | 17 18 * * * (every 720 min) [complete]
+    runs 2 over 9.0h (2026-11-17T15:57:42Z .. 2026-11-18T01:00:20Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 492.0 p90 563.0 p99 578.9 max 580.7 min; gap between runs n=1 p50 542.6 p90 542.6 p99 542.6 max 542.6 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_gdelt.yaml cron 47 8 * * * | 47 20 * * * (every 720 min) [complete]
+    runs 2 over 14.7h (2026-11-17T03:12:51Z .. 2026-11-17T17:55:10Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 1
+    delay n=2 p50 467.0 p90 531.9 p99 546.5 max 548.2 min; gap between runs n=1 p50 882.3 p90 882.3 p99 882.3 max 882.3 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_militaires.yaml cron 41 */3 * * * (every 180 min) [skips]
+    runs 3 over 19.2h (2026-11-17T23:07:23Z .. 2026-11-18T18:22:04Z); coverage 3/7 = 43%; longest missed streak 2; other-trigger runs between 0
+    delay n=3 p50 86.4 p90 146.1 p99 159.6 max 161.1 min; gap between runs n=2 p50 577.3 p90 618.1 p99 627.3 max 628.3 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_ooni.yaml cron 53 9 * * * | 53 21 * * * (every 720 min) [complete]
+    runs 2 over 14.6h (2026-11-17T04:12:32Z .. 2026-11-17T18:47:21Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 456.9 p90 518.9 p99 532.8 max 534.4 min; gap between runs n=1 p50 874.8 p90 874.8 p99 874.8 max 874.8 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_portwatch.yaml cron 13 3 * * * (every 1440 min) [complete]
+    runs 1 over 0.0h (2026-11-17T11:44:29Z .. 2026-11-17T11:44:29Z); coverage 1/1 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=1 p50 511.5 p90 511.5 p99 511.5 max 511.5 min; gap between runs n/a; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_radar.yaml cron 29 11 * * * | 29 23 * * * (every 720 min) [complete]
+    runs 2 over 14.8h (2026-11-17T05:11:33Z .. 2026-11-17T19:57:35Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 425.6 p90 492.0 p99 506.9 max 508.6 min; gap between runs n=1 p50 886.0 p90 886.0 p99 886.0 max 886.0 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_recit_russe.yaml cron 23 4 * * * | 23 16 * * * (every 720 min) [complete]
+    runs 2 over 9.9h (2026-11-17T13:38:30Z .. 2026-11-17T23:34:18Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 493.4 p90 543.1 p99 554.3 max 555.5 min; gap between runs n=1 p50 595.8 p90 595.8 p99 595.8 max 595.8 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_rss.yaml cron 37 6 * * * | 37 18 * * * (every 720 min) [complete]
+    runs 4 over 32.9h (2026-11-16T16:19:15Z .. 2026-11-18T01:13:59Z); coverage 4/4 = 100%; longest missed streak 0; other-trigger runs between 1
+    delay n=4 p50 512.8 p90 586.2 p99 587.8 max 587.9 min; gap between runs n=3 p50 581.1 p90 807.9 p99 858.9 max 864.5 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_sanctions.yaml cron 41 12 * * * | 41 0 * * * (every 720 min) [complete]
+    runs 3 over 22.8h (2026-11-16T22:29:51Z .. 2026-11-17T21:19:43Z); coverage 3/3 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=3 p50 518.7 p90 574.8 p99 587.4 max 588.9 min; gap between runs n=2 p50 684.9 p90 755.9 p99 771.9 max 773.6 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/collecte_violationswatch.yaml cron 17 6 * * * | 17 18 * * * (every 720 min) [complete]
+    runs 4 over 33.1h (2026-11-16T15:51:16Z .. 2026-11-18T00:56:22Z); coverage 4/4 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=4 p50 514.2 p90 583.2 p99 586.7 max 587.1 min; gap between runs n=3 p50 599.8 p90 802.4 p99 847.9 max 853.0 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/run_alphabet_bot.yaml cron */20 * * * * (every 20 min) [skips]
+    runs 32 over 207.4h (2026-11-09T17:17:49Z .. 2026-11-18T08:39:24Z); coverage 32/623 = 5%; longest missed streak 29; other-trigger runs between 4
+    delay n=32 p50 13.1 p90 18.0 p99 19.2 max 19.4 min; gap between runs n=31 p50 428.1 p90 500.9 p99 586.5 max 594.7 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/sante_modeles.yaml cron 41 */3 * * * (every 180 min) [skips]
+    runs 26 over 208.2h (2026-11-09T20:00:36Z .. 2026-11-18T12:10:54Z); coverage 26/70 = 37%; longest missed streak 3; other-trigger runs between 5
+    delay n=26 p50 75.0 p90 150.7 p99 165.7 max 166.4 min; gap between runs n=25 p50 504.6 p90 673.4 p99 751.4 max 756.0 min; queue p50 0.0 min
+  Othman-Benbrahim/metac-bot-template .github/workflows/veille_articles.yaml cron 23 6 * * * (every 1440 min) [complete]
+    runs 3 over 50.1h (2026-11-15T14:06:11Z .. 2026-11-17T16:14:20Z); coverage 3/3 = 100%; longest missed streak 0; other-trigger runs between 1
+    delay n=3 p50 581.5 p90 589.4 p99 591.1 max 591.3 min; gap between runs n=2 p50 1504.1 p90 1547.5 p99 1557.3 max 1558.4 min; queue p50 0.0 min
+  Ting-YiLin/metac-bot-template .github/workflows/export_gpt_chat_candidates.yaml cron 07 * * * * (every 60 min) [skips]
+    runs 25 over 167.7h (2026-11-11T14:07:29Z .. 2026-11-18T13:52:01Z); coverage 25/168 = 15%; longest missed streak 9; other-trigger runs between 161
+    delay n=25 p50 34.6 p90 49.5 p99 53.1 max 54.0 min; gap between runs n=24 p50 438.0 p90 560.3 p99 592.2 max 596.0 min; queue p50 0.0 min
+  Ting-YiLin/metac-bot-template .github/workflows/run_bot_testing_area.yaml cron 37 * * * * (every 60 min) [skips]
+    runs 26 over 174.4h (2026-11-11T07:00:16Z .. 2026-11-18T13:22:32Z); coverage 26/175 = 15%; longest missed streak 10; other-trigger runs between 0
+    delay n=26 p50 31.1 p90 51.7 p99 59.1 max 59.5 min; gap between runs n=25 p50 441.4 p90 555.0 p99 618.9 max 631.9 min; queue p50 0.0 min
+  Ting-YiLin/metac-bot-template .github/workflows/run_bot_testing_area.yaml cron 37 */6 * * * (every 360 min) [stopped]
+    runs 2 over 8.5h (2026-11-10T15:10:50Z .. 2026-11-10T23:40:01Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 228.4 p90 288.1 p99 301.5 max 303.0 min; gap between runs n=1 p50 509.2 p90 509.2 p99 509.2 max 509.2 min; queue p50 0.0 min
+  Ting-YiLin/metac-bot-template .github/workflows/run_bot_testing_area.yaml cron 23 */6 * * * (every 360 min) [stopped]
+    runs 2 over 9.0h (2026-11-03T14:27:45Z .. 2026-11-03T23:29:44Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=2 p50 215.7 p90 288.5 p99 304.9 max 306.7 min; gap between runs n=1 p50 542.0 p90 542.0 p99 542.0 max 542.0 min; queue p50 4492.7 min
+  burtoinicusor-ux/metac-bot-template .github/workflows/review_bot.yaml cron 17 7 * * * (every 1440 min) [complete]
+    runs 5 over 97.5h (2026-11-13T15:21:58Z .. 2026-11-17T16:52:30Z); coverage 5/5 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=5 p50 485.0 p90 579.3 p99 581.6 max 581.8 min; gap between runs n=4 p50 1455.1 p90 1545.0 p99 1571.4 max 1574.3 min; queue p50 0.0 min
+  burtoinicusor-ux/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 3,13,23,33,43,53 * * * * (every 10 min) [skips]
+    runs 23 over 142.1h (2026-11-11T21:53:23Z .. 2026-11-17T19:59:41Z); coverage 23/853 = 3%; longest missed streak 60; other-trigger runs between 122
+    delay n=23 p50 5.7 p90 9.7 p99 10.0 max 10.0 min; gap between runs n=22 p50 398.6 p90 506.8 p99 588.8 max 607.1 min; queue p50 0.0 min
+  burtoinicusor-ux/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 3 over 11.1h (2026-11-10T22:32:22Z .. 2026-11-11T09:37:29Z); coverage 3/34 = 9%; longest missed streak 21; other-trigger runs between 0
+    delay n=3 p50 9.3 p90 10.3 p99 10.5 max 10.5 min; gap between runs n=2 p50 332.6 p90 419.4 p99 439.0 max 441.1 min; queue p50 0.0 min
+  mcabejsek-creator/metac-bot-template .github/workflows/readonly_backlog_hourly.yaml cron 13 * * * * (every 60 min) [skips]
+    runs 28 over 190.3h (2026-11-10T15:34:06Z .. 2026-11-18T13:53:27Z); coverage 28/191 = 15%; longest missed streak 10; other-trigger runs between 0
+    delay n=28 p50 20.1 p90 44.3 p99 49.6 max 49.9 min; gap between runs n=27 p50 443.1 p90 561.8 p99 632.6 max 651.3 min; queue p50 0.0 min
+  mcabejsek-creator/metac-bot-template .github/workflows/review_bot.yaml cron 43 7 * * * (every 1440 min) [complete]
+    runs 9 over 192.9h (2026-11-10T15:47:55Z .. 2026-11-18T16:43:33Z); coverage 9/9 = 100%; longest missed streak 0; other-trigger runs between 1
+    delay n=9 p50 484.9 p90 566.3 p99 582.9 max 584.8 min; gap between runs n=8 p50 1424.2 p90 1512.0 p99 1581.7 max 1589.5 min; queue p50 0.0 min
+  mcabejsek-creator/metac-bot-template .github/workflows/run_bot_automatic.yaml cron 7,22,37,52 * * * * (every 15 min) [skips]
+    runs 31 over 194.6h (2026-11-10T07:24:27Z .. 2026-11-18T09:57:39Z); coverage 31/779 = 4%; longest missed streak 40; other-trigger runs between 826
+    delay n=31 p50 5.7 p90 11.9 p99 14.8 max 15.0 min; gap between runs n=30 p50 402.7 p90 501.3 p99 591.0 max 619.5 min; queue p50 0.0 min
+  mcabejsek-creator/metac-bot-template .github/workflows/shadow_report.yaml cron 11 8 * * * (every 1440 min) [complete]
+    runs 1 over 0.0h (2026-11-18T17:11:45Z .. 2026-11-18T17:11:45Z); coverage 1/1 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=1 p50 540.8 p90 540.8 p99 540.8 max 540.8 min; gap between runs n/a; queue p50 0.0 min
+  mcabejsek-creator/metac-bot-template .github/workflows/watch_open_metaculus_questions_readonly.yaml cron 7,22,37,52 * * * * (every 15 min) [skips]
+    runs 31 over 200.7h (2026-11-10T07:55:04Z .. 2026-11-18T16:34:37Z); coverage 31/803 = 4%; longest missed streak 39; other-trigger runs between 0
+    delay n=31 p50 7.8 p90 12.6 p99 14.6 max 14.7 min; gap between runs n=30 p50 406.8 p90 531.9 p99 585.5 max 591.9 min; queue p50 0.0 min
+  AlexanderMaidment/glass-earth-bot .github/workflows/learning_loop.yaml cron 0 21 * * * (every 1440 min) [complete]
+    runs 14 over 313.4h (2026-11-05T01:19:26Z .. 2026-11-18T02:45:19Z); coverage 14/14 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=14 p50 259.2 p90 364.6 p99 384.6 max 386.3 min; gap between runs n=13 p50 1416.9 p90 1579.5 p99 1598.5 max 1598.6 min; queue p50 0.0 min
+  AlexanderMaidment/glass-earth-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 60 over 376.6h (2026-11-02T23:58:37Z .. 2026-11-18T16:36:12Z); coverage 60/1131 = 5%; longest missed streak 29; other-trigger runs between 821
+    delay n=60 p50 9.6 p90 17.0 p99 19.1 max 19.4 min; gap between runs n=59 p50 393.4 p90 493.6 p99 599.4 max 599.7 min; queue p50 0.0 min
+  AlexanderMaidment/glass-earth-bot .github/workflows/timestamp_ledger.yaml cron 41 0 * * * (every 1440 min) [complete]
+    runs 16 over 360.7h (2026-11-03T07:14:01Z .. 2026-11-18T07:55:54Z); coverage 16/16 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=16 p50 393.7 p90 428.8 p99 462.5 max 467.3 min; gap between runs n=15 p50 1445.3 p90 1475.2 p99 1507.9 max 1513.0 min; queue p50 0.0 min
+  Jetstream801/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 9,29,49 * * * * (every 20 min) [skips]
+    runs 18 over 113.1h (2026-11-13T23:28:16Z .. 2026-11-18T16:37:12Z); coverage 18/341 = 5%; longest missed streak 29; other-trigger runs between 439
+    delay n=18 p50 10.2 p90 17.1 p99 19.0 max 19.3 min; gap between runs n=17 p50 407.2 p90 568.1 p99 595.3 max 600.0 min; queue p50 0.0 min
+  Jetstream801/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 3,23,43 * * * * (every 20 min) [stopped]
+    runs 1 over 0.0h (2026-11-13T13:15:53Z .. 2026-11-13T13:15:53Z); coverage 1/1 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=1 p50 12.9 p90 12.9 p99 12.9 max 12.9 min; gap between runs n/a; queue p50 0.0 min
+  evjohn0418-arch/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 33 over 34.9h (2026-11-17T06:48:43Z .. 2026-11-18T17:41:30Z); coverage 33/105 = 31%; longest missed streak 3; other-trigger runs between 0
+    delay n=33 p50 11.7 p90 17.9 p99 18.7 max 18.8 min; gap between runs n=32 p50 63.6 p90 78.2 p99 91.2 max 94.3 min; queue p50 0.0 min
+  feishudigital/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 47 */3 * * * (every 180 min) [skips]
+    runs 47 over 373.1h (2026-11-02T23:13:54Z .. 2026-11-18T12:17:08Z); coverage 47/125 = 38%; longest missed streak 3; other-trigger runs between 744
+    delay n=47 p50 71.4 p90 142.7 p99 167.8 max 170.8 min; gap between runs n=46 p50 485.6 p90 645.8 p99 765.4 max 775.5 min; queue p50 0.0 min
+  feishudigital/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 2-59/5 * * * * (every 5 min) [stopped]
+    runs 22 over 101.1h (2026-10-28T18:47:03Z .. 2026-11-01T23:50:38Z); coverage 22/1213 = 2%; longest missed streak 84; other-trigger runs between 424
+    delay n=22 p50 2.8 p90 4.0 p99 4.2 max 4.2 min; gap between runs n=21 p50 263.4 p90 401.8 p99 425.0 max 425.1 min; queue p50 0.0 min
+  feishudigital/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 2 over 6.2h (2026-10-28T05:27:06Z .. 2026-10-28T11:39:44Z); coverage 2/19 = 11%; longest missed streak 17; other-trigger runs between 1
+    delay n=2 p50 6.4 p90 11.5 p99 12.6 max 12.7 min; gap between runs n=1 p50 372.6 p90 372.6 p99 372.6 max 372.6 min; queue p50 0.0 min
+  Rytaryu/cirrus .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 19 over 120.0h (2026-11-13T16:35:24Z .. 2026-11-18T16:35:25Z); coverage 19/361 = 5%; longest missed streak 29; other-trigger runs between 7
+    delay n=19 p50 8.4 p90 13.4 p99 18.2 max 18.9 min; gap between runs n=18 p50 390.9 p90 568.3 p99 595.1 max 599.8 min; queue p50 0.0 min
+  henryloh0890/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 51 over 316.8h (2026-11-04T20:04:04Z .. 2026-11-18T00:54:40Z); coverage 51/952 = 5%; longest missed streak 30; other-trigger runs between 0
+    delay n=51 p50 8.7 p90 17.9 p99 19.1 max 19.6 min; gap between runs n=50 p50 398.4 p90 513.4 p99 612.6 max 629.4 min; queue p50 0.0 min
+  maxvick17/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [complete]
+    runs 1 over 0.0h (2026-11-18T13:52:03Z .. 2026-11-18T13:52:03Z); coverage 1/1 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=1 p50 5.0 p90 5.0 p99 5.0 max 5.0 min; gap between runs n/a; queue p50 0.0 min
+  lee2017-bit/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 7 over 64.4h (2026-11-16T01:52:14Z .. 2026-11-18T18:18:31Z); coverage 7/194 = 4%; longest missed streak 69; other-trigger runs between 0
+    delay n=7 p50 9.3 p90 14.7 p99 19.1 max 19.6 min; gap between runs n=6 p50 498.7 p90 1014.5 p99 1364.9 max 1403.8 min; queue p50 0.0 min
+  Pedro-Vinicius-MA/d-mail-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 19 over 115.2h (2026-11-13T14:43:36Z .. 2026-11-18T09:56:46Z); coverage 19/347 = 5%; longest missed streak 30; other-trigger runs between 163
+    delay n=19 p50 9.8 p90 16.6 p99 16.9 max 17.0 min; gap between runs n=18 p50 392.7 p90 514.6 p99 603.6 max 618.5 min; queue p50 0.0 min
+  tyvmha/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 20 over 20.7h (2026-11-17T21:36:32Z .. 2026-11-18T18:16:46Z); coverage 20/63 = 32%; longest missed streak 3; other-trigger runs between 3
+    delay n=20 p50 12.5 p90 18.5 p99 19.5 max 19.7 min; gap between runs n=19 p50 62.0 p90 76.9 p99 93.8 max 95.8 min; queue p50 0.0 min
+  colem-9/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 3 over 16.5h (2026-11-18T01:44:42Z .. 2026-11-18T18:17:07Z); coverage 3/51 = 6%; longest missed streak 26; other-trigger runs between 0
+    delay n=3 p50 10.1 p90 16.2 p99 17.5 max 17.7 min; gap between runs n=2 p50 496.2 p90 532.4 p99 540.5 max 541.5 min; queue p50 0.0 min
+  0xzhaynn/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 30 8 * * * (every 1440 min) [complete]
+    runs 2 over 23.7h (2026-11-17T17:44:19Z .. 2026-11-18T17:25:02Z); coverage 2/2 = 100%; longest missed streak 0; other-trigger runs between 2
+    delay n=2 p50 544.7 p90 552.4 p99 554.1 max 554.3 min; gap between runs n=1 p50 1420.7 p90 1420.7 p99 1420.7 max 1420.7 min; queue p50 0.0 min
+  wizotime/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 87 over 458.9h (2026-10-23T19:26:45Z .. 2026-11-11T22:18:40Z); coverage 87/1378 = 6%; longest missed streak 30; other-trigger runs between 683
+    delay n=87 p50 11.2 p90 18.7 p99 19.8 max 19.9 min; gap between runs n=86 p50 307.7 p90 464.6 p99 612.0 max 617.4 min; queue p50 0.0 min
+  YEJUN-0716/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 96 over 553.5h (2026-10-25T22:26:45Z .. 2026-11-17T23:57:39Z); coverage 96/1662 = 6%; longest missed streak 30; other-trigger runs between 0
+    delay n=96 p50 10.7 p90 18.4 p99 19.6 max 19.8 min; gap between runs n=95 p50 364.9 p90 469.5 p99 614.6 max 629.5 min; queue p50 0.0 min
+  livinginpeace/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 3 over 16.5h (2026-11-18T00:52:33Z .. 2026-11-18T17:22:52Z); coverage 3/50 = 6%; longest missed streak 26; other-trigger runs between 0
+    delay n=3 p50 15.9 p90 17.3 p99 17.7 max 17.7 min; gap between runs n=2 p50 495.2 p90 529.6 p99 537.3 max 538.2 min; queue p50 0.0 min
+  TomXiaoYZ/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 3 over 14.3h (2026-11-17T21:43:11Z .. 2026-11-18T12:02:04Z); coverage 3/44 = 7%; longest missed streak 25; other-trigger runs between 0
+    delay n=3 p50 15.1 p90 16.0 p99 16.2 max 16.2 min; gap between runs n=2 p50 429.4 p90 511.2 p99 529.6 max 531.7 min; queue p50 0.0 min
+  algopropfirms/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 26 over 169.1h (2026-11-11T15:34:01Z .. 2026-11-18T16:39:40Z); coverage 26/508 = 5%; longest missed streak 29; other-trigger runs between 1
+    delay n=26 p50 10.8 p90 17.0 p99 18.2 max 18.3 min; gap between runs n=25 p50 405.3 p90 539.9 p99 590.8 max 598.4 min; queue p50 0.0 min
+  CDarchi/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 4 over 22.9h (2026-11-17T18:46:27Z .. 2026-11-18T17:38:09Z); coverage 4/70 = 6%; longest missed streak 26; other-trigger runs between 0
+    delay n=4 p50 17.3 p90 19.6 p99 19.7 max 19.7 min; gap between runs n=3 p50 444.6 p90 514.1 p99 529.7 max 531.5 min; queue p50 0.0 min
+  Enhso/betomcat .github/workflows/host.yml cron */30 * * * * (every 30 min) [skips]
+    runs 96 over 568.8h (2026-10-26T00:54:24Z .. 2026-11-18T17:41:40Z); coverage 96/1139 = 8%; longest missed streak 20; other-trigger runs between 8378
+    delay n=96 p50 16.4 p90 27.7 p99 29.3 max 29.8 min; gap between runs n=95 p50 373.9 p90 486.9 p99 609.4 max 613.7 min; queue p50 0.0 min
+  BySergiMM/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 17 */3 * * * (every 180 min) [skips]
+    runs 19 over 153.4h (2026-11-12T02:16:20Z .. 2026-11-18T11:40:42Z); coverage 19/52 = 37%; longest missed streak 3; other-trigger runs between 289
+    delay n=19 p50 79.2 p90 124.2 p99 159.5 max 163.0 min; gap between runs n=18 p50 525.2 p90 668.3 p99 778.1 max 788.8 min; queue p50 0.0 min
+  BySergiMM/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 2,7,12,17,22,27,32,37,42,47,52,57 * * * * (every 5 min) [stopped]
+    runs 81 over 390.0h (2026-10-21T15:38:29Z .. 2026-11-06T21:38:19Z); coverage 81/4681 = 2%; longest missed streak 104; other-trigger runs between 517
+    delay n=81 p50 2.9 p90 4.6 p99 4.9 max 5.0 min; gap between runs n=80 p50 299.8 p90 428.5 p99 509.7 max 523.3 min; queue p50 0.0 min
+  kwyjad/Spagbot_metac-bot .github/workflows/run_bot_on_tournament.yaml cron */20 * * * * (every 20 min) [stopped]
+    runs 51 over 32.4h (2025-12-16T21:25:53Z .. 2025-12-18T05:52:26Z); coverage 51/98 = 52%; longest missed streak 5; other-trigger runs between 0
+    delay n=51 p50 10.5 p90 18.1 p99 19.7 max 19.8 min; gap between runs n=50 p50 33.6 p90 58.4 p99 130.7 max 130.9 min; queue p50 0.0 min
+  theadmirablefox/slow-monday .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 7 over 48.2h (2026-11-16T12:06:04Z .. 2026-11-18T12:20:51Z); coverage 7/146 = 5%; longest missed streak 29; other-trigger runs between 0
+    delay n=7 p50 11.6 p90 19.4 p99 19.9 max 19.9 min; gap between runs n=6 p50 507.7 p90 579.7 p99 591.3 max 592.6 min; queue p50 0.0 min
+  bassettijonathan-rgb/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 14 over 92.0h (2026-11-14T21:22:22Z .. 2026-11-18T17:24:21Z); coverage 14/277 = 5%; longest missed streak 29; other-trigger runs between 0
+    delay n=14 p50 8.5 p90 17.3 p99 18.6 max 18.8 min; gap between runs n=13 p50 452.6 p90 558.0 p99 599.7 max 604.7 min; queue p50 0.0 min
+  daviesluo/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 5,25,45 * * * * (every 20 min) [skips]
+    runs 7 over 74.0h (2026-11-15T15:35:13Z .. 2026-11-18T17:34:59Z); coverage 7/223 = 3%; longest missed streak 109; other-trigger runs between 65
+    delay n=7 p50 14.9 p90 16.1 p99 16.7 max 16.7 min; gap between runs n=6 p50 487.5 p90 1383.3 p99 2123.4 max 2205.6 min; queue p50 0.0 min
+  raul-lopez44/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 11 over 68.5h (2026-11-14T22:55:44Z .. 2026-11-17T19:24:41Z); coverage 11/206 = 5%; longest missed streak 30; other-trigger runs between 228
+    delay n=11 p50 10.5 p90 17.7 p99 19.3 max 19.5 min; gap between runs n=10 p50 433.0 p90 537.5 p99 620.6 max 629.8 min; queue p50 0.0 min
+  Class-now/metaculus-bot .github/workflows/run_bot_on_market_pulse.yaml cron 37 */4 * * * (every 240 min) [skips]
+    runs 35 over 281.2h (2026-11-07T00:15:44Z .. 2026-11-18T17:29:50Z); coverage 35/72 = 49%; longest missed streak 2; other-trigger runs between 2
+    delay n=35 p50 146.8 p90 216.7 p99 235.6 max 236.0 min; gap between runs n=34 p50 517.0 p90 642.5 p99 711.9 max 718.0 min; queue p50 0.0 min
+  Class-now/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 17 * * * * (every 60 min) [skips]
+    runs 36 over 246.6h (2026-11-08T07:22:29Z .. 2026-11-18T13:59:43Z); coverage 36/247 = 15%; longest missed streak 10; other-trigger runs between 0
+    delay n=36 p50 26.6 p90 47.0 p99 57.5 max 57.7 min; gap between runs n=35 p50 420.7 p90 557.6 p99 652.2 max 657.2 min; queue p50 0.0 min
+  sonhdgl/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 10 over 64.5h (2026-11-15T17:51:55Z .. 2026-11-18T10:23:00Z); coverage 10/194 = 5%; longest missed streak 30; other-trigger runs between 58
+    delay n=10 p50 13.1 p90 16.3 p99 16.7 max 16.8 min; gap between runs n=9 p50 453.1 p90 540.7 p99 611.9 max 619.8 min; queue p50 0.0 min
+  andrew222651/metac-bot .github/workflows/run_bot.yaml cron 7,27,47 * * * * (every 20 min) [complete]
+    runs 100 over 33.2h (2026-11-17T09:16:33Z .. 2026-11-18T18:29:33Z); coverage 100/101 = 99%; longest missed streak 1; other-trigger runs between 0
+    delay n=100 p50 3.4 p90 9.6 p99 13.7 max 16.4 min; gap between runs n=99 p50 20.4 p90 26.4 p99 33.7 max 45.8 min; queue p50 0.0 min
+  d0000d/horizon-forecasting .github/workflows/horizon_cloud.yaml cron */5 * * * * (every 5 min) [stopped]
+    runs 10 over 47.8h (2026-11-05T22:53:46Z .. 2026-11-07T22:40:09Z); coverage 10/575 = 2%; longest missed streak 86; other-trigger runs between 534
+    delay n=10 p50 1.9 p90 3.4 p99 3.7 max 3.8 min; gap between runs n=9 p50 286.8 p90 436.3 p99 436.4 max 436.4 min; queue p50 0.0 min
+  d0000d/horizon-forecasting .github/workflows/horizon_inventory.yaml cron */6 * * * * (every 6 min) [stopped]
+    runs 9 over 44.0h (2026-11-06T02:26:59Z .. 2026-11-07T22:24:42Z); coverage 9/441 = 2%; longest missed streak 72; other-trigger runs between 0
+    delay n=9 p50 3.0 p90 5.3 p99 5.3 max 5.3 min; gap between runs n=8 p50 335.1 p90 434.0 p99 435.1 max 435.2 min; queue p50 0.0 min
+  d0000d/horizon-forecasting .github/workflows/run_bot_on_tournament.yaml cron 7 * * * * (every 60 min) [skips]
+    runs 22 over 151.7h (2026-11-12T03:46:06Z .. 2026-11-18T11:30:48Z); coverage 22/153 = 14%; longest missed streak 10; other-trigger runs between 20
+    delay n=22 p50 34.2 p90 47.6 p99 56.8 max 58.4 min; gap between runs n=21 p50 460.1 p90 546.5 p99 615.6 max 630.4 min; queue p50 0.0 min
+  d0000d/horizon-forecasting .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 24 over 142.2h (2026-11-06T00:07:12Z .. 2026-11-11T22:18:19Z); coverage 24/427 = 6%; longest missed streak 30; other-trigger runs between 2
+    delay n=24 p50 8.7 p90 14.8 p99 18.5 max 19.3 min; gap between runs n=23 p50 380.9 p90 507.8 p99 591.2 max 611.1 min; queue p50 0.0 min
+  d0000d/horizon-forecasting .github/workflows/supervisor.yaml cron 47 5,11,17,23 * * * (every 360 min) [skips]
+    runs 28 over 242.4h (2026-11-08T12:12:25Z .. 2026-11-18T14:33:59Z); coverage 28/41 = 68%; longest missed streak 1; other-trigger runs between 7
+    delay n=28 p50 189.5 p90 291.1 p99 342.3 max 355.8 min; gap between runs n=27 p50 551.0 p90 719.7 p99 864.5 max 876.5 min; queue p50 0.0 min
+  Khanhduy203/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 7 over 47.2h (2026-11-16T19:53:35Z .. 2026-11-18T19:08:15Z); coverage 7/143 = 5%; longest missed streak 25; other-trigger runs between 0
+    delay n=7 p50 7.7 p90 17.3 p99 17.5 max 17.5 min; gap between runs n=6 p50 495.5 p90 521.5 p99 528.5 max 529.3 min; queue p50 0.0 min
+  buchinny/Resil .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 15 over 95.5h (2026-11-14T19:29:48Z .. 2026-11-18T18:58:01Z); coverage 15/287 = 5%; longest missed streak 30; other-trigger runs between 0
+    delay n=15 p50 12.1 p90 18.6 p99 19.1 max 19.2 min; gap between runs n=14 p50 438.0 p90 523.3 p99 611.0 max 623.4 min; queue p50 0.0 min
+  No-Stream/nostreambot-metaculus-bot .github/workflows/run_bot_on_mantic.yaml cron 5 * * * * | 15 * * * * | 25 * * * * (every 10 min) [skips]
+    runs 33 over 75.6h (2026-11-15T10:41:33Z .. 2026-11-18T14:19:35Z); coverage 23/228 = 10%; longest missed streak 26; other-trigger runs between 152
+    delay n=33 p50 17.4 p90 34.0 p99 35.9 max 36.4 min; gap between runs n=32 p50 21.3 p90 483.1 p99 553.6 max 555.4 min; queue p50 0.0 min
+  No-Stream/nostreambot-metaculus-bot .github/workflows/run_bot_on_metaculus_cup.yaml cron 13 * * * * | 33 * * * * | 53 * * * * (every 20 min) [skips]
+    runs 34 over 83.3h (2026-11-15T03:08:53Z .. 2026-11-18T14:29:30Z); coverage 28/251 = 11%; longest missed streak 29; other-trigger runs between 167
+    delay n=34 p50 10.6 p90 17.1 p99 19.6 max 19.9 min; gap between runs n=33 p50 27.2 p90 477.2 p99 578.4 max 593.8 min; queue p50 0.0 min
+  No-Stream/nostreambot-metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 3 * * * * | 23 * * * * | 43 * * * * (every 20 min) [skips]
+    runs 33 over 77.1h (2026-11-15T09:10:54Z .. 2026-11-18T14:15:20Z); coverage 31/232 = 13%; longest missed streak 26; other-trigger runs between 154
+    delay n=33 p50 8.0 p90 16.1 p99 19.4 max 19.9 min; gap between runs n=32 p50 57.3 p90 429.9 p99 517.9 max 526.8 min; queue p50 0.0 min
+  RuizhangZhou/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron */30 * * * * (every 30 min) [stopped]
+    runs 51 over 261.3h (2026-09-30T08:51:06Z .. 2026-10-11T06:09:18Z); coverage 51/524 = 10%; longest missed streak 18; other-trigger runs between 0
+    delay n=51 p50 16.6 p90 26.7 p99 29.0 max 29.4 min; gap between runs n=50 p50 302.0 p90 423.0 p99 501.4 max 557.6 min; queue p50 0.0 min
+  RuizhangZhou/metaculus-bot .github/workflows/run_market_pulse_cp_follower.yaml cron 20 17 * * * (every 1440 min) [complete]
+    runs 49 over 1154.4h (2026-09-30T21:27:06Z .. 2026-11-17T23:52:28Z); coverage 49/49 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=49 p50 255.5 p90 372.1 p99 447.9 max 451.6 min; gap between runs n=48 p50 1435.3 p90 1577.0 p99 1635.1 max 1649.8 min; queue p50 0.0 min
+  Inaxassan/metac-bot-template .github/workflows/Assay-bot.yml cron 23 * * * * (every 60 min) [stopped]
+    runs 31 over 197.6h (2026-11-03T17:55:50Z .. 2026-11-11T23:32:53Z); coverage 31/199 = 16%; longest missed streak 10; other-trigger runs between 0
+    delay n=31 p50 28.2 p90 52.8 p99 59.2 max 59.8 min; gap between runs n=30 p50 403.0 p90 531.8 p99 613.2 max 640.9 min; queue p50 0.0 min
+  Inaxassan/metac-bot-template .github/workflows/assay_ledger.yaml cron 7 * * * * (every 60 min) [stopped]
+    runs 30 over 192.4h (2026-11-03T20:55:31Z .. 2026-11-11T21:21:08Z); coverage 30/194 = 15%; longest missed streak 10; other-trigger runs between 0
+    delay n=30 p50 30.3 p90 53.9 p99 57.8 max 58.4 min; gap between runs n=29 p50 407.2 p90 495.1 p99 635.3 max 675.9 min; queue p50 0.0 min
+  Inaxassan/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 3,13,23,33,43,53 * * * * (every 10 min) [stopped]
+    runs 34 over 195.9h (2026-11-03T15:55:01Z .. 2026-11-11T19:51:46Z); coverage 34/1176 = 3%; longest missed streak 61; other-trigger runs between 1
+    delay n=34 p50 3.7 p90 7.8 p99 8.6 max 8.8 min; gap between runs n=33 p50 377.5 p90 485.6 p99 580.8 max 622.0 min; queue p50 0.0 min
+  DavilikOwO/metac-bot-template .github/workflows/learn.yaml cron 13 5 * * * (every 1440 min) [stopped]
+    runs 9 over 198.7h (2026-11-03T05:56:48Z .. 2026-11-11T12:39:55Z); coverage 9/9 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=9 p50 400.4 p90 497.2 p99 515.3 max 517.4 min; gap between runs n=8 p50 1443.3 p90 1645.0 p99 1829.9 max 1850.4 min; queue p50 0.0 min
+  DavilikOwO/metac-bot-template .github/workflows/nightly_lab.yaml cron 40 22 * * * (every 1440 min) [stopped]
+    runs 9 over 194.9h (2026-11-02T23:17:51Z .. 2026-11-11T02:14:09Z); coverage 9/9 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=9 p50 187.5 p90 244.8 p99 328.7 max 338.0 min; gap between runs n=8 p50 1442.8 p90 1592.1 p99 1615.9 max 1618.5 min; queue p50 0.0 min
+  DavilikOwO/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 23,53 * * * * (every 30 min) [stopped]
+    runs 81 over 221.1h (2026-11-02T18:38:07Z .. 2026-11-11T23:43:40Z); coverage 81/443 = 18%; longest missed streak 20; other-trigger runs between 3
+    delay n=81 p50 12.9 p90 24.1 p99 29.4 max 29.7 min; gap between runs n=80 p50 71.1 p90 432.6 p99 540.3 max 646.2 min; queue p50 0.0 min
+  sneeferson/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 30 over 193.4h (2026-11-10T15:15:27Z .. 2026-11-18T16:37:32Z); coverage 30/581 = 5%; longest missed streak 29; other-trigger runs between 2
+    delay n=30 p50 8.8 p90 16.1 p99 17.4 max 17.4 min; gap between runs n=29 p50 394.1 p90 508.3 p99 591.0 max 599.1 min; queue p50 0.0 min
+  after6labo/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 100 over 852.2h (2026-10-02T08:46:32Z .. 2026-11-06T20:58:52Z); coverage 100/2558 = 4%; longest missed streak 1048; other-trigger runs between 1548
+    delay n=100 p50 9.7 p90 18.5 p99 19.9 max 19.9 min; gap between runs n=99 p50 294.3 p90 446.7 p99 1025.2 max 20973.9 min; queue p50 0.0 min
+  leonidlouis/metac-bot .github/workflows/run_bot_on_tournament.yaml cron 17 * * * * (every 60 min) [stopped]
+    runs 34 over 198.0h (2026-10-27T15:54:11Z .. 2026-11-04T21:54:42Z); coverage 34/199 = 17%; longest missed streak 9; other-trigger runs between 0
+    delay n=34 p50 36.2 p90 46.0 p99 58.6 max 59.9 min; gap between runs n=33 p50 362.6 p90 474.6 p99 561.7 max 573.1 min; queue p50 0.0 min
+  vinit1009/metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 22 over 131.7h (2026-11-07T09:01:53Z .. 2026-11-12T20:46:21Z); coverage 22/396 = 6%; longest missed streak 30; other-trigger runs between 81
+    delay n=22 p50 13.3 p90 19.1 p99 19.5 max 19.6 min; gap between runs n=21 p50 395.7 p90 515.9 p99 602.4 max 622.6 min; queue p50 0.0 min
+  BTCCtrl/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 17 */3 * * * (every 180 min) [complete]
+    runs 74 over 219.1h (2026-11-08T18:51:20Z .. 2026-11-17T21:59:01Z); coverage 74/74 = 100%; longest missed streak 0; other-trigger runs between 0
+    delay n=74 p50 48.0 p90 69.6 p99 161.6 max 175.7 min; gap between runs n=73 p50 173.6 p90 206.2 p99 269.4 max 271.8 min; queue p50 0.0 min
+  BBOSIK/metac-bot-template .github/workflows/forecast_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 44 over 242.8h (2026-10-28T18:57:03Z .. 2026-11-07T21:43:36Z); coverage 44/729 = 6%; longest missed streak 30; other-trigger runs between 4
+    delay n=44 p50 10.8 p90 16.8 p99 19.1 max 19.3 min; gap between runs n=43 p50 340.1 p90 464.6 p99 565.2 max 620.0 min; queue p50 0.0 min
+  BBOSIK/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 4 over 13.0h (2026-10-27T20:01:53Z .. 2026-10-28T08:59:34Z); coverage 4/40 = 10%; longest missed streak 18; other-trigger runs between 0
+    delay n=4 p50 13.7 p90 15.5 p99 15.8 max 15.8 min; gap between runs n=3 p50 220.9 p90 351.3 p99 380.6 max 383.9 min; queue p50 0.0 min
+  bswyzzard/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 54 over 342.5h (2026-11-04T11:26:45Z .. 2026-11-18T17:57:53Z); coverage 54/1029 = 5%; longest missed streak 30; other-trigger runs between 0
+    delay n=54 p50 9.3 p90 18.1 p99 19.6 max 19.8 min; gap between runs n=53 p50 406.6 p90 514.8 p99 615.1 max 624.5 min; queue p50 0.0 min
+  Cocacolagambiter123/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 58 over 363.7h (2026-11-03T12:43:46Z .. 2026-11-18T16:23:11Z); coverage 58/1092 = 5%; longest missed streak 29; other-trigger runs between 0
+    delay n=58 p50 10.5 p90 17.8 p99 19.7 max 19.8 min; gap between runs n=57 p50 389.6 p90 501.4 p99 599.5 max 599.8 min; queue p50 0.0 min
+  QS1st/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 3,13,23,33,43,53 * * * * (every 10 min) [stopped]
+    runs 97 over 456.1h (2026-10-18T21:21:29Z .. 2026-11-06T21:29:09Z); coverage 97/2738 = 4%; longest missed streak 51; other-trigger runs between 1367
+    delay n=97 p50 5.5 p90 8.7 p99 9.7 max 9.8 min; gap between runs n=96 p50 292.7 p90 422.9 p99 509.0 max 523.5 min; queue p50 0.0 min
+  yy5652-hash/minibench-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 100 over 582.6h (2026-10-25T09:59:41Z .. 2026-11-18T16:38:35Z); coverage 100/1749 = 6%; longest missed streak 30; other-trigger runs between 2
+    delay n=100 p50 10.3 p90 17.9 p99 19.5 max 19.6 min; gap between runs n=99 p50 364.4 p90 488.4 p99 611.2 max 617.8 min; queue p50 0.0 min
+  OJ-IRO/ojiro-metaculus-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 3 over 10.6h (2026-11-01T22:41:57Z .. 2026-11-02T09:18:38Z); coverage 3/33 = 9%; longest missed streak 21; other-trigger runs between 0
+    delay n=3 p50 11.6 p90 14.3 p99 14.9 max 14.9 min; gap between runs n=2 p50 318.3 p90 423.1 p99 446.6 max 449.2 min; queue p50 0.0 min
+  Yuki-zik/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 65 over 405.6h (2026-11-01T21:16:09Z .. 2026-11-18T18:53:33Z); coverage 65/1218 = 5%; longest missed streak 30; other-trigger runs between 0
+    delay n=65 p50 9.1 p90 16.9 p99 19.3 max 19.4 min; gap between runs n=64 p50 393.8 p90 509.1 p99 602.5 max 614.4 min; queue p50 0.0 min
+  Spookensito/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 69 over 430.0h (2026-10-31T19:55:18Z .. 2026-11-18T17:58:13Z); coverage 69/1291 = 5%; longest missed streak 30; other-trigger runs between 0
+    delay n=69 p50 11.0 p90 18.4 p99 19.7 max 19.9 min; gap between runs n=68 p50 401.5 p90 513.5 p99 611.7 max 621.4 min; queue p50 0.0 min
+  Esran-S/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 76 over 457.1h (2026-10-29T22:51:57Z .. 2026-11-17T23:57:37Z); coverage 76/1372 = 6%; longest missed streak 29; other-trigger runs between 0
+    delay n=76 p50 8.9 p90 18.2 p99 19.4 max 19.6 min; gap between runs n=75 p50 375.6 p90 494.3 p99 599.5 max 599.8 min; queue p50 0.0 min
+  ichiburn/metac-bot-template .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [skips]
+    runs 78 over 476.5h (2026-10-29T21:27:09Z .. 2026-11-18T17:58:09Z); coverage 78/1430 = 5%; longest missed streak 30; other-trigger runs between 0
+    delay n=78 p50 9.4 p90 18.1 p99 19.6 max 19.7 min; gap between runs n=77 p50 388.4 p90 502.0 p99 616.4 max 622.0 min; queue p50 0.0 min
+  samsonllam/metac-prudentmatrix-bot .github/workflows/run_bot_on_tournament.yaml cron 7,27,47 * * * * (every 20 min) [stopped]
+    runs 96 over 470.2h (2026-10-20T05:25:01Z .. 2026-11-08T19:39:19Z); coverage 96/1412 = 7%; longest missed streak 30; other-trigger runs between 0
+    delay n=96 p50 11.3 p90 18.6 p99 19.9 max 19.9 min; gap between runs n=95 p50 293.4 p90 436.5 p99 493.6 max 617.6 min; queue p50 0.0 min
+
+skipped:
+  71 x not fetched: 3 API calls left (reserve 3)
+  34 x no schedule runs
+  17 x unsupported cron: '0 6 * * 1': day, month and weekday must be '*'
+  10 x unsupported cron: '0 0 */2 * *': day, month and weekday must be '*'
+  4 x latest schedule run is older than 14 days
+  2 x unsupported cron: '17 6 * * 1': day, month and weekday must be '*'
+  1 x unsupported cron: '17 13 * * 1': day, month and weekday must be '*'
+  1 x unsupported cron: '11 16 * * 1-5': day, month and weekday must be '*'
+  1 x unsupported cron: '11 8 * * 2': day, month and weekday must be '*'
+  1 x unsupported cron: '43 5 * * 1': day, month and weekday must be '*'
+  1 x unsupported cron: '0 3 1,15 * *': day, month and weekday must be '*'
+  1 x unsupported cron: '13 6 * * 1': day, month and weekday must be '*'
+
+note: delay = run created_at - nominal tick; the tick is the latest one at or before created_at under the cron lines in the workflow file at the run's head_sha. A delay longer than the interval would be attributed to a later tick, so delays are only reported as trustworthy for crons at least --unambiguous-min apart, and for workflows where (nearly) every tick has exactly one run.
+note: coverage = ticks with a run / ticks between the first and last observed run. Missed ticks are counted inside that span only.
+note: Only the latest 100 schedule runs per repository are fetched (one page, shared by all its scheduled workflows), so a workflow's span is whatever those runs cover.
+note: other_event_runs_between: run numbers count every run of a workflow, so jumps between consecutive schedule runs are runs from other triggers (workflow_dispatch, push, ...), e.g. an external pinger that dispatches the workflow.
+note: queue = run_started_at - created_at for first attempts.
+note: status: stopped = no schedule run for max(24 h, 2 intervals + 12 h) before now; complete = coverage >= 0.95; skips = otherwise.
+note: Sample: public forks of the template pushed in the last 60 days (GitHub disables schedules after 60 days without activity), newest push first, as far as the unauthenticated budget reached. Private repositories and accounts on paid plans are not represented.

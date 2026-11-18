@@ -25,6 +25,7 @@ def _load(name: str) -> ModuleType:
 
 
 qw = _load("question_windows")
+cd = _load("cron_delay")
 
 
 def _t(s: str) -> datetime:
@@ -110,3 +111,88 @@ def test_client_error_text_has_no_token(monkeypatch: pytest.MonkeyPatch) -> None
     with pytest.raises(qw.FetchError) as info:
         client.get("/posts/")
     assert "secret-token-value" not in str(info.value)
+
+
+# --- cron parser and delays ---------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("spec", "expected"),
+    [
+        ("*/15", {0, 15, 30, 45}),
+        ("7,27,47", {7, 27, 47}),
+        ("2-59/5", set(range(2, 60, 5))),
+        ("5/20", {5, 25, 45}),
+        ("1-3,10", {1, 2, 3, 10}),
+        ("0", {0}),
+    ],
+)
+def test_cron_minute_field(spec: str, expected: set[int]) -> None:
+    assert set(cd._field(spec, 0, 59)) == expected
+
+
+@pytest.mark.parametrize("expr", ["60 * * * *", "a * * * *", "0 0 * * 1", "0 0 */2 * *", "* *"])
+def test_cron_rejects_what_it_does_not_model(expr: str) -> None:
+    with pytest.raises(cd.UnsupportedCron):
+        cd.Cron.parse(expr)
+
+
+def test_schedule_union_and_intervals() -> None:
+    sched = cd.Schedule([cd.Cron.parse("0 */6 * * *"), cd.Cron.parse("30 3 * * *")])
+    assert sched.day == [0, 210, 360, 720, 1080]
+    assert sched.min_interval() == 150
+    assert cd.Schedule([cd.Cron.parse("7,27,47 * * * *")]).intervals() == [20] * 72
+
+
+def test_tick_at_or_before_wraps_to_the_previous_day() -> None:
+    sched = cd.Schedule([cd.Cron.parse("7 * * * *")])
+    assert sched.tick_at_or_before(_t("2026-01-02T00:05:00")) == _t("2026-01-01T23:07:00")
+    assert sched.tick_at_or_before(_t("2026-01-02T00:07:00")) == _t("2026-01-02T00:07:00")
+    ticks = sched.ticks_between(_t("2026-01-01T22:00:00"), _t("2026-01-02T01:07:00"))
+    assert [t.hour for t in ticks] == [22, 23, 0, 1]
+
+
+def test_analyse_runs_delays_missed_and_other_triggers() -> None:
+    sched = cd.Schedule([cd.Cron.parse("0 * * * *")])
+    runs = [
+        (_t("2026-01-01T00:03:00"), 1),
+        (_t("2026-01-01T01:10:00"), 2),
+        (_t("2026-01-01T03:02:00"), 5),
+    ]
+    stats = cd.analyse_runs(sched, runs)
+    assert stats["delays_min"] == [3.0, 10.0, 2.0]
+    assert (stats["expected_ticks"], stats["missed_ticks"], stats["ticks_with_a_run"]) == (4, 1, 3)
+    assert stats["coverage"] == 0.75
+    assert stats["missed_isolated"] == 1
+    assert stats["other_event_runs_between"] == 2
+    assert stats["gaps_min"] == [67.0, 112.0]
+
+
+def test_analyse_runs_attributes_a_long_delay_to_the_later_tick() -> None:
+    sched = cd.Schedule([cd.Cron.parse("*/20 * * * *")])
+    stats = cd.analyse_runs(sched, [(_t("2026-01-01T00:05:00"), 1), (_t("2026-01-01T00:50:00"), 2)])
+    # 00:50 is 50 min after 00:00 but is read as 10 min after 00:40.
+    assert stats["delays_min"] == [5.0, 10.0]
+    assert stats["missed_ticks"] == 1
+    assert stats["longest_missed_streak"] == 1
+
+
+def test_analyse_runs_separates_long_gaps() -> None:
+    sched = cd.Schedule([cd.Cron.parse("0 * * * *")])
+    runs = [(_t("2026-01-01T00:01:00"), 1), (_t("2026-01-01T08:01:00"), 2)]
+    stats = cd.analyse_runs(sched, runs, long_gap=6)
+    assert stats["missed_ticks"] == 7
+    assert stats["missed_in_long_gaps"] == 7
+    assert stats["missed_isolated"] == 0
+
+
+def test_parse_workflow_crons() -> None:
+    text = """
+on:
+  schedule:
+    - cron: "7,27,47 * * * *" # every 20 min
+    #- cron: '0 * * * *'
+    - cron: '30  3 * * *'
+    - cron: 15 4 * * *   # unquoted
+"""
+    assert cd.parse_workflow_crons(text) == ["7,27,47 * * * *", "30 3 * * *", "15 4 * * *"]
