@@ -77,6 +77,8 @@ jobs:
       AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_RESEARCH_MODELS }}
       AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
       AUGUR_MAX_COST_PER_RUN: ${{ vars.AUGUR_MAX_COST_PER_RUN || '1.00' }}
+      # Stop starting questions well inside the job's 40-minute timeout.
+      AUGUR_RUN_DEADLINE_MINUTES: '25'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v10.3.0
@@ -104,7 +106,8 @@ jobs:
               ''|*[!a-z0-9-]*) echo "refusing tournament name '$t'" | tee -a run.txt; status=1; continue ;;
             esac
             echo "== augur forecast --tournament $t ${args[*]}" | tee -a run.txt
-            uv run augur forecast --tournament "$t" "${args[@]}" 2>&1 | tee -a run.txt || status=1
+            uv run --no-sync augur forecast --tournament "$t" "${args[@]}" \
+              --coverage "coverage-$t.json" 2>&1 | tee -a run.txt || status=1
           done
           exit "$status"
       - name: Push the ledger export to the ledger branch

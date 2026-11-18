@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Export a run's ledger to JSONL and commit it, beside the run's printed output,
-# to the `ledger` branch: ledger/<UTC date>/<UTC timestamp>-<run id>.{jsonl,txt}.
+# to the `ledger` branch: ledger/<UTC date>/<UTC timestamp>-<run id>.{jsonl,txt}, plus
+# each tournament's coverage report (<...>.coverage-<tournament>.json).
 # One new file per run, so concurrent pushes never touch the same content.
 #
 #   scripts/push_ledger.sh [LEDGER.sqlite] [OUTPUT.txt]
@@ -43,6 +44,9 @@ fi
 mkdir -p "$tree/ledger/$day"
 uv run --no-sync python -m augur.export "$db" "$tree/$rel.jsonl"
 if [ -f "$txt" ]; then cp "$txt" "$tree/$rel.txt"; fi
+for coverage in coverage-*.json; do
+  if [ -f "$coverage" ]; then cp "$coverage" "$tree/$rel.${coverage%.json}.json"; fi
+done
 git -C "$tree" add ledger
 "${git_bot[@]}" commit --quiet -m "Add ledger export for run $name"
 
