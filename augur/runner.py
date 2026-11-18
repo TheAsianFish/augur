@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, TextIO
@@ -23,6 +23,8 @@ from augur.config import Settings
 from augur.errors import AugurError, BelowFloorError, MetaculusError, SubmitFloorError
 from augur.leakage import RunMode
 from augur.ledger import Ledger
+from augur.llm.base import Provider
+from augur.llm.probe import ProbeResult, new_session_id, probe_routes, record_probes
 from augur.llm.registry import FRONTIER_TIER_NAME, PRACTICE_TOURNAMENTS, in_frontier_tier
 from augur.llm.router import Router
 from augur.log import get_logger
@@ -122,11 +124,14 @@ class ForecastRun:
         searchers: Sequence[Searcher],
         client: MetaculusClient | None,
         out: TextIO,
+        probe_providers: Mapping[str, Provider] | None = None,
     ) -> None:
         self._settings = settings
         self._clock = clock
         self._ledger = ledger
         self._router = router
+        # Providers without retries for the opening probe; ``None`` skips it.
+        self._probe_providers = probe_providers
         self._scored = False
         self._searchers = list(searchers)
         self._client = client
@@ -182,6 +187,15 @@ class ForecastRun:
         calls = CallRecorder(self._router, self._ledger, self._clock, budget)
         if scored:
             self._router.set_floor("forecast", FRONTIER_TIER_NAME, in_frontier_tier)
+        if self._probe_providers is not None:
+            budget.charge_run(await self._probe(run_id))
+        no_model = ""
+        if not self._router.usable("forecast"):
+            no_model = (
+                f"no {FRONTIER_TIER_NAME} model answered the probe, so nothing is forecast"
+                if scored
+                else "no forecasting model answered the probe"
+            )
 
         candidates = await self._candidates(slug, samples if use_samples else None, use_samples)
         reports: list[QuestionReport] = []
@@ -201,8 +215,8 @@ class ForecastRun:
 
         stop_reason = ""
         for q, post in chosen:
-            if stop_reason:
-                reports.append(QuestionReport(q, "skipped", stop_reason))
+            if stop_reason or no_model:
+                reports.append(QuestionReport(q, "skipped", stop_reason or no_model))
                 continue
             structlog.contextvars.bind_contextvars(question_id=q.question_id)
             try:
@@ -504,6 +518,23 @@ class ForecastRun:
             return []
         return sorted({m.route.key for m in report.members if not in_frontier_tier(m.route)})
 
+    async def _probe(self, run_id: str) -> float:
+        """Probe every route once; disable the ones that do not answer. Returns the cost."""
+        assert self._probe_providers is not None
+        routes = self._router.routes()
+        roles = {r: list(self._router.roles_of(r)) for r in routes}
+        results = await probe_routes(routes, roles, self._probe_providers, self._router.catalog)
+        record_probes(self._ledger, results, new_session_id(), run_id)
+        for r in results:
+            if r.answers:
+                continue
+            if r.outcome == "rate_limited":
+                self._router.cool(r.route, r.retry_after or 60.0, "probe: rate_limited")
+            else:
+                self._router.disable(r.route, f"probe: {r.outcome}", r.outcome)
+        self._print(format_probe(results))
+        return sum(r.cost_usd for r in results)
+
     def _live_client(self) -> MetaculusClient:
         if self._client is None:
             raise AugurError("no Metaculus client; set METACULUS_TOKEN for live listing")
@@ -511,3 +542,21 @@ class ForecastRun:
 
     def _print(self, text: str) -> None:
         print(text, file=self._out, flush=True)
+
+
+def format_probe(results: Sequence[ProbeResult]) -> str:
+    """The probe as a short table: one line per route."""
+    lines = ["probe:"]
+    for r in results:
+        price = (
+            f"${r.price.usd_per_million_input:g}/${r.price.usd_per_million_output:g} per M"
+            if r.price
+            else "unpriced"
+        )
+        latency = f"{r.latency_ms} ms" if r.latency_ms is not None else "-"
+        tier = "frontier" if r.in_tier else "below tier"
+        lines.append(
+            f"  {r.route.key:<48} {r.outcome:<13} {latency:>8}  {price:<22} "
+            f"listed {r.listed_on or '?'}  {tier}  [{'+'.join(r.roles)}]"
+        )
+    return "\n".join(lines)

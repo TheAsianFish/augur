@@ -27,6 +27,7 @@ from augur.ledger import Ledger
 from augur.llm.base import LlmRequest, LlmResponse, Message
 from augur.llm.catalog import Catalog
 from augur.llm.endpoints import PRESETS, Route
+from augur.llm.probe import measure_limit, record_limit
 from augur.llm.router import Router
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
@@ -378,10 +379,87 @@ def test_the_ledger_scan_flags_a_submission_below_the_floor(tmp_path: Path) -> N
 # The opening probe
 
 
+async def test_the_probe_disables_a_dead_route_before_any_question(tmp_path: Path) -> None:
+    dead = Route(endpoint=OR, model="nvidia/nemotron-3.5-lightning:free")
+    r, p = router([dead, GEMMA], research=[GEMMA])
+    p.failures[dead.model] = ModelUnavailableError("404 No endpoints found", status_code=404)
+    probe_provider = RoutedProvider(failures=dict(p.failures))
+    out = io.StringIO()
+    report, ledger = await _run(
+        tmp_path, client=None, router=r, probe_providers={"openrouter": probe_provider}, out=out
+    )
+    assert report.count("forecast") >= 1
+    assert dead.model not in p.models_called(), "the run never waited on the dead route"
+    probes = ledger.connection.execute(
+        "SELECT route, outcome, in_tier, roles, run_id FROM model_probes ORDER BY route"
+    ).fetchall()
+    assert probes == [
+        (GEMMA.key, "answered", 0, "research,forecast", report.run_id),
+        (dead.key, "unavailable", 0, "forecast", report.run_id),
+    ]
+    assert "probe:" in out.getvalue()
+    assert ledger.count("model_switches") == 0
+    ledger.close()
+
+
+async def test_a_scored_run_skips_everything_when_no_frontier_model_answers_the_probe(
+    tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
+) -> None:
+    r, p = router([GPT, GEMMA], research=[GEMMA])
+    probe_provider = RoutedProvider(failures={GPT.model: OutOfCreditError("402", status_code=402)})
+    report, ledger = await _run(
+        tmp_path,
+        client=_client(http),
+        router=r,
+        probe_providers={"openrouter": probe_provider},
+        submit=True,
+        tournament="minibench",
+    )
+    [q] = [x for x in report.reports if x.question.question_id == 501]
+    assert q.status == "skipped"
+    assert "no frontier-2026-11 model answered the probe" in q.reason
+    assert p.requests == [], "no question cost a model call"
+    assert fake.forecasts == []
+    ledger.close()
+
+
 # Re-forecasting in the practice area
 
 
 # Measuring a free tier's limit
+
+
+async def test_measure_limit_stops_at_the_first_refusal(tmp_path: Path) -> None:
+    class Limited(RoutedProvider):
+        async def complete(self, request: LlmRequest) -> LlmResponse:
+            self.requests.append(request)
+            if len(self.requests) > 3:
+                raise RateLimitedError(
+                    "429 free-models-per-min",
+                    status_code=429,
+                    retry_after=41.0,
+                    limit_headers={"x-ratelimit-limit": "20"},
+                )
+            return LlmResponse(text="ok", model=request.model, input_tokens=9, output_tokens=1)
+
+    provider = Limited()
+    result = await measure_limit(GEMMA, provider, CATALOG, cap=10)
+    assert (result.sent, result.ok, result.first_refusal_at) == (4, 3, 4)
+    assert (result.refusal_status, result.refusal_kind) == (429, "rate_limited")
+    assert result.refusal_retry_after == 41.0
+    assert result.limit_headers == {"x-ratelimit-limit": "20"}
+    assert result.input_tokens == 27
+    led = Ledger.open(tmp_path / "l.sqlite", FixedClock(T0))
+    record_limit(led, result, "probe_x", T0)
+    assert led.count("limit_tests") == 1
+    led.close()
+
+    with pytest.raises(ProviderError, match="not free"):
+        await measure_limit(GPT, provider, CATALOG, cap=10)
+    with pytest.raises(ProviderError, match="local"):
+        await measure_limit(
+            Route(endpoint=PRESETS["ollama"], model="qwen2.5:7b"), provider, CATALOG, cap=10
+        )
 
 
 async def test_an_empty_answer_moves_this_call_on_but_keeps_the_route(tmp_path: Path) -> None:

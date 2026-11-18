@@ -76,6 +76,7 @@ async def _run(
     route: Route = LOCAL,
     router: Router | None = None,
     catalog: Catalog | None = None,
+    probe_providers: dict[str, Provider] | None = None,
     submit: bool = False,
     samples: Path | None = None,
     max_questions: int = 10,
@@ -99,6 +100,7 @@ async def _run(
         searchers=[searcher or FixedSearcher()],
         client=client,
         out=out or io.StringIO(),
+        probe_providers=probe_providers,
     )
     slug = tournament or ("bot-testing-area" if submit else "minibench")
     report = await run.run(slug, submit=submit, samples=samples, max_questions=max_questions)
