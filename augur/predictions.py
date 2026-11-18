@@ -19,6 +19,7 @@ M7 compares these rules against the alternatives; until then they are fixed.
 
 from __future__ import annotations
 
+import math
 import statistics
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -145,13 +146,23 @@ def summary(q: Question, prediction: Prediction) -> str:
         return f"{prediction.probability * 100:.0f}%"
     if isinstance(prediction, ChoicePrediction):
         return ", ".join(f"{o} {p * 100:.0f}%" for o, p in prediction.probabilities.items())
-    unit = f" {q.unit}" if q.unit else ""
+    unit = "" if not q.unit else q.unit if q.unit == "%" else f" {q.unit}"
     by_level = dict(prediction.percentiles)
     scaling = _scaling(q)
     median = quantile(list(prediction.cdf), scaling, 0.5)
     low = by_level.get(0.1, quantile(list(prediction.cdf), scaling, 0.1))
     high = by_level.get(0.9, quantile(list(prediction.cdf), scaling, 0.9))
+    if q.type == "discrete":
+        median, low, high = (_outcome(scaling, x) for x in (median, low, high))
     return f"median {_number(median)}{unit} (80% between {_number(low)} and {_number(high)})"
+
+
+def _outcome(scaling: Scaling, x: float) -> float:
+    """The discrete outcome whose bucket holds ``x`` (each bucket is centred on one)."""
+    n = scaling.inbound_outcome_count
+    step = (scaling.range_max - scaling.range_min) / n
+    index = min(n - 1, max(0, math.floor((x - scaling.range_min) / step)))
+    return scaling.range_min + step * (index + 0.5)
 
 
 def _binary(p: Prediction) -> BinaryPrediction:

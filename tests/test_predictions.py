@@ -165,3 +165,14 @@ def test_check_refuses_what_the_server_would() -> None:
     assert check(mc, bad)
     binary = question_from_post(load_fixture("post_43327_binary_detail.json"))
     assert check(binary, BinaryPrediction(0.0001))
+
+
+def test_a_discrete_summary_names_outcomes_not_points_inside_buckets() -> None:
+    q, _ = _q(DISCRETE_DETAIL)  # 0 to 15 officials, buckets centred on each count
+    lines = "\n".join(
+        f"Percentile {lv}: {v}"
+        for lv, v in zip((10, 20, 40, 60, 80, 90), (0, 0, 0, 0, 2, 3), strict=True)
+    )
+    text = summary(q, parse_prediction(q, lines))
+    assert text.startswith("median 0 Officials (80% between 0 and ")
+    assert "-0." not in text
