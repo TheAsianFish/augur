@@ -77,6 +77,14 @@ def _check_probability(probability: float) -> float:
     return value
 
 
+def _payload_kind(body: dict[str, Any]) -> str:
+    if body.get("probability_yes") is not None:
+        return "binary"
+    if body.get("probability_yes_per_category") is not None:
+        return "multiple_choice"
+    return "continuous"
+
+
 class MetaculusClient:
     def __init__(
         self,
@@ -203,13 +211,19 @@ class MetaculusClient:
     # Writes.
 
     async def submit_binary(self, question_id: int, probability: float) -> SubmitResult:
-        payload = self.binary_payload(question_id, probability)
+        return await self.submit_forecast(self.binary_payload(question_id, probability))
+
+    async def submit_forecast(self, payload: list[dict[str, Any]]) -> SubmitResult:
+        """Post a forecast body of any type (see :func:`augur.predictions.forecast_payload`)."""
+        if len(payload) != 1 or not isinstance(payload[0].get("question"), int):
+            raise ValueError("a forecast payload is one object naming its question id")
+        question_id = payload[0]["question"]
         self._require_token()
         response = await self._request("POST", "/questions/forecast/", json=payload)
         _log.info(
             "metaculus.forecast_submitted",
             question_id=question_id,
-            probability=payload[0]["probability_yes"],
+            kind=_payload_kind(payload[0]),
             status_code=response.status_code,
         )
         return SubmitResult(

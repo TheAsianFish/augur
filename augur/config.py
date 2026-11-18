@@ -37,6 +37,13 @@ class Settings(BaseModel):
     max_cost_per_question: float = Field(default=0.50, ge=0)
     max_cost_per_run: float = Field(default=5.00, ge=0)
     forecasters: int = Field(default=5, ge=1, le=25)
+    # Deadlines. A question stops being worked on this long before it closes;
+    # one with less than ``min_forecast_minutes`` left before that is missed,
+    # not started; and the whole run stops starting questions after
+    # ``run_deadline_minutes`` (the scheduled job's timeout is above it).
+    close_margin_minutes: float = Field(default=5.0, ge=0)
+    min_forecast_minutes: float = Field(default=4.0, gt=0)
+    run_deadline_minutes: float = Field(default=30.0, gt=0)
     log_level: str = "INFO"
 
     @classmethod
@@ -78,6 +85,9 @@ class Settings(BaseModel):
             "max_cost_per_question": get("AUGUR_MAX_COST_PER_QUESTION"),
             "max_cost_per_run": get("AUGUR_MAX_COST_PER_RUN"),
             "forecasters": get("AUGUR_FORECASTERS"),
+            "close_margin_minutes": get("AUGUR_CLOSE_MARGIN_MINUTES"),
+            "min_forecast_minutes": get("AUGUR_MIN_FORECAST_MINUTES"),
+            "run_deadline_minutes": get("AUGUR_RUN_DEADLINE_MINUTES"),
             "log_level": get("AUGUR_LOG_LEVEL"),
         }
         try:

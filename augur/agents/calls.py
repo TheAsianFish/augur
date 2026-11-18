@@ -11,6 +11,7 @@ rather than answered by a weaker model.
 
 from __future__ import annotations
 
+import asyncio
 import time
 from dataclasses import dataclass, field
 
@@ -239,19 +240,26 @@ class CallRecorder:
         t0 = time.perf_counter()
         response: LlmResponse | None = None
         failure: ProviderError | None = None
+        cancelled = False
         try:
             response = await provider.complete(request)
         except ProviderError as exc:
             failure = exc
+        except asyncio.CancelledError:
+            # Stopped at a question's deadline. The host may still bill the
+            # request, so it is charged the worst case and ledgered, then the
+            # cancellation goes on.
+            cancelled = True
+            failure = ProviderError("cancelled at the question's deadline; charged the worst case")
         finally:
             if response is None:
                 # An empty answer was generated and billed (a reasoning model can
                 # spend all of max_tokens thinking), so it is charged the worst
                 # case; a refused or failed request cost nothing.
-                spent = reserved if isinstance(failure, EmptyAnswerError) else 0.0
-                self.budget.settle(ctx.question_id, reserved, spent)
+                billed = cancelled or isinstance(failure, EmptyAnswerError)
+                self.budget.settle(ctx.question_id, reserved, reserved if billed else 0.0)
         latency_ms = int((time.perf_counter() - t0) * 1000)
-        cost = reserved if isinstance(failure, EmptyAnswerError) else 0.0
+        cost = reserved if cancelled or isinstance(failure, EmptyAnswerError) else 0.0
         if response is not None:
             if response.cost_usd is not None:
                 cost = response.cost_usd
@@ -285,6 +293,8 @@ class CallRecorder:
             started_at=started,
             source_ids=source_ids,
         )
+        if cancelled:
+            raise asyncio.CancelledError
         if response is None:
             raise failure or ProviderError("provider failed")
         return CallResult(response, call_id, route)

@@ -25,6 +25,11 @@ from augur.research.source import Searcher, Source
 
 log = get_logger(__name__)
 
+# Reasoning models spend part of these before answering: a free one emptied a
+# 200-token plan on thinking (M2).
+PLAN_MAX_TOKENS = 600
+BRIEF_MAX_TOKENS = 1000
+
 PLAN_SYSTEM = (
     "You plan web research for a forecaster. Reply with a JSON array of at most "
     "{n} short search queries (2 to 6 words each) for an encyclopedia and a news "
@@ -161,7 +166,7 @@ class Researcher:
             ),
             temperature=0.0,
             seed=0,
-            max_tokens=600,  # a reasoning model emptied 200 on thinking (M2)
+            max_tokens=PLAN_MAX_TOKENS,
         )
         ctx = CallContext(run_id=run_id, question_id=q.question_id, role="planner")
         queries: list[str] = []
@@ -222,7 +227,7 @@ class Researcher:
             ),
             temperature=0.0,
             seed=0,
-            max_tokens=1000,
+            max_tokens=BRIEF_MAX_TOKENS,
         )
         ctx = CallContext(run_id=run_id, question_id=q.question_id, role="researcher")
         try:

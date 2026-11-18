@@ -11,6 +11,8 @@ from datetime import datetime
 
 from augur.agents.forecaster import MemberForecast
 from augur.agents.researcher import ResearchResult
+from augur.predictions import BinaryPrediction, Prediction, summary
+from augur.questions import Question
 from augur.research.source import DateEvidence, Source
 
 MAX_COMMENT_CHARS = 9000
@@ -33,10 +35,6 @@ def _clip(text: str, limit: int) -> str:
     return cut + " …"
 
 
-def _pct(p: float) -> str:
-    return f"{p * 100:.0f}%"
-
-
 def _source_line(label: str, s: Source) -> str:
     when = (
         f"{_EVIDENCE[s.date_evidence]} {s.published_at:%Y-%m-%d}" if s.published_at else "undated"
@@ -44,9 +42,18 @@ def _source_line(label: str, s: Source) -> str:
     return f"- [{label}] [{s.title}]({s.url}) ({s.searcher}, {when})"
 
 
+_HOW = {
+    "binary": "the median of",
+    "multiple_choice": "the per-option median, normalised, of",
+    "numeric": "the average of the CDFs of",
+    "discrete": "the average of the CDFs of",
+}
+
+
 def render_comment(
     *,
-    probability: float,
+    q: Question,
+    prediction: Prediction,
     members: Sequence[MemberForecast],
     research: ResearchResult,
     cutoff: datetime,
@@ -54,12 +61,16 @@ def render_comment(
 ) -> str:
     """Markdown for the private comment. Pure: the same inputs give the same text."""
     ordered = sorted(members, key=lambda m: m.member)
-    spread = ", ".join(_pct(m.probability) for m in ordered)
     models = sorted({m.route.model for m in ordered})
     model = " and ".join(models) if models else "no model"
+    how = _HOW.get(q.type, "combined from")
+    if isinstance(prediction, BinaryPrediction):
+        spread = " (" + ", ".join(summary(q, m.prediction) for m in ordered) + ")"
+    else:
+        spread = ""
     lines = [
-        f"**Forecast: {_pct(probability)}**, the median of {len(ordered)} independent "
-        f"forecasts ({spread}) by {model}"
+        f"**Forecast: {summary(q, prediction)}**, {how} {len(ordered)} independent "
+        f"forecasts{spread} by {model}"
         + (
             f"; {requested - len(ordered)} of {requested} draws failed."
             if len(ordered) < requested
@@ -75,7 +86,8 @@ def render_comment(
     ]
     for m in ordered:
         lines.append(
-            f"{m.member + 1}. ({_pct(m.probability)}) {_clip(m.reasoning, MAX_REASONING_CHARS)}"
+            f"{m.member + 1}. ({summary(q, m.prediction)}) "
+            f"{_clip(m.reasoning, MAX_REASONING_CHARS)}"
         )
     if research.sources:
         lines += ["", "**Sources**", ""]

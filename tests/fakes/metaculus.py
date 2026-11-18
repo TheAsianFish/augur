@@ -22,6 +22,12 @@ FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "metaculus"
 BINARY_DETAIL = "post_43327_binary_detail.json"
 MINIBENCH_NUMERIC = "post_46616_minibench_numeric_list.json"
 BOT_TESTING_NUMERIC = "post_46224_bot_testing_numeric_list.json"
+MC_DETAIL = "post_46223_bot_testing_multiple_choice_detail.json"
+NUMERIC_DETAIL = "post_43323_bot_testing_numeric_detail.json"
+DISCRETE_DETAIL = "post_43321_bot_testing_discrete_detail.json"
+DISCRETE_STEP_DETAIL = "post_45517_bot_testing_discrete_step_detail.json"
+MINIBENCH_MC_DETAIL = "post_46614_minibench_multiple_choice_detail.json"
+MINIBENCH_DISCRETE_DETAIL = "post_46618_minibench_discrete_detail.json"
 
 FAKE_TOKEN = "fake-metaculus-token-0123456789"
 _DETAIL = re.compile(r"^/posts/(\d+)/$")
@@ -59,8 +65,56 @@ def group_post(post_id: int) -> dict[str, Any]:
     return post
 
 
-def _error(status: int, detail: str | dict[str, Any]) -> httpx.Response:
-    body = {"detail": detail} if isinstance(detail, str) else detail
+def _continuous_errors(cdf: Any, q: dict[str, Any]) -> str:
+    """Metaculus's ``continuous_validation``, transliterated from the server
+    (questions/serializers/common.py, read 2026-11-18) without numpy, kept
+    independent of ``augur.distributions`` so the fake is a second opinion."""
+    if not isinstance(cdf, list) or not all(
+        isinstance(v, int | float) and not isinstance(v, bool) for v in cdf
+    ):
+        return "continuous_cdf is required for continuous questions"
+    values = [round(float(v), 10) for v in cdf]
+    steps = [round(values[i + 1] - values[i], 9) for i in range(len(values) - 1)]
+    scaling = q.get("scaling") or {}
+    n = scaling.get("inbound_outcome_count") or q.get("inbound_outcome_count") or 200
+    errors = ""
+    if len(values) != n + 1:
+        errors += f"continuous_cdf must have {n + 1} values.\n"
+    min_diff = round(0.01 / n, 9)
+    if not all(s >= min_diff for s in steps):
+        errors += f"continuous_cdf must be increasing by at least {min_diff} at every step.\n"
+    max_diff = 0.2 * 200 / n
+    if not all(s <= max_diff for s in steps):
+        errors += f"continuous_cdf must be increasing by no more than {max_diff} at every step.\n"
+    open_lower = scaling.get("open_lower_bound", q.get("open_lower_bound"))
+    open_upper = scaling.get("open_upper_bound", q.get("open_upper_bound"))
+    if values and open_lower and not values[0] >= 0.001:
+        errors += "continuous_cdf at lower bound must be at least 0.001.\n"
+    if values and not open_lower and values[0] != 0.0:
+        errors += "continuous_cdf[0] must be 0.0 for questions with a closed lower bound.\n"
+    if values and open_upper and not values[-1] <= 0.999:
+        errors += "continuous_cdf at upper bound must be at most 0.999.\n"
+    if values and not open_upper and values[-1] != 1.0:
+        errors += "continuous_cdf at upper bound must be 1.00.\n"
+    return "CDF Invalid:\n" + errors if errors else ""
+
+
+def _choice_errors(per_category: Any, q: dict[str, Any]) -> str:
+    options = q.get("options") or []
+    if not isinstance(per_category, dict) or set(per_category) != set(options):
+        return f"Forecast must reflect current options: {options}"
+    values = list(per_category.values())
+    for v in values:
+        if isinstance(v, bool) or not isinstance(v, int | float) or not 0.001 <= v <= 0.999:
+            return "Probabilities for current options must be between 0.001 and 0.999"
+    total = float(sum(values))
+    if abs(total - 1.0) > 1e-8 + 1e-5:  # numpy.isclose defaults
+        return "Forecast values must sum to 1.0."
+    return ""
+
+
+def _error(status: int, detail: str | dict[str, Any] | list[str]) -> httpx.Response:
+    body: Any = {"detail": detail} if isinstance(detail, str) else detail
     return httpx.Response(status, json=body)
 
 
@@ -212,7 +266,7 @@ class FakeMetaculus:
             return _error(400, "body is not JSON")
         if not isinstance(body, list) or not body:
             return _error(400, "Expected a list of forecasts.")
-        accepted: list[tuple[dict[str, Any], float]] = []
+        accepted: list[tuple[dict[str, Any], list[float]]] = []
         for item in body:
             if not isinstance(item, dict):
                 return _error(400, "Each forecast must be an object.")
@@ -220,17 +274,40 @@ class FakeMetaculus:
             q = self._question(qid) if isinstance(qid, int) else None
             if q is None:
                 return _error(404, {"question": [f"Question {qid!r} does not exist."]})
-            if q.get("type") != "binary":
-                return _error(400, {"question": ["Question is not binary."]})
             if q.get("status") != "open":
                 return _error(400, {"question": ["Question is not open for forecasting."]})
+            qtype = q.get("type")
             p = item.get("probability_yes")
-            if isinstance(p, bool) or not isinstance(p, int | float) or not 0.001 <= p <= 0.999:
-                return _error(400, {"probability_yes": ["Must be between 0.001 and 0.999."]})
-            accepted.append((q, float(p)))
+            per_category = item.get("probability_yes_per_category")
+            cdf = item.get("continuous_cdf")
+            if qtype == "binary":
+                if per_category or cdf:
+                    return _error(400, ["Only probability_yes should be provided for binary"])
+                if isinstance(p, bool) or not isinstance(p, int | float) or not 0.001 <= p <= 0.999:
+                    return _error(400, {"probability_yes": ["Must be between 0.001 and 0.999."]})
+                accepted.append((q, [1 - float(p), float(p)]))
+            elif qtype == "multiple_choice":
+                if p or cdf:
+                    return _error(400, ["Only probability_yes_per_category should be provided"])
+                problem = _choice_errors(per_category, q)
+                if problem:
+                    return _error(400, [problem])
+                options = q.get("options") or []
+                assert isinstance(per_category, dict)
+                accepted.append((q, [float(per_category[o]) for o in options]))
+            elif qtype in ("numeric", "discrete", "date"):
+                if p or per_category:
+                    return _error(400, ["Only continuous_cdf should be provided"])
+                problem = _continuous_errors(cdf, q)
+                if problem:
+                    return _error(400, [problem])
+                assert isinstance(cdf, list)
+                accepted.append((q, [float(v) for v in cdf]))
+            else:
+                return _error(400, {"question": [f"Cannot forecast a {qtype} question."]})
         now = self.clock.now().timestamp()  # the live API sends epoch seconds here
-        for (q, p), item in zip(accepted, body, strict=True):
-            latest = {"start_time": now, "end_time": None, "forecast_values": [1 - p, p]}
+        for (q, values), item in zip(accepted, body, strict=True):
+            latest = {"start_time": now, "end_time": None, "forecast_values": values}
             mine = q.setdefault("my_forecasts", {"history": [], "latest": None, "score_data": {}})
             previous = mine.get("latest")
             if isinstance(previous, dict):

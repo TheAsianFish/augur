@@ -28,7 +28,16 @@ from augur.runner import SAMPLES_DIR, ForecastRun, RunReport
 
 from .conftest import T0
 from .fakes.llm import ScriptedProvider
-from .fakes.metaculus import FAKE_TOKEN, MINIBENCH_NUMERIC, FakeMetaculus, binary_post
+from .fakes.metaculus import (
+    DISCRETE_DETAIL,
+    DISCRETE_STEP_DETAIL,
+    FAKE_TOKEN,
+    MC_DETAIL,
+    MINIBENCH_NUMERIC,
+    NUMERIC_DETAIL,
+    FakeMetaculus,
+    binary_post,
+)
 from .fakes.search import FixedSearcher
 from .helpers import binary_question, catalog_of, free_catalog
 
@@ -170,7 +179,7 @@ async def test_live_run_submits_once_with_a_private_comment_and_skips_next_time(
     assert [r.question.question_id for r in forecast] == [501]
     assert forecast[0].submitted
     reasons = {r.question.question_id: r.reason for r in report.reports if r.status == "skipped"}
-    assert "not forecast yet" in reasons[46876]
+    assert reasons[46876] == "not open now"
     assert len(fake.forecasts) == 1
     sent = fake.forecasts[0]
     assert sent == {
@@ -457,3 +466,152 @@ async def test_the_floor_admits_a_frontier_model_and_the_practice_area(
     small, ledger2 = await _run(tmp_path / "b", client=_client(http), submit=True)
     assert [r.question.question_id for r in small.reports if r.status == "forecast"] == [521]
     ledger2.close()
+
+
+@pytest.fixture
+def every_type() -> FakeMetaculus:
+    """The bot-testing-area as it was on 2026-11-18: one question of each type."""
+    server = FakeMetaculus(clock=FixedClock(T0))
+    server.add_post(binary_post(500, 501, title="Will the fake event happen?"), "bot-testing-area")
+    for name in (MC_DETAIL, NUMERIC_DETAIL, DISCRETE_DETAIL, DISCRETE_STEP_DETAIL):
+        server.add_fixture(name, "bot-testing-area")
+    return server
+
+
+async def test_every_question_type_is_accepted_and_a_second_run_forecasts_none_twice(
+    tmp_path: Path, every_type: FakeMetaculus
+) -> None:
+    async with every_type.client() as http:
+        out = io.StringIO()
+        report, ledger = await _run(tmp_path, client=_client(http), submit=True, out=out)
+        assert {r.question.type: r.status for r in report.reports} == {
+            "binary": "forecast",
+            "multiple_choice": "forecast",
+            "numeric": "forecast",
+            "discrete": "forecast",
+        }
+        assert all(r.submitted for r in report.reports)
+        # The fake validates each body as Metaculus does; all five were taken.
+        assert len(every_type.forecasts) == 5
+        assert len(every_type.comments) == 5
+        kinds = {
+            q["question"]: next(
+                k
+                for k in ("probability_yes", "probability_yes_per_category", "continuous_cdf")
+                if q[k] is not None
+            )
+            for q in every_type.forecasts
+        }
+        assert sorted(kinds.values()) == [
+            "continuous_cdf",
+            "continuous_cdf",
+            "continuous_cdf",
+            "probability_yes",
+            "probability_yes_per_category",
+        ]
+        mc_comment = next(c for c in every_type.comments if c["on_post"] == 46223)
+        assert mc_comment["text"].startswith("**Forecast: Democratic Party ")
+        numeric_comment = next(c for c in every_type.comments if c["on_post"] == 43323)
+        assert "the average of the CDFs of 5 independent forecasts" in numeric_comment["text"]
+        rows = ledger.connection.execute(
+            "SELECT question_type, count(*) FROM forecasts WHERE kind = 'aggregate' "
+            "GROUP BY question_type ORDER BY question_type"
+        ).fetchall()
+        assert rows == [("binary", 1), ("discrete", 2), ("multiple_choice", 1), ("numeric", 1)]
+        ledger.close()
+
+        second, ledger2 = await _run(tmp_path, client=_client(http), submit=True)
+        assert second.count("forecast") == 0
+        assert {r.reason for r in second.reports} == {"already forecast by this account"}
+        assert len(every_type.forecasts) == 5, "a second run must never forecast a question twice"
+        assert len(every_type.comments) == 5
+        ledger2.close()
+    assert scan_ledger(tmp_path / "l.sqlite") == []
+
+
+async def test_a_question_too_close_to_its_close_is_missed_not_started(
+    tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
+) -> None:
+    from datetime import timedelta
+
+    soon = binary_post(530, 531, title="Closes in six minutes")
+    soon["question"]["scheduled_close_time"] = (T0 + timedelta(minutes=6)).isoformat()
+    fake.add_post(soon, "minibench")
+    provider = ScriptedProvider()
+    report, ledger = await _run(tmp_path, client=_client(http), provider=provider)
+    by_id = {r.question.question_id: r for r in report.reports}
+    assert by_id[531].status == "missed"
+    assert "too little time left (1.0 min before its deadline" in by_id[531].reason
+    assert by_id[501].status == "forecast"
+    # Soonest-closing first, and the missed question cost no model call.
+    calls = ledger.connection.execute(
+        "SELECT count(*) FROM llm_calls WHERE question_id = 531"
+    ).fetchone()[0]
+    assert calls == 0
+    ledger.close()
+
+
+async def test_the_coverage_report_is_printed_and_ledgered_per_question(
+    tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
+) -> None:
+    out = io.StringIO()
+    report, ledger = await _run(tmp_path, client=_client(http), out=out)
+    coverage = report.coverage()
+    assert coverage["listed"] == len(report.reports) == 2
+    assert (coverage["forecast"], coverage["skipped"], coverage["missed"]) == (1, 1, 0)
+    assert coverage["reasons"]["skipped"] == {"not open now": 1}
+    assert "coverage: 2 listed; 1 forecast in time (0 submitted)" in out.getvalue()
+    rows = ledger.connection.execute(
+        "SELECT question_id, status, reason, submitted FROM question_outcomes "
+        "WHERE run_id = ? ORDER BY question_id",
+        (report.run_id,),
+    ).fetchall()
+    assert rows == [(501, "forecast", "", 0), (46876, "skipped", "not open now", 0)]
+    json.dumps(coverage)  # the workflow writes it as JSON
+    ledger.close()
+
+
+async def test_draws_still_running_at_the_deadline_are_stopped_and_charged(
+    tmp_path: Path,
+) -> None:
+    from augur.agents.calls import Budget, CallRecorder
+    from augur.agents.forecaster import draw_forecasts
+    from augur.agents.researcher import ResearchResult
+
+    clock = FixedClock(T0)
+    ledger = Ledger.open(tmp_path / "l.sqlite", clock)
+    provider = ScriptedProvider(slow_draws=(1, 3))
+    router = Router.single(LOCAL, provider, free_catalog(LOCAL), clock)
+    q, post = binary_question(T0)
+    run_id = ledger.start_run(
+        mode=RunMode.DRY_RUN,
+        tournament="t",
+        provider="scripted",
+        model="m",
+        settings={},
+        code_version="test",
+    )
+    ledger.record_question(run_id, q, T0, post)
+    budget = Budget(1.0, 1.0)
+    calls = CallRecorder(router, ledger, clock, budget)
+    members, errors = await asyncio.wait_for(
+        draw_forecasts(
+            calls=calls,
+            run_id=run_id,
+            q=q,
+            cutoff=T0,
+            research=ResearchResult(queries=[], sources=[], brief="b"),
+            n=5,
+            concurrency=5,
+            timeout_s=0.2,
+        ),
+        timeout=5,
+    )
+    assert sorted(m.member for m in members) == [0, 2, 4]
+    assert "2 of 5 draws stopped at the question's deadline" in errors
+    stopped = ledger.connection.execute(
+        "SELECT member, error FROM llm_calls WHERE error LIKE 'cancelled%' ORDER BY member"
+    ).fetchall()
+    assert [m for m, _ in stopped] == [1, 3]
+    assert budget.reserved_run == pytest.approx(0.0)
+    ledger.close()

@@ -177,7 +177,7 @@ async def test_submit_to_a_numeric_question_is_rejected_by_the_fake(
         await client.submit_binary(46876, 0.5)
     assert info.value.status_code == 400
     assert "/questions/forecast/" in str(info.value)
-    assert "not binary" in str(info.value)
+    assert "Only continuous_cdf should be provided" in str(info.value)
 
 
 async def test_private_comment_sends_the_exact_payload(
