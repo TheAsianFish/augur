@@ -42,7 +42,7 @@ def test_settings_from_env_reads_either_asknews_secret_name() -> None:
     assert s.has_metaculus_token
     assert s.has_asknews
     assert s.max_questions_per_run == 3
-    assert s.ollama_base_url == "http://127.0.0.1:11434"
+    assert s.chains()["forecast"][0].endpoint.base_url == "http://127.0.0.1:11434"
 
 
 def test_public_settings_never_carry_secrets() -> None:

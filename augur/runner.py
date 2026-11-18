@@ -20,11 +20,11 @@ from augur.aggregate import median
 from augur.clock import Clock
 from augur.comment import render_comment
 from augur.config import Settings
-from augur.errors import AugurError, MetaculusError, SubmitFloorError
+from augur.errors import AugurError, BelowFloorError, MetaculusError, SubmitFloorError
 from augur.leakage import RunMode
 from augur.ledger import Ledger
-from augur.llm.base import Provider
 from augur.llm.registry import FRONTIER_TIER_NAME, PRACTICE_TOURNAMENTS, in_frontier_tier
+from augur.llm.router import Router
 from augur.log import get_logger
 from augur.metaculus import MetaculusClient
 from augur.questions import Question, question_from_post
@@ -118,7 +118,7 @@ class ForecastRun:
         settings: Settings,
         clock: Clock,
         ledger: Ledger,
-        provider: Provider,
+        router: Router,
         searchers: Sequence[Searcher],
         client: MetaculusClient | None,
         out: TextIO,
@@ -126,7 +126,7 @@ class ForecastRun:
         self._settings = settings
         self._clock = clock
         self._ledger = ledger
-        self._provider = provider
+        self._router = router
         self._searchers = list(searchers)
         self._client = client
         self._out = out
@@ -144,26 +144,42 @@ class ForecastRun:
             raise AugurError("--submit needs METACULUS_TOKEN; without it run a dry run")
         if submit and samples is not None:
             raise AugurError("--submit forecasts live questions only; drop --samples")
-        if submit:
+        scored = submit and slug not in PRACTICE_TOURNAMENTS
+        if scored:
             self._check_submit_floor(slug)
         mode = RunMode.LIVE if submit else RunMode.DRY_RUN
         use_samples = samples is not None or self._client is None or not self._client.has_token
         source = (
             f"samples:{_display(samples or SAMPLES_DIR)}" if use_samples else f"metaculus:{slug}"
         )
+        answering = self._router.chain("forecast")[0]
+        catalog = self._router.catalog
         run_id = self._ledger.start_run(
             mode=mode,
             tournament=slug,
-            provider=self._provider.name,
-            model=self._settings.model,
-            settings=self._settings.public_dict() | {"question_source": source},
+            provider=self._router.provider(answering).name,
+            model=answering.model,
+            settings=self._settings.public_dict()
+            | {
+                "question_source": source,
+                "scored": scored,
+                "floor": FRONTIER_TIER_NAME if scored else None,
+                "catalog": f"{catalog.origin} {catalog.fetched_at:%Y-%m-%d}",
+            },
             code_version=code_version(),
         )
         structlog.contextvars.bind_contextvars(run_id=run_id)
         log.info("run started", mode=mode.value, source=source)
-        self._print(f"run {run_id} ({mode.value}) on {source}, model {self._settings.model}")
+        chains = "; ".join(
+            f"{role}: {', '.join(r.key for r in self._router.chain(role))}"
+            for role in ("forecast", "research")
+        )
+        self._print(f"run {run_id} ({mode.value}) on {source}")
+        self._print(f"models: {chains}")
         budget = Budget(self._settings.max_cost_per_question, self._settings.max_cost_per_run)
-        calls = CallRecorder(self._provider, self._ledger, self._clock, budget)
+        calls = CallRecorder(self._router, self._ledger, self._clock, budget)
+        if scored:
+            self._router.set_floor("forecast", FRONTIER_TIER_NAME, in_frontier_tier)
 
         candidates = await self._candidates(slug, samples if use_samples else None, use_samples)
         reports: list[QuestionReport] = []
@@ -189,6 +205,9 @@ class ForecastRun:
             structlog.contextvars.bind_contextvars(question_id=q.question_id)
             try:
                 reports.append(await self._forecast(run_id, mode, calls, q, post))
+            except BelowFloorError as exc:
+                log.warning("question skipped by the floor", question_id=q.question_id)
+                reports.append(QuestionReport(q, "skipped", f"submit floor: {exc}"))
             except BudgetExceededError as exc:
                 stop_reason = str(exc)
                 reports.append(QuestionReport(q, "failed", stop_reason))
@@ -257,7 +276,6 @@ class ForecastRun:
             calls=calls,
             ledger=self._ledger,
             searchers=self._searchers,
-            model=self._settings.model,
             mode=mode,
         )
         research = await researcher.research(run_id, q, cutoff)
@@ -268,7 +286,6 @@ class ForecastRun:
             q=q,
             cutoff=cutoff,
             research=research,
-            model=self._settings.model,
             n=n,
             concurrency=n,
         )
@@ -304,7 +321,6 @@ class ForecastRun:
             probability=probability,
             members=members,
             research=research,
-            model=self._settings.model,
             cutoff=cutoff,
             requested=n,
         )
@@ -440,18 +456,21 @@ class ForecastRun:
         report.reason += "; posted the comment an earlier run could not"
 
     def _check_submit_floor(self, slug: str) -> None:
-        """Refuse to post to a scored tournament from a model below the frontier tier."""
-        if slug in PRACTICE_TOURNAMENTS:
+        """Refuse before any model call if the first answering model is below the tier.
+
+        Later routes in the chain are fallbacks: a scored question that would
+        fall to one below the tier is skipped when it happens (the router's
+        floor).
+        """
+        first = self._router.chain("forecast")[0]
+        if in_frontier_tier(first):
             return
-        provider, model = self._provider.name, self._settings.model
-        if in_frontier_tier(model, provider):
-            return
-        log.warning("submit refused by the floor", tournament=slug, provider=provider, model=model)
+        log.warning("submit refused by the floor", tournament=slug, route=first.key)
         raise SubmitFloorError(
-            f"--submit to {slug} needs a hosted model in the {FRONTIER_TIER_NAME} tier, "
-            f"and {model} on {provider} is not one; a weak forecast costs peer points that "
-            "skipping does not. Drop --submit for a dry run, or submit to "
-            f"{', '.join(sorted(PRACTICE_TOURNAMENTS))} to test the live path."
+            f"--submit to {slug} needs a hosted model in the {FRONTIER_TIER_NAME} tier first "
+            f"in AUGUR_FORECAST_MODELS, and {first.key} ({first.endpoint.host}) is not one; a "
+            "weak forecast costs peer points that skipping does not. Drop --submit for a dry "
+            f"run, or submit to {', '.join(sorted(PRACTICE_TOURNAMENTS))} to test the live path."
         )
 
     def _live_client(self) -> MetaculusClient:

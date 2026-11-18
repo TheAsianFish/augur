@@ -29,9 +29,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 1
+        assert first.schema_version() == 2
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 1
+        assert again.schema_version() == 2
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -80,6 +80,49 @@ def test_every_table_refuses_update_and_delete(ledger: Ledger, table: str) -> No
         status="dry_run",
         http_status=None,
         response_excerpt=None,
+    )
+    ledger.record_switch(
+        run_id=run_id,
+        question_id=q.question_id,
+        call_role="forecaster",
+        member=0,
+        from_route="openrouter:a",
+        to_route="openrouter:b",
+        reason="rate_limited",
+        outcome="switched",
+        detail="429",
+    )
+    ledger.record_probe(
+        {
+            "run_id": run_id,
+            "session_id": "s",
+            "route": "openrouter:a",
+            "endpoint": "openrouter",
+            "endpoint_host": "openrouter.ai",
+            "model": "a",
+            "roles": "forecast",
+            "outcome": "answered",
+            "price_basis": "test",
+            "release_basis": "unknown",
+            "in_tier": 0,
+            "limit_headers_json": "{}",
+            "detail": "ok",
+        }
+    )
+    ledger.record_limit_test(
+        {
+            "session_id": "s",
+            "route": "openrouter:a",
+            "endpoint_host": "openrouter.ai",
+            "requests_cap": 3,
+            "requests_sent": 3,
+            "requests_ok": 3,
+            "input_tokens": 3,
+            "output_tokens": 3,
+            "seconds": 1.0,
+            "limit_headers_json": "{}",
+            "started_at": "2026-11-17T18:00:00.000000Z",
+        }
     )
     conn = ledger.connection
     assert conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0] >= 1
@@ -157,3 +200,19 @@ def test_a_repair_posts_the_forecasting_runs_comment_not_a_later_dry_runs(
 
     sub(dry, "comment", "submitted", "**Forecast: 40%** live")
     assert ledger.unposted_comment(q.question_id) is None
+
+
+def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedClock) -> None:
+    """The committed M1 ledgers open under schema 2 with their rows intact."""
+    import shutil
+
+    from augur.leakage import scan_ledger
+
+    original = Path(__file__).resolve().parent.parent / "data/ledgers/m1-dryrun-samples.sqlite"
+    copy = tmp_path / "m1.sqlite"
+    shutil.copy(original, copy)
+    with Ledger.open(copy, clock) as led:
+        assert led.schema_version() == 2
+        assert led.count("llm_calls") == 7
+        assert led.count("model_switches") == 0
+    assert scan_ledger(copy) == []

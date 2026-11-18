@@ -3,14 +3,16 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import re
 from dataclasses import dataclass
 from datetime import datetime
 
 from augur.agents.calls import BudgetExceededError, CallContext, CallRecorder
 from augur.agents.researcher import ResearchResult, question_text
-from augur.errors import AugurError, ForecastParseError
+from augur.errors import AugurError, BelowFloorError, ForecastParseError
 from augur.llm.base import LlmRequest, Message
+from augur.llm.endpoints import Route
 from augur.log import get_logger
 from augur.questions import Question
 
@@ -37,6 +39,7 @@ class MemberForecast:
     probability: float
     reasoning: str
     call_id: str
+    route: Route
 
 
 def parse_probability(text: str) -> float:
@@ -59,10 +62,10 @@ def reasoning_of(text: str) -> str:
 
 
 def forecaster_request(
-    model: str, q: Question, cutoff: datetime, research: ResearchResult, member: int
+    q: Question, cutoff: datetime, research: ResearchResult, member: int
 ) -> LlmRequest:
     return LlmRequest(
-        model=model,
+        model="",  # the router sets each route's model
         messages=(
             Message(role="system", content=FORECASTER_SYSTEM),
             Message(
@@ -83,7 +86,6 @@ async def draw_forecasts(
     q: Question,
     cutoff: datetime,
     research: ResearchResult,
-    model: str,
     n: int,
     concurrency: int,
 ) -> tuple[list[MemberForecast], list[str]]:
@@ -91,26 +93,38 @@ async def draw_forecasts(
     slots = asyncio.Semaphore(concurrency)
     errors: list[str] = []
     refused: list[BudgetExceededError] = []
+    floored: list[BelowFloorError] = []
     cited = [s.source_id for s in research.sources]
 
     async def one(member: int) -> MemberForecast | None:
         async with slots:
-            request = forecaster_request(model, q, cutoff, research, member)
+            request = forecaster_request(q, cutoff, research, member)
             ctx = CallContext(run_id, q.question_id, "forecaster", member)
             try:
-                response, call_id = await calls.complete(ctx, request, source_ids=cited)
-                probability = parse_probability(response.text)
+                done = await calls.complete(ctx, request, source_ids=cited)
+                probability = parse_probability(done.response.text)
             except BudgetExceededError as exc:
                 refused.append(exc)
+                return None
+            except BelowFloorError as exc:
+                # Like a failed draw: the others may still have come from the tier.
+                floored.append(exc)
+                errors.append(f"member {member}: {exc}")
                 return None
             except AugurError as exc:
                 errors.append(f"member {member}: {exc}")
                 log.warning("forecaster failed", member=member, error=str(exc))
                 return None
-            return MemberForecast(member, probability, reasoning_of(response.text), call_id)
+            return MemberForecast(
+                member, probability, reasoning_of(done.response.text), done.call_id, done.route
+            )
 
     results = await asyncio.gather(*(one(m) for m in range(n)))
     if refused:
         # Never submit an ensemble the budget cut short; the run stops here.
         raise refused[0]
-    return [r for r in results if r is not None], errors
+    members = [r for r in results if r is not None]
+    if floored and len(members) < math.ceil(n / 2):
+        # Too few draws from the tier: the question is skipped, not failed.
+        raise floored[0]
+    return members, errors

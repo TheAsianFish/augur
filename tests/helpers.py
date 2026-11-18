@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+from augur.llm.catalog import Catalog
+from augur.llm.endpoints import Route
 from augur.questions import Question, question_from_post
 from augur.research.source import DateEvidence, Source
 
@@ -60,3 +62,26 @@ def source(
         date_evidence=evidence,
         evidence_detail="test fixture",
     )
+
+
+def catalog_of(*models: tuple[str, float, float], listed: datetime | None = None) -> Catalog:
+    """A model list with ``(id, usd per million in, usd per million out)`` entries."""
+    created = int((listed or datetime(2025, 1, 1, tzinfo=UTC)).timestamp())
+    return Catalog.from_api(
+        {
+            "data": [
+                {
+                    "id": model,
+                    "created": created,
+                    "pricing": {"prompt": f"{inp / 1e6:.12f}", "completion": f"{out / 1e6:.12f}"},
+                }
+                for model, inp, out in models
+            ]
+        },
+        datetime(2026, 11, 18, tzinfo=UTC),
+    )
+
+
+def free_catalog(*routes: Route) -> Catalog:
+    """Every ``openrouter`` route listed at $0, so the cost caps never bind in a test."""
+    return catalog_of(*((r.model, 0.0, 0.0) for r in routes))

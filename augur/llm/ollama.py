@@ -88,4 +88,4 @@ class OllamaProvider:
         )
 
     async def aclose(self) -> None:
-        await self._http.aclose()
+        return None  # the HTTP client belongs to the caller

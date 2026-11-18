@@ -33,6 +33,9 @@ APPEND_ONLY_TABLES = (
     "call_sources",
     "forecasts",
     "submissions",
+    "model_probes",
+    "limit_tests",
+    "model_switches",
     "schema_migrations",
 )
 
@@ -235,6 +238,9 @@ class Ledger:
         provider: str,
         model: str,
         model_release_date: date | None,
+        release_basis: str | None = None,
+        endpoint_host: str | None = None,
+        served_model: str | None = None,
         request_hash: str,
         request: dict[str, Any],
         response_text: str | None,
@@ -271,6 +277,9 @@ class Ledger:
                     "latency_ms": latency_ms,
                     "error": error,
                     "started_at": to_iso(started_at),
+                    "endpoint_host": endpoint_host,
+                    "served_model": served_model,
+                    "release_basis": release_basis,
                 },
             )
             for source_id in source_ids:
@@ -340,6 +349,49 @@ class Ledger:
             },
         )
         return submission_id
+
+    def record_probe(self, row: dict[str, Any]) -> str:
+        """One ``model_probes`` row; ``row`` holds every column but the id and time."""
+        probe_id = new_id("probe")
+        self._insert("model_probes", {"probe_id": probe_id, **row, "probed_at": self._now()})
+        return probe_id
+
+    def record_limit_test(self, row: dict[str, Any]) -> str:
+        test_id = new_id("limit")
+        self._insert("limit_tests", {"test_id": test_id, **row})
+        return test_id
+
+    def record_switch(
+        self,
+        *,
+        run_id: str,
+        question_id: int | None,
+        call_role: str,
+        member: int | None,
+        from_route: str | None,
+        to_route: str | None,
+        reason: str,
+        outcome: str,
+        detail: str,
+    ) -> str:
+        switch_id = new_id("sw")
+        self._insert(
+            "model_switches",
+            {
+                "switch_id": switch_id,
+                "run_id": run_id,
+                "question_id": question_id,
+                "call_role": call_role,
+                "member": member,
+                "from_route": from_route,
+                "to_route": to_route,
+                "reason": reason,
+                "outcome": outcome,
+                "detail": detail[:500],
+                "recorded_at": self._now(),
+            },
+        )
+        return switch_id
 
     # -- reads ----------------------------------------------------------
 

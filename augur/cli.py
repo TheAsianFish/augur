@@ -14,7 +14,10 @@ from augur.config import Settings
 from augur.errors import AugurError, MissingCredentialsError
 from augur.leakage import scan_ledger
 from augur.ledger import Ledger
-from augur.llm.factory import build_provider, default_http_client
+from augur.llm.catalog import (
+    fetch_catalog,
+)
+from augur.llm.factory import build_router, default_http_client
 from augur.log import configure_logging, get_logger
 from augur.metaculus import MetaculusClient
 from augur.research.asknews import AskNewsSearcher
@@ -65,7 +68,8 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     if args.submit and not settings.has_metaculus_token:
         raise MissingCredentialsError("--submit", ("METACULUS_TOKEN",))
     async with default_http_client() as http:
-        provider = build_provider(settings, http)
+        catalog = await fetch_catalog(http, clock.now())
+        router = build_router(settings, http, catalog, clock)
         searchers: list[Searcher] = [WikipediaSearcher(http, clock)]
         if settings.has_asknews and not args.no_asknews:
             searchers.append(AskNewsSearcher.from_settings(settings, http, clock))
@@ -81,7 +85,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                 settings=settings,
                 clock=clock,
                 ledger=ledger,
-                provider=provider,
+                router=router,
                 searchers=searchers,
                 client=client,
                 out=sys.stdout,
@@ -94,7 +98,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                     max_questions=max_questions,
                 )
             finally:
-                await provider.aclose()
+                await router.aclose()
         print(f"ledger: {ledger_path} (run {report.run_id})")
         return 1 if report.count("failed") else 0
 

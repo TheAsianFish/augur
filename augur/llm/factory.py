@@ -1,16 +1,20 @@
-"""Build the configured provider."""
+"""Build the providers and the router a run uses."""
 
 from __future__ import annotations
 
 import httpx
 
 import augur
+from augur.clock import Clock
 from augur.config import Settings
-from augur.errors import ConfigError, MissingCredentialsError
+from augur.errors import ConfigError
 from augur.llm.base import Provider
-from augur.llm.metaculus_proxy import MetaculusProxyProvider
+from augur.llm.catalog import Catalog
+from augur.llm.endpoints import Endpoint
 from augur.llm.ollama import OllamaProvider
+from augur.llm.openai_compat import OpenAICompatProvider
 from augur.llm.replay import RecordingProvider, ReplayProvider
+from augur.llm.router import Router
 
 
 def default_http_client() -> httpx.AsyncClient:
@@ -23,21 +27,51 @@ def default_http_client() -> httpx.AsyncClient:
     )
 
 
-def build_provider(settings: Settings, http: httpx.AsyncClient) -> Provider:
-    provider: Provider
-    if settings.provider == "ollama":
-        provider = OllamaProvider(http, settings.ollama_base_url)
-    elif settings.provider == "metaculus_proxy":
-        if settings.metaculus_token is None:
-            raise MissingCredentialsError("the metaculus_proxy provider", ("METACULUS_TOKEN",))
-        provider = MetaculusProxyProvider(http, settings.proxy_base_url, settings.metaculus_token)
-    else:
+def build_provider(
+    endpoint: Endpoint,
+    settings: Settings,
+    http: httpx.AsyncClient,
+    *,
+    max_retries: int = 3,
+    timeout: float | None = None,
+) -> Provider:
+    """The provider for one endpoint (never a replay; see :func:`build_providers`)."""
+    if endpoint.api == "ollama":
+        return OllamaProvider(http, endpoint.base_url)
+    key = settings.keys.get(endpoint.key_env) if endpoint.key_env else None
+    return OpenAICompatProvider(http, endpoint, key, max_retries=max_retries, timeout=timeout)
+
+
+def build_providers(
+    settings: Settings,
+    http: httpx.AsyncClient,
+    *,
+    max_retries: int = 3,
+    record: bool = True,
+    timeout: float | None = None,
+) -> dict[str, Provider]:
+    """One provider per endpoint the chains use, keyed by endpoint name."""
+    names = {r.endpoint.name: r.endpoint for c in settings.chains().values() for r in c}
+    if settings.is_replay:
         if settings.replay_path is None:
             raise ConfigError(
                 "AUGUR_PROVIDER=replay needs AUGUR_REPLAY_PATH set to a recorded JSONL file; "
                 "record one with AUGUR_RECORD_PATH and a live provider"
             )
-        return ReplayProvider(settings.replay_path)
-    if settings.record_path is not None:
-        provider = RecordingProvider(provider, settings.record_path)
-    return provider
+        replay = ReplayProvider(settings.replay_path)
+        return dict.fromkeys(names, replay)
+    providers: dict[str, Provider] = {}
+    for name, endpoint in names.items():
+        provider = build_provider(
+            endpoint, settings, http, max_retries=max_retries, timeout=timeout
+        )
+        if record and settings.record_path is not None:
+            provider = RecordingProvider(provider, settings.record_path)
+        providers[name] = provider
+    return providers
+
+
+def build_router(
+    settings: Settings, http: httpx.AsyncClient, catalog: Catalog, clock: Clock
+) -> Router:
+    return Router(settings.chains(), build_providers(settings, http), catalog, clock)

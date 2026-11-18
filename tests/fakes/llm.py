@@ -48,3 +48,35 @@ class ScriptedProvider:
 
     async def aclose(self) -> None:
         return None
+
+
+class RoutedProvider(ScriptedProvider):
+    """A scripted endpoint whose models can be made to fail with a given error.
+
+    ``failures[model]`` is raised for every call to that model; ``limit`` makes
+    every call after the first ``limit`` raise a 429 (a burst test).
+    """
+
+    def __init__(
+        self,
+        name: str = "openrouter",
+        failures: dict[str, ProviderError] | None = None,
+        percents: Sequence[float | None] = (30, 35, 40, 45, 50),
+    ) -> None:
+        super().__init__(percents)
+        self._name = name
+        self.failures = dict(failures or {})
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    def models_called(self, system: str | None = None) -> list[str]:
+        return [r.model for r in self.requests if system is None or r.messages[0].content == system]
+
+    async def complete(self, request: LlmRequest) -> LlmResponse:
+        failure = self.failures.get(request.model)
+        if failure is not None:
+            self.requests.append(request)
+            raise failure
+        return await super().complete(request)

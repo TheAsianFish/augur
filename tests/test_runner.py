@@ -17,7 +17,10 @@ from augur.config import Settings
 from augur.errors import AugurError, SubmitFloorError
 from augur.leakage import RunMode, scan_ledger
 from augur.ledger import Ledger
-from augur.llm.registry import bare_model_name, in_frontier_tier
+from augur.llm.base import Provider
+from augur.llm.catalog import Catalog
+from augur.llm.endpoints import PRESETS, Endpoint, Route
+from augur.llm.router import Router
 from augur.log import configure_logging
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
@@ -27,7 +30,7 @@ from .conftest import T0
 from .fakes.llm import ScriptedProvider
 from .fakes.metaculus import FAKE_TOKEN, MINIBENCH_NUMERIC, FakeMetaculus, binary_post
 from .fakes.search import FixedSearcher
-from .helpers import binary_question
+from .helpers import binary_question, catalog_of, free_catalog
 
 
 def _fast_limiter() -> RateLimiter:
@@ -57,11 +60,22 @@ def _settings(tmp_path: Path, **extra: object) -> Settings:
     )
 
 
+LOCAL = Route(endpoint=PRESETS["ollama"], model="qwen2.5:7b")
+OPENROUTER = PRESETS["openrouter"]
+
+
+def frontier(model: str = "openai/gpt-5.1") -> Route:
+    return Route(endpoint=OPENROUTER, model=model)
+
+
 async def _run(
     tmp_path: Path,
     *,
     client: MetaculusClient | None,
-    provider: ScriptedProvider | None = None,
+    provider: Provider | None = None,
+    route: Route = LOCAL,
+    router: Router | None = None,
+    catalog: Catalog | None = None,
     submit: bool = False,
     samples: Path | None = None,
     max_questions: int = 10,
@@ -73,11 +87,15 @@ async def _run(
     clock = FixedClock(T0)
     tmp_path.mkdir(parents=True, exist_ok=True)
     ledger = Ledger.open(tmp_path / "l.sqlite", clock)
+    if router is None:
+        router = Router.single(
+            route, provider or ScriptedProvider(), catalog or free_catalog(route), clock
+        )
     run = ForecastRun(
         settings=_settings(tmp_path, **settings),
         clock=clock,
         ledger=ledger,
-        provider=provider or ScriptedProvider(),
+        router=router,
         searchers=[searcher or FixedSearcher()],
         client=client,
         out=out or io.StringIO(),
@@ -271,17 +289,21 @@ async def test_concurrent_draws_cannot_overspend_the_cap(tmp_path: Path) -> None
     """Five draws start at once; reservations keep the total under the cap."""
     from augur.agents.calls import Budget, CallContext, CallRecorder, estimate_cost
     from augur.llm.base import LlmRequest, Message
-    from augur.llm.registry import priced
+    from augur.llm.catalog import price_for
 
-    model = "an-unpriced-model"
-    request = LlmRequest(model=model, messages=(Message(role="user", content="x" * 300),))
-    one = estimate_cost(request, priced(model, "scripted"))
-    assert one > 0, "an unknown model on a non-local provider must not be free"
+    pricey = frontier("vendor/pricey-model")
+    catalog = catalog_of(("vendor/pricey-model", 15.0, 75.0))
+    request = LlmRequest(model="", messages=(Message(role="user", content="x" * 300),))
+    price = price_for(pricey, catalog)
+    assert price is not None
+    one = estimate_cost(request.model_copy(update={"model": pricey.model}), price)
+    assert one > 0
 
     report, ledger = await _run(
         tmp_path,
         client=None,
-        model=model,
+        route=pricey,
+        catalog=catalog,
         max_cost_per_question=1.0,
         max_cost_per_run=0.20,
     )
@@ -299,13 +321,14 @@ async def test_concurrent_draws_cannot_overspend_the_cap(tmp_path: Path) -> None
         mode=RunMode.DRY_RUN,
         tournament="t",
         provider="scripted",
-        model=model,
+        model=pricey.model,
         settings={},
         code_version="test",
     )
     q, post = binary_question(T0)
     led.record_question(run_id, q, T0, post)
-    calls = CallRecorder(ScriptedProvider(), led, FixedClock(T0), budget)
+    router = Router.single(pricey, ScriptedProvider(), catalog, FixedClock(T0))
+    calls = CallRecorder(router, led, FixedClock(T0), budget)
     ctx = CallContext(run_id, q.question_id, "forecaster", 0)
     results = await asyncio.gather(
         *(calls.complete(ctx, request, []) for _ in range(5)), return_exceptions=True
@@ -365,38 +388,40 @@ async def test_a_forecast_taken_but_unacknowledged_still_gets_its_comment(
     ledger2.close()
 
 
-class _HostedProvider(ScriptedProvider):
-    @property
-    def name(self) -> str:
-        return "metaculus_proxy"
+LOOPBACK_NAMED_OPENROUTER = Endpoint(
+    name="openrouter", base_url="http://127.0.0.1:8080/v1", billing="free"
+)
 
 
 @pytest.mark.parametrize(
-    ("provider", "model"),
+    "route",
     [
-        (ScriptedProvider(), "qwen2.5:7b"),
-        (_HostedProvider(), "qwen2.5:7b"),
-        (_HostedProvider(), "llama-3.1-8b-instruct"),
-        (ScriptedProvider(), "gpt-5"),  # a frontier name on a local provider is not frontier
+        LOCAL,
+        Route(endpoint=OPENROUTER, model="meta-llama/llama-3.1-8b-instruct"),
+        Route(endpoint=OPENROUTER, model="google/gemma-4-31b-it:free"),
+        # A frontier name is not enough: the host must be one that serves it.
+        Route(endpoint=LOOPBACK_NAMED_OPENROUTER, model="openai/gpt-5"),
+        Route(endpoint=PRESETS["groq"], model="openai/gpt-5"),
     ],
+    ids=["local", "small-hosted", "free-hosted", "loopback-named-openrouter", "groq-host"],
 )
 @pytest.mark.parametrize("tournament", ["minibench", "futureeval", "32916"])
 async def test_the_floor_refuses_live_submission_below_the_frontier_tier(
     tmp_path: Path,
     fake: FakeMetaculus,
     http: httpx.AsyncClient,
-    provider: ScriptedProvider,
-    model: str,
+    route: Route,
     tournament: str,
 ) -> None:
+    provider = ScriptedProvider()
     with pytest.raises(SubmitFloorError, match="frontier-2026-11"):
         await _run(
             tmp_path,
             client=_client(http),
             provider=provider,
+            route=route,
             submit=True,
             tournament=tournament,
-            model=model,
         )
     assert provider.requests == [], "refused before any model call"
     assert fake.forecasts == []
@@ -409,26 +434,21 @@ async def test_the_floor_refuses_live_submission_below_the_frontier_tier(
 async def test_the_floor_admits_a_frontier_model_and_the_practice_area(
     tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
 ) -> None:
+    gpt = frontier("openai/gpt-5.1")
     report, ledger = await _run(
         tmp_path / "a",
         client=_client(http),
-        provider=_HostedProvider(),
+        route=gpt,
+        catalog=catalog_of((gpt.model, 1.25, 10.0)),
         submit=True,
         tournament="minibench",
-        model="openai/gpt-5:free",
     )
     assert report.count("forecast") == 1
     assert len(fake.forecasts) == 1
     ledger.close()
+    assert scan_ledger(tmp_path / "a" / "l.sqlite") == []
 
     fake.add_post(binary_post(520, 521, title="Practice"), "bot-testing-area")
     small, ledger2 = await _run(tmp_path / "b", client=_client(http), submit=True)
     assert [r.question.question_id for r in small.reports if r.status == "forecast"] == [521]
     ledger2.close()
-
-
-def test_bare_model_names() -> None:
-    assert bare_model_name("openai/gpt-5:free") == "gpt-5"
-    assert bare_model_name(" Claude-Opus-4-5 ") == "claude-opus-4-5"
-    assert bare_model_name("qwen2.5:7b") == "qwen2.5"
-    assert not in_frontier_tier("gpt-5-mini", "metaculus_proxy")
