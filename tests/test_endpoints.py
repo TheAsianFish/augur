@@ -229,3 +229,55 @@ def test_a_preset_or_alias_with_a_frontier_name_is_not_frontier() -> None:
     assert not in_frontier_tier(_route(eps["openrouter"], "@preset/gpt-5"))
     assert not in_frontier_tier(_route(eps["openrouter"], "meta-llama/llama-3-8b:x/gpt-5"))
     assert in_frontier_tier(_route(eps["openrouter"], "openai/gpt-5:free"))
+
+
+# Reasoning effort per route
+
+
+def test_parse_route_reads_a_trailing_effort() -> None:
+    eps = endpoints_from_env({})
+    route = parse_route("openrouter:openai/gpt-5.4@high", eps)
+    assert (route.model, route.reasoning_effort) == ("openai/gpt-5.4", "high")
+    assert route.key == "openrouter:openai/gpt-5.4@high"
+    assert parse_route(route.key, eps) == route
+    free = parse_route("openrouter:google/gemma-4-31b-it:free@low", eps)
+    assert (free.model, free.reasoning_effort) == ("google/gemma-4-31b-it:free", "low")
+    local = parse_route("ollama:qwen2.5:7b@minimal", eps)
+    assert (local.model, local.reasoning_effort) == ("qwen2.5:7b", "minimal")
+    assert parse_route("ollama:qwen2.5:7b", eps).reasoning_effort is None
+
+
+def test_a_leading_preset_is_a_model_not_an_effort() -> None:
+    eps = endpoints_from_env({})
+    bare = parse_route("openrouter:@preset/x", eps)
+    assert (bare.model, bare.reasoning_effort) == ("@preset/x", None)
+    with_effort = parse_route("openrouter:@preset/x@xhigh", eps)
+    assert (with_effort.model, with_effort.reasoning_effort) == ("@preset/x", "xhigh")
+    assert not in_frontier_tier(bare)
+    assert not in_frontier_tier(with_effort)
+
+
+def test_an_unknown_effort_names_the_allowed_ones() -> None:
+    with pytest.raises(ConfigError) as info:
+        parse_route("openrouter:openai/gpt-5.4@extreme", endpoints_from_env({}))
+    for allowed in ("minimal", "low", "medium", "high", "xhigh"):
+        assert allowed in str(info.value)
+
+
+def test_efforts_make_distinct_routes_of_one_model() -> None:
+    eps = endpoints_from_env({})
+    chain = parse_chain("openrouter:openai/gpt-5.4,openrouter:openai/gpt-5.4@high", eps)
+    assert [r.key for r in chain] == ["openrouter:openai/gpt-5.4", "openrouter:openai/gpt-5.4@high"]
+    assert chain[0] != chain[1]
+    same = parse_chain("openrouter:openai/gpt-5.4@high,openrouter:openai/gpt-5.4@high", eps)
+    assert len(same) == 1
+
+
+def test_effort_does_not_change_tier_membership() -> None:
+    eps = endpoints_from_env({})
+    plain = parse_route("openrouter:openai/gpt-5.1", eps)
+    high = parse_route("openrouter:openai/gpt-5.1@high", eps)
+    assert in_frontier_tier(plain)
+    assert in_frontier_tier(high)
+    assert not in_frontier_tier(parse_route("openrouter:openai/gpt-5-mini@high", eps))
+    assert not in_frontier_tier(parse_route("groq:openai/gpt-5.1@high", eps))

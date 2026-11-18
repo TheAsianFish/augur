@@ -8,6 +8,9 @@ from typing import Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
+Effort = Literal["minimal", "low", "medium", "high", "xhigh"]
+EFFORTS: tuple[str, ...] = ("minimal", "low", "medium", "high", "xhigh")
+
 
 class Message(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -26,9 +29,15 @@ class LlmRequest(BaseModel):
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     seed: int | None = None
     max_tokens: int = Field(default=1024, ge=1)
+    # How hard a reasoning model should think; ``None`` leaves it to the host.
+    reasoning_effort: Effort | None = None
 
     def request_hash(self) -> str:
-        canonical = json.dumps(self.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+        data = self.model_dump(mode="json")
+        if data["reasoning_effort"] is None:
+            # Left out so hashes (and replay recordings) from before the field existed hold.
+            del data["reasoning_effort"]
+        canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 

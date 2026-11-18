@@ -20,12 +20,13 @@ from __future__ import annotations
 import ipaddress
 import re
 from collections.abc import Mapping
-from typing import Literal
+from typing import Literal, cast
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from augur.errors import ConfigError
+from augur.llm.base import EFFORTS, Effort
 
 Api = Literal["openai", "ollama"]
 # How a call is priced. ``openrouter``: from OpenRouter's model list.
@@ -81,11 +82,21 @@ class Route(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     endpoint: Endpoint
+    # The bare model id, as sent to the host.
     model: str
+    reasoning_effort: Effort | None = None
+
+    @property
+    def effort_applied(self) -> bool | None:
+        """Whether the host is sent the effort: ``None`` if none is set, ``False`` for Ollama."""
+        if self.reasoning_effort is None:
+            return None
+        return self.endpoint.api != "ollama"
 
     @property
     def key(self) -> str:
-        return f"{self.endpoint.name}:{self.model}"
+        suffix = f"@{self.reasoning_effort}" if self.reasoning_effort else ""
+        return f"{self.endpoint.name}:{self.model}{suffix}"
 
     def __str__(self) -> str:
         return self.key
@@ -190,7 +201,10 @@ def endpoints_from_env(environ: Mapping[str, str]) -> dict[str, Endpoint]:
 
 
 def parse_route(text: str, endpoints: Mapping[str, Endpoint]) -> Route:
-    """``openrouter:openai/gpt-5`` -> Route; the endpoint must be known."""
+    """``openrouter:openai/gpt-5@high`` -> Route; the endpoint must be known.
+
+    A trailing ``@minimal|low|medium|high|xhigh`` is the route's reasoning effort.
+    """
     name, sep, model = text.strip().partition(":")
     name = name.strip().lower()
     model = model.strip()
@@ -204,7 +218,17 @@ def parse_route(text: str, endpoints: Mapping[str, Endpoint]) -> Route:
             f"unknown endpoint {name!r} in {text.strip()!r}; known: "
             f"{', '.join(sorted(endpoints))} (add one with AUGUR_ENDPOINT_<NAME>_URL)"
         )
-    return Route(endpoint=endpoints[name], model=model)
+    effort: Effort | None = None
+    head, at, tail = model.rpartition("@")
+    # Only a trailing ``@<effort>``: a leading ``@preset/...`` id is a model.
+    if at and head:
+        if tail.lower() not in EFFORTS:
+            raise ConfigError(
+                f"unknown reasoning effort {tail!r} in {text.strip()!r}; "
+                f"allowed: {', '.join(EFFORTS)} (for example {name}:{head}@high)"
+            )
+        model, effort = head.strip(), cast(Effort, tail.lower())
+    return Route(endpoint=endpoints[name], model=model, reasoning_effort=effort)
 
 
 def parse_chain(text: str, endpoints: Mapping[str, Endpoint]) -> tuple[Route, ...]:
