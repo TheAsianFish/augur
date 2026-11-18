@@ -7,8 +7,8 @@ it). Two uses:
 * **Prices.** A call is reserved and settled at the listed price, so the cost
   caps bind on what the model really costs. A model with no price on a host
   that bills is not called (:class:`~augur.errors.UnpricedModelError`); it is
-  never assumed to cost frontier rates, which tripped the caps for a cheap
-  model in M1.
+  never assumed to cost frontier rates (M1's rule), which would let the caps
+  stop a run on a model that costs nothing.
 * **Release dates.** A model cannot be listed before it is released, so the
   listing date is an upper bound on the release date: using it in the
   backtest gate ("released before the question opened") can only exclude

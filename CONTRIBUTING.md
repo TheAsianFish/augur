@@ -21,12 +21,15 @@ installs Metaculus's template bot and does not support 3.14.
 |---------|--------------|
 | `make check` | The quality gate: `ruff format --check`, `ruff check`, `mypy --strict`, unit tests. Offline, under two minutes. This is all CI runs on a pull request. |
 | `make test` | Unit tests only. |
-| `make test-integration` | Tests that need a local Ollama or live credentials; each skips with its reason when the requirement is missing. |
+| `make test-integration` | Tests that need a local Ollama or live credentials; each skips with its reason when the requirement is missing. The OpenRouter ones call `:free` models only. |
 | `make eval` | (M3) Replays the committed backtest ledgers and recordings and re-scores them. Offline, free. |
 | `make backtest ARGS=...` | (M4) Runs a new backtest (local model by default). Manual; never in per-PR CI. |
 | `make results` | (M3) Renders RESULTS.md from the ledger and result files. A test fails if the committed file differs. |
-| `augur forecast --tournament minibench` | Dry run: the live listing with `METACULUS_TOKEN`, the committed samples in `data/samples/` without it. Add `--submit` to post. |
-| `augur ledger check PATH...` | Scans ledgers for leakage; exits 1 on any violation. |
+| `augur forecast --tournament minibench` | Dry run: the live listing with `METACULUS_TOKEN`, the committed samples in `data/samples/` without it. Add `--submit` to post. Probes the model chains first (`--no-probe` to skip). `--reforecast` re-forecasts questions already forecast, in the bot-testing-area only. |
+| `augur models list` | Each configured route with its listed price, listing date and whether it is in the frontier tier. No model calls. |
+| `augur models probe [--route E:M ...] [--burst N]` | One short call per route, recorded in the ledger; `--burst N` then measures each free route's real rate limit (stops at the first refusal; free routes only). Prints the OpenRouter key's credit and daily free allowance. |
+| `augur models snapshot` | Refreshes the committed copy of OpenRouter's model list (`augur/llm/openrouter_models.json`), used when the live list cannot be fetched. |
+| `augur ledger check PATH...` | Scans ledgers for leakage and for forecasts submitted below the floor; exits 1 on any violation. |
 
 ## Configuration
 
@@ -35,10 +38,14 @@ file, a log line, the ledger or a commit.
 
 | Variable | Purpose |
 |----------|---------|
-| `METACULUS_TOKEN` | Metaculus API and the sponsored LLM proxy. |
+| `METACULUS_TOKEN` | Metaculus API. |
 | `ASKNEWS_CLIENT_ID`, `ASKNEWS_CLIENT_SECRET` (or `ASKNEWS_SECRET`) | News search. |
-| `AUGUR_PROVIDER`, `AUGUR_MODEL` | `ollama`, `metaculus_proxy` or `replay`, and the model name. |
-| `OLLAMA_HOST`, `AUGUR_PROXY_BASE_URL` | Where the local model and the proxy live. |
+| `AUGUR_FORECAST_MODELS`, `AUGUR_RESEARCH_MODELS` | Ordered model chains, `endpoint:model,...` (split at the first colon, so `openrouter:google/gemma-4-31b-it:free` and `ollama:qwen2.5:7b` both parse). The forecast chain answers; the research chain plans queries and writes the brief, and defaults to the forecast chain. |
+| `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `GITHUB_TOKEN` | Keys for the `openrouter`, `groq`, `gemini` and `github` presets. Only the variables an endpoint names are read. |
+| `AUGUR_ENDPOINT_<NAME>_URL`, `_KEY_ENV`, `_BILLING`, `_RPM`, `_API` | Any other OpenAI-compatible host: base URL, the name of the variable holding its key, `free`, `openrouter` or `unpriced` (the default: its models are not called until priced), a requests-per-minute ceiling, and `openai` or `ollama`. |
+| `AUGUR_PROVIDER`, `AUGUR_MODEL` | Without the chains: one endpoint and model for both roles (default `ollama`, `qwen2.5:7b`), or `AUGUR_PROVIDER=replay`. |
+| `OLLAMA_HOST` | Where the local model lives. |
+| `AUGUR_PROBE` | `0` skips the opening probe. |
 | `AUGUR_RECORD_PATH`, `AUGUR_REPLAY_PATH` | Record every model call to a JSONL file; replay one (with `AUGUR_PROVIDER=replay`). |
 | `AUGUR_FORECASTERS` | Forecaster draws per question (default 5), combined by the median. |
 | `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
@@ -96,6 +103,8 @@ PLAN.md only when its definition of done is met.
 One bot account. Forecast and comment only through the documented API, within
 its rate limits. Comments must reflect the reasoning that produced the
 forecast. Never run `--submit` from a branch that has not passed `make check`. Outside the
-bot-testing-area, `--submit` refuses unless the answering model is a hosted
-model in the frontier tier (`augur/llm/registry.py`); do not widen the tier
-to get a run through.
+bot-testing-area, `--submit` refuses unless the first forecasting model is a
+hosted model in the frontier tier (`augur/llm/registry.py`), and a question
+whose forecasts would come from below the tier is skipped; do not widen the
+tier to get a run through. Never add a paid balance to any key; `--burst`
+runs only on free models.
