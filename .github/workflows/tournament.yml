@@ -1,0 +1,117 @@
+name: Tournament
+
+# A cheap standard-library poll first; the forecast job (install, models,
+# Metaculus) runs only when an open question has not been forecast yet.
+# Repository variables: AUGUR_SCHEDULE (off | minibench | all; unset = off),
+# AUGUR_SUBMIT ('true' to post from scheduled runs; otherwise a dry run),
+# AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS, AUGUR_MAX_QUESTIONS_PER_RUN,
+# AUGUR_MAX_COST_PER_RUN.
+
+on:
+  schedule:
+    - cron: '17 */2 * * *' # cadence: see RESULTS.md M3
+  workflow_dispatch:
+    inputs:
+      tournament:
+        description: Tournament to forecast
+        type: choice
+        options: [minibench, bot-testing-area, futureeval]
+        default: minibench
+      submit:
+        description: Post forecasts and comments (from main only)
+        type: boolean
+        default: false
+      max_questions:
+        description: Questions per run at most
+        type: string
+        default: '6'
+
+concurrency:
+  group: tournament
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      has_work: ${{ steps.poll.outputs.has_work }}
+      tournaments: ${{ steps.poll.outputs.tournaments }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/poll.py
+          sparse-checkout-cone-mode: false
+      - name: Poll for open questions not yet forecast
+        id: poll
+        env:
+          METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+          # Scheduled runs obey the variable (unset or 'off' is the kill switch);
+          # a manual run polls the tournament it was asked for.
+          AUGUR_SCHEDULE: ${{ github.event_name == 'workflow_dispatch' && 'all' || vars.AUGUR_SCHEDULE || 'off' }}
+          AUGUR_POLL_TOURNAMENTS: ${{ github.event_name == 'workflow_dispatch' && (inputs.tournament == 'futureeval' && '33121' || inputs.tournament) || '' }}
+        run: python3 scripts/poll.py
+
+  forecast:
+    needs: poll
+    if: needs.poll.outputs.has_work == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      AUGUR_LEDGER: run.sqlite
+      AUGUR_LOG_LEVEL: INFO
+      METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      ASKNEWS_CLIENT_ID: ${{ secrets.ASKNEWS_CLIENT_ID }}
+      ASKNEWS_CLIENT_SECRET: ${{ secrets.ASKNEWS_CLIENT_SECRET }}
+      AUGUR_FORECAST_MODELS: ${{ vars.AUGUR_FORECAST_MODELS }}
+      AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_RESEARCH_MODELS }}
+      AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
+      AUGUR_MAX_COST_PER_RUN: ${{ vars.AUGUR_MAX_COST_PER_RUN || '1.00' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install
+        run: uv sync --locked
+      - name: Forecast
+        id: forecast
+        continue-on-error: true
+        env:
+          TOURNAMENTS: ${{ needs.poll.outputs.tournaments }}
+          # Posting needs the switch for this kind of run, and main (which passed make check).
+          SUBMIT: ${{ github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.submit) || (github.event_name == 'schedule' && vars.AUGUR_SUBMIT == 'true')) }}
+        run: |
+          set -o pipefail
+          args=()
+          if [ "$SUBMIT" = "true" ]; then args+=(--submit); fi
+          status=0
+          : > run.txt
+          IFS=',' read -ra tournaments <<< "$TOURNAMENTS"
+          for t in "${tournaments[@]}"; do
+            case "$t" in
+              ''|*[!a-z0-9-]*) echo "refusing tournament name '$t'" | tee -a run.txt; status=1; continue ;;
+            esac
+            echo "== augur forecast --tournament $t ${args[*]}" | tee -a run.txt
+            uv run augur forecast --tournament "$t" "${args[@]}" 2>&1 | tee -a run.txt || status=1
+          done
+          exit "$status"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Tournament run (${{ github.event_name }}, forecast ${{ steps.forecast.outcome }})"
+            echo '```'
+            if [ -f run.txt ]; then tail -n 40 run.txt; else echo "no output"; fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail if the forecast failed
+        if: steps.forecast.outcome == 'failure'
+        run: |
+          echo "the forecast step failed; its output is in the summary"
+          exit 1
