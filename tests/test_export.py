@@ -65,7 +65,7 @@ def test_export_is_byte_stable_and_counts_rows(
     assert counts["source_uses"] == 1
     assert counts["forecasts"] == 2
     assert counts["llm_calls"] == 0
-    assert counts["schema_migrations"] == 3
+    assert counts["schema_migrations"] == 4
     assert not any(t.startswith("sqlite_") for t in counts)
     assert sum(counts.values()) == data.count(b"\n")
     assert FAKE_TOKEN.encode() not in data

@@ -36,6 +36,7 @@ APPEND_ONLY_TABLES = (
     "model_probes",
     "limit_tests",
     "model_switches",
+    "question_outcomes",
     "schema_migrations",
 )
 
@@ -304,11 +305,17 @@ class Ledger:
         kind: str,
         member: int | None,
         method: str,
-        probability: float,
+        probability: float | None,
         reasoning: str,
         call_id: str | None,
+        question_type: str = "binary",
+        values: dict[str, Any] | None = None,
     ) -> str:
+        """One member's or the aggregate's forecast. ``probability`` is binary only;
+        ``values`` holds the full prediction (option probabilities, percentiles, CDF)."""
         forecast_id = new_id("fc")
+        if values is None and probability is not None:
+            values = {"probability": probability}
         self._insert(
             "forecasts",
             {
@@ -318,7 +325,9 @@ class Ledger:
                 "kind": kind,
                 "member": member,
                 "method": method,
+                "question_type": question_type,
                 "probability": probability,
+                "values_json": None if values is None else json.dumps(values, sort_keys=True),
                 "reasoning": reasoning,
                 "call_id": call_id,
                 "recorded_at": self._now(),
@@ -366,6 +375,43 @@ class Ledger:
         test_id = new_id("limit")
         self._insert("limit_tests", {"test_id": test_id, **row})
         return test_id
+
+    def record_outcome(
+        self,
+        *,
+        run_id: str,
+        question_id: int,
+        post_id: int,
+        question_type: str,
+        status: str,
+        reason: str,
+        submitted: bool,
+        closes_at: datetime | None,
+        minutes_left: float | None,
+        cost_usd: float,
+        seconds: float | None,
+    ) -> str:
+        """What happened to one question a run saw: the run's coverage, row by row."""
+        outcome_id = new_id("qo")
+        self._insert(
+            "question_outcomes",
+            {
+                "outcome_id": outcome_id,
+                "run_id": run_id,
+                "question_id": question_id,
+                "post_id": post_id,
+                "question_type": question_type,
+                "status": status,
+                "reason": reason,
+                "submitted": int(submitted),
+                "closes_at": to_iso(closes_at) if closes_at else None,
+                "minutes_left": minutes_left,
+                "cost_usd": cost_usd,
+                "seconds": seconds,
+                "recorded_at": self._now(),
+            },
+        )
+        return outcome_id
 
     def record_switch(
         self,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 from datetime import timedelta
 from pathlib import Path
 
@@ -29,9 +30,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 3
+        assert first.schema_version() == 4
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 3
+        assert again.schema_version() == 4
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -91,6 +92,19 @@ def test_every_table_refuses_update_and_delete(ledger: Ledger, table: str) -> No
         reason="rate_limited",
         outcome="switched",
         detail="429",
+    )
+    ledger.record_outcome(
+        run_id=run_id,
+        question_id=q.question_id,
+        post_id=q.post_id,
+        question_type=q.type,
+        status="forecast",
+        reason="",
+        submitted=False,
+        closes_at=q.scheduled_close_time,
+        minutes_left=90.0,
+        cost_usd=0.0,
+        seconds=12.5,
     )
     ledger.record_probe(
         {
@@ -212,7 +226,33 @@ def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedCloc
     copy = tmp_path / "m1.sqlite"
     shutil.copy(original, copy)
     with Ledger.open(copy, clock) as led:
-        assert led.schema_version() == 3
+        assert led.schema_version() == 4
         assert led.count("llm_calls") == 7
         assert led.count("model_switches") == 0
     assert scan_ledger(copy) == []
+
+
+def test_migration_4_keeps_every_forecast_of_an_older_ledger(tmp_path: Path) -> None:
+    import shutil
+
+    committed = (
+        Path(__file__).resolve().parent.parent / "data/ledgers/m1-live-bot-testing-area.sqlite"
+    )
+    copy = tmp_path / "old.sqlite"
+    shutil.copy(committed, copy)
+    with closing(sqlite3.connect(f"file:{committed}?mode=ro", uri=True)) as old:
+        before = old.execute(
+            "SELECT forecast_id, probability, reasoning FROM forecasts ORDER BY forecast_id"
+        ).fetchall()
+    assert before
+    with Ledger.open(copy, FixedClock(T0)) as led:
+        assert led.schema_version() == 4
+        conn = led.connection
+        after = conn.execute(
+            "SELECT forecast_id, probability, reasoning FROM forecasts ORDER BY forecast_id"
+        ).fetchall()
+        assert after == before
+        types = {r[0] for r in conn.execute("SELECT question_type FROM forecasts")}
+        assert types == {"binary"}
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+            conn.execute("DELETE FROM forecasts")
