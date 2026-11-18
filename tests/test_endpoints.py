@@ -221,3 +221,11 @@ def test_bad_model_entry_fails_at_from_env() -> None:
 def test_probe_flag() -> None:
     assert Settings.from_env({"AUGUR_PROBE": "0"}).probe is False
     assert Settings.from_env({}).probe is True
+
+
+def test_a_preset_or_alias_with_a_frontier_name_is_not_frontier() -> None:
+    """``@preset/gpt-5`` or ``small:x/gpt-5`` can route to any model behind the name."""
+    eps = endpoints_from_env({})
+    assert not in_frontier_tier(_route(eps["openrouter"], "@preset/gpt-5"))
+    assert not in_frontier_tier(_route(eps["openrouter"], "meta-llama/llama-3-8b:x/gpt-5"))
+    assert in_frontier_tier(_route(eps["openrouter"], "openai/gpt-5:free"))

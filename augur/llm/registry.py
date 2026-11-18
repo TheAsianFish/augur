@@ -85,6 +85,11 @@ def bare_model_name(model: str) -> str:
 def in_frontier_tier(route: Route) -> bool:
     """Whether a forecast from ``route`` may be submitted to a live tournament."""
     endpoint = route.endpoint
+    # Only a plain ``vendor/name[:variant]`` id is matched by name: a preset or
+    # alias (``@preset/gpt-5``, ``small:x/gpt-5``) can route anywhere.
+    vendor = route.model.rsplit("/", 1)[0] if "/" in route.model else ""
+    if "@" in route.model or ":" in vendor:
+        return False
     return (
         not endpoint.is_local
         and endpoint.host in FRONTIER_HOSTS
