@@ -213,6 +213,7 @@ async def _models(args: argparse.Namespace, settings: Settings) -> int:
                 listed, basis = release_bound(route, catalog)
                 print(
                     f"  {route.key:<48} "
+                    + f"effort {route.reasoning_effort or '-':<7} "
                     + (
                         f"${price.usd_per_million_input:g}/${price.usd_per_million_output:g} per M"
                         if price

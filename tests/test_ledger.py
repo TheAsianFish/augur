@@ -29,9 +29,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 2
+        assert first.schema_version() == 3
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 2
+        assert again.schema_version() == 3
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -203,7 +203,7 @@ def test_a_repair_posts_the_forecasting_runs_comment_not_a_later_dry_runs(
 
 
 def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedClock) -> None:
-    """The committed M1 ledgers open under schema 2 with their rows intact."""
+    """The committed M1 ledgers open under the current schema with their rows intact."""
     import shutil
 
     from augur.leakage import scan_ledger
@@ -212,7 +212,7 @@ def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedCloc
     copy = tmp_path / "m1.sqlite"
     shutil.copy(original, copy)
     with Ledger.open(copy, clock) as led:
-        assert led.schema_version() == 2
+        assert led.schema_version() == 3
         assert led.count("llm_calls") == 7
         assert led.count("model_switches") == 0
     assert scan_ledger(copy) == []

@@ -40,7 +40,7 @@ file, a log line, the ledger or a commit.
 |----------|---------|
 | `METACULUS_TOKEN` | Metaculus API. |
 | `ASKNEWS_CLIENT_ID`, `ASKNEWS_CLIENT_SECRET` (or `ASKNEWS_SECRET`) | News search. |
-| `AUGUR_FORECAST_MODELS`, `AUGUR_RESEARCH_MODELS` | Ordered model chains, `endpoint:model,...` (split at the first colon, so `openrouter:google/gemma-4-31b-it:free` and `ollama:qwen2.5:7b` both parse). The forecast chain answers; the research chain plans queries and writes the brief, and defaults to the forecast chain. |
+| `AUGUR_FORECAST_MODELS`, `AUGUR_RESEARCH_MODELS` | Ordered model chains, `endpoint:model,...` (split at the first colon, so `openrouter:google/gemma-4-31b-it:free` and `ollama:qwen2.5:7b` both parse). The forecast chain answers; the research chain plans queries and writes the brief, and defaults to the forecast chain. A route may end in `@minimal`, `@low`, `@medium`, `@high` or `@xhigh` (`openrouter:openai/gpt-5.4@high`) to ask for that reasoning effort; it is sent to the host and recorded with every call. |
 | `OPENROUTER_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY`, `GITHUB_TOKEN` | Keys for the `openrouter`, `groq`, `gemini` and `github` presets. Only the variables an endpoint names are read. |
 | `AUGUR_ENDPOINT_<NAME>_URL`, `_KEY_ENV`, `_BILLING`, `_RPM`, `_API` | Any other OpenAI-compatible host: base URL, the name of the variable holding its key, `free`, `openrouter` or `unpriced` (the default: its models are not called until priced), a requests-per-minute ceiling, and `openai` or `ollama`. |
 | `AUGUR_PROVIDER`, `AUGUR_MODEL` | Without the chains: one endpoint and model for both roles (default `ollama`, `qwen2.5:7b`), or `AUGUR_PROVIDER=replay`. |

@@ -240,6 +240,8 @@ class Ledger:
         model_release_date: date | None,
         release_basis: str | None = None,
         endpoint_host: str | None = None,
+        reasoning_effort: str | None = None,
+        reasoning_effort_applied: bool | None = None,
         served_model: str | None = None,
         request_hash: str,
         request: dict[str, Any],
@@ -280,6 +282,10 @@ class Ledger:
                     "endpoint_host": endpoint_host,
                     "served_model": served_model,
                     "release_basis": release_basis,
+                    "reasoning_effort": reasoning_effort,
+                    "reasoning_effort_applied": None
+                    if reasoning_effort_applied is None
+                    else int(reasoning_effort_applied),
                 },
             )
             for source_id in source_ids:

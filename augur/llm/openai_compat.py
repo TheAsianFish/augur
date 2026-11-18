@@ -126,6 +126,11 @@ class OpenAICompatProvider:
         }
         if request.seed is not None:
             body["seed"] = request.seed
+        if request.reasoning_effort is not None:
+            if endpoint.billing == "openrouter" or endpoint.host == "openrouter.ai":
+                body["reasoning"] = {"effort": request.reasoning_effort}
+            else:
+                body["reasoning_effort"] = request.reasoning_effort
         headers = {}
         if self._key is not None:
             headers["Authorization"] = f"Bearer {self._key.get_secret_value()}"

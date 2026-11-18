@@ -228,7 +228,9 @@ class CallRecorder:
                 "bills, so it is not called; pick a listed model, or set "
                 f"AUGUR_ENDPOINT_{route.endpoint.name.upper()}_BILLING=free if the host is free"
             )
-        request = request.model_copy(update={"model": route.model})
+        request = request.model_copy(
+            update={"model": route.model, "reasoning_effort": route.reasoning_effort}
+        )
         provider = self.router.provider(route)
         release, release_basis = self.router.release(route)
         reserved = estimate_cost(request, price)
@@ -269,6 +271,8 @@ class CallRecorder:
             model_release_date=release,
             release_basis=release_basis,
             endpoint_host=route.endpoint.host,
+            reasoning_effort=route.reasoning_effort,
+            reasoning_effort_applied=route.effort_applied,
             served_model=response.served_model if response else None,
             request_hash=request.request_hash(),
             request=request.model_dump(mode="json"),
