@@ -5,6 +5,8 @@ import math
 from typing import Any
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from augur.distributions import (
     Scaling,
@@ -564,3 +566,114 @@ def test_validate_probabilities_reports_each_rule() -> None:
         "probabilities must sum to 1, got 1.1"
     ]
     assert validate_probabilities({"a": 0.5, "b": 0.25, "c": 0.25 + 5e-6}, OPTIONS) == []
+
+
+# Property tests. Derandomized and without an example database, so every run
+# checks the same examples; the example counts keep the file to a few seconds.
+
+PROPERTY = settings(max_examples=400, derandomize=True, database=None, deadline=None)
+
+
+@st.composite
+def scalings(draw: st.DrawFn) -> Scaling:
+    n = draw(st.one_of(st.just(200), st.integers(2, 200)))
+    range_min = draw(st.floats(-1e6, 1e6))
+    # A range at least 1e-4 of its magnitude wide: narrower ones are not
+    # resolvable in floating point, and no real question has one.
+    width = max(draw(st.floats(1e-3, 1e6)), 1e-4 * abs(range_min))
+    kind = draw(st.sampled_from(["linear", "log below", "log above"]))
+    zero_point = None
+    if kind == "log below":
+        zero_point = range_min - width * draw(st.floats(1e-3, 1e3))
+    elif kind == "log above":
+        zero_point = range_min + width * (1.0 + draw(st.floats(1e-3, 1e3)))
+    return Scaling(
+        range_min=range_min,
+        range_max=range_min + width,
+        zero_point=zero_point,
+        open_lower_bound=draw(st.booleans()),
+        open_upper_bound=draw(st.booleans()),
+        inbound_outcome_count=n,
+    )
+
+
+# Unscaled positions: anywhere near the range, far outside it, and a few
+# fixed points so that ties (point masses) come up often.
+_POSITIONS = st.one_of(
+    st.floats(-0.5, 1.5),
+    st.floats(-5.0, 6.0),
+    st.sampled_from([0.0, 0.25, 0.5, 1.0]),
+)
+_LEVELS = st.one_of(st.floats(1e-4, 1 - 1e-4), st.sampled_from([0.1, 0.5, 0.9]))
+
+
+def _percentile_sets(scaling: Scaling) -> st.SearchStrategy[list[tuple[float, float]]]:
+    pair = st.tuples(_LEVELS, _POSITIONS.map(scaling.to_scaled))
+    return st.lists(pair, min_size=1, max_size=11).filter(
+        lambda ps: all(math.isfinite(v) for _, v in ps)
+    )
+
+
+@PROPERTY
+@given(st.data())
+def test_property_every_built_cdf_is_valid(data: st.DataObject) -> None:
+    s = data.draw(scalings())
+    percentiles = data.draw(_percentile_sets(s))
+    cdf = cdf_from_percentiles(percentiles, s)
+    assert validate_cdf(cdf, s) == []
+
+
+@PROPERTY
+@given(st.data())
+def test_property_mixtures_of_built_cdfs_are_valid(data: st.DataObject) -> None:
+    s = data.draw(scalings())
+    members = data.draw(st.lists(_percentile_sets(s), min_size=1, max_size=5))
+    weights = data.draw(
+        st.lists(st.floats(0.0, 1.0), min_size=len(members), max_size=len(members)).filter(
+            lambda w: sum(w) > 0
+        )
+    )
+    cdfs = [cdf_from_percentiles(p, s) for p in members]
+    assert validate_cdf(mix_cdfs(cdfs, weights), s) == []
+    assert validate_cdf(mix_cdfs(cdfs), s) == []
+
+
+@PROPERTY
+@given(st.data())
+def test_property_well_spread_percentiles_round_trip(data: st.DataObject) -> None:
+    s = data.draw(scalings())
+    # Two to five percentiles evenly spaced from 0.1 to 0.9, at increasing
+    # unscaled positions inside the range 0.1 to 0.15 apart, so the density
+    # stays moderate (the stated tolerance assumes it).
+    start = data.draw(st.floats(0.05, 0.3))
+    gaps = data.draw(st.lists(st.floats(0.1, 0.15), min_size=1, max_size=4))
+    positions = [start + math.fsum(gaps[:i]) for i in range(len(gaps) + 1)]
+    levels = [0.1 + 0.8 * i / len(gaps) for i in range(len(gaps) + 1)]
+    percentiles = [(lv, s.to_scaled(u)) for lv, u in zip(levels, positions, strict=True)]
+    cdf = cdf_from_percentiles(percentiles, s)
+    _assert_round_trip(cdf, s, percentiles)
+
+
+@PROPERTY
+@given(scalings(), st.floats(0.0, 1.0))
+def test_property_scaling_round_trips(s: Scaling, u: float) -> None:
+    x = s.to_scaled(u)
+    assert s.to_unscaled(x) == pytest.approx(u, abs=1e-6)
+
+
+@PROPERTY
+@given(st.data())
+def test_property_normalised_probabilities_are_valid(data: st.DataObject) -> None:
+    count = data.draw(st.integers(2, 20))
+    options = [f"option {i}" for i in range(count)]
+    value = st.one_of(st.floats(0.0, 1e6), st.sampled_from([0.0, 1e-300, 1.0]), st.just(math.nan))
+    given_options = data.draw(st.lists(st.sampled_from(options), unique=True, min_size=1))
+    probabilities = {o: data.draw(value) for o in given_options}
+    if not any(v > 0 for v in probabilities.values()):
+        with pytest.raises(ValueError, match="zero or missing"):
+            normalise_probabilities(probabilities, options)
+        return
+    out = normalise_probabilities(probabilities, options)
+    assert list(out) == options
+    assert validate_probabilities(out, options) == []
+    assert normalise_probabilities(probabilities, options) == out  # deterministic
