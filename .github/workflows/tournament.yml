@@ -21,6 +21,10 @@ on:
         description: Post forecasts and comments (from main only)
         type: boolean
         default: false
+      push_ledger:
+        description: Push this run's ledger export to the ledger branch
+        type: boolean
+        default: true
       max_questions:
         description: Questions per run at most
         type: string
@@ -60,6 +64,8 @@ jobs:
     if: needs.poll.outputs.has_work == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write # the ledger branch push
     env:
       AUGUR_LEDGER: run.sqlite
       AUGUR_LOG_LEVEL: INFO
@@ -78,7 +84,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Install
-        run: uv sync --locked
+        run: uv sync --locked --no-dev
       - name: Forecast
         id: forecast
         continue-on-error: true
@@ -101,6 +107,9 @@ jobs:
             uv run augur forecast --tournament "$t" "${args[@]}" 2>&1 | tee -a run.txt || status=1
           done
           exit "$status"
+      - name: Push the ledger export to the ledger branch
+        if: always() && (github.event_name == 'schedule' || inputs.push_ledger)
+        run: bash scripts/push_ledger.sh run.sqlite run.txt
       - name: Summary
         if: always()
         run: |
@@ -113,5 +122,5 @@ jobs:
       - name: Fail if the forecast failed
         if: steps.forecast.outcome == 'failure'
         run: |
-          echo "the forecast step failed; its output is in the summary"
+          echo "the forecast step failed; its output is in the step summary"
           exit 1
