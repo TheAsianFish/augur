@@ -11,7 +11,7 @@ private Actions-minute allowance. Nothing is published to PyPI at this step.
 
 | Check | How | Result |
 |-------|-----|--------|
-| No secret in the history | Every commit's patch (`git log --all -p --binary`, 11 commits) searched for the exact values of `METACULUS_TOKEN` and `OPENROUTER_API_KEY`, and for key shapes (`sk-or-v1-…`, `sk-ant-…`, `sk-…`, `ghp_…`, `AKIA…`, a literal `Token <hex>` or `Bearer <token>`) | 0 matches |
+| No secret in the history | Every commit's patch (`git log --all -p --binary`, every commit on `dev/m2`, re-run at review) searched for the exact values of `METACULUS_TOKEN` and `OPENROUTER_API_KEY`, and for key shapes (`sk-or-v1-…`, `sk-ant-…`, `sk-…`, `ghp_…`, `AKIA…`, a literal `Token <hex>` or `Bearer <token>`) | 0 matches |
 | No secret in the committed data | The same exact-value search over every file in `data/` and `augur/llm/openrouter_models.json` (ledgers, recordings, printed runs) | 0 matches |
 | Secrets never logged | `tests/test_logging.py`, `test_no_token_reaches_the_logs_during_a_live_run`, and the provider tests that assert a key echoed by a server is redacted | pass in `make check` |
 | No private notes tracked | `git ls-files` has no `CLAUDE.md`, `AGENTS.md`, `.agent/`, `.claude/` or `.env` | none tracked |
