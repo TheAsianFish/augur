@@ -137,6 +137,10 @@ def test_in_frontier_tier() -> None:
     assert in_frontier_tier(_route(eps["openrouter"], "openai/gpt-5.1"))
     assert in_frontier_tier(_route(eps["openrouter"], "anthropic/claude-opus-5.5"))
     assert not in_frontier_tier(_route(eps["openrouter"], "openai/gpt-5-mini"))
+    assert in_frontier_tier(_route(eps["openrouter"], "openai/gpt-5.4"))
+    assert in_frontier_tier(_route(eps["openrouter"], "anthropic/claude-opus-5"))
+    assert not in_frontier_tier(_route(eps["openrouter"], "openai/gpt-5.4-mini"))
+    assert not in_frontier_tier(_route(eps["openrouter"], "openai/gpt-6.2-astra"))
     assert not in_frontier_tier(_route(eps["groq"], "openai/gpt-5.1"))
     assert not in_frontier_tier(_route(eps["ollama"], "gpt-5"))
 

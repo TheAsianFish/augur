@@ -49,7 +49,7 @@ def test_submit_to_minibench_with_a_local_model_is_refused_before_any_call(
     )
     err = capsys.readouterr().err
     assert code == 2
-    assert "frontier-2026-11" in err
+    assert "frontier-2026-11b" in err
     assert "not-a-real-token" not in err
 
 

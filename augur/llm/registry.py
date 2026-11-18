@@ -34,19 +34,35 @@ def local_release_date(model: str) -> date | None:
 # points that skipping the question would not. So ``--submit`` outside the
 # practice tournaments needs every forecast to come from a hosted model in
 # this named tier; small and local models are for tests, dry runs, backtests
-# and the bot-testing-area. The tier is the frontier models used by the
-# Spring 2026 leaders and the Metaculus template bots, by bare name (see
-# ``bare_model_name``); it is reviewed whenever the hosted model list changes,
-# and never widened to get a run through.
-FRONTIER_TIER_NAME = "frontier-2026-11"
+# and the bot-testing-area. Matching is by bare name (``bare_model_name``).
+#
+# What admits a model: an outside forecasting result that names it, either as
+# the final model of a top bot or a Metaculus template bot, or as a measured
+# forecaster on a published benchmark. A newer or pricier model of the same
+# line is not admitted on that alone; it waits for evidence or for the
+# maintainer. The tier is reviewed whenever the hosted model list changes and
+# never widened to get a run through; each review gets a new name, which the
+# ledger records on every scored run.
+#
+# Review 2026-11-18 (M3), against OpenRouter's list of that day: added
+# ``gpt-5-4`` (the Spring 2026 survey's strongest single signal, r = +0.42 as
+# the final model) and ``claude-opus-5`` (Claude Opus 5 at xhigh effort scored
+# Brier 0.120 on Bench to the Future 3, 0.004 behind the best published
+# system). Listed but not admitted, for want of a forecasting result: the
+# GPT-5.2, 5.5, 5.6 and 6.x models, Claude Opus 4.6 to 4.8 and Sonnet 5,
+# Gemini 3.1 Pro, Grok 4.20 to 4.7. ``gemini-3-pro-preview`` and ``grok-4``
+# stay although OpenRouter no longer lists them.
+FRONTIER_TIER_NAME = "frontier-2026-11b"
 FRONTIER_TIER: frozenset[str] = frozenset(
     {
         "gpt-5",
         "gpt-5-1",
+        "gpt-5-4",
         "o3",
         "claude-opus-4-1",
         "claude-opus-4-5",
         "claude-sonnet-4-5",
+        "claude-opus-5",
         "claude-opus-5-5",
         "claude-sonnet-5-5",
         "gemini-2-5-pro",

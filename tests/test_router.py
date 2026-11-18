@@ -292,7 +292,7 @@ async def test_the_last_check_catches_a_below_tier_answer_the_router_let_through
     [q] = [x for x in report.reports if x.question.question_id == 501]
     assert GEMMA.model in p.models_called(FORECASTER_SYSTEM), "the router fell through"
     assert q.status == "skipped"
-    assert "below the frontier-2026-11 tier; nothing posted" in q.reason
+    assert "below the frontier-2026-11b tier; nothing posted" in q.reason
     assert fake.forecasts == []
     assert fake.comments == []
     refused = ledger.connection.execute(
@@ -417,7 +417,7 @@ async def test_a_scored_run_skips_everything_when_no_frontier_model_answers_the_
     )
     [q] = [x for x in report.reports if x.question.question_id == 501]
     assert q.status == "skipped"
-    assert "no frontier-2026-11 model answered the probe" in q.reason
+    assert "no frontier-2026-11b model answered the probe" in q.reason
     assert p.requests == [], "no question cost a model call"
     assert fake.forecasts == []
     ledger.close()

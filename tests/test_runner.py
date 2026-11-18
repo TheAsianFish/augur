@@ -428,7 +428,7 @@ async def test_the_floor_refuses_live_submission_below_the_frontier_tier(
     tournament: str,
 ) -> None:
     provider = ScriptedProvider()
-    with pytest.raises(SubmitFloorError, match="frontier-2026-11"):
+    with pytest.raises(SubmitFloorError, match="frontier-2026-11b"):
         await _run(
             tmp_path,
             client=_client(http),
