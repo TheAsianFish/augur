@@ -343,6 +343,28 @@ async def test_a_failed_comment_is_posted_by_the_next_run_and_never_twice(
     ledger3.close()
 
 
+async def test_a_forecast_taken_but_unacknowledged_still_gets_its_comment(
+    tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
+) -> None:
+    fake.lost_forecast_answers = 100  # every retry is taken, none acknowledged
+    first, ledger = await _run(tmp_path, client=_client(http), submit=True)
+    [failed] = [r for r in first.reports if r.question.question_id == 501]
+    assert failed.status == "failed"
+    taken = len(fake.forecasts)
+    assert taken >= 1, "the server took the forecast"
+    assert fake.comments == []
+    ledger.close()
+    fake.lost_forecast_answers = 0
+
+    second, ledger2 = await _run(tmp_path, client=_client(http), submit=True)
+    [repaired] = [r for r in second.reports if r.question.question_id == 501]
+    assert "posted the comment an earlier run could not" in repaired.reason
+    assert len(fake.forecasts) == taken, "the repair does not forecast again"
+    assert len(fake.comments) == 1
+    assert fake.comments[0]["text"].startswith("**Forecast: 40%**")
+    ledger2.close()
+
+
 class _HostedProvider(ScriptedProvider):
     @property
     def name(self) -> str:

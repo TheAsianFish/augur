@@ -117,3 +117,43 @@ def test_probability_must_be_inside_zero_one(ledger: Ledger) -> None:
 def test_unknown_table_count_is_refused(ledger: Ledger) -> None:
     with pytest.raises(LedgerError, match="unknown table"):
         ledger.count("sqlite_master")
+
+
+def test_a_repair_posts_the_forecasting_runs_comment_not_a_later_dry_runs(
+    ledger: Ledger, clock: FixedClock
+) -> None:
+    q, post = binary_question(T0 - timedelta(hours=1))
+    live = ledger.start_run(
+        mode=RunMode.LIVE,
+        tournament="minibench",
+        provider="replay",
+        model="m",
+        settings={},
+        code_version="test",
+    )
+    ledger.record_question(live, q, T0, post)
+
+    def sub(run_id: str, kind: str, status: str, text: str = "") -> None:
+        payload = {"text": text} if kind == "comment" else {"probability_yes": 0.4}
+        ledger.record_submission(
+            run_id=run_id,
+            question_id=q.question_id,
+            post_id=q.post_id,
+            kind=kind,
+            payload=payload,
+            status=status,
+            http_status=None,
+            response_excerpt=None,
+        )
+
+    sub(live, "forecast", "submitted")
+    sub(live, "comment", "failed", "**Forecast: 40%** live")
+    clock.advance(300)
+    dry = _run(ledger)
+    ledger.record_question(dry, q, clock.now(), post)
+    sub(dry, "forecast", "dry_run")
+    sub(dry, "comment", "dry_run", "**Forecast: 80%** dry")
+    assert ledger.unposted_comment(q.question_id) == "**Forecast: 40%** live"
+
+    sub(dry, "comment", "submitted", "**Forecast: 40%** live")
+    assert ledger.unposted_comment(q.question_id) is None

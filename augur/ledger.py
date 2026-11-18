@@ -344,27 +344,33 @@ class Ledger:
     # -- reads ----------------------------------------------------------
 
     def unposted_comment(self, question_id: int) -> str | None:
-        """The text of a comment that failed after its forecast was submitted.
+        """The comment that belongs to this account's forecast and was never posted.
 
-        ``None`` when the question has no submitted forecast, or already has a
-        submitted comment. Lets a later run post what an earlier one could not.
+        Call it only when the server shows this account's forecast standing.
+        The text comes from the latest live run that attempted the forecast
+        (posted, or failed in a way that may still have been processed), and
+        only from that run's failed comment: never a dry run's text, which may
+        say another probability. ``None`` when a comment was already posted,
+        or no such run left one.
         """
         posted = self._conn.execute(
             "SELECT count(*) FROM submissions WHERE question_id = ? AND kind = 'comment' "
             "AND status = 'submitted'",
             (question_id,),
         ).fetchone()[0]
+        if posted:
+            return None
         forecast = self._conn.execute(
-            "SELECT count(*) FROM submissions WHERE question_id = ? AND kind = 'forecast' "
-            "AND status = 'submitted'",
+            "SELECT run_id FROM submissions WHERE question_id = ? AND kind = 'forecast' "
+            "AND status IN ('submitted', 'failed') ORDER BY recorded_at DESC LIMIT 1",
             (question_id,),
-        ).fetchone()[0]
-        if posted or not forecast:
+        ).fetchone()
+        if forecast is None:
             return None
         row = self._conn.execute(
-            "SELECT payload_json FROM submissions WHERE question_id = ? AND kind = 'comment' "
-            "ORDER BY recorded_at DESC LIMIT 1",
-            (question_id,),
+            "SELECT payload_json FROM submissions WHERE question_id = ? AND run_id = ? "
+            "AND kind = 'comment' AND status = 'failed' ORDER BY recorded_at DESC LIMIT 1",
+            (question_id, forecast[0]),
         ).fetchone()
         if row is None:
             return None

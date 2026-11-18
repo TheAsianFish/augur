@@ -85,8 +85,11 @@ class FakeMetaculus:
         self.comments: list[dict[str, Any]] = []
         self.requests: list[httpx.Request] = []
         self.unavailable_comments = 0
-        """Answer the next N comment posts with 503 (after recording them, as a
-        server that processed the write but failed to answer might)."""
+        """Answer the next N comment posts with 503 without recording them (a
+        write the server did not process)."""
+        self.lost_forecast_answers = 0
+        """Record the next N forecast posts, then answer 503 (a write the server
+        processed but failed to acknowledge)."""
 
     # Setup.
 
@@ -142,7 +145,13 @@ class FakeMetaculus:
         if request.method == "GET" and match:
             return self._detail(int(match.group(1)))
         if request.method == "POST" and route == "/questions/forecast/":
-            return self._forecast(request)
+            response = self._forecast(request)
+            if self.lost_forecast_answers > 0 and response.status_code < 300:
+                self.lost_forecast_answers -= 1
+                return httpx.Response(
+                    503, json={"detail": "Service unavailable."}, headers={"Retry-After": "0"}
+                )
+            return response
         if request.method == "POST" and route == "/comments/create/":
             if self.unavailable_comments > 0:
                 self.unavailable_comments -= 1

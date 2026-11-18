@@ -359,7 +359,23 @@ class ForecastRun:
             report.status = "skipped"
             report.reason = "already forecast by this account (checked again before submitting)"
             return
-        await self._submit(run_id, q, "forecast", forecast_payload, report)
+        try:
+            await self._submit(run_id, q, "forecast", forecast_payload, report)
+        except MetaculusError:
+            # The server may have taken the forecast and failed to answer. Keep
+            # the comment as unsent so a later run that sees the forecast
+            # standing posts this text, the reasoning behind it.
+            self._ledger.record_submission(
+                run_id=run_id,
+                question_id=q.question_id,
+                post_id=q.post_id,
+                kind="comment",
+                payload=comment_payload,
+                status="failed",
+                http_status=None,
+                response_excerpt="not sent: the forecast's own post failed",
+            )
+            raise
         await self._submit(run_id, q, "comment", comment_payload, report)
         report.submitted = True
         self._print(f"   submitted {report.probability * 100:.1f}%; posted this private comment:")
