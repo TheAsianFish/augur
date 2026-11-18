@@ -7,6 +7,7 @@ so this provider is untested against the live service. Override the URL with
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import httpx
@@ -90,20 +91,36 @@ class MetaculusProxyProvider:
             ) from exc
         in_tok = usage.get("prompt_tokens")
         out_tok = usage.get("completion_tokens")
+        info = priced(request.model, self.name)
+        if isinstance(in_tok, int) and isinstance(out_tok, int):
+            cost = info.cost(in_tok, out_tok)
+        else:
+            # No usage reported: charge the worst case (about a token per three
+            # characters in, max_tokens out) so the cost caps still bind.
+            chars = sum(len(m.content) for m in request.messages)
+            cost = info.cost(chars // 3 + 1, request.max_tokens)
+            in_tok = out_tok = None
         return LlmResponse(
             text=text,
             model=request.model,
             input_tokens=in_tok,
             output_tokens=out_tok,
-            cost_usd=priced(request.model, self.name).cost(in_tok, out_tok),
+            cost_usd=cost,
         )
 
     async def aclose(self) -> None:
         await self._http.aclose()
 
 
+MAX_RETRY_AFTER = 120.0
+
+
 def _retry_after(resp: httpx.Response, default: float) -> float:
+    """The server's wait, clamped: ``inf``, ``nan`` or a day must not stall the run."""
     try:
-        return max(0.0, float(resp.headers["Retry-After"]))
+        seconds = float(resp.headers["Retry-After"])
     except (KeyError, ValueError):
-        return default
+        seconds = default
+    if not math.isfinite(seconds) or seconds < 0:
+        seconds = default
+    return min(seconds, MAX_RETRY_AFTER)

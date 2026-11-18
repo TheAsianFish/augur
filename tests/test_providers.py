@@ -14,6 +14,7 @@ from augur.llm.base import LlmRequest, LlmResponse, Message
 from augur.llm.factory import build_provider, default_http_client
 from augur.llm.metaculus_proxy import MetaculusProxyProvider
 from augur.llm.ollama import OllamaProvider
+from augur.llm.registry import priced
 from augur.llm.replay import RecordingProvider, ReplayProvider
 from augur.ratelimit import RateLimiter
 
@@ -169,6 +170,39 @@ async def test_proxy_retries_429_with_retry_after() -> None:
     assert out.text == "answer"
     assert calls == 2
     assert time.now >= 3.0  # the limiter held the call for Retry-After
+
+
+@pytest.mark.parametrize("header", ["inf", "nan", "86400", "-5"])
+async def test_proxy_clamps_an_unreasonable_retry_after(header: str) -> None:
+    calls = 0
+    time = FakeTime()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(429, headers={"Retry-After": header})
+        return proxy_ok(request)
+
+    p = MetaculusProxyProvider(
+        client(httpx.MockTransport(handler)), "http://p", SecretStr("t"), fast_limiter(time)
+    )
+    assert (await p.complete(REQ)).text == "answer"
+    assert time.now <= 120.0, "a hostile or broken Retry-After must not stall the run"
+
+
+async def test_proxy_without_usage_is_charged_the_worst_case() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": [{"message": {"content": "answer"}}]})
+
+    p = MetaculusProxyProvider(
+        client(httpx.MockTransport(handler)), "http://p", SecretStr("t"), fast_limiter()
+    )
+    unknown = REQ.model_copy(update={"model": "some-new-model"})
+    out = await p.complete(unknown)
+    worst = priced("some-new-model", "metaculus_proxy").cost(1, unknown.max_tokens)
+    assert out.input_tokens is None
+    assert out.cost_usd >= worst > 0, "a host that omits usage must not read as free"
 
 
 async def test_proxy_gives_up_without_leaking_token() -> None:
