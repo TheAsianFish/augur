@@ -81,5 +81,6 @@ until the variables below are set: unset `AUGUR_SCHEDULE` is the kill switch.
 5. Once the repository is public, set `AUGUR_CHAIN_MINUTES=60`: GitHub's
    scheduler was measured to drop most ticks (RESULTS.md M3), and the chain
    dispatches each next run itself. While private, its waiting would bill
-   about 1,440 minutes a month, so leave it unset.
+   about 43,000 minutes a month (a 60-minute job, 24 times a day), so leave
+   it unset.
 6. Kill switch: set `AUGUR_SCHEDULE=off`.
