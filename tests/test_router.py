@@ -275,6 +275,32 @@ async def test_the_same_fallback_answers_in_the_practice_area(
     ledger.close()
 
 
+async def test_the_last_check_catches_a_below_tier_answer_the_router_let_through(
+    tmp_path: Path,
+    fake: FakeMetaculus,
+    http: httpx.AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """If the router's floor were lost, the check on who answered still refuses to post."""
+    monkeypatch.setattr(Router, "set_floor", lambda self, role, name, floor: None)
+    r, p = router([GPT, GEMMA], research=[GEMMA])
+    p.failures[GPT.model] = OutOfCreditError("402", status_code=402)
+    report, ledger = await _run(
+        tmp_path, client=_client(http), router=r, submit=True, tournament="minibench"
+    )
+    [q] = [x for x in report.reports if x.question.question_id == 501]
+    assert GEMMA.model in p.models_called(FORECASTER_SYSTEM), "the router fell through"
+    assert q.status == "skipped"
+    assert "below the frontier-2026-11 tier; nothing posted" in q.reason
+    assert fake.forecasts == []
+    assert fake.comments == []
+    refused = ledger.connection.execute(
+        "SELECT from_route, reason FROM model_switches WHERE outcome = 'refused_by_floor'"
+    ).fetchall()
+    assert refused == [(GEMMA.key, "below_floor_at_submit")]
+    ledger.close()
+
+
 async def test_a_frontier_fallback_still_submits(
     tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
 ) -> None:
@@ -288,6 +314,65 @@ async def test_a_frontier_fallback_still_submits(
     assert "by anthropic/claude-opus-5.5." in fake.comments[0]["text"]
     ledger.close()
     assert scan_ledger(tmp_path / "l.sqlite") == []
+
+
+def test_the_ledger_scan_flags_a_submission_below_the_floor(tmp_path: Path) -> None:
+    path = tmp_path / "bad.sqlite"
+    led = Ledger.open(path, FixedClock(T0))
+    run_id = led.start_run(
+        mode=RunMode.LIVE,
+        tournament="minibench",
+        provider="openrouter",
+        model=GEMMA.model,
+        settings={},
+        code_version="test",
+    )
+    q, post = binary_question(T0)
+    led.record_question(run_id, q, T0, post)
+    call_id = led.record_call(
+        run_id=run_id,
+        question_id=q.question_id,
+        role="forecaster",
+        member=0,
+        provider="openrouter",
+        model=GEMMA.model,
+        model_release_date=None,
+        endpoint_host="openrouter.ai",
+        request_hash="h",
+        request={},
+        response_text="Probability: 40%",
+        input_tokens=1,
+        output_tokens=1,
+        cost_usd=0.0,
+        latency_ms=1,
+        error=None,
+        started_at=T0,
+        source_ids=[],
+    )
+    led.record_forecast(
+        run_id=run_id,
+        question_id=q.question_id,
+        kind="member",
+        member=0,
+        method="draw",
+        probability=0.4,
+        reasoning="r",
+        call_id=call_id,
+    )
+    led.record_submission(
+        run_id=run_id,
+        question_id=q.question_id,
+        post_id=q.post_id,
+        kind="forecast",
+        payload={},
+        status="submitted",
+        http_status=201,
+        response_excerpt=None,
+    )
+    led.close()
+    [violation] = scan_ledger(path)
+    assert violation.kind == "below_floor"
+    assert GEMMA.model in violation.detail
 
 
 # The opening probe

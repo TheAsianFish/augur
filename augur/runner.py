@@ -127,6 +127,7 @@ class ForecastRun:
         self._clock = clock
         self._ledger = ledger
         self._router = router
+        self._scored = False
         self._searchers = list(searchers)
         self._client = client
         self._out = out
@@ -145,6 +146,7 @@ class ForecastRun:
         if submit and samples is not None:
             raise AugurError("--submit forecasts live questions only; drop --samples")
         scored = submit and slug not in PRACTICE_TOURNAMENTS
+        self._scored = scored
         if scored:
             self._check_submit_floor(slug)
         mode = RunMode.LIVE if submit else RunMode.DRY_RUN
@@ -368,6 +370,29 @@ class ForecastRun:
                 self._print("   | " + line)
             return
 
+        below = self._below_floor(report)
+        if below:
+            # The router never lets a scored question fall below the tier; this
+            # is the last check, on the models that actually answered.
+            for route in below:
+                self._ledger.record_switch(
+                    run_id=run_id,
+                    question_id=q.question_id,
+                    call_role="forecaster",
+                    member=None,
+                    from_route=route,
+                    to_route=None,
+                    reason="below_floor_at_submit",
+                    outcome="refused_by_floor",
+                    detail=f"{route} answered but is below the {FRONTIER_TIER_NAME} tier",
+                )
+            report.status = "skipped"
+            report.reason = (
+                f"submit floor: {', '.join(below)} answered, below the {FRONTIER_TIER_NAME} "
+                "tier; nothing posted"
+            )
+            self._print(f"   not submitted: {report.reason}")
+            return
         client = self._live_client()
         # Re-read just before writing: another run may have forecast meanwhile.
         fresh, _ = await client.get_question(q.post_id)
@@ -460,7 +485,7 @@ class ForecastRun:
 
         Later routes in the chain are fallbacks: a scored question that would
         fall to one below the tier is skipped when it happens (the router's
-        floor).
+        floor), and :meth:`_below_floor` checks the models that answered.
         """
         first = self._router.chain("forecast")[0]
         if in_frontier_tier(first):
@@ -472,6 +497,12 @@ class ForecastRun:
             "weak forecast costs peer points that skipping does not. Drop --submit for a dry "
             f"run, or submit to {', '.join(sorted(PRACTICE_TOURNAMENTS))} to test the live path."
         )
+
+    def _below_floor(self, report: QuestionReport) -> list[str]:
+        """Answering routes below the tier, when the run is scored (else nothing)."""
+        if not self._scored:
+            return []
+        return sorted({m.route.key for m in report.members if not in_frontier_tier(m.route)})
 
     def _live_client(self) -> MetaculusClient:
         if self._client is None:
