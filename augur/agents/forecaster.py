@@ -11,7 +11,7 @@ from datetime import datetime
 from augur.agents.calls import BudgetExceededError, CallContext, CallRecorder
 from augur.agents.researcher import ResearchResult, question_text
 from augur.errors import AugurError, BelowFloorError, ForecastParseError
-from augur.llm.base import LlmRequest, Message
+from augur.llm.base import LlmRequest, LlmResponse, Message
 from augur.llm.endpoints import Route
 from augur.log import get_logger
 from augur.questions import Question
@@ -61,6 +61,14 @@ def reasoning_of(text: str) -> str:
     return "\n".join(lines).strip()
 
 
+def member_reasoning(response: LlmResponse) -> str:
+    """The stated reasoning; if the answer was only a number, the model's own trace."""
+    stated = reasoning_of(response.text)
+    if stated or not response.reasoning:
+        return stated
+    return "(from the model's reasoning trace) " + response.reasoning.strip()
+
+
 def forecaster_request(
     q: Question, cutoff: datetime, research: ResearchResult, member: int
 ) -> LlmRequest:
@@ -75,7 +83,10 @@ def forecaster_request(
         ),
         temperature=0.7,
         seed=member,
-        max_tokens=600,
+        # Reasoning models spend part of this before the answer: at 600, two of
+        # five draws from a free reasoning model stopped before their
+        # probability line (M2 bot-testing-area run).
+        max_tokens=1500,
     )
 
 
@@ -116,7 +127,7 @@ async def draw_forecasts(
                 log.warning("forecaster failed", member=member, error=str(exc))
                 return None
             return MemberForecast(
-                member, probability, reasoning_of(done.response.text), done.call_id, done.route
+                member, probability, member_reasoning(done.response), done.call_id, done.route
             )
 
     results = await asyncio.gather(*(one(m) for m in range(n)))

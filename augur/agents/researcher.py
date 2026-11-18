@@ -161,7 +161,7 @@ class Researcher:
             ),
             temperature=0.0,
             seed=0,
-            max_tokens=200,
+            max_tokens=600,  # a reasoning model emptied 200 on thinking (M2)
         )
         ctx = CallContext(run_id=run_id, question_id=q.question_id, role="planner")
         queries: list[str] = []
@@ -222,7 +222,7 @@ class Researcher:
             ),
             temperature=0.0,
             seed=0,
-            max_tokens=500,
+            max_tokens=1000,
         )
         ctx = CallContext(run_id=run_id, question_id=q.question_id, role="researcher")
         try:

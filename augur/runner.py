@@ -280,7 +280,7 @@ class ForecastRun:
     def _skip_reason(self, q: Question, *, live_listing: bool) -> str | None:
         now = self._clock.now()
         if q.type != "binary":
-            return f"{q.type} questions are not forecast yet (binary only until M2)"
+            return f"{q.type} questions are not forecast yet (binary only until M3)"
         if live_listing and not q.is_open(now):
             return "not open now"
         if live_listing and q.already_forecast(now) and not self._reforecast:

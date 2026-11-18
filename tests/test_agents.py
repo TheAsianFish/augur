@@ -125,3 +125,14 @@ def test_comment_names_every_model_that_answered() -> None:
         probability=0.4, members=members, research=research, cutoff=T0, requested=3
     )
     assert "by openai/gpt-5.1 and qwen2.5:7b." in text
+
+
+def test_a_bare_number_falls_back_to_the_reasoning_trace() -> None:
+    from augur.agents.forecaster import member_reasoning
+    from augur.llm.base import LlmResponse
+
+    stated = LlmResponse(text="Base rates say no.\nProbability: 5%", model="m", reasoning="t")
+    assert member_reasoning(stated) == "Base rates say no."
+    bare = LlmResponse(text="Probability: 5%", model="m", reasoning="Only the UK has left.")
+    assert member_reasoning(bare) == "(from the model's reasoning trace) Only the UK has left."
+    assert member_reasoning(LlmResponse(text="Probability: 5%", model="m")) == ""
