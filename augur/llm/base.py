@@ -39,7 +39,15 @@ class LlmResponse(BaseModel):
     model: str
     input_tokens: int | None = None
     output_tokens: int | None = None
-    cost_usd: float = 0.0
+    # ``None`` when the host did not say; otherwise its own figure, which wins
+    # over a price computed from tokens.
+    cost_usd: float | None = None
+    # The model the host says answered (a router may serve another).
+    served_model: str | None = None
+    # A reasoning model's trace, when the host returns it beside the answer.
+    reasoning: str | None = None
+    # Any rate-limit headers the host sent (``x-ratelimit-*``, ``retry-after``).
+    limit_headers: dict[str, str] = Field(default_factory=dict)
 
 
 class Provider(Protocol):

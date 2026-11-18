@@ -202,6 +202,7 @@ async def test_proxy_without_usage_is_charged_the_worst_case() -> None:
     out = await p.complete(unknown)
     worst = priced("some-new-model", "metaculus_proxy").cost(1, unknown.max_tokens)
     assert out.input_tokens is None
+    assert out.cost_usd is not None
     assert out.cost_usd >= worst > 0, "a host that omits usage must not read as free"
 
 
