@@ -20,10 +20,11 @@ from augur.aggregate import median
 from augur.clock import Clock
 from augur.comment import render_comment
 from augur.config import Settings
-from augur.errors import AugurError, MetaculusError
+from augur.errors import AugurError, MetaculusError, SubmitFloorError
 from augur.leakage import RunMode
 from augur.ledger import Ledger
 from augur.llm.base import Provider
+from augur.llm.registry import FRONTIER_TIER_NAME, PRACTICE_TOURNAMENTS, in_frontier_tier
 from augur.log import get_logger
 from augur.metaculus import MetaculusClient
 from augur.questions import Question, question_from_post
@@ -143,6 +144,8 @@ class ForecastRun:
             raise AugurError("--submit needs METACULUS_TOKEN; without it run a dry run")
         if submit and samples is not None:
             raise AugurError("--submit forecasts live questions only; drop --samples")
+        if submit:
+            self._check_submit_floor(slug)
         mode = RunMode.LIVE if submit else RunMode.DRY_RUN
         use_samples = samples is not None or self._client is None or not self._client.has_token
         source = (
@@ -419,6 +422,21 @@ class ForecastRun:
             report.reason += f"; its missing comment failed again ({exc})"
             return
         report.reason += "; posted the comment an earlier run could not"
+
+    def _check_submit_floor(self, slug: str) -> None:
+        """Refuse to post to a scored tournament from a model below the frontier tier."""
+        if slug in PRACTICE_TOURNAMENTS:
+            return
+        provider, model = self._provider.name, self._settings.model
+        if in_frontier_tier(model, provider):
+            return
+        log.warning("submit refused by the floor", tournament=slug, provider=provider, model=model)
+        raise SubmitFloorError(
+            f"--submit to {slug} needs a hosted model in the {FRONTIER_TIER_NAME} tier, "
+            f"and {model} on {provider} is not one; a weak forecast costs peer points that "
+            "skipping does not. Drop --submit for a dry run, or submit to "
+            f"{', '.join(sorted(PRACTICE_TOURNAMENTS))} to test the live path."
+        )
 
     def _live_client(self) -> MetaculusClient:
         if self._client is None:

@@ -24,6 +24,10 @@ class MissingCredentialsError(ConfigError):
         self.variables = variables
 
 
+class SubmitFloorError(ConfigError):
+    """``--submit`` to a live tournament with a model below the frontier tier."""
+
+
 class MetaculusError(AugurError):
     """The Metaculus API refused or failed a request."""
 

@@ -14,9 +14,10 @@ from pydantic import SecretStr
 
 from augur.clock import FixedClock
 from augur.config import Settings
-from augur.errors import AugurError
+from augur.errors import AugurError, SubmitFloorError
 from augur.leakage import RunMode, scan_ledger
 from augur.ledger import Ledger
+from augur.llm.registry import bare_model_name, in_frontier_tier
 from augur.log import configure_logging
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
@@ -39,6 +40,8 @@ def fake() -> FakeMetaculus:
     server.add_post(binary_post(500, 501, title="Will the fake event happen?"), "minibench")
     server.add_post(binary_post(510, 511, title="A closed one", status="closed"), "minibench")
     server.add_fixture(MINIBENCH_NUMERIC, "minibench")
+    for keys in server.tournaments.values():
+        keys.add("bot-testing-area")  # submissions go to the practice area (the floor)
     return server
 
 
@@ -64,6 +67,7 @@ async def _run(
     max_questions: int = 10,
     out: io.StringIO | None = None,
     searcher: FixedSearcher | None = None,
+    tournament: str | None = None,
     **settings: object,
 ) -> tuple[RunReport, Ledger]:
     clock = FixedClock(T0)
@@ -78,7 +82,8 @@ async def _run(
         client=client,
         out=out or io.StringIO(),
     )
-    report = await run.run("minibench", submit=submit, samples=samples, max_questions=max_questions)
+    slug = tournament or ("bot-testing-area" if submit else "minibench")
+    report = await run.run(slug, submit=submit, samples=samples, max_questions=max_questions)
     return report, ledger
 
 
@@ -336,3 +341,72 @@ async def test_a_failed_comment_is_posted_by_the_next_run_and_never_twice(
     assert done.reason == "already forecast by this account"
     assert len(fake.comments) == 1
     ledger3.close()
+
+
+class _HostedProvider(ScriptedProvider):
+    @property
+    def name(self) -> str:
+        return "metaculus_proxy"
+
+
+@pytest.mark.parametrize(
+    ("provider", "model"),
+    [
+        (ScriptedProvider(), "qwen2.5:7b"),
+        (_HostedProvider(), "qwen2.5:7b"),
+        (_HostedProvider(), "llama-3.1-8b-instruct"),
+        (ScriptedProvider(), "gpt-5"),  # a frontier name on a local provider is not frontier
+    ],
+)
+@pytest.mark.parametrize("tournament", ["minibench", "futureeval", "32916"])
+async def test_the_floor_refuses_live_submission_below_the_frontier_tier(
+    tmp_path: Path,
+    fake: FakeMetaculus,
+    http: httpx.AsyncClient,
+    provider: ScriptedProvider,
+    model: str,
+    tournament: str,
+) -> None:
+    with pytest.raises(SubmitFloorError, match="frontier-2026-11"):
+        await _run(
+            tmp_path,
+            client=_client(http),
+            provider=provider,
+            submit=True,
+            tournament=tournament,
+            model=model,
+        )
+    assert provider.requests == [], "refused before any model call"
+    assert fake.forecasts == []
+    assert fake.comments == []
+    ledger = Ledger.open(tmp_path / "l.sqlite", FixedClock(T0))
+    assert ledger.count("runs") == 0
+    ledger.close()
+
+
+async def test_the_floor_admits_a_frontier_model_and_the_practice_area(
+    tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
+) -> None:
+    report, ledger = await _run(
+        tmp_path / "a",
+        client=_client(http),
+        provider=_HostedProvider(),
+        submit=True,
+        tournament="minibench",
+        model="openai/gpt-5:free",
+    )
+    assert report.count("forecast") == 1
+    assert len(fake.forecasts) == 1
+    ledger.close()
+
+    fake.add_post(binary_post(520, 521, title="Practice"), "bot-testing-area")
+    small, ledger2 = await _run(tmp_path / "b", client=_client(http), submit=True)
+    assert [r.question.question_id for r in small.reports if r.status == "forecast"] == [521]
+    ledger2.close()
+
+
+def test_bare_model_names() -> None:
+    assert bare_model_name("openai/gpt-5:free") == "gpt-5"
+    assert bare_model_name(" Claude-Opus-4-5 ") == "claude-opus-4-5"
+    assert bare_model_name("qwen2.5:7b") == "qwen2.5"
+    assert not in_frontier_tier("gpt-5-mini", "metaculus_proxy")

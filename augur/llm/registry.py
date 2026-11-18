@@ -52,6 +52,44 @@ UNPRICED_OUTPUT_PER_MILLION = 75.0
 LOCAL_PROVIDERS = frozenset({"ollama", "replay"})
 
 
+# The submit floor. A forecast posted to a live tournament is scored against
+# about 110 bots, most on frontier models, and a weak forecast loses peer
+# points that skipping the question would not. So ``--submit`` outside the
+# practice tournaments needs a hosted model in this named tier; small and local
+# models are for tests, dry runs, backtests and the bot-testing-area. The tier
+# is the frontier models used by the Spring 2026 leaders and the Metaculus
+# template bots, by bare name (vendor prefix and ``:variant`` suffix dropped);
+# it is reviewed whenever the hosted model list changes.
+FRONTIER_TIER_NAME = "frontier-2026-11"
+FRONTIER_TIER: frozenset[str] = frozenset(
+    {
+        "gpt-5",
+        "gpt-5.1",
+        "o3",
+        "claude-opus-4-1",
+        "claude-opus-4-5",
+        "claude-sonnet-4-5",
+        "claude-opus-5-5",
+        "claude-sonnet-5-5",
+        "gemini-2.5-pro",
+        "gemini-3-pro-preview",
+        "grok-4",
+    }
+)
+HOSTED_PROVIDERS = frozenset({"metaculus_proxy"})
+PRACTICE_TOURNAMENTS = frozenset({"bot-testing-area"})
+
+
+def bare_model_name(model: str) -> str:
+    """``openai/gpt-5:free`` -> ``gpt-5``: the name the frontier tier is keyed on."""
+    return model.strip().lower().rsplit("/", 1)[-1].split(":", 1)[0]
+
+
+def in_frontier_tier(model: str, provider: str) -> bool:
+    """Whether ``model`` served by ``provider`` may submit to a live tournament."""
+    return provider in HOSTED_PROVIDERS and bare_model_name(model) in FRONTIER_TIER
+
+
 def lookup(model: str) -> ModelInfo:
     """The registry entry for ``model``; an unknown model has no release date and costs 0."""
     return _REGISTRY.get(model, ModelInfo(name=model, release_date=None, known=False))

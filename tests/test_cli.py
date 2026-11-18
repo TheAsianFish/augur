@@ -34,3 +34,19 @@ def test_submit_without_a_token_exits_2(
     code = main(["forecast", "--submit", "--ledger", str(tmp_path / "l.sqlite")])
     assert code == 2
     assert "METACULUS_TOKEN" in capsys.readouterr().err
+
+
+def test_submit_to_minibench_with_a_local_model_is_refused_before_any_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("METACULUS_TOKEN", "not-a-real-token")
+    monkeypatch.setenv("AUGUR_PROVIDER", "ollama")
+    monkeypatch.setenv("AUGUR_MODEL", "qwen2.5:7b")
+    monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:9")  # nothing listens; must not be called
+    code = main(
+        ["forecast", "--tournament", "minibench", "--submit", "--ledger", str(tmp_path / "l.db")]
+    )
+    err = capsys.readouterr().err
+    assert code == 2
+    assert "frontier-2026-11" in err
+    assert "not-a-real-token" not in err
