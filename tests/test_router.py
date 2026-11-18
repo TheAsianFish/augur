@@ -489,3 +489,13 @@ async def test_an_empty_answer_moves_this_call_on_but_keeps_the_route(tmp_path: 
     assert r.unavailable(NEMOTRON) is None, "a longer request may still get an answer"
     assert switches(led) == [(NEMOTRON.key, GEMMA.key, "empty", "switched")]
     led.close()
+
+
+async def test_an_upstream_429_without_a_wait_still_rests_the_route(tmp_path: Path) -> None:
+    r, p = router([GEMMA, NEMOTRON])
+    p.failures[GEMMA.model] = RateLimitedError("429 upstream", status_code=429, retry_after=1.0)
+    led, run_id, qid = ledger_with_question(tmp_path)
+    calls = CallRecorder(r, led, FixedClock(T0), Budget(1.0, 1.0))
+    await calls.complete(CallContext(run_id, qid, "forecaster", 0), forecast_request(), [])
+    assert "until 18:00:30 UTC" in str(r.unavailable(GEMMA)), "at least MIN_COOL_S"
+    led.close()

@@ -34,6 +34,11 @@ from augur.log import get_logger
 
 log = get_logger(__name__)
 
+# A route refused for rate after the provider's own short retries rests at
+# least this long: an upstream 429 carries no wait, and without a floor every
+# later call would spend its retries on the same busy model (M2: 7.8 s each).
+MIN_COOL_S = 30.0
+
 
 class BudgetExceededError(AugurError):
     """A cost cap would be crossed; the run stops spending."""
@@ -165,8 +170,8 @@ class CallRecorder:
             except FallbackError as exc:
                 if isinstance(exc, EmptyAnswerError):
                     pass  # this request only; the route stays in use
-                elif isinstance(exc, RateLimitedError) and exc.retry_after is not None:
-                    self.router.cool(route, exc.retry_after, exc.kind)
+                elif isinstance(exc, RateLimitedError):
+                    self.router.cool(route, max(exc.retry_after or 0.0, MIN_COOL_S), exc.kind)
                 else:
                     self.router.disable(route, f"{exc.kind}: {exc}", exc.kind)
                 moved_from = (route, exc)

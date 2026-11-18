@@ -13,7 +13,7 @@ from typing import Any, Literal, TextIO
 import structlog
 
 import augur
-from augur.agents.calls import Budget, BudgetExceededError, CallRecorder
+from augur.agents.calls import MIN_COOL_S, Budget, BudgetExceededError, CallRecorder
 from augur.agents.forecaster import MemberForecast, draw_forecasts
 from augur.agents.researcher import Researcher, ResearchResult
 from augur.aggregate import median
@@ -538,7 +538,9 @@ class ForecastRun:
             if r.answers:
                 continue
             if r.outcome == "rate_limited":
-                self._router.cool(r.route, r.retry_after or 60.0, "probe: rate_limited")
+                self._router.cool(
+                    r.route, max(r.retry_after or 0.0, MIN_COOL_S), "probe: rate_limited"
+                )
             else:
                 self._router.disable(r.route, f"probe: {r.outcome}", r.outcome)
         self._print(format_probe(results))
