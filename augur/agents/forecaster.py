@@ -194,16 +194,15 @@ def member_reasoning(response: LlmResponse, options: list[str] | None = None) ->
     return "(from the model's reasoning trace) " + response.reasoning.strip()
 
 
-# Reasoning models spend part of the budget before the answer. At 600, two of
-# five binary draws stopped before their probability line (M2). At 1,500, 5 of
-# 25 multiple-choice, numeric and discrete draws stopped before their last
-# option or percentile line (M3 bot-testing-area run), so they get more.
-BINARY_MAX_TOKENS = 1500
-SHAPED_MAX_TOKENS = 2500
-
-
-def max_tokens(q: Question) -> int:
-    return BINARY_MAX_TOKENS if q.type == "binary" else SHAPED_MAX_TOKENS
+# Reasoning models spend part of the budget before the answer, and the share
+# varies by question. Measured on free reasoning models: at 600, 2 of 5 binary
+# draws stopped before their probability line (M2); at 1,500, 5 of 25
+# non-binary draws stopped before their last line (M3, bot-testing-area) and
+# 3 of 5 binary draws on a live MiniBench question did (M3 dry run); at 2,500,
+# 5 of 30 calls still spent everything on reasoning and fell back. At GPT-5.4's
+# listed $15 per million output tokens, five draws at 4,000 cost at most about
+# $0.30, inside the default $0.50 per-question cap.
+FORECAST_MAX_TOKENS = 4000
 
 
 def _bound(value: float | None, unit: str) -> str:
@@ -267,7 +266,7 @@ def forecaster_request(
         ),
         temperature=0.7,
         seed=member,
-        max_tokens=max_tokens(q),
+        max_tokens=FORECAST_MAX_TOKENS,
     )
 
 
