@@ -1,0 +1,11 @@
+model list: live, 478 models, fetched 2026-11-18 11:11 UTC; floor tier frontier-2026-11
+openrouter key: {"expires_at": "2027-05-17T06:11:00.002Z", "free_model_daily_requests": {"limit": 1000, "remaining": 993, "used": 7}, "is_free_tier": false, "limit": 1, "limit_remaining": 1, "usage": 0}
+probe:
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered        613 ms  $0/$0 per M            listed 2026-06-04  below tier  [probe]
+  openrouter:inclusionai/ling-3.2-flash:free       answered       1705 ms  $0/$0 per M            listed 2026-11-13  below tier  [probe]
+  openrouter:thinkingmachines/inkling-2-small:free auth            789 ms  $0/$0 per M            listed 2026-11-09  below tier  [probe]
+  burst openrouter:nvidia/nemotron-3-ultra-550b-a55b:free: 20/21 accepted in 25.7 s (47/min); refused at request 21 (HTTP 429, rate_limited, retry after 7.508019208908081s)
+    headers: {'x-ratelimit-limit': '20', 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1795000320000'}
+  burst openrouter:inclusionai/ling-3.2-flash:free: 2/3 accepted in 3.1 s (39/min); refused at request 3 (HTTP 429, rate_limited, retry after 4.455211400985718s)
+    headers: {'x-ratelimit-limit': '20', 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '1795000320000'}
+ledger: data/ledgers/m2-probe.sqlite (session probe_0ca3be7961784402)
