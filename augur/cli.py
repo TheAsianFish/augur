@@ -72,6 +72,11 @@ def _parser() -> argparse.ArgumentParser:
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
     )
+    fc.add_argument(
+        "--reforecast",
+        action="store_true",
+        help="forecast again questions this account already forecast (bot-testing-area only)",
+    )
 
     models = sub.add_parser("models", help="the model chains: list, probe, measure limits")
     models_sub = models.add_subparsers(dest="models_command", required=True)
@@ -153,6 +158,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                     submit=args.submit,
                     samples=args.samples,
                     max_questions=max_questions,
+                    reforecast=args.reforecast,
                 )
             finally:
                 await router.aclose()

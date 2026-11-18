@@ -426,6 +426,23 @@ async def test_a_scored_run_skips_everything_when_no_frontier_model_answers_the_
 # Re-forecasting in the practice area
 
 
+async def test_reforecast_is_for_the_practice_area_only(
+    tmp_path: Path, fake: FakeMetaculus, http: httpx.AsyncClient
+) -> None:
+    _, led = await _run(tmp_path / "a", client=_client(http), submit=True)
+    led.close()
+    assert len(fake.forecasts) == 1
+    _, led = await _run(tmp_path / "b", client=_client(http), submit=True)
+    led.close()
+    assert len(fake.forecasts) == 1, "skipped: already forecast"
+    redo, led = await _run(tmp_path / "c", client=_client(http), submit=True, reforecast=True)
+    led.close()
+    assert redo.count("forecast") == 1
+    assert len(fake.forecasts) == 2
+    with pytest.raises(AugurError, match="bot-testing-area only"):
+        await _run(tmp_path / "d", client=_client(http), tournament="minibench", reforecast=True)
+
+
 # Measuring a free tier's limit
 
 

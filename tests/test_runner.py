@@ -83,6 +83,7 @@ async def _run(
     out: io.StringIO | None = None,
     searcher: FixedSearcher | None = None,
     tournament: str | None = None,
+    reforecast: bool = False,
     **settings: object,
 ) -> tuple[RunReport, Ledger]:
     clock = FixedClock(T0)
@@ -103,7 +104,9 @@ async def _run(
         probe_providers=probe_providers,
     )
     slug = tournament or ("bot-testing-area" if submit else "minibench")
-    report = await run.run(slug, submit=submit, samples=samples, max_questions=max_questions)
+    report = await run.run(
+        slug, submit=submit, samples=samples, max_questions=max_questions, reforecast=reforecast
+    )
     return report, ledger
 
 

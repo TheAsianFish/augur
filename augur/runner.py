@@ -132,6 +132,7 @@ class ForecastRun:
         self._router = router
         # Providers without retries for the opening probe; ``None`` skips it.
         self._probe_providers = probe_providers
+        self._reforecast = False
         self._scored = False
         self._searchers = list(searchers)
         self._client = client
@@ -144,12 +145,19 @@ class ForecastRun:
         submit: bool,
         samples: Path | None,
         max_questions: int,
+        reforecast: bool = False,
     ) -> RunReport:
         slug = TOURNAMENTS.get(tournament, tournament)
         if submit and (self._client is None or not self._client.has_token):
             raise AugurError("--submit needs METACULUS_TOKEN; without it run a dry run")
         if submit and samples is not None:
             raise AugurError("--submit forecasts live questions only; drop --samples")
+        if reforecast and slug not in PRACTICE_TOURNAMENTS:
+            raise AugurError(
+                f"--reforecast is for {', '.join(sorted(PRACTICE_TOURNAMENTS))} only; a scored "
+                "tournament is forecast once per question"
+            )
+        self._reforecast = reforecast
         scored = submit and slug not in PRACTICE_TOURNAMENTS
         self._scored = scored
         if scored:
@@ -171,6 +179,7 @@ class ForecastRun:
                 "question_source": source,
                 "scored": scored,
                 "floor": FRONTIER_TIER_NAME if scored else None,
+                "reforecast": reforecast,
                 "catalog": f"{catalog.origin} {catalog.fetched_at:%Y-%m-%d}",
             },
             code_version=code_version(),
@@ -274,7 +283,7 @@ class ForecastRun:
             return f"{q.type} questions are not forecast yet (binary only until M2)"
         if live_listing and not q.is_open(now):
             return "not open now"
-        if live_listing and q.already_forecast(now):
+        if live_listing and q.already_forecast(now) and not self._reforecast:
             return "already forecast by this account"
         return None
 
@@ -410,7 +419,7 @@ class ForecastRun:
         client = self._live_client()
         # Re-read just before writing: another run may have forecast meanwhile.
         fresh, _ = await client.get_question(q.post_id)
-        if fresh.already_forecast(self._clock.now()):
+        if fresh.already_forecast(self._clock.now()) and not self._reforecast:
             report.status = "skipped"
             report.reason = "already forecast by this account (checked again before submitting)"
             return
