@@ -1,7 +1,8 @@
 # Augur
 
-**Status: in progress.** M2 of 10 (model access and the submit floor on the
-model that answers); see [PLAN.md](PLAN.md).
+**Status: in progress.** M3 of 10 (live on MiniBench: every question type, a
+deadline per question, the scheduled workflow and the durable ledger); see
+[PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -19,31 +20,36 @@ the ledger's own triggers, and by a test that scans every committed ledger.
 
 ```text
 $ export AUGUR_FORECAST_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free,openrouter:inclusionai/ling-3.2-flash:free,openrouter:google/gemma-4-31b-it:free
-$ export AUGUR_RESEARCH_MODELS=openrouter:google/gemma-4-26b-a4b-it:free,openrouter:inclusionai/ling-3.2-flash:free,openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+$ export AUGUR_RESEARCH_MODELS=openrouter:inclusionai/ling-3.2-flash:free,openrouter:google/gemma-4-26b-a4b-it:free,openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
 $ augur forecast --tournament bot-testing-area --submit --reforecast
-run run_f18e2cb98e624da6bb6f (live) on metaculus:bot-testing-area
+run run_53eeaa89f3784e2a8bbf (live) on metaculus:bot-testing-area
 probe:
-  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered    697 ms  $0/$0 per M  listed 2026-06-04  below tier  [research+forecast]
-  openrouter:inclusionai/ling-3.2-flash:free        answered   1389 ms  $0/$0 per M  listed 2026-11-13  below tier  [research+forecast]
-  openrouter:google/gemma-4-31b-it:free             rate_limited 1121 ms $0/$0 per M  listed 2026-04-02  below tier  [forecast]
-  openrouter:google/gemma-4-26b-a4b-it:free         rate_limited 3005 ms $0/$0 per M  listed 2026-04-03  below tier  [research]
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered      939 ms  $0/$0 per M  listed 2026-06-04  below tier  [research+forecast]
+  openrouter:google/gemma-4-31b-it:free             rate_limited 1524 ms  $0/$0 per M  listed 2026-04-02  below tier  [forecast]
+  ...
+estimated worst case $0.0000 a question, $0.0000 for 6 (caps $0.50 a question, $5.00 a run)
 
-== Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
-   https://www.metaculus.com/questions/43327/
-   sources: 4 admitted, 0 rejected; members: 1% 1% 1% 1% 1%; median: 1.0%
-   submitted 1.0%; posted this private comment:
-   | **Forecast: 1%**, the median of 5 independent forecasts (1%, 1%, 1%, 1%, 1%) by nvidia/nemotron-3-ultra-550b-a55b:free.
-   | **Research** (only sources dated at or before 2026-11-18 11:14 UTC): …
-   | - [S1] [Withdrawal from the European Union](https://en.wikipedia.org/w/index.php?oldid=1386162346) (wikipedia, revision of 2026-11-17)
-done: 1 forecast, 5 skipped, 0 failed; estimated cost $0.0000
+== What will be Donald Trump's net approval on December 31, 2026?
+   https://www.metaculus.com/questions/43323/ (numeric)
+   sources: 5 admitted, 0 rejected; members: median -22.0% (80% between -32.0 and -12.0) | ...
+   combined: median -22.1% (80% between -32.5 and -11.7)
+   submitted median -22.1% (80% between -32.5 and -11.7); posted this private comment:
+   | **Forecast: median -22.1% (80% between -32.5 and -11.7)**, the average of the CDFs of 5 independent forecasts by ...
+
+== Which party's nominee will win the 2028 US presidential election?
+   https://www.metaculus.com/questions/46223/ (multiple_choice)
+   combined: Democratic Party 48%, Republican Party 50%, Other 2%
+   submitted Democratic Party 48%, Republican Party 50%, Other 2%; posted this private comment: ...
+
+coverage: 6 listed; 6 forecast in time (6 submitted), 0 missed, 0 skipped, 0 failed; estimated cost $0.0000
 ```
 
 A real run on free OpenRouter models (trimmed; the full output is
-`data/runs/m2-live-bot-testing-area-2.txt`). The probe found both Gemma
-models busy upstream, so planning and the brief fell back to the next model,
-and each switch is a ledger row. These models are below the frontier tier,
-so the same command against MiniBench refuses before any model call. To
-capture a GIF: `vhs` or `asciinema rec` around the command.
+`data/runs/m3-live-bot-testing-area-2.txt`): one question of every type in
+the practice area, soonest-closing first, each CDF and option set built to
+Metaculus's validity rules and accepted. These models are below the
+frontier tier, so the same command against MiniBench refuses before any
+model call. To capture a GIF: `vhs` or `asciinema rec` around the command.
 
 ## Quickstart
 
@@ -79,6 +85,7 @@ weak forecast costs peer points that skipping does not.
 ```mermaid
 flowchart LR
   MQ[Metaculus API<br/>or committed samples] --> RUN[runner<br/>skip, cap, budget]
+  CRON[scheduled workflow<br/>stdlib poll first] --> RUN
   RUN --> PROBE[probe<br/>one call per model]
   PROBE --> ROUTER{router<br/>ordered chain per role,<br/>fallback, floor}
   CAT[OpenRouter model list<br/>prices, listing dates] --> ROUTER
@@ -87,25 +94,29 @@ flowchart LR
   S --> LED[(ledger<br/>SQLite, append-only)]
   LED --> GATE{leakage gate<br/>proven date <= cutoff}
   GATE -->|admitted only| BRIEF[brief citing S1..Sn]
-  BRIEF --> FC[5 forecaster draws]
-  FC --> MED[median]
-  MED --> CHECK{who answered<br/>in the tier?}
+  BRIEF --> FC[5 forecaster draws<br/>probability, option lines<br/>or six percentiles]
+  FC --> MED[combine by type<br/>median, per-option median,<br/>mean of CDFs]
+  MED --> VALID{Metaculus's<br/>validity rules}
+  VALID --> CHECK{who answered<br/>in the tier?}
   CHECK -->|yes, or practice area| OUT[forecast + private comment<br/>posted or printed]
   ROUTER -.-> RES & FC
   RES & FC & PROBE & ROUTER --> LED
   OUT --> LED
+  LED --> BR[ledger branch<br/>one JSONL export per run]
 ```
 
 | Module | Job |
 |--------|-----|
-| `augur/metaculus.py` | Typed `httpx` client: list, detail (`my_forecasts`), binary forecast, private comment; token bucket and `Retry-After`. |
+| `augur/metaculus.py` | Typed `httpx` client: list, detail (`my_forecasts`), a forecast of any type, private comment; token bucket and `Retry-After`. |
+| `augur/predictions.py`, `augur/distributions.py` | What a forecast is per type, how members combine, the payload; percentiles to the CDF Metaculus accepts, its validity rules mirrored from the server, property-tested. |
 | `augur/llm/` | `endpoints` (presets and `AUGUR_ENDPOINT_*`, `endpoint:model` routes), `openai_compat` (one provider for every OpenAI-compatible host, sorting refusals into rate-limited, out-of-credit, auth, unavailable, empty), `router` (the chain per role, cool-downs, the floor), `catalog` (OpenRouter's model list: prices, listing dates), `probe` (opening probe, burst limit measurement), `registry` (frontier tier, local release dates), `ollama`, `replay`. |
 | `augur/research/` | `Source` record with `date_evidence`; `wikipedia` (the revision current at `as_of`), `asknews` (bounded by `end_timestamp`). |
 | `augur/leakage.py` | The gate, and `scan_ledger`, which re-checks every stored row. |
 | `augur/ledger.py` | Numbered migrations; every table refuses `UPDATE` and `DELETE`. |
 | `augur/agents/` | Researcher, forecaster draws, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
 | `augur/comment.py` | The private comment, built only from the members' reasoning and the cited sources. |
-| `augur/runner.py`, `augur/cli.py` | `augur forecast`, `augur models list|probe|snapshot`, `augur ledger check`. |
+| `augur/runner.py`, `augur/cli.py` | `augur forecast` (soonest-closing first, a deadline per question, a coverage report), `augur models list|probe|snapshot`, `augur ledger check|export`. |
+| `.github/workflows/tournament.yml`, `scripts/` | The schedule: `poll.py` (standard library) decides whether to install anything; the forecast job posts from `main` only and `push_ledger.sh` commits each run's export to the `ledger` branch. `question_windows.py`, `cron_delay.py` and `cadence.py` measured how often it must run. |
 
 ### The hard part
 
@@ -131,6 +142,15 @@ the question and writes the refusal to the ledger); the runner checks the
 routes that actually answered before posting; and `augur ledger check`
 flags any submitted forecast whose members came from outside the tier.
 
+M3 adds a third: **every posted forecast is one the server accepts, inside
+its three-hour window.** A numeric answer is six percentiles; the server
+wants 201 CDF points with a minimum and maximum step and exact or open
+ends. `augur/distributions.py` builds to those rules, Hypothesis checks it
+over arbitrary questions and answers, and the fake server re-checks every
+body with its own transliteration of the server code. Each question has a
+deadline from its close; work still running there is cancelled and charged,
+and what finished is posted.
+
 ## Design decisions
 
 | Decision | Chosen | Alternative | Why |
@@ -144,17 +164,26 @@ flags any submitted forecast whose members came from outside the tier.
 | Ollama | Its native API | Its OpenAI-compatible `/v1` | `/v1` cannot set the context window per request and silently drops the start of long prompts (M1). |
 | Source dates | Evidence only (revision, capture, bounded publish date) | Page metadata | Audits show self-reported dates leak. |
 | Ledger | SQLite, append-only by trigger | DuckDB, PostgreSQL | Tens of thousands of rows, one writer, ships with Python. |
-| Aggregation (M1) | Median of 5 draws | Mean | Robust to one wild draw; Q3 tests alternatives in M7. |
+| Aggregation | Binary: median of 5 draws. Multiple choice: per-option median, renormalised. Numeric and discrete: the mean of the members' CDFs | Mean; median of each percentile | The median is robust to one wild draw. A mixture of valid CDFs is valid by construction and keeps the members' disagreement as spread instead of inventing a confident consensus. M7 tests alternatives. |
+| Percentiles to a CDF | Linear between six stated percentiles in Metaculus's unscaled space, exponential tails, isotonic repair of a non-monotone answer, then the least uniform mixing that clears the server's minimum step | Asking the model for 201 numbers; a parametric fit | The server's rules are hard constraints (minimum and maximum step, exact or open ends); building to them, and checking against an independent transliteration in the fake server, means no live forecast is rejected. |
+| Deadlines | Each question stops at its close less 5 minutes (never past the run's own deadline); draws still running are cancelled and charged the worst case; the finished ones are posted | One timeout for the whole run | A MiniBench question is open for 3 hours; a forecast posted after close scores nothing, and a cancelled request may still be billed. |
+| Schedule | Cron every 90 min on two offset lines, plus a self-dispatch chain (`AUGUR_CHAIN_MINUTES`) once public | Cron every 20 to 30 min, as many bots use | Measured: GitHub dropped about 95% of short-interval ticks on public bot repositories, and every 30 min would bill more than the shared allowance while private. A `workflow_dispatch` from the job's own token is not subject to the scheduler. |
+| Live record | Each scheduled run pushes its ledger as JSONL to a `ledger` branch, one new file per run | Actions artifacts | Artifacts expire; M5's replay evaluation needs every live source forever. |
 | Submit floor | Live tournaments need a frontier-tier hosted model | Submit whatever model answers | An expired key must never post small-model forecasts. |
 | Comments | Private, rendered from the members' own reasoning | Boilerplate | Prize rules require the reasoning that produced the forecast. |
 
 ## Results
 
-Nothing is scored yet; the first scored number arrives in M4. What M1 and
-M2 measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
+Nothing is scored yet; the first scored number arrives in M4. What M1 to
+M3 measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
 
 | Run | Outcome |
 |-----|---------|
+| M3, every question type in the bot-testing-area (free OpenRouter models, $0) | 11 of 11 forecasts accepted by the live API (2 numeric, 2 discrete, 1 multiple choice, 1 binary; HTTP 201 each), each with a private comment |
+| M3, draws lost to the token budget | 5 of 25 non-binary draws at 1,500 tokens, 0 of 30 at 2,500; a live MiniBench binary question 3 of 5 at 1,500, 0 of 5 at 4,000 (dry run) |
+| M3, MiniBench windows over 16 rounds | 954 questions, 47% not binary; every window since June exactly 3.00 h; median 0.67 h between opens |
+| M3, GitHub's cron on 55 public bot repositories (2,813 scheduled runs) | Crons every 20 min or less ran on 5.0% of ticks (median 5.5 h between runs); the two on-time workflows: delay p50 9 min, p99 108 min |
+| M3, cadence simulated on the measured windows and delays | Every 90 min catches 99.25% of 3-hour windows for about 979 billed min a month while private; throttled as most forks are, no cron catches over 43%, hence the dispatch-chain fallback |
 | M1, dry run on the committed sample (`qwen2.5:7b` on 4 CPUs, $0) | 3 dated Wikipedia revisions admitted, 5 draws, median 5%; 11 min 25 s |
 | M2, live bot-testing-area forecast on free OpenRouter models ($0) | Probe, two fallbacks recorded, 5 of 5 draws, forecast and private comment accepted (HTTP 201 each); 2 min 32 s |
 | M2, OpenRouter's free-model limit, three burst sessions | Per key across all free models, fixed clock minutes; 24 to 25 accepted against an advertised 20 |
@@ -170,18 +199,20 @@ M2 measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
 - No frontier model has answered yet: the only key here has a $1 limit that
   may not be the sponsorship, so only free models were called. Until a
   frontier model answers, the floor keeps the bot out of scored
-  tournaments. The frontier tier also predates the newest models on
-  OpenRouter; reviewing it is a maintainer decision (RELEASE.md).
+  tournaments, so no MiniBench forecast has been posted. The tier was
+  reviewed in M3 (GPT-5.4 and Claude Opus 5 admitted on cited results).
 - Groq, Gemini and GitHub Models are configured but not exercised (no keys).
   AskNews is wired but unverified without keys.
-- Binary questions only until M3.
+- Date questions are listed and skipped (MiniBench had none in 16 rounds).
+- The scheduled workflow has run under `act` and against the live listing,
+  not yet on GitHub: the repository is private and the ledger-branch push is
+  proven only against a local bare remote.
 
 ## Roadmap
 
 M2 (done) one OpenAI-compatible provider with probed model chains, and the
-repository public at its merge; M3 live on
-MiniBench with every question type, a scheduled workflow and a durable
-ledger; M4 the shadow template, scoring and the first standings; M5 market
+repository public at its merge; M3 (done) every question type, a deadline
+per question, the scheduled workflow and the durable ledger; M4 the shadow template, scoring and the first standings; M5 market
 prices and the community prior, and a replay evaluation on the hosted
 models; M6 the leakage-proof backtest; M7 ablations; M8 calibration; M9
 "does it know when it does not know"; M10 release and a season postmortem. Details in
