@@ -1,0 +1,3 @@
+{"event": "submit refused by the floor", "level": "warning", "route": "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free", "timestamp": "2026-11-18T18:57:59.164870Z", "tournament": "minibench"}
+augur: --submit to minibench needs a hosted model in the frontier-2026-11b tier first in AUGUR_FORECAST_MODELS, and openrouter:nvidia/nemotron-3-ultra-550b-a55b:free (openrouter.ai) is not one; a weak forecast costs peer points that skipping does not. Drop --submit for a dry run, or submit to bot-testing-area to test the live path.
+exit 2
