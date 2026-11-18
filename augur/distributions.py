@@ -29,6 +29,65 @@ to 9 (numpy's ``round``: scale, round half to even, unscale); then
 * an open lower bound needs ``cdf[0] >= 0.001``, a closed one ``cdf[0] == 0``;
   an open upper bound needs ``cdf[-1] <= 0.999``, a closed one ``cdf[-1] == 1``.
 
+From percentiles to a CDF
+-------------------------
+:func:`cdf_from_percentiles` takes a forecaster's ``(level, value)`` pairs
+and returns a CDF that passes :func:`validate_cdf` for any input it does not
+reject. The steps, in order:
+
+1. **Unscale.** Each value moves to unscaled ``u``. Everything below is done
+   in ``u``, so on a log-scaled question "linear between percentiles" means
+   log-linear in the question's units, the shape Metaculus's own slider
+   gives. A value past a log scale's zero point (no position) or absurdly far
+   outside the range is clamped to ``|u| <= 1e6``.
+2. **Repair.** Pairs are sorted by level. A sloppy answer whose values fall
+   as the level rises is replaced by its isotonic (least-squares monotone)
+   fit, pool-adjacent-violators: each violating run is replaced by its mean,
+   the smallest change that makes the values non-decreasing. Pairs with the
+   same level are then merged into their mean value. Equal values for
+   different levels survive: they are a point mass, a vertical step.
+3. **Interpolate.** Between knots the CDF is linear in ``u`` (right-
+   continuous at a vertical step, so a point mass is counted at its value).
+4. **Tails.** Below the lowest knot ``(u0, p0)`` the CDF is
+   ``p0 * exp((u - u0) / s)``, and symmetrically above the highest. The scale
+   ``s`` is chosen so the density is continuous at the knot: it is ``p0``
+   over the slope of the outermost segment of positive width, so the tail
+   decays over about the distance the outer percentiles are apart. It holds
+   exactly the mass the forecaster left outside the outer percentile, never
+   reaches zero (an open bound naturally gets some mass beyond it), and
+   needs no arbitrary end point. With no segment of positive width (one
+   percentile, or all values equal) the forecaster stated no spread, and
+   ``s`` is one bucket, ``1 / n``.
+5. **Bounds.** The CDF is evaluated at the ``n + 1`` grid points. A closed
+   bound pins its end to exactly 0 or 1, so mass the forecast put beyond it
+   lands in the edge bucket. An open bound clips the CDF into
+   ``[0.001, 0.999]`` at that end.
+6. **Mass inside.** The minimum step forces at least ``n * min_step = 1%`` of
+   the mass inside the range. If ``cdf[-1] - cdf[0]`` is below
+   ``_MIN_INBOUND_MASS`` (5%: a forecast almost entirely beyond an open
+   bound), the open ends move apart by the shortfall, shared in proportion to
+   the room each has before its bound limit, which puts it on the side where
+   the forecast's mass is. This is the one step that overrides the forecast
+   materially, and only because the server requires it.
+7. **Too steep.** Where a bucket holds more than 99% of the maximum step (a
+   point mass on a 200-bucket question), the excess is handed to the nearest
+   buckets with room, equally to the left and right at each distance,
+   filling each to the cap at most. A bucket is never filled past the cap,
+   so each move fixes one bucket without breaking another, and the loop ends
+   after at most ``n`` moves; the mass stays as close to where it was as the
+   rule allows. The ends of the CDF do not move.
+8. **Too flat.** The bucket masses are mixed with a uniform spread of the
+   same total, ``pmf' = (1 - e) * pmf + e * (cdf[-1] - cdf[0]) / n``, with
+   the smallest ``e`` that lifts the emptiest bucket to 1.05 times the minimum
+   step plus ``1e-8``. Both terms are within the maximum step, so the mixture
+   is too, the ends do not move, and the margin is far larger than the
+   ``1e-9`` that rounding to 10 and then 9 places can take off a step. For a
+   typical forecast ``e`` is about 1%, so each CDF value moves by at most
+   about 0.01.
+9. **Round and check.** The CDF is rounded to 10 places and validated; a
+   failure there is a bug in this module (the property tests look for one),
+   reported as an ``AssertionError``.
+
 A multiple-choice forecast needs every option in ``[0.001, 0.999]`` and a sum
 that is ``numpy.isclose`` to 1 (``rtol=1e-5``, ``atol=1e-8``).
 :func:`normalise_probabilities` normalises, clips into that range, and then
@@ -40,7 +99,7 @@ exact and nothing is clipped twice.
 from __future__ import annotations
 
 import math
-from bisect import bisect_left
+from bisect import bisect_left, bisect_right
 from collections.abc import Mapping, Sequence
 from itertools import pairwise
 from typing import Any, Self
@@ -58,6 +117,12 @@ _CDF_DECIMALS = 10
 _PMF_DECIMALS = 9
 _ISCLOSE_RTOL = 1e-5
 _ISCLOSE_ATOL = 1e-8
+_U_LIMIT = 1e6
+_MIN_TAIL_SCALE = 1e-12
+_MIN_INBOUND_MASS = 0.05
+_MAX_STEP_SHARE = 0.99
+_MIN_STEP_FACTOR = 1.05
+_MIN_STEP_MARGIN = 1e-8
 
 
 def _np_round(x: float, decimals: int) -> float:
@@ -239,6 +304,150 @@ def validate_cdf(cdf: Sequence[float], scaling: Scaling) -> list[str]:
     elif last != 1.0:
         errors.append(f"upper bound is closed: cdf[-1] must be 1.0, got {last}")
     return errors
+
+
+def _isotonic(values: Sequence[float]) -> list[float]:
+    """The least-squares non-decreasing fit (pool adjacent violators)."""
+    blocks: list[tuple[float, int]] = []  # (sum, count)
+    for v in values:
+        total, count = v, 1
+        while blocks and blocks[-1][0] / blocks[-1][1] > total / count:
+            prev_total, prev_count = blocks.pop()
+            total, count = total + prev_total, count + prev_count
+        blocks.append((total, count))
+    return [total / count for total, count in blocks for _ in range(count)]
+
+
+def _knots(
+    percentiles: Sequence[tuple[float, float]], scaling: Scaling
+) -> tuple[list[float], list[float]]:
+    """Repaired knots: unscaled values (non-decreasing) and levels (increasing)."""
+    if not percentiles:
+        raise ValueError("no percentiles to build a CDF from; the forecast needs at least one")
+    pairs: list[tuple[float, float]] = []
+    for item in percentiles:
+        level, value = float(item[0]), float(item[1])
+        if not (math.isfinite(level) and math.isfinite(value)):
+            raise ValueError(f"percentile ({level}, {value}) is not a pair of finite numbers")
+        if not 0.0 < level < 1.0:
+            raise ValueError(f"percentile level {level} is outside (0, 1)")
+        u = min(max(scaling.to_unscaled(value), -_U_LIMIT), _U_LIMIT)
+        pairs.append((level, u))
+    pairs.sort()
+    fitted = _isotonic([u for _, u in pairs])
+    us: list[float] = []
+    ps: list[float] = []
+    i = 0
+    while i < len(pairs):
+        j = i
+        while j < len(pairs) and pairs[j][0] == pairs[i][0]:
+            j += 1
+        us.append(math.fsum(fitted[i:j]) / (j - i))
+        ps.append(pairs[i][0])
+        i = j
+    # The mean of a non-decreasing run can drift by an ulp; keep the knots ordered.
+    for k in range(1, len(us)):
+        us[k] = max(us[k], us[k - 1])
+    return us, ps
+
+
+def _tail_scales(us: Sequence[float], ps: Sequence[float], n: int) -> tuple[float, float]:
+    """Exponential tail scales that keep the density continuous at the outer knots."""
+    segments = [k for k in range(len(us) - 1) if us[k + 1] > us[k]]
+    if not segments:
+        return 1.0 / n, 1.0 / n
+    lo, hi = segments[0], segments[-1]
+    lo_slope = (ps[lo + 1] - ps[lo]) / (us[lo + 1] - us[lo])
+    hi_slope = (ps[hi + 1] - ps[hi]) / (us[hi + 1] - us[hi])
+    return (
+        max(ps[0] / lo_slope, _MIN_TAIL_SCALE),
+        max((1.0 - ps[-1]) / hi_slope, _MIN_TAIL_SCALE),
+    )
+
+
+def _evaluate(
+    us: Sequence[float], ps: Sequence[float], scales: tuple[float, float], u: float
+) -> float:
+    """The repaired forecast's CDF at unscaled ``u``."""
+    k = bisect_right(us, u) - 1  # the last knot at or below u
+    if k < 0:
+        return ps[0] * math.exp((u - us[0]) / scales[0])
+    if k == len(us) - 1:
+        return 1.0 - (1.0 - ps[-1]) * math.exp(-(u - us[-1]) / scales[1])
+    return ps[k] + (ps[k + 1] - ps[k]) * (u - us[k]) / (us[k + 1] - us[k])
+
+
+def _cap_steps(pmf: list[float], cap: float) -> list[float]:
+    """Move each bucket's mass above ``cap`` to the nearest buckets with room."""
+    n = len(pmf)
+    for _ in range(n):
+        i = max(range(n), key=pmf.__getitem__)
+        if pmf[i] <= cap:
+            break
+        excess = pmf[i] - cap
+        pmf[i] = cap
+        for d in range(1, n):
+            targets = [j for j in (i - d, i + d) if 0 <= j < n and pmf[j] < cap]
+            for j in targets:
+                give = min(excess / len(targets), cap - pmf[j])
+                pmf[j] += give
+                excess -= give
+            if excess <= 0.0:
+                break
+    return pmf
+
+
+def cdf_from_percentiles(
+    percentiles: Sequence[tuple[float, float]], scaling: Scaling
+) -> list[float]:
+    """A CDF Metaculus accepts, from ``(level, value)`` pairs in the question's units.
+
+    The pairs may be unsorted, tied, outside the range or non-monotone (see
+    the module docstring for how each is handled). ``ValueError`` only for an
+    empty list, a non-finite number or a level outside (0, 1).
+    """
+    us, ps = _knots(percentiles, scaling)
+    n = scaling.inbound_outcome_count
+    scales = _tail_scales(us, ps, n)
+    lo_end = OPEN_BOUND_MIN if scaling.open_lower_bound else 0.0
+    hi_end = OPEN_BOUND_MAX if scaling.open_upper_bound else 1.0
+    cdf = [min(max(_evaluate(us, ps, scales, i / n), lo_end), hi_end) for i in range(n + 1)]
+    if not scaling.open_lower_bound:
+        cdf[0] = 0.0
+    if not scaling.open_upper_bound:
+        cdf[-1] = 1.0
+
+    inside = cdf[-1] - cdf[0]
+    if inside < _MIN_INBOUND_MASS:
+        room_lo = cdf[0] - lo_end
+        room_hi = hi_end - cdf[-1]
+        shortfall = _MIN_INBOUND_MASS - inside
+        cdf[0] -= shortfall * room_lo / (room_lo + room_hi)
+        cdf[-1] += shortfall * room_hi / (room_lo + room_hi)
+    first, last = cdf[0], cdf[-1]
+
+    pmf = [min(max(b - a, 0.0), 1.0) for a, b in pairwise(cdf)]
+    pmf = _cap_steps(pmf, _MAX_STEP_SHARE * max_step(n))
+    uniform = (last - first) / n
+    target = _MIN_STEP_FACTOR * min_step(n) + _MIN_STEP_MARGIN
+    least = min(pmf)
+    if least < target:
+        e = (target - least) / (uniform - least)
+        pmf = [(1.0 - e) * p + e * uniform for p in pmf]
+
+    out = [first]
+    for p in pmf:
+        out.append(out[-1] + p)
+    out[-1] = last
+    out = [_np_round(v, _CDF_DECIMALS) for v in out]
+    if scaling.open_lower_bound:
+        out[0] = max(out[0], OPEN_BOUND_MIN)
+    if scaling.open_upper_bound:
+        out[-1] = min(out[-1], OPEN_BOUND_MAX)
+    errors = validate_cdf(out, scaling)
+    if errors:
+        raise AssertionError(f"bug: cdf_from_percentiles built an invalid CDF: {errors}")
+    return out
 
 
 def mix_cdfs(

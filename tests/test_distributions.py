@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import math
 from typing import Any
 
@@ -7,6 +8,7 @@ import pytest
 
 from augur.distributions import (
     Scaling,
+    cdf_from_percentiles,
     max_step,
     min_step,
     mix_cdfs,
@@ -329,6 +331,178 @@ def test_quantile_inverts_a_ramp_and_clamps() -> None:
     log_s = _scaling(lower=False, upper=False, range_min=1, range_max=1000, zero_point=0)
     # Uniform in unscaled space is log-uniform: the median is the geometric mean.
     assert quantile(_ramp(log_s), log_s, 0.5) == pytest.approx(math.sqrt(1000))
+
+
+# cdf_from_percentiles
+
+LEVELS = [0.05, 0.1, 0.2, 0.4, 0.5, 0.6, 0.8, 0.9, 0.95]
+SHAPE = [0.12, 0.2, 0.3, 0.42, 0.48, 0.53, 0.65, 0.75, 0.85]  # unscaled, right-skewed
+
+
+def _percentiles(scaling: Scaling, shape: list[float] = SHAPE) -> list[tuple[float, float]]:
+    return [(lv, scaling.to_scaled(u)) for lv, u in zip(LEVELS, shape, strict=True)]
+
+
+def _round_trip_tolerance(scaling: Scaling) -> float:
+    """How far, in unscaled units, a quantile may land from the percentile given.
+
+    The uniform mix moves each CDF value by about 0.01, which at these
+    densities is under 0.02 in u; the quantile is linear between grid points,
+    so a percentile between them can also be off by up to one bucket.
+    """
+    return 0.02 + 1.0 / scaling.inbound_outcome_count
+
+
+def _assert_round_trip(
+    cdf: list[float], scaling: Scaling, percentiles: list[tuple[float, float]]
+) -> None:
+    tol = _round_trip_tolerance(scaling)
+    for level, value in percentiles:
+        got = scaling.to_unscaled(quantile(cdf, scaling, level))
+        assert got == pytest.approx(scaling.to_unscaled(value), abs=tol), (level, value)
+
+
+@pytest.mark.parametrize("payload", REAL_SCALINGS)
+def test_real_scalings_give_valid_round_tripping_cdfs(payload: dict[str, Any]) -> None:
+    s = Scaling.from_question({"scaling": payload})
+    percentiles = _percentiles(s)
+    cdf = cdf_from_percentiles(percentiles, s)
+    assert len(cdf) == s.inbound_outcome_count + 1
+    assert validate_cdf(cdf, s) == []
+    _assert_round_trip(cdf, s, percentiles)
+
+
+@pytest.mark.parametrize("zero_point", [0.0, -10.0, 2000.0])
+def test_log_scale_round_trip(zero_point: float) -> None:
+    s = _scaling(range_min=1, range_max=1000, zero_point=zero_point)
+    percentiles = _percentiles(s)
+    cdf = cdf_from_percentiles(percentiles, s)
+    assert validate_cdf(cdf, s) == []
+    _assert_round_trip(cdf, s, percentiles)
+
+
+@pytest.mark.parametrize("lower", [True, False])
+@pytest.mark.parametrize("upper", [True, False])
+def test_each_bound_combination(lower: bool, upper: bool) -> None:
+    s = _scaling(lower=lower, upper=upper)
+    cdf = cdf_from_percentiles(_percentiles(s), s)
+    assert validate_cdf(cdf, s) == []
+    if lower:
+        assert 0.001 <= cdf[0] < 0.05
+    else:
+        assert cdf[0] == 0.0
+    if upper:
+        assert 0.95 < cdf[-1] <= 0.999
+    else:
+        assert cdf[-1] == 1.0
+    _assert_round_trip(cdf, s, _percentiles(s))
+
+
+def test_mass_beyond_a_closed_bound_lands_in_the_edge_bucket() -> None:
+    # 20 buckets, so no maximum step gets in the way.
+    s = _scaling(lower=False, upper=False, range_max=20, n=20)
+    cdf = cdf_from_percentiles([(0.1, -5.0), (0.9, 15.0)], s)
+    assert validate_cdf(cdf, s) == []
+    assert cdf[0] == 0.0
+    # Linear from (-5, 0.1) to (15, 0.9): P(X <= 1) is 0.34, all of it in bucket 1.
+    assert cdf[1] == pytest.approx(0.34, abs=0.01)
+    # With 200 buckets the edge bucket is capped and the rest spills inwards.
+    s = _scaling(lower=False, upper=False, range_max=20)
+    cdf = cdf_from_percentiles([(0.1, -5.0), (0.9, 15.0)], s)
+    assert validate_cdf(cdf, s) == []
+    assert cdf[1] == pytest.approx(0.99 * max_step(200), abs=0.005)
+    assert cdf[2] == pytest.approx(0.1 + 0.8 * 5.2 / 20, abs=0.01)
+
+
+def test_point_mass_is_spread_to_the_steepest_allowed() -> None:
+    s = _scaling(range_max=20)
+    cdf = cdf_from_percentiles([(0.1, 5.0), (0.5, 5.0), (0.9, 5.0)], s)
+    assert validate_cdf(cdf, s) == []
+    steps = [b - a for a, b in itertools.pairwise(cdf)]
+    # Capped at 99% of the maximum, less the ~1% the uniform mix takes.
+    assert max(steps) == pytest.approx(0.99 * max_step(200), abs=0.005)
+    # The mass stays around 5 (bucket 50), within a handful of buckets.
+    assert quantile(cdf, s, 0.5) == pytest.approx(5.0, abs=0.5)
+
+
+def test_point_mass_on_a_discrete_question_is_one_bucket() -> None:
+    s = Scaling.from_question({"scaling": DISCRETE_INT_SCALING})
+    cdf = cdf_from_percentiles([(0.1, 3), (0.5, 3), (0.9, 3)], s)
+    assert validate_cdf(cdf, s) == []
+    steps = [b - a for a, b in itertools.pairwise(cdf)]
+    assert steps.index(max(steps)) == 3  # the bucket (2.5, 3.5]
+    assert max(steps) > 0.6
+
+
+@pytest.mark.parametrize(("lower", "upper"), [(True, True), (False, False), (True, False)])
+def test_percentiles_entirely_below_the_range(lower: bool, upper: bool) -> None:
+    s = _scaling(lower=lower, upper=upper, range_max=20)
+    cdf = cdf_from_percentiles([(0.1, -50.0), (0.5, -45.0), (0.9, -40.0)], s)
+    assert validate_cdf(cdf, s) == []
+    if lower:
+        # The server needs some mass inside; the rest stays below.
+        assert cdf[0] >= 0.9
+    else:
+        assert cdf[0] == 0.0
+        assert cdf[10] >= 0.9  # moved into the lowest buckets
+
+
+@pytest.mark.parametrize(("lower", "upper"), [(True, True), (False, False), (False, True)])
+def test_percentiles_entirely_above_the_range(lower: bool, upper: bool) -> None:
+    s = _scaling(lower=lower, upper=upper, range_max=20)
+    cdf = cdf_from_percentiles([(0.1, 50.0), (0.5, 55.0), (0.9, 60.0)], s)
+    assert validate_cdf(cdf, s) == []
+    if upper:
+        assert cdf[-1] <= 0.1
+    else:
+        assert cdf[-1] == 1.0
+        assert cdf[-11] <= 0.1
+
+
+def test_non_monotone_answer_is_repaired_by_isotonic_fit() -> None:
+    s = _scaling(range_max=20)
+    sloppy = cdf_from_percentiles([(0.1, 2.0), (0.5, 8.0), (0.9, 6.0)], s)
+    # Pool adjacent violators: 8 and 6 become their mean, 7.
+    repaired = cdf_from_percentiles([(0.1, 2.0), (0.5, 7.0), (0.9, 7.0)], s)
+    assert validate_cdf(sloppy, s) == []
+    assert sloppy == repaired
+
+
+def test_unsorted_and_duplicate_levels() -> None:
+    s = _scaling(range_max=20)
+    ordered = cdf_from_percentiles([(0.1, 1.0), (0.5, 5.0), (0.9, 9.0)], s)
+    assert cdf_from_percentiles([(0.9, 9.0), (0.1, 1.0), (0.5, 5.0)], s) == ordered
+    # Two answers for one level are merged into their mean.
+    assert cdf_from_percentiles([(0.5, 4.0), (0.9, 9.0), (0.5, 6.0), (0.1, 1.0)], s) == ordered
+
+
+def test_values_past_a_log_zero_point_are_usable() -> None:
+    s = _scaling(range_min=1, range_max=1000, zero_point=0)
+    cdf = cdf_from_percentiles([(0.1, -5.0), (0.5, 30.0), (0.9, 500.0)], s)
+    assert validate_cdf(cdf, s) == []
+
+
+@pytest.mark.parametrize(
+    ("percentiles", "message"),
+    [
+        ([], "no percentiles"),
+        ([(0.5, math.nan)], "finite"),
+        ([(math.nan, 1.0)], "finite"),
+        ([(0.5, math.inf)], "finite"),
+        ([(0.0, 1.0)], "outside"),
+        ([(1.0, 1.0)], "outside"),
+    ],
+)
+def test_unusable_percentiles_raise(percentiles: list[tuple[float, float]], message: str) -> None:
+    with pytest.raises(ValueError, match=message):
+        cdf_from_percentiles(percentiles, _scaling())
+
+
+def test_mixing_built_cdfs_stays_valid() -> None:
+    s = _scaling(lower=False)
+    a = cdf_from_percentiles([(0.1, 5.0), (0.5, 5.0), (0.9, 5.0)], s)
+    b = cdf_from_percentiles(_percentiles(s), s)
+    assert validate_cdf(mix_cdfs([a, b], [0.3, 0.7]), s) == []
 
 
 # Multiple choice
