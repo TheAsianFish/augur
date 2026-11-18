@@ -91,8 +91,9 @@ jobs:
       AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_RESEARCH_MODELS }}
       AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
       AUGUR_MAX_COST_PER_RUN: ${{ vars.AUGUR_MAX_COST_PER_RUN || '1.00' }}
-      # Stop starting questions well inside the job's 40-minute timeout.
-      AUGUR_RUN_DEADLINE_MINUTES: '25'
+      # Stop starting questions well inside the job's 40-minute timeout; the
+      # forecast step splits it between the tournaments it runs.
+      RUN_MINUTES: '25'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v10.3.0
@@ -115,6 +116,7 @@ jobs:
           status=0
           : > run.txt
           IFS=',' read -ra tournaments <<< "$TOURNAMENTS"
+          export AUGUR_RUN_DEADLINE_MINUTES=$(( RUN_MINUTES / (${#tournaments[@]} > 0 ? ${#tournaments[@]} : 1) ))
           for t in "${tournaments[@]}"; do
             case "$t" in
               ''|*[!a-z0-9-]*) echo "refusing tournament name '$t'" | tee -a run.txt; status=1; continue ;;
@@ -148,7 +150,8 @@ jobs:
   chain:
     needs: [poll, forecast]
     if: >-
-      always() && vars.AUGUR_CHAIN_MINUTES != '' && vars.AUGUR_SCHEDULE != 'off' &&
+      always() && vars.AUGUR_CHAIN_MINUTES != '' &&
+      (vars.AUGUR_SCHEDULE == 'minibench' || vars.AUGUR_SCHEDULE == 'all') &&
       github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.chained)
     runs-on: ubuntu-latest
     timeout-minutes: 120
