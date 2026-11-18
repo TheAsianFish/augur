@@ -1,0 +1,32 @@
+run run_1eda8adeb92c4269b5fe (dry_run) on metaculus:minibench
+models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free, openrouter:inclusionai/ling-3.2-flash:free, openrouter:google/gemma-4-31b-it:free; research: openrouter:inclusionai/ling-3.2-flash:free, openrouter:google/gemma-4-26b-a4b-it:free, openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+probe:
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered        807 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+  openrouter:inclusionai/ling-3.2-flash:free       answered       1594 ms  $0/$0 per M            listed 2026-11-13  below tier  [research+forecast]
+  openrouter:google/gemma-4-31b-it:free            rate_limited    749 ms  $0/$0 per M            listed 2026-04-02  below tier  [forecast]
+  openrouter:google/gemma-4-26b-a4b-it:free        rate_limited   3129 ms  $0/$0 per M            listed 2026-04-03  below tier  [research]
+estimated worst case $0.0000 a question, $0.0000 for 1 (caps $0.50 a question, $5.00 a run)
+
+== Will the Banco Central del Paraguay announce a payment start date for ueno bank CDA holders by 28 November 2026?
+   https://www.metaculus.com/questions/46620/ (binary)
+   sources: 0 admitted, 0 rejected; members: 35% | 65% | 30% | 65% | 25%
+   combined: 35%
+   would POST /api/questions/forecast/ (dry run, not sent):
+   [{"question": 46880, "source": "api", "probability_yes": 0.35, "probability_yes_per_category": null, "continuous_cdf": null}]
+   would POST /api/comments/create/ as a private comment (dry run):
+   | **Forecast: 35%**, the median of 5 independent forecasts (35%, 65%, 30%, 65%, 25%) by nvidia/nemotron-3-ultra-550b-a55b:free.
+   | 
+   | **Research** (only sources dated at or before 2026-11-18 19:00 UTC):
+   | 
+   | No sources dated before the cutoff were found.
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (35%) (a) Time left: The resolution deadline is 28 Nov 2026 (23:59 UTC−3), ten days from now (18 Nov). The forecasting question closes in three hours, but the event window runs until 28 Nov. (b) Status quo: As of 13 Nov no specific calendar day for CDA payments had been announced; the BCP/FGD only stated CDAs would be paid “after the anticipo stage” and opened a validation platform on 12 Nov. The anticipo stage for the 75‑wage ceiling began the week of 16 Nov. (c) Base rate: In the ueno resolution itself, the first anticipo payments started three days after the resolution order (2 Nov → 5 Nov). However, CDAs require title verification, a slower process. In other Latin American deposit‑insurance …
+   | 2. (65%) (a) Time left: ~10 days until the 28 Nov 2026 23:59 PYT deadline (today is 18 Nov). (b) Status quo: As of 13 Nov, no specific calendar day for CDA payments had been announced; the BCP only stated CDA holders would be paid “after the anticipo stage” and opened a validation platform on 12 Nov. The anticipo (40 minimum wages) was completed 5–11 Nov; the next tranche for ordinary deposits (up to 75 wages) was slated to start the week of 16 Nov. (c) Base rate: In Paraguayan bank resolutions under Law 2334/2003, the BCP has moved from decree to first payment in ~1–2 weeks for standard deposits. CDAs require manual title verification, a slower process, but the authorities have already built a …
+   | 3. (30%) (a) Time left: ~10 days until 28 Nov 2026 23:59 PYT. (b) Status quo: As of 13 Nov no CDA payment date announced; BCP only opened a validation platform on 12 Nov and said CDAs would be paid “after the anticipo stage”. (c) Base rate: In Paraguayan bank resolutions, specific calendar dates for complex instruments (CDAs) typically follow validation by 2–4 weeks; the anticipo to 1.8 M depositors took ~1 week, but CDAs need title checks. (d) Research: No pre‑cutoff sources; but BCP’s pattern is to announce a concrete start day once operational readiness is confirmed (e.g., “from the following week” for the 75‑wage tranche). Ten days is tight for finishing validations and setting a firm day. (e) …
+   | 4. (65%) (a) Time left: The resolution deadline is 28 Nov 2026 23:59 Paraguay time (UTC‑3), i.e. 10 days from now (18 Nov). The Metaculus market closes in 3 hours, but the event window remains open. (b) Status quo: As of 13 Nov, no specific calendar day for CDA payments had been announced. The BCP/FGD completed the 40‑minimum‑wage anticipo for sight deposits by 11 Nov, opened a CDA validation platform on 12 Nov, and stated CDA holders would be paid after the anticipo stage. No further official update is known as of 18 Nov. (c) Base rate: In comparable deposit‑insurance resolutions (e.g., Paraguay’s past small‑bank failures, or similar emerging‑market cases), authorities typically announce a payout …
+   | 5. (25%) (a) Time left: 10 days until the 28 Nov 2026 (23:59 PYT) deadline. (b) Status quo: As of 13 Nov, no specific calendar day for CDA payments had been announced; officials only stated CDAs would be paid “after the anticipo stage” and require title verification via a platform opened 12 Nov. (c) Base rate: In Paraguayan bank resolutions, specific payment dates for complex instrument classes (like CDAs needing manual verification) are typically announced only after validation is well advanced, often 2–4 weeks after platform launch. (d) Research: The BCP/FGD has communicated frequently but has deliberately avoided calendar dates for CDAs, citing the need for individual title checks. The anticipo …
+coverage: 1 listed; 1 forecast in time (0 submitted), 0 missed, 0 skipped, 0 failed; estimated cost $0.0000
+ledger: data/ledgers/m3-dryrun-minibench-2.sqlite (run run_1eda8adeb92c4269b5fe)
+exit 0

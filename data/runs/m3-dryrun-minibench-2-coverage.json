@@ -1,0 +1,29 @@
+{
+ "cost_usd": 0.0,
+ "failed": 0,
+ "forecast": 1,
+ "listed": 1,
+ "missed": 0,
+ "mode": "dry_run",
+ "questions": [
+  {
+   "minutes_left": 162.2,
+   "post_id": 46620,
+   "question_id": 46880,
+   "reason": "",
+   "seconds": 79.7,
+   "status": "forecast",
+   "submitted": false,
+   "type": "binary"
+  }
+ ],
+ "reasons": {
+  "failed": {},
+  "missed": {},
+  "skipped": {}
+ },
+ "run_id": "run_1eda8adeb92c4269b5fe",
+ "skipped": 0,
+ "source": "metaculus:minibench",
+ "submitted": 0
+}
