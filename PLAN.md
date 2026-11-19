@@ -101,6 +101,17 @@ template, with its paired bootstrap interval clustered by opening week.
 The same rule and report apply against the community prediction where the
 API shows it (it does not to a bot token on scored tournaments; M4).
 
+**Status after M4 (2026-11-19).** Q1: *not yet resolvable*; no live
+question with both an Augur and a shadow-template forecast has resolved,
+and the floor has kept Augur out of scored rounds until a frontier model
+answers. Q5: *no reading*; Augur has no leaderboard entry. What M4 did
+measure for both: the median bot's line and the best template bot's average
+in the 2026-11-02 round (RESULTS.md), and the sample each needs: at a
+per-question spread of 32 points, 60 resolved questions detect a
+difference of 11.6 points and 300 detect 5.2, so Q1's +5 target is a
+Spring 2027 measurement and Fall 2026 can place Augur only above or below
+the median bot.
+
 **Reconciled before any run (2026-11-18).** The first version of Q3 said
 research depth would be the largest effect, while Q2 says leak-free
 retrieval is worth at most 0.02 Brier over none. Both cannot hold on the
@@ -417,6 +428,35 @@ documented ones.
 - [ ] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
 - [ ] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
 - [ ] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
+
+**Plan changes, 2026-11-19 (M4, decided while building it).**
+
+- *A bot token sees no resolution.* On 80 resolved posts across two
+  MiniBench rounds, Fall 2026 and Spring 2026, the API returned
+  `resolution: null`, empty aggregations and no score for this account
+  (`scripts/resolution_visibility.py`). So "checked against Metaculus's own
+  score for a resolved question of each type" became: checked against
+  Metaculus's own scoring code, `score_math.py` at a pinned commit, run on
+  fixed cases of every type (`tests/test_score_vectors.py`). `augur resolve`
+  counts hidden questions as hidden and also takes a resolution read by hand
+  (`--manual ... --evidence`). The API check stays under To measure.
+- *That check found a bug:* Augur split the 0.05 tail mass between two open
+  bounds; Metaculus gives each open tail 0.05.
+- *The ForecastBench number uses one draw, not five.* On a 4-core CPU,
+  concurrency does not raise `qwen2.5:7b`'s throughput, and five draws on
+  139 questions would take about 12 hours. Market questions only (dataset
+  questions ask about several horizons at once; the loader grows in M6),
+  from the 2026-05-24 set: 139 of 500 resolved to 0 or 1.
+- *The shadow template is the real `TemplateBot`* (forecasting-tools 0.3.7)
+  with every role on Augur's first forecast route; left unset, its roles
+  default to paid models. Its first run had no AskNews keys, so no research.
+- *Reference forecasts pool across ledgers* by question id, so the template
+  can keep its own ledger.
+- *MiniBench's community prediction is the bots' own aggregate*
+  (`include_bots_in_aggregates`), and the leaderboard ranks three of them;
+  it is reported as that, not as the human Community Prediction.
+- *Not done:* the first scheduled runs on `main` could not be read (private
+  repository, no credentials here); the commands are under To measure.
 
 **Plan changes, 2026-11-18 (M3, decided while building it).**
 
