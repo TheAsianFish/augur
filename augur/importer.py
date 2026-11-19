@@ -6,9 +6,12 @@ timestamp) into one fresh ledger gives back a single file that ``augur
 score`` and ``augur report`` read, with the leakage triggers re-checking
 every source use and every citation on the way in.
 
-Rows keep their ids, so importing the same export twice adds nothing. The
-one table with an integer id assigned by SQLite (``source_uses``) gets a new
-id, and a row identical in every other column is not inserted twice.
+Rows keep their ids, so importing the same export twice adds nothing: a row
+whose primary key is already present is counted as a duplicate, and any
+other constraint failure (a CHECK, a NOT NULL, a leakage trigger) aborts the
+whole import. The one table whose integer id SQLite assigns
+(``source_uses``) is matched on every other column instead, since two
+exports number their rows independently.
 """
 
 from __future__ import annotations
@@ -106,27 +109,38 @@ def _insert(
     auto = _AUTO_IDS.get(table)
     values = {k: v for k, v in row.items() if k != auto}
     names = list(values)
-    quoted = ", ".join(f'"{n}"' for n in names)
-    marks = ", ".join("?" for _ in names)
     if auto is not None:
         # Same content already present: a re-import, not a new row. "IS" treats
         # NULLs as equal.
-        where = " AND ".join(f'"{n}" IS ?' for n in names)
-        hit = conn.execute(
-            f'SELECT 1 FROM "{table}" WHERE {where} LIMIT 1',  # noqa: S608 - names from the schema
-            tuple(values.values()),
-        ).fetchone()
-        if hit:
-            report.duplicates[table] = report.duplicates.get(table, 0) + 1
-            return
-        sql = f'INSERT INTO "{table}" ({quoted}) VALUES ({marks})'  # noqa: S608
+        match = {n: values[n] for n in names}
     else:
-        sql = f'INSERT OR IGNORE INTO "{table}" ({quoted}) VALUES ({marks})'  # noqa: S608
+        keys = _primary_key(conn, table)
+        missing = [k for k in keys if k not in values]
+        if missing:
+            raise LedgerError(f"{table} row lacks its key column(s) {', '.join(missing)}")
+        match = {k: values[k] for k in keys}
+    where = " AND ".join(f'"{n}" IS ?' for n in match)
+    hit = conn.execute(
+        f'SELECT 1 FROM "{table}" WHERE {where} LIMIT 1',  # noqa: S608 - names from the schema
+        tuple(match.values()),
+    ).fetchone()
+    if hit:
+        report.duplicates[table] = report.duplicates.get(table, 0) + 1
+        return
+    quoted = ", ".join(f'"{n}"' for n in names)
+    marks = ", ".join("?" for _ in names)
+    sql = f'INSERT INTO "{table}" ({quoted}) VALUES ({marks})'  # noqa: S608
     try:
         cur = conn.execute(sql, tuple(values.values()))
     except sqlite3.IntegrityError as exc:
         raise LedgerError(f"import refused a {table} row: {exc}") from exc
     if cur.rowcount:
         report.inserted[table] = report.inserted.get(table, 0) + 1
-    else:
-        report.duplicates[table] = report.duplicates.get(table, 0) + 1
+
+
+def _primary_key(conn: sqlite3.Connection, table: str) -> list[str]:
+    info = conn.execute(f'PRAGMA table_info("{table}")').fetchall()
+    keys = [str(c[1]) for c in sorted(info, key=lambda c: int(c[5])) if int(c[5]) > 0]
+    if not keys:
+        raise LedgerError(f"table {table} has no primary key to match imported rows on")
+    return keys
