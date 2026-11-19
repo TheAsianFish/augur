@@ -153,6 +153,8 @@ def render_live(root: Path) -> str:
             ):
                 before = questions.get(int(qid), ("", False))
                 questions[int(qid)] = (str(tournament), before[1] or bool(posted))
+    for p in paths:
+        with closing(sqlite3.connect(f"file:{p}?mode=ro", uri=True)) as conn:
             if _has(conn, "reference_forecasts"):
                 for qid, who in conn.execute(
                     "SELECT question_id, forecaster FROM reference_forecasts"
@@ -162,7 +164,7 @@ def render_live(root: Path) -> str:
     by_tournament: dict[str, int] = {}
     for t in posted.values():
         by_tournament[t] = by_tournament.get(t, 0) + 1
-    loaded = scorecard.load(live, modes=["live"])
+    loaded = scorecard.load(paths, modes=["live"])
     tour = ", ".join(f"{t} {n}" for t, n in sorted(by_tournament.items())) or "none"
     refs = (
         ", ".join(f"{who} on {len(qs & set(questions))}" for who, qs in sorted(references.items()))

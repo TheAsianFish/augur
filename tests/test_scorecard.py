@@ -407,3 +407,22 @@ def test_format_summary_reports_the_counts_and_the_comparisons(world: World) -> 
     assert "  vs always 50% (n = 3)" in text
     assert "  vs base rate (33%) (n = 3)" in text
     assert "check " in text
+
+
+def test_references_and_resolutions_pool_across_ledgers(world: World, tmp_path: Path) -> None:
+    """A template forecast kept in its own ledger pairs with Augur's on the same question."""
+    other = tmp_path / "shadow.sqlite"
+    with Ledger.open(other, FixedClock(T0)) as ledger:
+        _reference(ledger, world.ids["q2"], "binary", "template", {"probability": 0.5})
+    alone = {s.question_id: s for s in load([world.path]).scored}
+    pooled = {s.question_id: s for s in load([world.path, other]).scored}
+    assert "template" not in alone[world.ids["q2"]].references
+    assert pooled[world.ids["q2"]].references["template"] == {"probability": 0.5}
+    comparison = next(
+        c
+        for c in summarise(list(pooled.values()), resamples=200).comparisons
+        if c.against == "template"
+    )
+    assert comparison.n == 3
+    # A ledger holding only references adds no scored question of its own.
+    assert len(load([other]).scored) == 0

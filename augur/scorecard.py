@@ -7,8 +7,9 @@ it posted one, otherwise its latest aggregate (dry runs and backtests).
 
 Comparisons are always on the questions both forecasters have:
 
-- **references** from the ledger: the shadow template bot, the Metaculus
-  community prediction, a market price;
+- **references** from any of the ledgers given (pooled by question id):
+  the shadow template bot, the Metaculus community prediction, a market
+  price;
 - **constant forecasts** on binary questions: always 50%, and the share of
   the scored binary questions that resolved Yes (the base rate, known only
   after the fact, so a little flattering to the constant).
@@ -118,16 +119,57 @@ def _latest_by_question(
     return out
 
 
+@dataclass
+class _Shared:
+    """What every ledger given says about each question, the latest row winning.
+
+    A resolution or a reference forecast may sit in a different ledger from
+    Augur's forecast (the shadow template has its own), so they are pooled
+    across ledgers by question id before any forecast is scored.
+    """
+
+    resolutions: dict[int, tuple[str, str, str | None]] = field(default_factory=dict)
+    references: dict[int, dict[str, tuple[str, dict[str, Any]]]] = field(default_factory=dict)
+    metaculus: dict[int, dict[str, tuple[str, float]]] = field(default_factory=dict)
+
+    def read(self, conn: sqlite3.Connection) -> None:
+        for qid, at, status, value in conn.execute(
+            "SELECT question_id, recorded_at, status, value FROM resolutions "
+            "ORDER BY recorded_at, rowid"
+        ):
+            if int(qid) not in self.resolutions or at >= self.resolutions[int(qid)][0]:
+                self.resolutions[int(qid)] = (str(at), str(status), value)
+        for qid, at, who, values in conn.execute(
+            "SELECT question_id, recorded_at, forecaster, values_json FROM reference_forecasts "
+            "ORDER BY recorded_at, rowid"
+        ):
+            mine = self.references.setdefault(int(qid), {})
+            if str(who) not in mine or at >= mine[str(who)][0]:
+                mine[str(who)] = (str(at), json.loads(values))
+        for qid, at, name, score in conn.execute(
+            "SELECT question_id, recorded_at, score_type, score FROM metaculus_scores "
+            "WHERE forecaster = 'augur' ORDER BY recorded_at, rowid"
+        ):
+            mine_scores = self.metaculus.setdefault(int(qid), {})
+            if str(name) not in mine_scores or at >= mine_scores[str(name)][0]:
+                mine_scores[str(name)] = (str(at), float(score))
+
+
 def load(paths: Sequence[Path], *, modes: Sequence[str] | None = None) -> Loaded:
     """Every question with an Augur aggregate in the ledgers at ``paths``."""
     result = Loaded(scored=[])
-    seen: set[int] = set()
+    shared = _Shared()
+    usable: list[Path] = []
     for path in paths:
         with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
+            if _has_table(conn, "resolutions"):
+                shared.read(conn)
+                usable.append(path)
+    seen: set[int] = set()
+    for path in usable:
+        with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
             conn.row_factory = sqlite3.Row
-            if not _has_table(conn, "resolutions"):
-                continue
-            _load_one(conn, result, seen, modes)
+            _load_one(conn, result, seen, modes, shared)
     result.scored.sort(key=lambda s: (s.opened, s.question_id))
     return result
 
@@ -140,7 +182,11 @@ def _has_table(conn: sqlite3.Connection, name: str) -> bool:
 
 
 def _load_one(
-    conn: sqlite3.Connection, result: Loaded, seen: set[int], modes: Sequence[str] | None
+    conn: sqlite3.Connection,
+    result: Loaded,
+    seen: set[int],
+    modes: Sequence[str] | None,
+    shared: _Shared,
 ) -> None:
     mode_sql = ""
     params: list[Any] = []
@@ -159,31 +205,15 @@ def _load_one(
         "ORDER BY posted, f.recorded_at, f.rowid"
     )
     forecasts = _latest_by_question(conn, sql, params)
-    resolutions = _latest_by_question(
-        conn,
-        "SELECT question_id, status, value FROM resolutions ORDER BY recorded_at, rowid",
-    )
-    references: dict[int, dict[str, dict[str, Any]]] = {}
-    for row in conn.execute(
-        "SELECT question_id, forecaster, values_json FROM reference_forecasts "
-        "ORDER BY recorded_at, rowid"
-    ):
-        references.setdefault(int(row[0]), {})[str(row[1])] = json.loads(row[2])
-    metaculus: dict[int, dict[str, float]] = {}
-    for row in conn.execute(
-        "SELECT question_id, score_type, score FROM metaculus_scores "
-        "WHERE forecaster = 'augur' ORDER BY recorded_at, rowid"
-    ):
-        metaculus.setdefault(int(row[0]), {})[str(row[1])] = float(row[2])
     for qid, f in forecasts.items():
         qid = int(qid)
         if qid in seen:
             continue
-        res = resolutions.get(qid)
+        res = shared.resolutions.get(qid)
         if res is None:
             result.unresolved += 1
             continue
-        if res["status"] != "resolved":
+        if res[1] != "resolved":
             result.annulled += 1
             continue
         q = conn.execute(
@@ -208,15 +238,15 @@ def _load_one(
                 question_type=str(q["type"]),
                 title=str(q["title"]),
                 opened=parse_iso(str(q["open_time"])),
-                resolution=str(res["value"]),
+                resolution=str(res[2]),
                 source=source,
                 submitted=bool(f["posted"]),
                 model=str(f["model"]),
                 augur=json.loads(f["values_json"]),
-                references=references.get(qid, {}),
+                references={k: v for k, (_, v) in shared.references.get(qid, {}).items()},
                 options=options,
                 scaling=scaling,
-                metaculus=metaculus.get(qid, {}),
+                metaculus={k: v for k, (_, v) in shared.metaculus.get(qid, {}).items()},
             )
             scored.p(scored.augur)
         except (ScoringError, ValueError, KeyError) as exc:
