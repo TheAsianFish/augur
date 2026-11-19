@@ -468,3 +468,10 @@ def test_references_and_resolutions_pool_across_ledgers(world: World, tmp_path: 
     assert comparison.n == 3
     # A ledger holding only references adds no scored question of its own.
     assert len(load([other]).scored) == 0
+
+
+def test_a_ledger_from_before_values_json_still_contributes_its_forecast() -> None:
+    # Schema 1 kept a binary forecast as a bare probability column.
+    old = Path(__file__).resolve().parent.parent / "data/ledgers/m1-live-bot-testing-area.sqlite"
+    loaded = load([old])
+    assert (len(loaded.scored), loaded.unresolved, loaded.unscorable) == (0, 1, [])

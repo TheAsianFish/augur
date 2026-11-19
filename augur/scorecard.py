@@ -230,9 +230,17 @@ def _candidates(conn: sqlite3.Connection, modes: Sequence[str] | None) -> list[_
     if modes:
         mode_sql = f" AND r.mode IN ({', '.join('?' for _ in modes)})"
         params = list(modes)
-    # Only "?" placeholders are formatted into the text; no input reaches it.
+    # Ledgers from before schema 4 hold binary forecasts as a bare probability.
+    columns = {str(r[1]) for r in conn.execute("PRAGMA table_info(forecasts)")}
+    values_sql = (
+        "f.values_json"
+        if "values_json" in columns
+        else "json_object('probability', f.probability) AS values_json"
+    )
+    # Only "?" placeholders and the fixed column text above are formatted
+    # into the query; no input reaches it.
     sql = (
-        "SELECT f.question_id, f.values_json, f.recorded_at, r.tournament, r.model, "  # noqa: S608
+        f"SELECT f.question_id, {values_sql}, f.recorded_at, r.tournament, r.model, "  # noqa: S608
         "q.post_id, q.type, q.title, q.open_time, q.payload_json, "
         "EXISTS (SELECT 1 FROM submissions s WHERE s.run_id = f.run_id "
         "  AND s.question_id = f.question_id AND s.kind = 'forecast' "
