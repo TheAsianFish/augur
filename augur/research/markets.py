@@ -437,6 +437,9 @@ class MarketsSearcher:
             created = _instant(hit.get("createdTime"))
             if created is None or created > as_of:
                 continue  # the market did not exist yet
+            closed = _instant(hit.get("closeTime"))
+            if closed is not None and closed <= as_of:
+                continue  # closed by as_of: its last price says nothing about now
             quote = await self._manifold_quote(
                 str(hit["id"]),
                 as_of,

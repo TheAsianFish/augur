@@ -76,6 +76,12 @@ class FakeMarkets:
                         "createdTime": _ms(AS_OF - timedelta(days=30)),
                     },
                     {
+                        "id": "closed-earlier",
+                        "question": "Will the test event happen in 2026?",
+                        "createdTime": _ms(AS_OF - timedelta(days=900)),
+                        "closeTime": _ms(AS_OF - timedelta(days=500)),
+                    },
+                    {
                         "id": "born-later",
                         "question": "Will the test event happen in 2026?",
                         "createdTime": _ms(AFTER),

@@ -1,0 +1,30 @@
+{
+ "judged": "2026-11-19, by hand, reading each question with a search hit and its top hit",
+ "rule": "same_event: the top hit is a market about the event the question asks about (same race, same gauge and dates), even if it asks a different question about it",
+ "round": "minibench (2026-11-16), 59 questions",
+ "runs": {
+  "m5-market-coverage-1.json": {
+   "note": "first run; keywords still counted dates, so three hits matched only on 'November 26/27, 2026'",
+   "questions_with_a_hit": 5,
+   "labels": {
+    "46567": {"same_event": false, "top_hit": "Will the next Meta Muse Spark model be released on November 26, 2026?"},
+    "46581": {"same_event": false, "top_hit": "Will Russia target Kyiv on November 26, 2026?"},
+    "46586": {"same_event": false, "top_hit": "Will Donald Trump publicly insult someone on November 27, 2026?"},
+    "46612": {"same_event": true, "top_hit": "Will Dan S. Sullivan win the 2026 Alaska Senate first round by at least 12%?"},
+    "46619": {"same_event": true, "top_hit": "Will the peak water level at La Jolla be 7.70 ft MLLW or more?"}
+   },
+   "same_event": 2
+  },
+  "m5-market-coverage.json": {
+   "note": "second run, dates no longer shared words",
+   "questions_with_a_hit": 4,
+   "labels": {
+    "46567": {"same_event": false, "top_hit": "Brazil's Ibovespa reaches 200,000 points by Dec 31, 2026? (same index, a different date and question)"},
+    "46576": {"same_event": false, "top_hit": "Will the Nasdaq Composite close higher on Monday, November 9, 2026 than on Friday, November 6, 2026? (same index, a different day)"},
+    "46612": {"same_event": true, "top_hit": "Will Dan Sullivan win the Alaska Senate race in 2026?"},
+    "46619": {"same_event": true, "top_hit": "Will the peak water level at La Jolla be 7.70 ft MLLW or more?"}
+   },
+   "same_event": 2
+  }
+ }
+}

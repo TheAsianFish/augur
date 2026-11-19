@@ -1,0 +1,66 @@
+46561 binary          0 hit(s)  Will Volodymyr Zelenskyy attend the Special European Council in Brusse
+46562 discrete        0 hit(s)  How many posts will Donald Trump publish on Truth Social on November 2
+46563 numeric         0 hit(s)  What will Magazine Luiza (MGLU3) close at on Friday, November 27, 2026
+46564 discrete        0 hit(s)  What will be Grupo Casas Bahia's (BHIA3) closing share price on 27 Nov
+46565 binary          0 hit(s)  Will a televised debate featuring at least three of Sánchez, Feijóo, A
+46566 binary          0 hit(s)  Will Alibaba make a non-preview Qwen4 model available on a pay-as-you-
+46567 numeric         3 hit(s)  What will the Ibovespa close at on 26 November 2026?
+2026-11-19 20:56:48 [warning  ] metaculus.retry                attempt=1 method=GET path=/posts/46568/ retry_after=10.0 status_code=429
+46568 binary          0 hit(s)  Will the Detroit Lions beat the Chicago Bears in their Thanksgiving Da
+46569 binary          0 hit(s)  Will the InfoGripe bulletin for epidemiological week 46 of 2026 report
+46570 multiple_choice 0 hit(s)  Eagles at Cowboys on Thanksgiving 2026: will Dallas win by 7+ points, 
+46571 multiple_choice 0 hit(s)  Which of Nvidia, AMD, Broadcom, or Micron will post the highest percen
+46572 discrete        0 hit(s)  What will the Tokyo (Ku-area) core CPI year-on-year inflation rate be 
+46573 binary          0 hit(s)  Will Argentina's Senate give media sanción to a bill suspending or eli
+46574 binary          0 hit(s)  Will Lebanon's cabinet refer the Dahr al-Baidar explosives case to the
+2026-11-19 20:57:08 [warning  ] metaculus.retry                attempt=1 method=GET path=/posts/46575/ retry_after=10.0 status_code=429
+46575 binary          0 hit(s)  Will Mexican federal authorities have confirmed recovery of all nine r
+46576 numeric         0 hit(s)  What will the Nasdaq Composite (^IXIC) close at on Friday, November 27
+46577 numeric         0 hit(s)  How many cumulative confirmed measles cases will Mexico's daily measle
+46578 multiple_choice 0 hit(s)  What stage will the BCP have reached in disposing of Ueno Bank's asset
+46579 discrete        0 hit(s)  How many AIS-visible commercial ship crossings of the Strait of Hormuz
+46580 discrete        0 hit(s)  What will Brazil's IPCA-15 monthly inflation rate be for November 2026
+46581 binary          2 hit(s)  As of 26 November 2026, will Russia be listed among the teams in the I
+46582 discrete        0 hit(s)  How many total 2026 measles-associated deaths will CDC's measles data 
+46583 numeric         0 hit(s)  How many viewers (millions, combined average across channels) will Spa
+2026-11-19 20:57:28 [warning  ] metaculus.retry                attempt=1 method=GET path=/posts/46584/ retry_after=10.0 status_code=429
+46584 binary          0 hit(s)  Will EU leaders at the 26–27 November 2026 Special European Council ag
+46585 binary          0 hit(s)  Will a division (bloc vote) be held on Malaysia's Supply Bill 2027 in 
+46586 binary          1 hit(s)  By 27 November 2026, will Maersk publicly state that personal data was
+46587 multiple_choice 0 hit(s)  How much precipitation will San Francisco International Airport record
+46588 discrete        0 hit(s)  By 27 November 2026, how many of the two Bundibugyo-specific vaccine c
+46589 binary          0 hit(s)  Will the U.S. Trustee's official committee of unsecured creditors in T
+46590 discrete        0 hit(s)  What will President Lee Jae-myung's job approval rating be in Gallup K
+46591 numeric         0 hit(s)  How many postal ballots will Correos report as admitted for Spain's 29
+46592 binary          0 hit(s)  Will Strategy (MSTR) close below $100 on Friday, November 27, 2026?
+46593 discrete        0 hit(s)  What rating will MasterChef Celebrity (Telefe) record for its Thursday
+46594 numeric         0 hit(s)  What will the Northern Sierra 8-Station Precipitation Index be for Nov
+46595 numeric         0 hit(s)  What will SpaceX's (SPCX) closing share price be on Friday, November 2
+46596 binary          0 hit(s)  Will the FDA approve BridgeBio's BBP-418 (ribitol) for limb-girdle mus
+2026-11-19 20:58:16 [warning  ] metaculus.retry                attempt=1 method=GET path=/posts/46597/ retry_after=10.0 status_code=429
+46597 discrete        0 hit(s)  What will be the highest significant wave height at NDBC buoy 46026 (1
+46598 discrete        0 hit(s)  What will France's provisional year-on-year CPI inflation be for Novem
+46599 binary          0 hit(s)  Will Plus Ultra operate a scheduled Madrid–Lima passenger flight on 26
+46600 discrete        0 hit(s)  How many subscribers will Russell Brand's YouTube channel show on 27 N
+46601 binary          0 hit(s)  Will front-month ICE Brent crude futures (January 2027 contract) settl
+46602 numeric         0 hit(s)  What will Nvidia's (NVDA) closing share price be on Friday, November 2
+46603 binary          0 hit(s)  Will the European Council's 26–27 November 2026 conclusions explicitly
+46604 numeric         0 hit(s)  How many drones will Russia launch at Ukraine overnight on 26–27 Novem
+2026-11-19 20:58:36 [warning  ] metaculus.retry                attempt=1 method=GET path=/posts/46605/ retry_after=10.0 status_code=429
+46605 numeric         0 hit(s)  What will Dabom's November 27, 2026 consumer price for a 30-egg pack o
+46606 discrete        0 hit(s)  What value will the Crypto Fear & Greed Index record for November 27, 
+46607 numeric         0 hit(s)  What will Anthropic (ANT) close at on Friday, November 27, 2026?
+46608 binary          0 hit(s)  Will at least one of the two Ir-192 sources stolen from the Rivers Sta
+46609 numeric         0 hit(s)  How many confirmed U.S. measles cases for 2026 will CDC report in its 
+46610 binary          0 hit(s)  Will the CBRT's November 2026 Financial Stability Report devote a dedi
+46611 binary          0 hit(s)  Will Ituri province report at least 10 more new confirmed Ebola cases 
+2026-11-19 20:58:57 [warning  ] metaculus.retry                attempt=1 method=GET path=/posts/46612/ retry_after=10.0 status_code=429
+46612 binary          3 hit(s)  Will Dan S. Sullivan publicly concede Alaska's 2026 U.S. Senate race b
+46613 multiple_choice 0 hit(s)  Which party's member will GPS name as its candidate for Sarawak's Bawa
+46614 multiple_choice 0 hit(s)  What will be the last date for filing claims and objections in Delhi's
+46615 discrete        0 hit(s)  On Black Friday (November 27, 2026), what will be the deepest percenta
+46616 numeric         0 hit(s)  How many confirmed measles cases will Wisconsin DHS report for 2026 as
+46617 numeric         0 hit(s)  What 2026 cumulative dengue case count will Colombia's INS report in t
+46618 discrete        0 hit(s)  How many storms will the UK–Ireland–Netherlands storm-naming group hav
+46619 numeric         3 hit(s)  What will be the highest observed water level (ft above MLLW) at NOAA'
+59 questions; 5 with a priced similar market; 0 with a visible community prior

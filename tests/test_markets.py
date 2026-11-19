@@ -154,7 +154,8 @@ async def test_search_skips_markets_created_after_as_of_and_dates_each_hit() -> 
         assert src.published_at <= AS_OF
         assert "may ask something different" in src.excerpt
         assert admit_source(src, AS_OF, RunMode.BACKTEST).admitted
-    assert not any(src.quote and src.quote.market_id == "born-later" for src in sources)
+    ids = {src.quote.market_id for src in sources if src.quote}
+    assert not ids & {"born-later", "closed-earlier"}
 
 
 async def test_search_question_puts_the_own_aggregate_first() -> None:
