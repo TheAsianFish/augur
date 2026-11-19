@@ -37,6 +37,9 @@ APPEND_ONLY_TABLES = (
     "limit_tests",
     "model_switches",
     "question_outcomes",
+    "resolutions",
+    "reference_forecasts",
+    "metaculus_scores",
     "schema_migrations",
 )
 
@@ -445,7 +448,98 @@ class Ledger:
         )
         return switch_id
 
+    def record_resolution(
+        self,
+        *,
+        question_id: int,
+        post_id: int,
+        question_type: str,
+        status: str,
+        value: str | None,
+        resolved_at: datetime | None,
+        source: str,
+        evidence: str,
+    ) -> str:
+        """What a question resolved to (or that it was annulled). The latest row counts."""
+        resolution_id = new_id("res")
+        self._insert(
+            "resolutions",
+            {
+                "resolution_id": resolution_id,
+                "question_id": question_id,
+                "post_id": post_id,
+                "question_type": question_type,
+                "status": status,
+                "value": value,
+                "resolved_at": to_iso(resolved_at) if resolved_at else None,
+                "source": source,
+                "evidence": evidence[:500],
+                "recorded_at": self._now(),
+            },
+        )
+        return resolution_id
+
+    def record_reference(
+        self,
+        *,
+        question_id: int,
+        post_id: int,
+        question_type: str,
+        forecaster: str,
+        detail: str,
+        values: dict[str, Any],
+        as_of: datetime,
+        source: str,
+    ) -> str:
+        """Someone else's forecast on the same question: community, template or market."""
+        reference_id = new_id("ref")
+        probability = values.get("probability") if question_type == "binary" else None
+        self._insert(
+            "reference_forecasts",
+            {
+                "reference_id": reference_id,
+                "question_id": question_id,
+                "post_id": post_id,
+                "question_type": question_type,
+                "forecaster": forecaster,
+                "detail": detail[:500],
+                "probability": probability,
+                "values_json": json.dumps(values, sort_keys=True),
+                "as_of": to_iso(as_of),
+                "source": source,
+                "recorded_at": self._now(),
+            },
+        )
+        return reference_id
+
+    def record_metaculus_score(
+        self, *, question_id: int, post_id: int, forecaster: str, score_type: str, score: float
+    ) -> str:
+        score_id = new_id("ms")
+        self._insert(
+            "metaculus_scores",
+            {
+                "score_id": score_id,
+                "question_id": question_id,
+                "post_id": post_id,
+                "forecaster": forecaster,
+                "score_type": score_type,
+                "score": float(score),
+                "recorded_at": self._now(),
+            },
+        )
+        return score_id
+
     # -- reads ----------------------------------------------------------
+
+    def latest_resolution(self, question_id: int) -> tuple[str, str | None] | None:
+        """``(status, value)`` of the latest resolution row, or ``None``."""
+        row = self._conn.execute(
+            "SELECT status, value FROM resolutions WHERE question_id = ? "
+            "ORDER BY recorded_at DESC, rowid DESC LIMIT 1",
+            (question_id,),
+        ).fetchone()
+        return None if row is None else (str(row[0]), row[1])
 
     def unposted_comment(self, question_id: int) -> str | None:
         """The comment that belongs to this account's forecast and was never posted.
