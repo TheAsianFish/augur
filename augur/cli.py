@@ -93,14 +93,14 @@ def _parser() -> argparse.ArgumentParser:
         default=LIVE_MARKETS,
         help="the markets searcher: the question's own community prediction where the token "
         "sees it and similar Manifold, Polymarket and Kalshi markets, priced as of the cutoff "
-        "(the default follows the replay evaluation's rule; PLAN.md, M5)",
+        "(on by default since M5's replay evaluation; RESULTS.md)",
     )
     fc.add_argument(
         "--blend",
         action=argparse.BooleanOptionalAction,
         default=LIVE_BLEND,
         help="blend a binary forecast with the question's own community prediction, when the "
-        "markets searcher finds it, one third to two thirds in log-odds (default per M5's rule)",
+        "markets searcher finds it, one third to two thirds in log-odds (on by default since M5)",
     )
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"

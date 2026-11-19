@@ -49,10 +49,12 @@ BLEND_WEIGHT = 1.0 / 3.0
 EXTREMIZE = 1.5
 """The extremizing factor of the settings arm, fixed before any run."""
 CLIP = (0.01, 0.99)
-LIVE_MARKETS = False
-"""Whether ``augur forecast`` runs the markets searcher by default (M5's decision rule)."""
-LIVE_BLEND = False
-"""Whether a live binary forecast is blended with its own community prediction (M5's rule)."""
+LIVE_MARKETS = True
+"""Whether ``augur forecast`` runs the markets searcher by default. M5's rule admits it:
+on C2 the interval of Brier(d) - Brier(b) is [-0.144, -0.054], below 0 (RESULTS.md)."""
+LIVE_BLEND = True
+"""Whether a live binary forecast is blended with its own community prediction. M5's rule
+admits it: on C2 the interval of Brier(c) - Brier(b) is [-0.157, -0.069], below 0."""
 PRICED_PLATFORMS = ("manifold", "polymarket")
 PRICES_SUFFIX = ":prices"
 WITH_PRICES_SUFFIX = ":with-prices"
