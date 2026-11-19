@@ -48,6 +48,18 @@ def test_check_names_the_stale_blocks(tmp_path: Path, monkeypatch: pytest.Monkey
     assert report.check(path, tmp_path) == []
 
 
+def test_check_reports_a_missing_or_repeated_block(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setitem(report.BLOCKS, "demo", report.Block("demo", lambda _root: "fresh\n"))
+    path = tmp_path / "RESULTS.md"
+    path.write_text("intro, the block deleted\n", encoding="utf-8")
+    assert report.check(path, tmp_path, required=["demo"]) == ["demo (missing)"]
+    # A stale first copy beside a fresh second one used to pass.
+    path.write_text(_doc("demo", "stale\n") + _doc("demo", "fresh\n"), encoding="utf-8")
+    assert report.check(path, tmp_path) == ["demo", "demo (twice)"]
+
+
 def test_check_refuses_while_a_ledger_has_unsaved_rows(tmp_path: Path) -> None:
     ledgers = tmp_path / "data" / "ledgers"
     ledgers.mkdir(parents=True)
@@ -73,5 +85,5 @@ def test_cli_report_writes_then_checks(
 
 
 def test_the_committed_results_match_a_fresh_render() -> None:
-    stale = report.check(REPO / "RESULTS.md", REPO)
+    stale = report.check(REPO / "RESULTS.md", REPO, required=list(report.BLOCKS))
     assert stale == [], f"RESULTS.md blocks {stale} differ from a render: run `make results`"

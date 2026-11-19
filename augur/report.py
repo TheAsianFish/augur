@@ -337,8 +337,11 @@ def render(text: str, root: Path = REPO, only: Sequence[str] | None = None) -> s
     return _BLOCK.sub(replace, text)
 
 
-def check(path: Path, root: Path = REPO) -> list[str]:
+def check(path: Path, root: Path = REPO, required: Sequence[str] | None = None) -> list[str]:
     """The names of the blocks in ``path`` that differ from a fresh render.
+
+    A block named in ``required`` but absent, or present more than once, is
+    reported too, so deleting a block cannot make the check pass.
 
     Refuses while a committed ledger has unsaved write-ahead-log content: a
     reader sees it, git does not, so the check would pass here and fail on a
@@ -351,9 +354,12 @@ def check(path: Path, root: Path = REPO) -> list[str]:
             "the writer (sqlite3 FILE 'PRAGMA wal_checkpoint(TRUNCATE)') and run again"
         )
     text = path.read_text(encoding="utf-8")
+    names = [m.group("name") for m in _BLOCK.finditer(text)]
+    problems = {f"{n} (missing)" for n in required or () if n not in names}
+    problems |= {f"{n} (twice)" for n in names if names.count(n) > 1}
     fresh = render(text, root)
-    if fresh == text:
-        return []
-    old = {m.group("name"): m.group("body") for m in _BLOCK.finditer(text)}
-    new = {m.group("name"): m.group("body") for m in _BLOCK.finditer(fresh)}
-    return sorted(n for n in old if old[n] != new.get(n))
+    if fresh != text:
+        olds = [(m.group("name"), m.group("body")) for m in _BLOCK.finditer(text)]
+        news = [m.group("body") for m in _BLOCK.finditer(fresh)]
+        problems |= {n for (n, body), now in zip(olds, news, strict=True) if body != now}
+    return sorted(problems)
