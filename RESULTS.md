@@ -1,10 +1,245 @@
 # Results
 
 Every number here comes from a command in this repository, with the model,
-date, cost and raw output recorded. Nothing scored yet: the first scored
-number (ForecastBench, no retrieval) and the first live score arrive in M4.
-M3 measured what a live round needs: the question windows, how late
-GitHub's cron fires, and whether every question type is accepted.
+date, cost and raw output recorded. Blocks between `augur:begin` and
+`augur:end` comment markers are rendered by `augur report` (`make
+results`) from the committed ledgers and snapshots, and a test fails if the
+committed file differs from a fresh render. M4 has the first scored number
+(ForecastBench, no retrieval, a local model) and the scoring it rests on;
+the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M4: scoring, baselines and the first scored number (2026-11-19)
+
+**Setup.** Scoring is Metaculus's (`augur/score.py`): the baseline score,
+head-to-head and peer scores for every type, Brier and log score; paired
+comparisons with a bootstrap that resamples questions (or opening weeks),
+10,000 resamples, a fixed seed, and the minimum detectable effect (MDE) at
+80% power and 5% two-sided. Everything below cost $0: the backtest ran on a
+local model, hosted calls used OpenRouter `:free` models, and the
+Metaculus and GitHub reads are free API calls.
+
+### Scoring, checked against Metaculus's own code
+
+`scripts/metaculus_score_vectors.py` runs Metaculus's `scoring/score_math.py`
+(BSD 2-Clause, pinned at commit `8d7ac79`, its Django imports stubbed) on
+eight fixed cases and commits the outputs; `tests/test_score_vectors.py`
+requires Augur's spot baseline and spot peer scores to match them to 1e-9.
+
+| Case | Forecasters | Matched |
+|------|-------------|---------|
+| Binary, resolved Yes and resolved No | 3 each | yes |
+| Multiple choice, 3 options (one uniform) | 3 | yes |
+| Numeric, closed bounds, inside the range | 3 | yes |
+| Numeric, open bounds, inside, below and above the range | 3 each | yes |
+| Discrete, 11 outcomes, closed bounds | 3 | yes |
+
+The check found one bug before any number was reported: Augur split the
+0.05 baseline mass between a question's two open tails, while Metaculus
+gives each open tail 0.05. An out-of-range outcome on such a question
+would have scored 34.7 points too high (100 ln 2 / 2). Hand-computed cases
+for every type are in `tests/test_score.py`.
+
+**Why not against the API's scores.** The plan was to compare with
+Metaculus's score for a resolved question of each type. With this
+account's token the API hides that: `scripts/resolution_visibility.py`
+(output `data/runs/m4-resolution-visibility.txt`, 2026-11-19) read 20
+resolved posts from each of four tournaments (two MiniBench rounds, Fall
+2026, Spring 2026), and **0 of 80** showed a `resolution`, a community
+aggregate or a score for this account; the account is a bot (`Augur-bot-1`).
+So `augur resolve` counts such questions as *hidden* instead of guessing,
+and the comparison with Metaculus's own per-question score is under To
+measure. On open bot-testing-area questions the community aggregate *is*
+shown: `augur resolve` kept it for all 6 questions in the M3 ledger
+(`data/runs/m4-resolve-live.txt`).
+
+### The tokenless ForecastBench number (no retrieval, `qwen2.5:7b`)
+
+The bot's own forecaster prompt and median, no sources, the clock pinned to
+each question's freeze date, on ForecastBench market questions that
+resolved to 0 or 1 and were posed after the model's release (2024-09-19).
+The market's price at the freeze date is a reference row only: the model
+never saw it. Keeping only questions already resolved to 0 or 1 by the
+resolution set favours markets that resolved early (often "by a date"
+markets settled before it), which is a property of the sample, not of the
+model.
+
+<!-- augur:begin forecastbench -->
+Question set `2026-05-24-llm.json` (ForecastBench, CC BY-SA 4.0): 500 questions; removed 250 not a market question (dataset questions are M6's); 111 not resolved to 0 or 1 in the resolution set; **139 scored** (139 binary, 40.3% resolved Yes).
+
+| Forecaster | Brier [95% CI] | Baseline score | Augur minus it: Brier [95% CI] | MDE (Brier) | Augur over it: head-to-head [95% CI] | MDE (points) |
+|---|---|---|---|---|---|---|
+| **Augur**, qwen2.5:7b, no retrieval | 0.2395 [0.1929, 0.2895] | -7.9 [-30.9, 12.9] | | | | |
+| Market price at the freeze date (not shown to Augur) | 0.1311 | 41.4 | +0.1084 [+0.0582, +0.1612] | 0.0740 | -34.2 [-50.9, -19.0] | 22.8 |
+| Always 50% | 0.2500 | 0.0 | -0.0105 [-0.0571, +0.0395] | 0.0691 | -5.5 [-21.4, +9.0] | 22.0 |
+| Base rate (40%) | 0.2406 | 2.7 | -0.0011 [-0.0432, +0.0427] | 0.0614 | -7.4 [-22.0, +5.8] | 20.2 |
+
+Method: 1 backtest run(s) in `data/ledgers/m4-forecastbench-qwen.sqlite` (code 0.1.0.dev0+8e787a7faf8c); 1 draw(s) per question, median; clock pinned to each question's freeze date (2026-05-14 00:00 UTC); no sources. 139 model calls (0 failed), 32,185 output tokens, 3.1 h of model time on a 4-core CPU, cost $0.00. Outcomes: forecast 139. Intervals: paired bootstrap over questions, 10,000 resamples, seed 20261119; MDE is the true difference this n would detect with 80% power at the 5% level. The base rate is the scored set's own, known only after the fact.
+<!-- augur:end forecastbench -->
+
+**What it says.** Without sources, `qwen2.5:7b` in Augur's forecaster
+prompt is no better than a constant: Brier 0.2395 against 0.2500 for always
+50% and 0.2406 for the set's own base rate, and both paired intervals span
+zero. The market's price at the freeze date, which the model never saw,
+scores 0.1311; Augur is behind it by 0.108 Brier [0.058, 0.161], well past
+the detectable effect at n = 139. So the run measured the floor a pipeline
+starts from, not a forecaster: a small model's prior about events after its
+training cut-off carries almost no information, and the price of a liquid
+market carries most of what is knowable. That is the gap retrieval (M5's
+market prices and news, M6's backtest) and a frontier model have to close.
+For scale only, El Lahib et al. report 0.244 with no retrieval for
+gpt-oss-120b on their own 93 questions (arXiv 2602.00758): the same
+neighbourhood, on different questions and a different model, so not a
+comparison. Nothing was predicted for this number before the run.
+
+**One draw, not five.** The plan said "the M1 pipeline", five draws and the
+median. On this 4-core CPU `qwen2.5:7b` decodes about the same number of
+tokens a second whether one request runs or five run at once
+(`scripts/ollama_throughput.py`, `data/runs/m4-qwen-throughput.txt`), so
+five draws cost five times the model time in the block above (3.1 h),
+about 15 hours. The run used `AUGUR_FORECASTERS=1`; the five-draw run is under To
+measure. The outside evidence on what the median adds is small: AIA
+Forecaster's ablation went from 0.1182 (one draw) to 0.1138 (median of
+several), arXiv 2511.07678.
+
+**Beside the frontier, not against it.** AIA Forecaster reports Brier
+0.1076 against superforecasters' 0.1110 on ForecastBench's FB-7-21 set
+(self-reported; agentic search and a frontier model). This run is **not
+comparable** to that: a different question set (one 2026 set, market
+questions only), no search, a 7B local model. ForecastBench's public
+`forecast_sets` hold only the 2024-07-21 set, so no outside forecaster can
+be scored on these same questions yet; that row is M10's.
+
+### Live: Augur against the shadow template and the community
+
+`augur baseline` runs Metaculus's real `TemplateBot` (forecasting-tools
+0.3.7, `FallTemplateBot2026`) unpublished on questions Augur forecast, with
+Augur's first forecast route for every template role, and records its
+forecast as a `template` reference. First run, 2026-11-19
+(`data/runs/m4-shadow-template.txt`, ledger `m4-shadow-template.sqlite`), on
+three bot-testing-area questions Augur forecast in M3 with the same free
+model (`nvidia/nemotron-3-ultra-550b-a55b:free`):
+
+| Question | Augur (M3, posted) | Shadow template (M4, unpublished) |
+|----------|--------------------|-----------------------------------|
+| 43327 EU exit before 2027 (binary) | 1% | 1.0% |
+| 46223 2028 presidential winner (multiple choice) | Democratic 48%, Republican 50%, Other 2% | Democratic 47.4%, Republican 50.2%, Other 2.4% |
+| 43323 Trump net approval, 31 Dec (numeric) | median −22.1, 80% in [−32.5, −11.7] | 40th to 60th percentile −18.1 to −13.0, 80% in [−32.1, −2.0] |
+
+The template had no news search (no AskNews keys here) while Augur's M3 run
+read Wikipedia, and it forecast about 10 hours after Augur did (05:07 on
+2026-11-19 against 18:46 the day before), so this pair is not yet like for
+like; none of the three questions has resolved. The same caution applies to
+the community aggregate `augur resolve` keeps: it is the latest one when
+resolve runs, usually after Augur's forecast, so a head-to-head against it
+favours the community. Each reference row records its `as_of` for that
+reason; a live comparison should run the template at Augur's forecast time. The first try on `google/gemma-4-31b-it:free` got
+HTTP 429 on all 15 template calls (an upstream shared pool).
+
+<!-- augur:begin live-scores -->
+Live questions in the committed ledgers: 6; posted by Augur: 6 (bot-testing-area 6). Reference forecasts recorded: community on 6, market on 0, template on 3. With a resolution in the ledger: 0; annulled 0; scored **0**.
+
+Nothing is scored yet, so no interval and no detectable effect can be computed from data. Until there is a measured spread, the detectable effect at the sizes this season can reach, for a per-question spread of 32 points (PLAN.md, from the Spring 2026 winner's interval; a paired difference against the same-model template is likely tighter, and M4's first resolved round replaces this with the measured one):
+
+| Resolved questions | Detectable mean difference (points per question, 80% power, 5% two-sided) |
+|---|---|
+| 30 | 16.4 |
+| 60 | 11.6 |
+| 120 | 8.2 |
+| 300 | 5.2 |
+<!-- augur:end live-scores -->
+
+**Q1 (does Augur beat the same-model template?): not yet resolvable.** No
+live question with both forecasts has resolved, and Augur has posted no
+MiniBench forecast: the submit floor refuses until a frontier-tier model
+answers (M3). The decision rule was committed to PLAN.md before any round
+resolved: target +5 points per question; held if the paired interval is
+above 0; failed if below 0, or if the point estimate is negative after both
+remaining Fall rounds. At the 32-point spread above, a 5-point difference
+needs about 300 resolved questions to be detected four times in five; Fall
+2026 can give at most about 120.
+
+### Standings
+
+`augur standings` reads each round's primary leaderboard
+(`/api/leaderboards/project/{id}/`) and keeps a snapshot
+(`data/standings/*.json`); `augur report` renders from the snapshots.
+
+<!-- augur:begin standings -->
+#### MiniBench - 2026-11-02 (`minibench-2026-11-02`)
+
+Finalized: no. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:05.413788Z from https://www.metaculus.com/api/leaderboards/project/33135/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | takeoff.watch | bot | 59 | 22.77 [17.36, 29.05] | 1343.4 |
+| Best template bot | 107 | metac-claude-opus-5-5-high+asknews | Metaculus template bot | 59 | 3.66 [-0.97, 7.94] | 216.0 |
+| Best Metaculus house bot (not the template) | 3 | metac-autocast-experimental | Metaculus house bot (not the template) | 59 | 16.34 [10.92, 21.58] | 964.2 |
+| Community prediction | 80 | community prediction (unweighted) | community prediction | 59 | 5.06 [4.08, 6.12] | 298.6 |
+| Community prediction | 63 | community prediction (recency_weighted) | community prediction | 59 | 6.17 [4.77, 7.69] | 364.2 |
+| Community prediction | 48 | community prediction (reputation_weighted) | community prediction | 59 | 7.56 [6.13, 9.07] | 446.2 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Best listed open-source bot: no listed open-source bot in this round.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+Median bot by summed score (the line Q5 predicts Augur clears): 50.0 over 19 questions, 2.63 a question (rank 177; the middle of 431 bot entries, many of which covered only part of the round, which a summed score punishes).
+
+Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 60 no run saw it (from the committed ledgers; `augur standings --from data/standings/minibench-2026-11-02.json --ledger ...` lists each one).
+
+#### MiniBench (`minibench`)
+
+Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:08.935168Z from https://www.metaculus.com/api/leaderboards/project/33169/.
+
+The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 2026-12-04T00:00:00Z); there is nothing to compare.
+
+Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 59 no run saw it; 1 forecast in a dry run, not submitted (from the committed ledgers; `augur standings --from data/standings/minibench.json --ledger ...` lists each one).
+<!-- augur:end standings -->
+
+**Unfair comparisons, named.** (1) Augur has no entry: there is nothing of
+its own to compare yet. (2) The averages divide Metaculus's summed score
+and its interval by the questions covered; Metaculus's interval method was
+not checked. (3) In MiniBench the community prediction is an aggregate of
+the bots themselves (`include_bots_in_aggregates` is true on these
+questions), not of human forecasters, so it is not the human Community
+Prediction of the Frontier table (14.8 among humans in Spring 2026).
+(4) The template bots search AskNews and run on paid frontier models; the
+house bots (`metac-agent-*`, `metac-autocast*`) are Metaculus's own agentic
+systems, not the template. (5) Open-source bots are recognised only from a
+short sourced list; none of them entered this round.
+
+**Q5's first reading: not placed.** The prediction was "above the median
+bot and above the best same-model template bot; below the top 10." With no
+scored forecast in any round, Q5 has no reading; the line it would have to
+clear is now measured (the median bot above), and the best template bot of
+the 2026-11-02 round averaged 3.66 a question against rank 1's 22.77. One
+round of about 60 questions gives an interval of about ±8 points on an
+average (PLAN.md), enough to place the bot above or below the median, not
+among the leaders.
+
+### Scheduled runs on `main`
+
+Not observed: the repository is still private and this environment has no
+GitHub credentials, so the `ledger` branch could not be read. The commands
+are under To measure; `augur ledger import` and `augur standings --ledger`
+are what turn that branch into the coverage check (forecast, skipped,
+missed, and why).
+
+### Ledgers
+
+<!-- augur:begin ledgers -->
+| Ledger | Runs (modes) | Questions | Model calls | Forecasts (aggregate) | Posted | Resolutions | References |
+|---|---|---|---|---|---|---|---|
+| `m1-dryrun-samples.sqlite` | 1 (dry_run 1) | 1 | 7 | 1 | 0 | 0 | 0 |
+| `m1-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 7 | 1 | 1 | 0 | 0 |
+| `m2-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 16 | 2 | 2 | 0 | 0 |
+| `m2-probe.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 0 |
+| `m3-dryrun-minibench-2.sqlite` | 1 (dry_run 1) | 1 | 6 | 1 | 0 | 0 | 0 |
+| `m3-dryrun-minibench.sqlite` | 1 (dry_run 1) | 1 | 9 | 0 | 0 | 0 | 0 |
+| `m3-live-bot-testing-area-2.sqlite` | 1 (live 1) | 6 | 53 | 6 | 6 | 0 | 6 |
+| `m3-live-bot-testing-area.sqlite` | 1 (live 1) | 5 | 43 | 5 | 5 | 0 | 0 |
+| `m4-forecastbench-qwen.sqlite` | 1 (backtest 1) | 139 | 139 | 139 | 0 | 139 | 139 |
+| `m4-shadow-template.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 3 |
+<!-- augur:end ledgers -->
 
 ## M3: every question type live, deadlines, and the schedule (2026-11-18)
 
@@ -351,7 +586,10 @@ works against the real API; they say nothing yet about accuracy.
 | What | Why not yet | Command |
 |------|-------------|---------|
 | A frontier model answering, and forecasts with private comments on a live MiniBench round | No billed model was called: the key reports a $1 limit that may not be the sponsorship, and nothing paid is spent without the maintainer's say-so. The floor refused the free chain (exit 2, `data/runs/m3-submit-floor-minibench.txt`) | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high,openrouter:anthropic/claude-opus-5 AUGUR_RESEARCH_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free augur models probe`, then the same variables with `augur forecast --tournament minibench --submit --coverage coverage.json` while a round is open (from about 2026-11-30). Worst case about $0.30 to $0.35 a question at GPT-5.4's listed $2.50/$15 per million: five 4,000-token draws ($0.30) plus their prompts of about 3,000 tokens each; needs `METACULUS_TOKEN` |
-| This repository's own cron delay and coverage | Private, and no push credentials here | After merge, with `AUGUR_SCHEDULE=minibench`: `python3 scripts/cron_delay.py` cannot see private runs, so read the run times from the `ledger` branch's `*.txt` files against the two cron lines (M4) |
+| This repository's own cron delay and coverage, and the first scheduled runs on `main` | Private, and no GitHub credentials here, so the `ledger` branch cannot be read | After merge, with `AUGUR_SCHEDULE=minibench`: `git fetch origin ledger && git worktree add /tmp/ledger FETCH_HEAD && augur ledger import /tmp/ledger/ledger --out /tmp/live.sqlite && augur standings --round minibench --ledger /tmp/live.sqlite` (forecast, skipped, missed and why per question); the run times are the `*.txt` files' timestamps against the two cron lines; billed minutes: `gh api repos/TheAsianFish/augur/actions/runs --jq '.workflow_runs[] \| select(.event=="schedule") \| [.created_at, .run_started_at, .updated_at]'` |
+| Augur against the same-model shadow template and the community prediction on resolved live questions (Q1) | No live MiniBench forecast yet (the floor), and a bot token sees no resolution on scored tournaments | After each forecast run: `uv sync --extra baseline && augur baseline --ledger L` (same model as Augur, AskNews keys set so the template searches as it does on the leaderboard); after resolution: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` read from the question page), then `augur score L data/ledgers/m4-shadow-template.sqlite --mode live --cluster week` |
+| Augur's score beside Metaculus's own for one resolved question of each type | The API hides resolutions and scores from this bot account (0 of 80) | `augur resolve` records `my_forecasts.score_data` whenever the API returns it, and `augur score` prints each `check` line; with a personal (non-bot) token, `python3 scripts/resolution_visibility.py` first shows whether that account sees them |
+| The ForecastBench number with five draws, as the pipeline runs live | About 15 hours of CPU on 4 cores (five times the measured 3.1 h) | `AUGUR_FORECASTERS=5 make backtest FB_LEDGER=data/ledgers/m4-forecastbench-qwen-5.sqlite`, then `make results` after adding the ledger to the report |
 | The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
 | Groq, Gemini and GitHub Models free tiers | No `GROQ_API_KEY`, `GEMINI_API_KEY` or `GITHUB_TOKEN` here; the presets are configured, not exercised | `AUGUR_FORECAST_MODELS=groq:<model> augur models probe --burst 30` (and `gemini:`, `github:`) |
 | Tokens-per-minute limits | OpenRouter sends no token-limit header and the bursts are tiny | the same burst on Groq, which sends `x-ratelimit-limit-tokens` |

@@ -1,0 +1,18 @@
+{
+ "kept": 139,
+ "licence": "ForecastBench datasets, Forecasting Research Institute, CC BY-SA 4.0",
+ "model_release": "qwen2.5:7b 2024-09-19",
+ "removed": {
+  "not a market question (dataset questions are M6's)": 250,
+  "not resolved to 0 or 1 in the resolution set": 111
+ },
+ "sha256": {
+  "questions": "eaf464d95e0c6ee935521d96ca149cf07d9c2fc81d573902a4b2f0a322800e80",
+  "resolutions": "2f917b08607e0c86efb6047cc7ad6d95488512061aa435d75625486de864c671"
+ },
+ "total": 500,
+ "urls": {
+  "questions": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/question_sets/2026-05-24-llm.json",
+  "resolutions": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/resolution_sets/2026-05-24_resolution_set.json"
+ }
+}

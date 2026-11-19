@@ -10,10 +10,14 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from augur import baseline, report, scorecard, standings
+from augur.backtest import PinnedClock, run_forecastbench
 from augur.clock import SystemClock
 from augur.config import Settings
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
 from augur.export import export_jsonl
+from augur.forecastbench import load_set
+from augur.importer import import_exports
 from augur.leakage import scan_ledger
 from augur.ledger import Ledger
 from augur.llm.catalog import (
@@ -43,7 +47,8 @@ from augur.ratelimit import RateLimiter
 from augur.research.asknews import AskNewsSearcher
 from augur.research.source import Searcher
 from augur.research.wikipedia import WikipediaSearcher
-from augur.runner import TOURNAMENTS, ForecastRun, format_probe
+from augur.resolve import resolve_forecastbench, resolve_manual, resolve_metaculus
+from augur.runner import TOURNAMENTS, ForecastRun, code_version, format_probe
 
 log = get_logger("augur.cli")
 
@@ -116,6 +121,64 @@ def _parser() -> argparse.ArgumentParser:
     )
     snap.add_argument("--out", type=Path, default=SNAPSHOT_PATH)
 
+    bt = sub.add_parser("backtest", help="forecast resolved questions with the clock pinned")
+    bt_sub = bt.add_subparsers(dest="backtest_command", required=True)
+    fb = bt_sub.add_parser(
+        "forecastbench",
+        help="ForecastBench market questions, no retrieval, as of each freeze date",
+        description=(
+            "Forecast the eligible questions of one ForecastBench question set with the "
+            "configured forecast model and no retrieval. Resumable: questions that already "
+            "have an aggregate in the ledger are not forecast again."
+        ),
+    )
+    fb.add_argument("--questions", type=Path, required=True, help="question set JSON")
+    fb.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
+    fb.add_argument("--limit", type=int, help="forecast only the first N eligible questions")
+    fb.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
+
+    res = sub.add_parser(
+        "resolve",
+        help="append resolutions (and references Metaculus exposes) to a ledger",
+        description=(
+            "Read each live or dry-run question in the ledger from Metaculus and append its "
+            "resolution, the community aggregate and Metaculus's own scores where the API "
+            "shows them; or resolve a backtest from a ForecastBench resolution set; or "
+            "record one resolution read by hand."
+        ),
+    )
+    res.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
+    res.add_argument("--forecastbench", type=Path, help="a ForecastBench resolution set JSON")
+    res.add_argument(
+        "--manual", nargs=2, metavar=("POST_ID", "VALUE"), help="record one resolution by hand"
+    )
+    res.add_argument("--evidence", default="", help="where a --manual resolution was read")
+
+    sc = sub.add_parser(
+        "score",
+        help="score resolved forecasts in one or more ledgers, with paired intervals",
+    )
+    sc.add_argument("ledgers", type=Path, nargs="+")
+    sc.add_argument(
+        "--cluster",
+        choices=("question", "week", "source"),
+        default="question",
+        help="what the bootstrap resamples: questions, opening weeks or sources",
+    )
+    sc.add_argument("--mode", action="append", choices=("live", "dry_run", "backtest"))
+    sc.add_argument("--resamples", type=int, default=10_000)
+
+    rep = sub.add_parser(
+        "report", help="re-render RESULTS.md's generated blocks from the committed ledgers"
+    )
+    rep.add_argument("--path", type=Path, default=Path("RESULTS.md"))
+    rep.add_argument(
+        "--check", action="store_true", help="exit 1 if the file differs from a fresh render"
+    )
+
+    standings.add_parser(sub)
+    baseline.add_parser(sub)
+
     led = sub.add_parser("ledger", help="inspect a ledger")
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
     check = led_sub.add_parser("check", help="scan a ledger for leakage; exit 1 on a violation")
@@ -125,6 +188,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     export.add_argument("db", type=Path)
     export.add_argument("out", type=Path)
+    imp = led_sub.add_parser(
+        "import",
+        help="rebuild a ledger from JSONL exports (files or directories, e.g. the ledger branch)",
+    )
+    imp.add_argument("paths", type=Path, nargs="+")
+    imp.add_argument("--out", type=Path, required=True, help="the SQLite ledger to write")
     return parser
 
 
@@ -311,6 +380,108 @@ async def _models(args: argparse.Namespace, settings: Settings) -> int:
         return 0 if answering or args.route else 1
 
 
+async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
+    if settings.is_replay:
+        raise ConfigError("a backtest needs a live model; set AUGUR_PROVIDER or the chains")
+    answering = settings.chains()["forecast"][0]
+    released, _ = release_bound(answering, load_snapshot())
+    if released is None:
+        raise ConfigError(
+            f"{answering.key} has no known release date, so a backtest cannot rule out that "
+            "it remembers the outcomes; use a model with one (augur models list)"
+        )
+    report = load_set(args.questions, args.resolutions, released=released, limit=args.limit)
+    print("\n".join(report.lines()))
+    clock = PinnedClock(SystemClock().now())
+    ledger_path: Path = args.ledger or settings.ledger_path
+    async with default_http_client() as http:
+        # Rate-limit cool-downs run on the wall clock: a pinned clock never
+        # reaches the end of a cool-down, so one 429 would fail every later question.
+        router = build_router(settings, http, load_snapshot(), SystemClock())
+        with Ledger.open(ledger_path, clock) as ledger:
+            try:
+                result = await run_forecastbench(
+                    questions=report.kept,
+                    tournament=f"forecastbench:{report.question_set}",
+                    settings=settings,
+                    router=router,
+                    ledger=ledger,
+                    clock=clock,
+                    code_version=code_version(),
+                )
+            finally:
+                await router.aclose()
+    print(
+        f"ledger: {ledger_path} (run {result.run_id}): {result.forecast} forecast, "
+        f"{result.resumed} done earlier, {result.skipped} skipped, {result.failed} failed"
+    )
+    return 1 if result.failed else 0
+
+
+async def _resolve(args: argparse.Namespace, settings: Settings) -> int:
+    clock = SystemClock()
+    ledger_path: Path = args.ledger or settings.ledger_path
+    if not ledger_path.exists():  # noqa: ASYNC240 - one stat before any I/O starts
+        raise AugurError(f"no ledger at {ledger_path}")
+    with Ledger.open(ledger_path, clock) as ledger:
+        if args.manual:
+            post, value = args.manual
+            status, recorded = resolve_manual(
+                ledger, post_id=int(post), value=value, evidence=args.evidence
+            )
+            print(f"post {post}: {status} {recorded or ''}".rstrip())
+            return 0
+        if args.forecastbench is not None:
+            report = resolve_forecastbench(ledger, args.forecastbench)
+            print(report.line())
+            return 0
+        if not settings.has_metaculus_token:
+            raise MissingCredentialsError("augur resolve", ("METACULUS_TOKEN",))
+        async with default_http_client() as http:
+            client = MetaculusClient.from_settings(settings, http)
+            report = await resolve_metaculus(ledger, client)
+        print(report.line())
+        return 1 if report.failed else 0
+
+
+def _score(args: argparse.Namespace) -> int:
+    for path in args.ledgers:
+        if not path.exists():
+            raise AugurError(f"no ledger at {path}")
+    loaded = scorecard.load(args.ledgers, modes=args.mode)
+    for problem in loaded.unscorable:
+        print(f"not scored: {problem}")
+    if not loaded.scored:
+        print(
+            f"nothing to score: {loaded.unresolved} forecast questions have no resolution and "
+            f"{loaded.annulled} were annulled (run augur resolve first)"
+        )
+        return 1
+    summary = scorecard.summarise(loaded.scored, cluster=args.cluster, resamples=args.resamples)
+    print(scorecard.format_summary(summary, loaded))
+    return 0
+
+
+def _report(args: argparse.Namespace) -> int:
+    path: Path = args.path
+    if not path.exists():
+        raise AugurError(f"no {path}; run from the repository root or pass --path")
+    root = path.resolve().parent
+    if args.check:
+        stale = report.check(path, root)
+        if stale:
+            print(f"{path} is stale in: {', '.join(stale)}; run augur report")
+            return 1
+        print(f"{path} matches a fresh render")
+        return 0
+    text = path.read_text(encoding="utf-8")
+    fresh = report.render(text, root)
+    if fresh != text:
+        path.write_text(fresh, encoding="utf-8")
+    print(f"{path}: {'re-rendered' if fresh != text else 'already current'}")
+    return 0
+
+
 def _ledger_check(paths: Sequence[Path]) -> int:
     bad = 0
     for path in paths:
@@ -331,8 +502,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         configure_logging(settings.log_level)
         if args.command == "forecast":
             return asyncio.run(_forecast(args, settings))
+        if args.command == "standings":
+            return asyncio.run(standings.main(args, settings))
         if args.command == "models":
             return asyncio.run(_models(args, settings))
+        if args.command == "backtest":
+            return asyncio.run(_backtest(args, settings))
+        if args.command == "baseline":
+            return asyncio.run(baseline.main(args, settings))
+        if args.command == "resolve":
+            return asyncio.run(_resolve(args, settings))
+        if args.command == "score":
+            return _score(args)
+        if args.command == "report":
+            return _report(args)
+        if args.ledger_command == "import":
+            result = import_exports(args.paths, args.out, SystemClock())
+            dupes = sum(result.duplicates.values())
+            print(
+                f"{args.out}: {result.total} rows from {result.files} exports "
+                f"({dupes} already present)"
+            )
+            return 0
         if args.ledger_command == "export":
             if not args.db.exists():
                 raise AugurError(f"no ledger at {args.db}")

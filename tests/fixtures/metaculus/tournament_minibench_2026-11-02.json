@@ -1,0 +1,9 @@
+{
+ "close_date": "2026-11-20T00:00:00Z",
+ "forecasting_end_date": "2026-11-04T01:41:51Z",
+ "id": 33135,
+ "name": "MiniBench - 2026-11-02",
+ "score_type": "spot_peer_tournament",
+ "slug": "minibench-2026-11-02",
+ "start_date": "2026-11-02T00:00:00Z"
+}

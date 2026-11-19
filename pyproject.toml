@@ -12,6 +12,10 @@ dependencies = [
     "structlog>=24.4",
 ]
 
+[project.optional-dependencies]
+# Metaculus's template bot, run unpublished as the shadow baseline (augur baseline).
+baseline = ["forecasting-tools>=0.3.7"]
+
 [project.scripts]
 augur = "augur.cli:main"
 
@@ -47,6 +51,13 @@ strict = true
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
 files = ["augur", "tests", "scripts"]
+
+# The optional baseline extra: untyped, and absent from the default install
+# (CI), so it is treated the same whether or not it is installed.
+[[tool.mypy.overrides]]
+module = ["forecasting_tools", "forecasting_tools.*"]
+ignore_missing_imports = true
+follow_imports = "skip"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

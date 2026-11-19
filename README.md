@@ -1,7 +1,7 @@
 # Augur
 
-**Status: in progress.** M3 of 10 (live on MiniBench: every question type, a
-deadline per question, the scheduled workflow and the durable ledger); see
+**Status: in progress.** M4 of 10 (scoring checked against Metaculus's own
+code, the shadow template bot, standings, and the first scored number); see
 [PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
@@ -72,6 +72,15 @@ export METACULUS_TOKEN=...                               # the bot account's tok
 uv run augur forecast --tournament bot-testing-area --submit
 ```
 
+After questions resolve:
+
+```sh
+uv run augur resolve --ledger augur.db                  # append resolutions; hidden ones are counted, not guessed
+uv run augur score augur.db --cluster week               # scores, and paired intervals against every reference
+uv run augur standings --round minibench                 # the round's leaderboard beside Augur
+make eval                                                # offline: re-score the committed backtest, check RESULTS.md
+```
+
 Presets: `openrouter`, `groq`, `gemini`, `github` (each reads its own key
 variable) and `ollama`; any other OpenAI-compatible host is
 `AUGUR_ENDPOINT_<NAME>_URL` plus `_KEY_ENV`. `--submit` to MiniBench or
@@ -103,6 +112,12 @@ flowchart LR
   RES & FC & PROBE & ROUTER --> LED
   OUT --> LED
   LED --> BR[ledger branch<br/>one JSONL export per run]
+  BR -->|augur ledger import| LED
+  TPL[shadow template bot<br/>real TemplateBot, unpublished] --> LED
+  RESV[augur resolve<br/>Metaculus, ForecastBench, manual] --> LED
+  LED --> SCORE[augur score<br/>Metaculus scores, paired<br/>clustered bootstrap, MDE]
+  LB[leaderboard API] --> STAND[augur standings]
+  SCORE & STAND --> REPORT[augur report<br/>RESULTS.md blocks, drift test]
 ```
 
 | Module | Job |
@@ -115,6 +130,10 @@ flowchart LR
 | `augur/ledger.py` | Numbered migrations; every table refuses `UPDATE` and `DELETE`. |
 | `augur/agents/` | Researcher, forecaster draws, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
 | `augur/comment.py` | The private comment, built only from the members' reasoning and the cited sources. |
+| `augur/score.py`, `augur/scorecard.py` | Metaculus's baseline, head-to-head and peer scores for every type (matched to its own `score_math.py`), Brier and log score; scoring every resolved forecast against the template, the community, a market price, 50% and the base rate with a paired, clustered bootstrap and the minimum detectable effect. |
+| `augur/resolve.py`, `augur/baseline.py`, `augur/standings.py` | Resolutions (hidden ones counted, not guessed), the shadow template run unpublished on Augur's model, and each round's leaderboard beside Augur. |
+| `augur/forecastbench.py`, `augur/backtest.py` | ForecastBench question sets, eligibility filters, and the bot's own forecaster run with the clock pinned to each question's freeze date. |
+| `augur/report.py`, `augur/importer.py` | RESULTS.md's generated blocks (a test fails on drift); one ledger rebuilt from the `ledger` branch's exports. |
 | `augur/runner.py`, `augur/cli.py` | `augur forecast` (soonest-closing first, a deadline per question, a coverage report), `augur models list|probe|snapshot`, `augur ledger check|export`. |
 | `.github/workflows/tournament.yml`, `scripts/` | The schedule: `poll.py` (standard library) decides whether to install anything; the forecast job posts from `main` only and `push_ledger.sh` commits each run's export to the `ledger` branch. `question_windows.py`, `cron_delay.py` and `cadence.py` measured how often it must run. |
 
@@ -171,24 +190,35 @@ and what finished is posted.
 | Live record | Each scheduled run pushes its ledger as JSONL to a `ledger` branch, one new file per run | Actions artifacts | Artifacts expire; M5's replay evaluation needs every live source forever. |
 | Submit floor | Live tournaments need a frontier-tier hosted model | Submit whatever model answers | An expired key must never post small-model forecasts. |
 | Comments | Private, rendered from the members' own reasoning | Boilerplate | Prize rules require the reasoning that produced the forecast. |
+| Template baseline | Metaculus's real `TemplateBot` (optional `baseline` extra), unpublished, every role on Augur's model | Reimplementing its prompt | "Beats the template" must not mean "beats my copy of it", and the model must be the same so the difference is the pipeline. |
+| Comparisons | Paired per question, bootstrap over clusters (question, opening week), 10,000 resamples, seeded; the detectable effect printed beside every interval | Unpaired means, or a t-test | Pairing removes question difficulty; questions that move together are not independent; the detectable effect keeps "no difference" apart from "could not tell". |
+| Checking the scores | Against Metaculus's own `score_math.py` run on fixed cases (outputs committed) | Against the API's per-question scores | The API hides resolutions and scores from a bot token (0 of 80 resolved posts). The code check found an open-tail bug that hand-computed cases had not. |
+| RESULTS.md | Prose plus blocks rendered from the committed ledgers; a test fails if the file differs from a fresh render | Hand-copied tables | A number in the report cannot drift from the data it came from. |
 
 ## Results
 
-Nothing is scored yet; the first scored number arrives in M4. What M1 to
-M3 measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
+Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M4, ForecastBench 2026-05-24, 139 resolved market questions, `qwen2.5:7b` with no retrieval, one draw, local CPU ($0) | Brier 0.2395 [0.193, 0.290]: no better than always 50% (0.2500) or the base rate (0.2406); the market price it never saw scores 0.1311, 0.108 better [0.058, 0.161]. Without sources a small model is a constant; not comparable to published ForecastBench systems |
+| M4, scoring against Metaculus's own `score_math.py` (pinned commit) | Spot baseline and spot peer scores match to 1e-9 on 8 cases of every type, open tails included, after fixing one bug the check found (an out-of-range outcome scored 34.7 points too high) |
+| M4, what a bot token sees of resolved questions | 0 of 80 resolved posts (two MiniBench rounds, Fall and Spring 2026) show a resolution, an aggregate or a score |
+| M4, MiniBench 2026-11-02 standings (435 entries, 59 questions) | Rank 1 averaged 22.77 spot peer points a question, the best template bot 3.66, the community aggregates (of the bots themselves in MiniBench) 5.06 to 7.56, the median bot 50.0 summed over 19 questions; Augur has no entry (the floor has kept it out until a frontier model answers) |
+| M4, shadow template on 3 bot-testing-area questions (same free model as Augur, unpublished, $0) | 3 of 3 recorded; close to Augur's own forecasts on all three; none resolved yet |
 | M3, every question type in the bot-testing-area (free OpenRouter models, $0) | 11 of 11 forecasts accepted by the live API (2 numeric, 2 discrete, 1 multiple choice, 1 binary; HTTP 201 each), each with a private comment |
-| M3, draws lost to the token budget | 5 of 25 non-binary draws at 1,500 tokens, 0 of 30 at 2,500; a live MiniBench binary question 3 of 5 at 1,500, 0 of 5 at 4,000 (dry run) |
 | M3, MiniBench windows over 16 rounds | 954 questions, 47% not binary; every window since June exactly 3.00 h; median 0.67 h between opens |
 | M3, GitHub's cron on 55 public bot repositories (2,813 scheduled runs) | Crons every 20 min or less ran on 5.0% of ticks (median 5.5 h between runs); the two on-time workflows: delay p50 9 min, p99 108 min |
 | M3, cadence simulated on the measured windows and delays | Every 90 min catches 99.25% of 3-hour windows for about 979 billed min a month while private; throttled as most forks are, no cron catches over 43%, hence the dispatch-chain fallback |
-| M1, dry run on the committed sample (`qwen2.5:7b` on 4 CPUs, $0) | 3 dated Wikipedia revisions admitted, 5 draws, median 5%; 11 min 25 s |
-| M2, live bot-testing-area forecast on free OpenRouter models ($0) | Probe, two fallbacks recorded, 5 of 5 draws, forecast and private comment accepted (HTTP 201 each); 2 min 32 s |
 | M2, OpenRouter's free-model limit, three burst sessions | Per key across all free models, fixed clock minutes; 24 to 25 accepted against an advertised 20 |
-| M2, frontier tier against OpenRouter's names | M1's rule matched 4 of 11 tier names (no Claude model); now 9 of 11 |
-| Leakage and floor scan of all four committed ledgers | 0 violations |
+| Leakage and floor scan of every committed ledger | 0 violations |
+
+Q1 (does Augur beat the same-model template?) is not yet resolvable: no
+live question with both forecasts has resolved. Q5 (where it stands) has no
+reading: Augur has no scored forecast in any round yet. The decision rule is
+committed in PLAN.md; at an assumed per-question spread of 32 points (from
+the Spring 2026 winner's interval, not yet measured on Augur) a 5-point
+difference needs about 300 resolved questions.
 
 ## Known limits
 
@@ -207,12 +237,19 @@ M3 measured (details, commands and raw output in [RESULTS.md](RESULTS.md)):
 - The scheduled workflow has run under `act` and against the live listing,
   not yet on GitHub: the repository is private and the ledger-branch push is
   proven only against a local bare remote.
+- A bot token sees no resolution on scored tournaments, so live questions
+  are resolved by hand (`augur resolve --manual ... --evidence URL`) until
+  Metaculus shows them; scoring itself is checked against Metaculus's code.
+- The ForecastBench number uses one forecaster draw (CPU time), market
+  questions only, and no retrieval; it is not comparable to published
+  ForecastBench results with search and frontier models.
 
 ## Roadmap
 
 M2 (done) one OpenAI-compatible provider with probed model chains, and the
 repository public at its merge; M3 (done) every question type, a deadline
-per question, the scheduled workflow and the durable ledger; M4 the shadow template, scoring and the first standings; M5 market
+per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
+first scored number; M5 market
 prices and the community prior, and a replay evaluation on the hosted
 models; M6 the leakage-proof backtest; M7 ablations; M8 calibration; M9
 "does it know when it does not know"; M10 release and a season postmortem. Details in

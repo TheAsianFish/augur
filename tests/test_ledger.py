@@ -30,9 +30,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 4
+        assert first.schema_version() == 5
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 4
+        assert again.schema_version() == 5
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -138,6 +138,33 @@ def test_every_table_refuses_update_and_delete(ledger: Ledger, table: str) -> No
             "started_at": "2026-11-17T18:00:00.000000Z",
         }
     )
+    ledger.record_resolution(
+        question_id=q.question_id,
+        post_id=q.post_id,
+        question_type="binary",
+        status="resolved",
+        value="yes",
+        resolved_at=T0,
+        source="manual",
+        evidence="test",
+    )
+    ledger.record_reference(
+        question_id=q.question_id,
+        post_id=q.post_id,
+        question_type="binary",
+        forecaster="template",
+        detail="test",
+        values={"probability": 0.3},
+        as_of=T0,
+        source="test",
+    )
+    ledger.record_metaculus_score(
+        question_id=q.question_id,
+        post_id=q.post_id,
+        forecaster="augur",
+        score_type="baseline_score",
+        score=1.0,
+    )
     conn = ledger.connection
     assert conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0] >= 1
     with pytest.raises(sqlite3.DatabaseError, match="append-only"):
@@ -226,7 +253,7 @@ def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedCloc
     copy = tmp_path / "m1.sqlite"
     shutil.copy(original, copy)
     with Ledger.open(copy, clock) as led:
-        assert led.schema_version() == 4
+        assert led.schema_version() == 5
         assert led.count("llm_calls") == 7
         assert led.count("model_switches") == 0
     assert scan_ledger(copy) == []
@@ -246,7 +273,7 @@ def test_migration_4_keeps_every_forecast_of_an_older_ledger(tmp_path: Path) -> 
         ).fetchall()
     assert before
     with Ledger.open(copy, FixedClock(T0)) as led:
-        assert led.schema_version() == 4
+        assert led.schema_version() == 5
         conn = led.connection
         after = conn.execute(
             "SELECT forecast_id, probability, reasoning FROM forecasts ORDER BY forecast_id"
@@ -256,3 +283,23 @@ def test_migration_4_keeps_every_forecast_of_an_older_ledger(tmp_path: Path) -> 
         assert types == {"binary"}
         with pytest.raises(sqlite3.IntegrityError, match="append-only"):
             conn.execute("DELETE FROM forecasts")
+
+
+def test_a_resolution_needs_a_value_exactly_when_resolved(ledger: Ledger) -> None:
+    common = {
+        "question_id": 1,
+        "post_id": 1,
+        "question_type": "binary",
+        "resolved_at": T0,
+        "source": "manual",
+        "evidence": "test",
+    }
+    with pytest.raises(LedgerError):
+        ledger.record_resolution(status="resolved", value=None, **common)  # type: ignore[arg-type]
+    with pytest.raises(LedgerError):
+        ledger.record_resolution(status="annulled", value="yes", **common)  # type: ignore[arg-type]
+    ledger.record_resolution(status="resolved", value="no", **common)  # type: ignore[arg-type]
+    ledger.record_resolution(status="annulled", value=None, **common)  # type: ignore[arg-type]
+    # A correction is a new row, and the latest one counts.
+    assert ledger.latest_resolution(1) == ("annulled", None)
+    assert ledger.latest_resolution(2) is None

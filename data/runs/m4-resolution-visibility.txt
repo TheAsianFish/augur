@@ -1,0 +1,6 @@
+$ python3 scripts/resolution_visibility.py   # 2026-11-19T05:04Z
+account: Augur-bot-1 (bot: True)
+minibench-2026-11-02: 20 resolved posts (binary 8, discrete 8, numeric 4); resolution shown on 0, community aggregate on 0, this account's score on 0
+minibench-2026-10-19: 20 resolved posts (binary 12, discrete 1, numeric 7); resolution shown on 0, community aggregate on 0, this account's score on 0
+33121: 20 resolved posts (binary 10, discrete 7, multiple_choice 1, numeric 2); resolution shown on 0, community aggregate on 0, this account's score on 0
+spring-aib-2026: 20 resolved posts (binary 13, discrete 2, multiple_choice 3, numeric 2); resolution shown on 0, community aggregate on 0, this account's score on 0
