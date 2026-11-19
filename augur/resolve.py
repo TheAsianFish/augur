@@ -228,7 +228,8 @@ def _references(ledger: Ledger, q: Question, raw_q: dict[str, Any], report: Reso
                     score=score,
                 )
                 report.scores += 1
-            break
+            if values is not None:
+                break
     mine = raw_q.get("my_forecasts")
     if isinstance(mine, dict):
         for name, score in _scores(mine.get("score_data")):
