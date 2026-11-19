@@ -1,0 +1,4 @@
+$ augur resolve --ledger data/ledgers/m3-live-bot-testing-area-2.sqlite   # 2026-11-19T05:03Z
+6 checked: 0 resolved, 0 annulled, 0 resolved but hidden from this account, 6 not resolved yet, 0 unchanged, 0 failed; 6 reference forecasts and 0 Metaculus scores recorded
+$ augur resolve --ledger data/ledgers/m3-dryrun-minibench-2.sqlite   # 2026-11-19T05:04Z
+1 checked: 0 resolved, 0 annulled, 0 resolved but hidden from this account, 1 not resolved yet, 0 unchanged, 0 failed; 0 reference forecasts and 0 Metaculus scores recorded
