@@ -26,16 +26,17 @@ import asyncio
 import json
 import os
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
 from augur.clock import Clock, SystemClock
-from augur.distributions import validate_cdf, validate_probabilities
+from augur.distributions import quantile, validate_cdf, validate_probabilities
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
 from augur.ledger import Ledger
 from augur.log import get_logger
+from augur.predictions import PERCENTILE_LEVELS
 from augur.questions import FORECAST_TYPES, Question, question_from_post
 
 if TYPE_CHECKING:
@@ -73,15 +74,13 @@ class TemplateForecast:
     """What the template forecast, in plain values, before Augur validates it.
 
     Exactly one of ``probability`` (binary), ``probabilities`` (multiple
-    choice) or ``cdf`` (numeric, discrete) is set. ``percentiles`` are the
-    ``(level, value)`` pairs the template's forecasters stated, when it has them.
+    choice) or ``cdf`` (numeric, discrete) is set.
     """
 
     detail: str
     probability: float | None = None
     probabilities: dict[str, float] | None = None
     cdf: list[float] | None = None
-    percentiles: list[tuple[float, float]] = field(default_factory=list)
 
 
 class TemplateRunner(Protocol):
@@ -119,12 +118,7 @@ def from_template_prediction(prediction: object, detail: str) -> TemplateForecas
         )
     get_cdf = getattr(prediction, "get_cdf", None)
     if callable(get_cdf):
-        declared = getattr(prediction, "declared_percentiles", None) or []
-        return TemplateForecast(
-            detail=detail,
-            cdf=[float(p.percentile) for p in get_cdf()],
-            percentiles=[(float(p.percentile), float(p.value)) for p in declared],
-        )
+        return TemplateForecast(detail=detail, cdf=[float(p.percentile) for p in get_cdf()])
     raise TemplateFailedError(
         f"the template returned a {type(prediction).__name__}, which Augur cannot read"
     )
@@ -132,7 +126,12 @@ def from_template_prediction(prediction: object, detail: str) -> TemplateForecas
 
 def template_values(question: Question, forecast: TemplateForecast) -> dict[str, Any]:
     """The forecast in the shape of :func:`augur.predictions.values_json`, checked
-    against Metaculus's rules for the question. Raises :class:`TemplateFailedError`."""
+    against Metaculus's rules for the question. Raises :class:`TemplateFailedError`.
+
+    For numeric and discrete questions the percentiles are read back from the
+    CDF at Augur's levels, as for Augur's own aggregate: the template's
+    aggregate keeps no stated percentiles (its ``declared_percentiles`` is the
+    whole CDF)."""
     qid = question.question_id
     if question.type == "binary":
         p = forecast.probability
@@ -159,9 +158,12 @@ def template_values(question: Question, forecast: TemplateForecast) -> dict[str,
         errors = validate_cdf(forecast.cdf, question.scaling)
         if errors:
             raise TemplateFailedError(f"question {qid}: template CDF invalid: {errors}")
+        cdf = list(forecast.cdf)
         return {
-            "cdf": list(forecast.cdf),
-            "percentiles": [[level, value] for level, value in forecast.percentiles],
+            "cdf": cdf,
+            "percentiles": [
+                [level, quantile(cdf, question.scaling, level)] for level in PERCENTILE_LEVELS
+            ],
         }
     raise TemplateFailedError(f"question {qid}: {question.type} questions are not compared")
 
@@ -254,8 +256,8 @@ def _summary(values: Mapping[str, Any]) -> str:
     if "probabilities" in values:
         parts = (f"{o} {p * 100:.1f}%" for o, p in values["probabilities"].items())
         return "template " + ", ".join(parts)
-    stated = ", ".join(f"p{level * 100:g}={value:.4g}" for level, value in values["percentiles"])
-    return f"template CDF of {len(values['cdf'])} points; stated {stated or 'none'}"
+    read = ", ".join(f"p{level * 100:g}={value:.4g}" for level, value in values["percentiles"])
+    return f"template CDF of {len(values['cdf'])} points; {read}"
 
 
 # -- the real runner, behind the optional extra -------------------------------

@@ -95,12 +95,8 @@ async def test_every_type_is_converted_and_recorded(ledger: Ledger, clock: Fixed
                 detail="d",
                 probabilities={"Other": 0.02, "Republican Party": 0.48, "Democratic Party": 0.5},
             ),
-            numeric.post_id: TemplateForecast(
-                detail="d", cdf=_cdf(numeric, num_pcts), percentiles=num_pcts
-            ),
-            discrete.post_id: TemplateForecast(
-                detail="d", cdf=_cdf(discrete, dis_pcts), percentiles=dis_pcts
-            ),
+            numeric.post_id: TemplateForecast(detail="d", cdf=_cdf(numeric, num_pcts)),
+            discrete.post_id: TemplateForecast(detail="d", cdf=_cdf(discrete, dis_pcts)),
         }
     )
     result = await run_shadow(ledger, runner, [binary, choice, numeric, discrete], clock)
@@ -112,7 +108,11 @@ async def test_every_type_is_converted_and_recorded(ledger: Ledger, clock: Fixed
     assert set(json.loads(rows[1][2])["probabilities"]) == set(choice.options or [])
     numeric_values = json.loads(rows[2][2])
     assert len(numeric_values["cdf"]) == 201
-    assert numeric_values["percentiles"] == [list(p) for p in num_pcts]
+    # Percentiles read back from the CDF at Augur's levels.
+    read = dict(numeric_values["percentiles"])
+    assert list(read) == [0.1, 0.2, 0.4, 0.6, 0.8, 0.9]
+    assert read[0.1] == pytest.approx(-20.0, abs=0.5)
+    assert read[0.9] == pytest.approx(-5.0, abs=0.5)
     assert len(json.loads(rows[3][2])["cdf"]) == 17
     assert all(r[3] == "forecasting-tools TemplateBot, unpublished" for r in rows)
 
@@ -193,7 +193,6 @@ def test_template_predictions_are_read_by_shape() -> None:
         _Distribution(cdf, [_Percentile(0.1, -20.0), _Percentile(0.9, -5.0)]), "d"
     )
     assert dist.cdf == cdf
-    assert dist.percentiles == [(0.1, -20.0), (0.9, -5.0)]
     assert template_values(numeric, dist)["cdf"] == cdf
     with pytest.raises(TemplateFailedError):
         from_template_prediction(True, "d")
