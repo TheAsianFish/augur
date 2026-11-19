@@ -1,0 +1,12 @@
+2026-06-21-llm.json: 9 Polymarket questions differ by more than 0.01
+condition id  as-of price  freeze value  hours after the freeze where they are equal
+0x3f0bc2757b  0.2250       0.2150        +1.0
+0xb8e6d129a0  0.2150       0.2550        -3.0, -2.0, +0.0, +1.0, +2.0, +3.0
+0xde1bcc6693  0.4800       0.5150        +1.0, +20.0, +35.0
+0x4427ce55f5  0.3750       0.3600        -16.0, +1.0, +10.0, +21.0, +22.0, +23.0
+0xd81e304a53  0.3400       0.3250        +6.0
+0x676e7cda42  0.4050       0.3250        +4.0, +12.0
+0xa4d72632ac  0.9055       0.8335        none in +/-3 days
+0x7351fc78d0  0.1700       0.1200        -69.0, -67.0, -66.0, -64.0, -25.0, -15.0
+0xe7d699841d  0.2865       0.2515        none in +/-3 days
+7 of 9 equal a price from after the freeze instant
