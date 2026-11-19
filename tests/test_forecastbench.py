@@ -121,7 +121,6 @@ def test_missing_and_na_text_fields_become_empty_or_defaults(tmp_path: Path) -> 
                 background="N/A",
                 url="",
                 value="N/A",
-                market_info_close_datetime=None,
                 market_info_open_datetime="garbage",
             )
         ],
@@ -131,8 +130,19 @@ def test_missing_and_na_text_fields_become_empty_or_defaults(tmp_path: Path) -> 
     assert q.background == ""
     assert q.url == "https://www.forecastbench.org"
     assert q.freeze_value is None
-    assert q.market_close is None
     assert q.market_open is None
+
+
+def test_a_question_without_a_market_close_is_dropped(tmp_path: Path) -> None:
+    """The prompt would otherwise state the resolution date, which is after the fact."""
+    qs, rs = write_pair(
+        tmp_path,
+        [raw_question("x", market_info_close_datetime=None), raw_question("y")],
+        [raw_resolution("x", 1.0), raw_resolution("y", 0.0)],
+    )
+    report = load_set(qs, rs, released=RELEASED)
+    assert [q.fb_id for q in report.kept] == ["y"]
+    assert report.removed == {"no market close date": 1}
 
 
 def test_a_price_outside_the_unit_interval_is_not_kept_as_a_price(tmp_path: Path) -> None:
@@ -200,7 +210,6 @@ def test_nothing_the_forecaster_must_not_see_reaches_the_question(tmp_path: Path
     [
         (datetime(2025, 6, 1, tzinfo=UTC), datetime(2025, 6, 1, tzinfo=UTC)),
         (datetime(2025, 2, 1, tzinfo=UTC), datetime(2025, 3, 1, tzinfo=UTC)),  # before the freeze
-        (None, datetime(2025, 4, 1, tzinfo=UTC)),  # the resolution date, midnight UTC
     ],
 )
 def test_close_time_never_precedes_the_freeze(

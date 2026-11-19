@@ -15,7 +15,10 @@ Eligibility, applied in this order, with the count each step removes:
    ForecastBench to its current price, which is not an outcome;
 3. *opened after the model's release*: the question's freeze date (the
    instant the question was posed) must fall after the model's release date,
-   so the model cannot remember the outcome.
+   so the model cannot remember the outcome;
+4. *a market close date*: the prompt states when the question closes, and
+   the only other date on hand is the resolution date, which is after the
+   fact.
 
 The market price at the freeze date is kept for a reference row, never shown
 to the model: a price-only arm is M5's experiment.
@@ -27,7 +30,7 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, time
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -68,8 +71,9 @@ class FBQuestion(BaseModel):
 
     def to_question(self) -> Question:
         """The question as the forecaster sees it: no market price, no outcome."""
-        close = self.market_close or datetime.combine(self.resolution_date, time(0), tzinfo=UTC)
-        close = max(close, self.freeze_datetime)
+        if self.market_close is None:
+            raise ValueError(f"{self.fb_id} has no market close date; the loader drops these")
+        close = max(self.market_close, self.freeze_datetime)
         description = "\n\n".join(p for p in (self.source_intro, self.background) if p)
         return Question(
             post_id=self.question_id,
@@ -164,6 +168,12 @@ def load_set(
         if freeze.date() <= released:
             report.remove("posed on or before the model's release")
             continue
+        market_close = _instant(raw.get("market_info_close_datetime"))
+        if market_close is None:
+            # The fallback would be the resolution date, which is after the fact
+            # and hints at the outcome ("by" markets that resolve early are Yes).
+            report.remove("no market close date")
+            continue
         report.kept.append(
             FBQuestion(
                 fb_id=raw["id"],
@@ -176,7 +186,7 @@ def load_set(
                 freeze_datetime=freeze,
                 freeze_value=_float(raw.get("freeze_datetime_value")),
                 market_open=_instant(raw.get("market_info_open_datetime")),
-                market_close=_instant(raw.get("market_info_close_datetime")),
+                market_close=market_close,
                 resolution_date=date.fromisoformat(str(r["resolution_date"])),
                 outcome=int(float(r["resolved_to"])),
             )

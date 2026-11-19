@@ -178,3 +178,13 @@ def test_pinned_clock_moves_and_stays_utc() -> None:
     clock = PinnedClock(datetime(2025, 3, 1, tzinfo=UTC))
     clock.set(datetime(2025, 4, 1, tzinfo=UTC))
     assert clock.now() == datetime(2025, 4, 1, tzinfo=UTC)
+
+
+async def test_the_run_row_records_the_real_start_not_a_freeze_date(tmp_path: Path) -> None:
+    *_, questions = small_set(tmp_path)
+    db = tmp_path / "bt.sqlite"
+    await run_backtest(db, questions)
+    [(started,)] = _rows(db, "SELECT started_at FROM runs")
+    # The harness's clock starts at 2026-01-01; every freeze date is earlier or later.
+    assert started == "2026-01-01T00:00:00.000000Z"
+    assert all(started != q.freeze_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ") for q in questions)

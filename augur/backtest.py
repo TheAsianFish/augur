@@ -85,8 +85,6 @@ async def run_forecastbench(
     todo = [q for q in questions if q.question_id not in done]
     if not todo:
         out(f"all {len(questions)} questions already forecast in this ledger")
-    first = todo[0].freeze_datetime if todo else questions[0].freeze_datetime
-    clock.set(first)
     answering = router.chain("forecast")[0]
     run_id = ledger.start_run(
         mode=RunMode.BACKTEST,
@@ -97,6 +95,9 @@ async def run_forecastbench(
         | {"retrieval": "none", "questions": len(questions), "resumed": len(done)},
         code_version=code_version,
     )
+    # The run row records when the run really started; only then is the clock pinned.
+    if todo:
+        clock.set(todo[0].freeze_datetime)
     # A local model costs nothing; the caps still bind if a hosted one is configured.
     budget = Budget(settings.max_cost_per_question, settings.max_cost_per_run)
     calls = CallRecorder(router, ledger, clock, budget)

@@ -395,7 +395,9 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     clock = PinnedClock(SystemClock().now())
     ledger_path: Path = args.ledger or settings.ledger_path
     async with default_http_client() as http:
-        router = build_router(settings, http, load_snapshot(), clock)
+        # Rate-limit cool-downs run on the wall clock: a pinned clock never
+        # reaches the end of a cool-down, so one 429 would fail every later question.
+        router = build_router(settings, http, load_snapshot(), SystemClock())
         with Ledger.open(ledger_path, clock) as ledger:
             try:
                 result = await run_forecastbench(
