@@ -81,6 +81,26 @@ reported as failed.
 | Q5 | Where does the fleet stand against the frontier? | Above the median bot and above the best same-model template bot; below the top 10. | M4 (first standing), M10 (final) | Rank and average spot peer score with interval in each MiniBench round and in FutureEval, the gap to the best template bot, the best open-source bot and rank 1, the gap to the pro baseline where Metaculus publishes it, and prize money if any. |
 | Q6 | Open: does the bot know when it does not know? | Disagreement among forecasters predicts the final forecast's error with AUROC above 0.6, and shrinking high-disagreement forecasts toward the prior improves the backtest score by less than the detectable effect. | M9 | AUROC of disagreement against error (Brier above the median), and the change in score from shrink and from skip policies on the backtest, then live on a pre-registered half of questions split by question id. |
 
+**Q1's decision rule, committed 2026-11-19 before any live round resolves.**
+The comparison is `augur score` on every resolved live question that has
+both Augur's posted forecast and a shadow template forecast from the same
+model (`augur baseline`): the mean head-to-head score, Augur minus the
+template, with its paired bootstrap interval clustered by opening week.
+
+- **Target:** +5 points per question, the smallest gain over its own
+  baseline among Fall 2025's top five scaffolds (Metaculus notebook 43337).
+- **Held:** the interval's lower bound is above 0.
+- **Failed:** the interval's upper bound is below 0, or, after both
+  remaining Fall MiniBench rounds have resolved, the point estimate is
+  negative even though the interval includes 0. A negative estimate after
+  both rounds means the pipeline subtracts value, and the next milestone
+  diagnoses why before any fleet work (M7).
+- **Not yet resolvable:** anything else, reported with the interval and
+  the detectable effect at that n.
+
+The same rule and report apply against the community prediction where the
+API shows it (it does not to a bot token on scored tournaments; M4).
+
 **Reconciled before any run (2026-11-18).** The first version of Q3 said
 research depth would be the largest effect, while Q2 says leak-free
 retrieval is worth at most 0.02 Brier over none. Both cannot hold on the
