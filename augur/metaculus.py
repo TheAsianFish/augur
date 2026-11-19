@@ -195,6 +195,68 @@ class MetaculusClient:
             )
         return found
 
+    @property
+    def base_url(self) -> str:
+        """The API root, without a trailing slash."""
+        return self._base
+
+    async def get_me(self) -> dict[str, Any]:
+        """The account the token belongs to (``/users/me/``; ``/user/`` does not exist)."""
+        return await self._get_json("/users/me/", None)
+
+    async def get_tournament(self, slug: str) -> dict[str, Any]:
+        """A tournament's project record: id, name, dates and score type."""
+        return await self._get_json(f"/projects/tournaments/{slug}/", None)
+
+    async def get_leaderboards(self, project_id: int) -> list[dict[str, Any]]:
+        """Every leaderboard of a project (the primary one has ``is_primary_leaderboard``)."""
+        path = f"/leaderboards/project/{int(project_id)}/"
+        response = await self._request("GET", path, params=None)
+        try:
+            data = response.json()
+        except ValueError:
+            data = None
+        if not isinstance(data, list) or not all(isinstance(b, dict) for b in data):
+            raise MetaculusError(
+                f"GET {path} returned no list of leaderboards; the API format may have changed",
+                response.status_code,
+            )
+        return data
+
+    async def list_posts(
+        self, tournament: str, statuses: str | None = None
+    ) -> list[dict[str, Any]]:
+        """Every post of ``tournament`` in the given statuses (comma separated; all if None)."""
+        found: list[dict[str, Any]] = []
+        seen: set[int] = set()
+        for page in range(self._max_pages):
+            params: dict[str, str | int] = {
+                "limit": self._page_size,
+                "offset": page * self._page_size,
+                "tournaments": tournament,
+            }
+            if statuses:
+                params["statuses"] = statuses
+            data = await self._get_json("/posts/", params)
+            results = data.get("results")
+            if not isinstance(results, list):
+                raise MetaculusError(
+                    "GET /posts/ returned no results list; the API format may have changed",
+                    None,
+                )
+            for post in results:
+                post_id = post.get("id") if isinstance(post, dict) else None
+                if isinstance(post_id, int) and post_id not in seen:
+                    seen.add(post_id)
+                    found.append(post)
+            if len(results) < self._page_size:
+                break
+        else:
+            _log.warning(
+                "metaculus.max_pages_reached", tournament=tournament, max_pages=self._max_pages
+            )
+        return found
+
     async def get_post(self, post_id: int) -> dict[str, Any]:
         """The post detail, which unlike the list includes ``question.my_forecasts``."""
         return await self._get_json(f"/posts/{int(post_id)}/", None)
