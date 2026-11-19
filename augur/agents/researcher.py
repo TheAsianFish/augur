@@ -27,8 +27,8 @@ log = get_logger(__name__)
 
 # Reasoning models spend part of these before answering: a free one emptied a
 # 200-token plan on thinking (M2).
-PLAN_MAX_TOKENS = 600
-BRIEF_MAX_TOKENS = 1000
+PLAN_MAX_TOKENS = 2000
+BRIEF_MAX_TOKENS = 4000
 
 PLAN_SYSTEM = (
     "You plan web research for a forecaster. Reply with a JSON array of at most "
