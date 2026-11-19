@@ -327,6 +327,20 @@ def test_a_market_source_dated_unlike_its_price_is_refused(ledger: Ledger) -> No
     wrong = s.model_copy(update={"published_at": T0 - timedelta(hours=1)})
     with pytest.raises(LedgerError, match="must be its price's"):
         ledger.record_source(wrong)
+    # Refused whole: no market-dated source is left behind without its price.
+    assert ledger.count("sources") == 0
+    assert ledger.count("market_quotes") == 0
+
+
+def test_a_failed_price_write_leaves_no_source_behind(ledger: Ledger) -> None:
+    s = market_source(T0 - timedelta(hours=2), as_of=T0)
+    ledger.connection.execute(
+        "CREATE TRIGGER fail_quote BEFORE INSERT ON market_quotes "
+        "BEGIN SELECT RAISE(ABORT, 'injected'); END"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="injected"):
+        ledger.record_source(s)
+    assert ledger.count("sources") == 0
 
 
 def test_the_rebuilt_sources_table_still_refuses_a_late_price(ledger: Ledger) -> None:
@@ -357,3 +371,15 @@ def test_the_scan_flags_a_price_whose_date_was_edited(tmp_path: Path) -> None:
         raw.commit()
     kinds = {v.kind for v in scan_ledger(path)}
     assert "late_price" in kinds
+
+
+def test_the_scan_flags_a_market_source_without_its_price(tmp_path: Path) -> None:
+    from augur.leakage import scan_ledger
+
+    path = tmp_path / "l.sqlite"
+    with Ledger.open(path, FixedClock(T0)) as led:
+        bare = market_source(T0 - timedelta(hours=2), as_of=T0).model_copy(update={"quote": None})
+        led.record_source(bare)
+    violations = scan_ledger(path)
+    assert [v.kind for v in violations] == ["late_price"]
+    assert "has no price row" in violations[0].detail

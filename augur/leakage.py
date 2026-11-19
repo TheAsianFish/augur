@@ -249,6 +249,18 @@ def _scan_prices(conn: sqlite3.Connection) -> list[Violation]:
                 f"source dated {published}",
             )
         )
+    # A source that claims a market's date evidence but has no price row
+    # carries a date nothing backs.
+    orphans = conn.execute(
+        """
+        SELECT s.source_id, s.date_evidence FROM sources s
+        LEFT JOIN market_quotes m ON m.source_id = s.source_id
+        WHERE s.date_evidence IN ('market_trade', 'price_history', 'aggregate_history')
+          AND m.source_id IS NULL
+        """
+    )
+    for sid, evidence in orphans:
+        found.append(Violation("late_price", "", 0, f"{evidence} source {sid} has no price row"))
     return found
 
 

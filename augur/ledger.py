@@ -22,6 +22,7 @@ from augur.clock import Clock, to_iso
 from augur.errors import LedgerError
 from augur.leakage import Admission, RunMode
 from augur.questions import Question
+from augur.research.quotes import MarketQuote
 from augur.research.source import Source
 
 APPEND_ONLY_TABLES = (
@@ -208,7 +209,18 @@ class Ledger:
         )
 
     def record_source(self, source: Source) -> None:
-        """Store a source before any model sees it. Re-recording the same source is a no-op."""
+        """Store a source before any model sees it. Re-recording the same source is a no-op.
+
+        A market source and its price are written together or not at all: a
+        source whose date is not its price's is refused before anything is
+        stored, so no market-dated source can exist without its price.
+        """
+        quote = source.quote
+        if quote is not None and source.published_at != quote.price_time:
+            raise LedgerError(
+                f"market source {source.source_id} is dated {source.published_at} but its price "
+                f"at {quote.price_time}; a market source's date must be its price's"
+            )
         row = {
             "source_id": source.source_id,
             "searcher": source.searcher,
@@ -226,23 +238,27 @@ class Ledger:
         }
         cols = ", ".join(row)
         marks = ", ".join("?" for _ in row)
-        self._conn.execute(
-            f"INSERT OR IGNORE INTO sources ({cols}) VALUES ({marks})",  # noqa: S608
-            tuple(row.values()),
-        )
-        if source.quote is not None:
-            self._record_quote(source)
-
-    def _record_quote(self, source: Source) -> None:
-        quote = source.quote
-        assert quote is not None
-        if source.published_at != quote.price_time:
-            raise LedgerError(
-                f"market source {source.source_id} is dated {source.published_at} but its price "
-                f"at {quote.price_time}; a market source's date must be its price's"
+        if quote is None:
+            self._conn.execute(
+                f"INSERT OR IGNORE INTO sources ({cols}) VALUES ({marks})",  # noqa: S608
+                tuple(row.values()),
             )
+            return
+        self._conn.execute("BEGIN")
+        try:
+            self._conn.execute(
+                f"INSERT OR IGNORE INTO sources ({cols}) VALUES ({marks})",  # noqa: S608
+                tuple(row.values()),
+            )
+            self._record_quote(source.source_id, quote)
+            self._conn.execute("COMMIT")
+        except BaseException:
+            self._conn.execute("ROLLBACK")
+            raise
+
+    def _record_quote(self, source_id: str, quote: MarketQuote) -> None:
         row = {
-            "source_id": source.source_id,
+            "source_id": source_id,
             "platform": quote.platform,
             "market_id": quote.market_id,
             "title": quote.title,
