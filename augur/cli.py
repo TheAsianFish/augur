@@ -10,7 +10,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from augur import scorecard
+from augur import report, scorecard
 from augur.backtest import PinnedClock, run_forecastbench
 from augur.clock import SystemClock
 from augur.config import Settings
@@ -167,6 +167,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     sc.add_argument("--mode", action="append", choices=("live", "dry_run", "backtest"))
     sc.add_argument("--resamples", type=int, default=10_000)
+
+    rep = sub.add_parser(
+        "report", help="re-render RESULTS.md's generated blocks from the committed ledgers"
+    )
+    rep.add_argument("--path", type=Path, default=Path("RESULTS.md"))
+    rep.add_argument(
+        "--check", action="store_true", help="exit 1 if the file differs from a fresh render"
+    )
 
     led = sub.add_parser("ledger", help="inspect a ledger")
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
@@ -449,6 +457,26 @@ def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _report(args: argparse.Namespace) -> int:
+    path: Path = args.path
+    if not path.exists():
+        raise AugurError(f"no {path}; run from the repository root or pass --path")
+    root = path.resolve().parent
+    if args.check:
+        stale = report.check(path, root)
+        if stale:
+            print(f"{path} is stale in: {', '.join(stale)}; run augur report")
+            return 1
+        print(f"{path} matches a fresh render")
+        return 0
+    text = path.read_text(encoding="utf-8")
+    fresh = report.render(text, root)
+    if fresh != text:
+        path.write_text(fresh, encoding="utf-8")
+    print(f"{path}: {'re-rendered' if fresh != text else 'already current'}")
+    return 0
+
+
 def _ledger_check(paths: Sequence[Path]) -> int:
     bad = 0
     for path in paths:
@@ -477,6 +505,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_resolve(args, settings))
         if args.command == "score":
             return _score(args)
+        if args.command == "report":
+            return _report(args)
         if args.ledger_command == "import":
             result = import_exports(args.paths, args.out, SystemClock())
             dupes = sum(result.duplicates.values())
