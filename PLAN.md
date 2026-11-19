@@ -175,11 +175,14 @@ P1 held on C1 and C2: the price alone (C2 0.106) beats Augur without it
 held on C1 and failed on C2 (the blend is 0.023 worse than the price, the
 interval [−0.001, +0.047] includes 0 but the point is outside ±0.01). P4
 held: shown the price, Augur improves by 0.097 [0.054, 0.144] and still
-trails the price by 0.037 [0.003, 0.073]. P5 held in all three parts (91 of
-101 within 0.01 of ForecastBench's value; 101 of 101 Polymarket and
-Manifold priced after a disclosed fix to a staleness cut, 0 of 37 Metaculus
-and INFER; a same-event market for 2 of 59 MiniBench questions). P6: one
-draw against three failed (0.022 worse [0.004, 0.044]); the log-odds mean
+trails the price by 0.037 [0.003, 0.073]. P5's first two parts failed as first
+measured (a seven-day staleness cut priced 85 of 101 Polymarket and
+Manifold questions, 75 of those 85 within 0.01 of ForecastBench's value)
+and held only after a change made once the data were seen (Manifold
+exempted from the cut: 101 of 101 priced, 91 of 101 within 0.01); 0 of 37
+Metaculus and INFER priced, and its third part held (a same-event market
+for 2 of 59 MiniBench questions). P6: one
+draw against three failed (the first draw, 0.022 worse [0.004, 0.044]); the log-odds mean
 and extremizing parts held. Under the decision rules both the markets
 searcher and the exact-price blend became the live default (`--no-markets`,
 `--no-blend`). C3 still has no resolved question, so research depth is not

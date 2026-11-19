@@ -12,8 +12,8 @@ score waits on a scored round (see Q1 and Q5 below).
 ## M5: market prices, and the bot that ships against them (2026-11-19)
 
 **Question.** How much of a forecast's score could a copier get by reading
-the market, and does Augur add anything to it? The overseer's question in
-plain words: "how does yours compare to just reading Polymarket?" The arms,
+the market, and does Augur add anything to it? The question a quant asks
+first: "how does yours compare to just reading Polymarket?" The arms,
 corpora, predictions P1 to P6 and the decision rules were committed to
 PLAN.md (`5c2e32e`) before any run.
 
@@ -76,6 +76,7 @@ Predictions stated in PLAN.md before the run:
 - P3 (blend worse than the price on C1; within ±0.01 on C2, interval including 0): C1 **held**, C2 **failed**.
 - P4 (showing the price improves Brier by at least 0.03, interval below 0; the model still under-uses it): first part **held**, second part **held**.
 - P5, first two parts (freeze value matched on ≥90% of priced C2 questions; an exact price for ≥90% of Polymarket and Manifold, 0% of Metaculus and INFER): 91/101 matched **held**; 101/101 priced **held**; 0 of 37 Metaculus and INFER priced **held**. The third part (MiniBench) is below.
+  As first measured, with the seven-day staleness cut the price run applied before Manifold was exempted (a change made after seeing the data): 75/85 matched **failed**; 85/101 priced **failed**. So P5's first two parts failed as first measured and hold only after that change.
 - P6 (one draw within 0.01 of three, interval including 0; mean of log-odds within 0.005 of the median; extremizing worse, interval including 0): **failed**, **held**, **held**.
 
 Method: arms (a)–(d) are paired on the questions with an exact price (C1 has no arm (d)); every probability is clipped to [0.01, 0.99] before scoring; log is the mean natural log of the probability given to the outcome (higher is better). Intervals: paired bootstrap over questions, 10,000 resamples, seed 20261119; MDE is the true difference this n would detect with 80% power at the 5% level.
@@ -100,7 +101,10 @@ Method: arms (a)–(d) are paired on the questions with an exact price (C1 has n
   [−0.001, +0.047] includes 0 but the point estimate is outside ±0.01).
   On C1 the blend is 0.010 worse than the price (P3's C1 half held).
 - **Settings.** One draw is 0.022 worse than the median of three [0.004,
-  0.044] (P6's first part failed: three draws matter more than predicted);
+  0.044] (P6's first part failed: three draws matter more than predicted).
+  "One draw" is each question's first draw, a choice the plan did not
+  state; the second or third draw alone is within 0.004 of the median, so
+  this part of P6 rests on which draw is taken;
   mean, mean of log-odds and median are within 0.002 of each other;
   extremizing at 1.5 is 0.008 worse, interval including 0 (held).
 - **Decision rules.** Both pre-stated conditions are met on C2: the
@@ -129,7 +133,10 @@ the first price run cut prices older than seven days and found 85 of 101.
 A Manifold market maker's price stands until the next bet, so the last bet
 is the price however old; I checked one (`1y80gk7t9k`: last bet 12 days
 before the freeze, equal to ForecastBench's value to 16 digits), removed the
-cut for Manifold, and re-ran: 101 of 101. The seven-day window still bounds
+cut for Manifold, and re-ran: 101 of 101. The
+change was made after seeing the data, so the block above reports P5 both
+ways: as first measured its first two parts failed (85 of 101 priced, 75 of
+85 matched), and they hold only after the change. The seven-day window still bounds
 the Polymarket and Kalshi history reads.
 
 **ForecastBench's freeze value is not always an as-of price.** Where
@@ -142,6 +149,16 @@ per query, so this is evidence, not proof, but it means M4's "market"
 reference row (built from ForecastBench's values) may read a few hours past
 its cutoff, and the price arms here use Augur's own as-of reads instead
 (`data/runs/m5-freeze-value-timing.txt`, `-c1.txt`).
+
+**Beside the frontier, not against it.** AIA Forecaster's ablation on
+ForecastBench (arXiv 2511.07678, self-reported) runs the same experiment
+on a frontier model with agentic search: no search 0.116, market price
+only 0.103, search 0.085, both 0.075; on liquid markets the market beats
+it (0.1258 against 0.1106) and a fixed ⅓ : ⅔ blend scores 0.106. C2's
+direction matches that last row (the price beats the bot), but the gap is
+far larger here (0.240 against 0.106) because arm (b) has no search and a
+free model; the question sets differ, so none of these numbers is
+comparable to C2's, and nothing here places Augur against AIA.
 
 **Unfair or missing comparisons, named.** C2 is one free model, not the
 frontier model the floor requires live; the replay of live research (C3,

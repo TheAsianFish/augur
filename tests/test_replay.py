@@ -48,9 +48,10 @@ PRICES = {"a": 0.8, "b": 0.3}
 class ScriptedMarkets(MarketsSearcher):
     """Exact quotes from a table, dated an hour before the freeze (or after, if asked)."""
 
-    def __init__(self, late: bool = False) -> None:
+    def __init__(self, late: bool = False, stale: frozenset[str] = frozenset()) -> None:
         super().__init__(httpx.AsyncClient(), FixedClock(NOW))
         self.late = late
+        self.stale = stale
 
     async def exact_quote(
         self, platform: str, market_id: str, as_of: datetime, *, title: str = "", url: str = ""
@@ -64,18 +65,21 @@ class ScriptedMarkets(MarketsSearcher):
             url=url,
             outcome="Yes",
             probability=PRICES[market_id],
-            price_time=as_of - timedelta(hours=1),
+            price_time=as_of
+            - (timedelta(days=12) if market_id in self.stale else timedelta(hours=1)),
             as_of=as_of,
             match="exact",
         )
 
 
-async def _record(path: Path, questions: list[FBQuestion]) -> None:
+async def _record(
+    path: Path, questions: list[FBQuestion], stale: frozenset[str] = frozenset()
+) -> None:
     with Ledger.open(path, FixedClock(NOW)) as ledger:
         report = await record_prices(
             questions=questions,
             tournament=TOURNAMENT,
-            searcher=ScriptedMarkets(),
+            searcher=ScriptedMarkets(stale=stale),
             ledger=ledger,
             code_version="test",
             out=lambda _line: None,
@@ -203,3 +207,21 @@ async def test_every_arm_scores_on_the_priced_questions(tmp_path: Path) -> None:
     # One draw (20%) against the median (40%) on outcomes 1, 0, 0.
     one = statistics.fmean([0.64 - 0.36, 0.04 - 0.16, 0.04 - 0.16])
     assert settings["one draw - median of 3"] == pytest.approx(one)
+
+
+async def test_p5_is_also_scored_as_first_measured(tmp_path: Path) -> None:
+    """A price older than the first run's seven-day cut counts after the change, not before."""
+    *_, questions = small_set(tmp_path)
+    prices_path = tmp_path / "prices.sqlite"
+    await _record(prices_path, questions, stale=frozenset({"a"}))
+    b_path = tmp_path / "b.sqlite"
+    await run_backtest(b_path, questions, percents=(40,))
+    score = score_corpus(
+        label="test",
+        questions=questions,
+        tournament=TOURNAMENT,
+        forecasts=b_path,
+        prices=prices_path,
+    )
+    assert score.freeze_match == (2, 2)
+    assert score.first_measure == (1, 1)

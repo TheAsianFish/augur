@@ -39,7 +39,7 @@ from augur.errors import SearchError
 from augur.forecastbench import FBQuestion
 from augur.leakage import RunMode, admit_source
 from augur.ledger import Ledger
-from augur.research.markets import MarketsSearcher
+from augur.research.markets import STALE_AFTER, MarketsSearcher
 from augur.research.quotes import MarketQuote
 from augur.research.source import DateEvidence, Source
 from augur.score import Estimate, ScoringError, brier, clustered_bootstrap, log_score, paired
@@ -315,6 +315,10 @@ class CorpusScore:
     """Platform: (priced, questions)."""
     freeze_match: tuple[int, int]
     """Priced questions whose as-of price is within 0.01 of ForecastBench's freeze value."""
+    first_measure: tuple[int, int]
+    """``freeze_match`` under the seven-day staleness cut the first price run applied to
+    every platform, before Manifold was exempted after the data were seen: (matched,
+    priced). Kept so P5 is reported as first measured as well as after the change."""
     arms: list[ArmScore]
     diffs: list[Diff]
     settings: list[Diff]
@@ -356,6 +360,7 @@ def score_corpus(
     outcome = {q.question_id: q.outcome for q in questions}
     by_platform: dict[str, tuple[int, int]] = {}
     match = 0
+    first_match = first_priced = 0
     for fb in questions:
         got, total = by_platform.get(fb.source, (0, 0))
         priced = fb.question_id in quotes
@@ -367,6 +372,10 @@ def score_corpus(
             and abs(quote.probability - fb.freeze_value) <= 0.01
         ):
             match += 1
+        if quote and quote.price_time >= quote.as_of - STALE_AFTER:
+            first_priced += 1
+            if fb.freeze_value is not None and abs(quote.probability - fb.freeze_value) <= 0.01:
+                first_match += 1
     both = [q.question_id for q in questions if q.question_id in quotes and q.question_id in b_all]
     if not both:
         raise ScoringError(f"{label}: no question has both a price and a forecast")
@@ -409,6 +418,7 @@ def score_corpus(
         priced=len(quotes),
         priced_by_platform=by_platform,
         freeze_match=(match, len(quotes)),
+        first_measure=(first_match, first_priced),
         arms=arms,
         diffs=diffs,
         settings=settings,

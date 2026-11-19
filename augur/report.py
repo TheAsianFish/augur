@@ -485,6 +485,16 @@ def _replay_verdicts(scores: dict[str, replay.CorpusScore]) -> list[str]:
         f"{sum(g for g, _ in none)} of {sum(n for _, n in none)} Metaculus and INFER priced "
         f"{_held(sum(g for g, _ in none) == 0)}. The third part (MiniBench) is below."
     )
+    first_match, first_priced = c2.first_measure
+    if first_priced != priced:
+        lines.append(
+            "  As first measured, with the seven-day staleness cut the price run applied "
+            f"before Manifold was exempted (a change made after seeing the data): "
+            f"{first_match}/{first_priced} matched "
+            f"{_held(first_match >= 0.9 * first_priced)}; "
+            f"{first_priced}/{total} priced {_held(first_priced >= 0.9 * total)}. "
+            "So P5's first two parts failed as first measured and hold only after that change."
+        )
     one, logodds, ext = (
         _diff(c2, "one draw - median of 3"),
         _diff(c2, "mean log-odds - median"),
