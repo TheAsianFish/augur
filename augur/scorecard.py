@@ -25,7 +25,7 @@ import json
 import sqlite3
 from collections.abc import Hashable, Sequence
 from contextlib import closing
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -70,6 +70,13 @@ class ScoredQuestion:
     options: tuple[str, ...] = ()
     scaling: Scaling | None = None
     metaculus: dict[str, float] = field(default_factory=dict)
+    forecast_at: str = ""
+    reference_as_of: dict[str, str] = field(default_factory=dict)
+
+    def later(self, name: str) -> bool:
+        """Whether reference ``name`` is dated after Augur's forecast (it knew more)."""
+        as_of = self.reference_as_of.get(name, "")
+        return bool(self.forecast_at) and as_of > self.forecast_at
 
     def p(self, values: dict[str, Any]) -> float:
         """The probability on the outcome; binary and option probabilities are held to
@@ -128,7 +135,7 @@ class _Shared:
     """
 
     resolutions: dict[int, tuple[str, str, str | None]] = field(default_factory=dict)
-    references: dict[int, dict[str, tuple[str, dict[str, Any]]]] = field(default_factory=dict)
+    references: dict[int, dict[str, tuple[str, dict[str, Any], str]]] = field(default_factory=dict)
     metaculus: dict[int, dict[str, tuple[str, float]]] = field(default_factory=dict)
 
     def read(self, conn: sqlite3.Connection) -> None:
@@ -138,13 +145,13 @@ class _Shared:
         ):
             if int(qid) not in self.resolutions or at >= self.resolutions[int(qid)][0]:
                 self.resolutions[int(qid)] = (str(at), str(status), value)
-        for qid, at, who, values in conn.execute(
-            "SELECT question_id, recorded_at, forecaster, values_json FROM reference_forecasts "
-            "ORDER BY recorded_at, rowid"
+        for qid, at, who, values, as_of in conn.execute(
+            "SELECT question_id, recorded_at, forecaster, values_json, as_of "
+            "FROM reference_forecasts ORDER BY recorded_at, rowid"
         ):
             mine = self.references.setdefault(int(qid), {})
             if str(who) not in mine or at >= mine[str(who)][0]:
-                mine[str(who)] = (str(at), json.loads(values))
+                mine[str(who)] = (str(at), json.loads(values), str(as_of))
         for qid, at, name, score in conn.execute(
             "SELECT question_id, recorded_at, score_type, score FROM metaculus_scores "
             "WHERE forecaster = 'augur' ORDER BY recorded_at, rowid"
@@ -212,7 +219,7 @@ def load(paths: Sequence[Path], *, modes: Sequence[str] | None = None) -> Loaded
         except (ScoringError, ValueError, KeyError) as exc:
             result.unscorable.append(f"{qid}: {exc}")
             continue
-        result.scored.append(scored)
+        result.scored.append(_without_bad_references(scored, result.unscorable))
     result.scored.sort(key=lambda s: (s.opened, s.question_id))
     return result
 
@@ -294,11 +301,31 @@ def _scored(c: _Candidate, resolution: str, shared: _Shared) -> ScoredQuestion:
         submitted=c.posted,
         model=c.model,
         augur=c.values,
-        references={k: v for k, (_, v) in shared.references.get(c.question_id, {}).items()},
+        references={k: v for k, (_, v, _) in shared.references.get(c.question_id, {}).items()},
         options=options,
         scaling=scaling,
         metaculus={k: v for k, (_, v) in shared.metaculus.get(c.question_id, {}).items()},
+        forecast_at=c.recorded_at,
+        reference_as_of={k: a for k, (_, _, a) in shared.references.get(c.question_id, {}).items()},
     )
+
+
+def _without_bad_references(scored: ScoredQuestion, unscorable: list[str]) -> ScoredQuestion:
+    """Drop (and list) any reference that cannot be scored, so one bad row
+    does not stop the whole scorecard."""
+    kept: dict[str, dict[str, Any]] = {}
+    for name, values in scored.references.items():
+        try:
+            scored.p(values)
+            if scored.question_type == "binary":
+                float(values["probability"])
+        except (ScoringError, ValueError, KeyError, TypeError) as exc:
+            unscorable.append(f"{scored.question_id} ({name}): {exc}")
+            continue
+        kept[name] = values
+    if len(kept) == len(scored.references):
+        return scored
+    return replace(scored, references=kept)
 
 
 # -- the numbers -------------------------------------------------------------
@@ -316,6 +343,7 @@ class Comparison:
     other_brier: float | None
     augur_baseline: float
     other_baseline: float
+    later: int = 0
 
 
 @dataclass(frozen=True)
@@ -433,6 +461,7 @@ def _compare(
         augur_baseline=sum(s.baseline(s.augur) for s in scored) / len(scored),
         other_baseline=sum(s.baseline(o) for s, o in zip(scored, others, strict=True))
         / len(scored),
+        later=sum(s.later(name) for s in scored),
     )
 
 
@@ -460,6 +489,7 @@ def format_summary(summary: Summary, loaded: Loaded) -> str:
                 and c.other_brier is not None
                 else ""
             )
+            + (f"; {c.later} of {c.n} dated after Augur's forecast (favours it)" if c.later else "")
         )
     for qid, name, ours, theirs in summary.metaculus_checks:
         lines.append(f"  check {qid}: our {name} {ours:.3f}, Metaculus {theirs:.3f}")

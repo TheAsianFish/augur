@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -475,3 +475,32 @@ def test_a_ledger_from_before_values_json_still_contributes_its_forecast() -> No
     old = Path(__file__).resolve().parent.parent / "data/ledgers/m1-live-bot-testing-area.sqlite"
     loaded = load([old])
     assert (len(loaded.scored), loaded.unresolved, loaded.unscorable) == (0, 1, [])
+
+
+def test_a_bad_reference_is_listed_not_fatal_and_a_later_one_is_flagged(
+    world: World, tmp_path: Path
+) -> None:
+    """One unscorable reference must not stop the scorecard, and a reference
+    dated after Augur's forecast is counted, since it knew more."""
+    other = tmp_path / "shadow.sqlite"
+    with Ledger.open(other, FixedClock(T0 + timedelta(days=1))) as ledger:
+        ledger.record_reference(
+            question_id=world.ids["q2"],
+            post_id=world.ids["q2"],
+            question_type="binary",
+            forecaster="template",
+            detail="d",
+            values={"probability": 0.5},
+            as_of=T0 + timedelta(hours=3),  # Augur forecast q2 at T0 + 61 minutes
+            source="s",
+        )
+        # Replaces q3's good template row (later recorded_at) with one that has no probability.
+        _reference(ledger, world.ids["q3"], "binary", "template", {"p": 0.5})
+    loaded = load([world.path, other])
+    assert any(f"{world.ids['q3']} (template)" in u for u in loaded.unscorable)
+    by_id = {s.question_id: s for s in loaded.scored}
+    assert "template" not in by_id[world.ids["q3"]].references
+    summary = summarise(loaded.scored, resamples=RESAMPLES)
+    template = next(c for c in summary.comparisons if c.against == "template")
+    assert (template.n, template.later) == (2, 1)  # q1 (as of T0, not later) and q2
+    assert "1 of 2 dated after Augur's forecast" in format_summary(summary, loaded)
