@@ -10,6 +10,7 @@ from typing import Protocol
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from augur.clock import ensure_utc, to_iso
+from augur.research.quotes import MarketQuote
 
 
 class DateEvidence(StrEnum):
@@ -21,6 +22,12 @@ class DateEvidence(StrEnum):
     """An archive's capture timestamp."""
     PROVIDER_PUBLISHED_BOUNDED = "provider_published_bounded"
     """A news provider's publish date, from a query bounded by ``end_timestamp <= as_of``."""
+    MARKET_TRADE = "market_trade"
+    """A trade or bet's server timestamp: the last one at or before ``as_of`` sets the price."""
+    PRICE_HISTORY = "price_history"
+    """A point of an exchange's price history, the last one at or before ``as_of``."""
+    AGGREGATE_HISTORY = "aggregate_history"
+    """An entry of the Metaculus aggregate's history in force at ``as_of``."""
     NONE = "none"
     """No proof (for example a date read from the page itself)."""
 
@@ -40,6 +47,8 @@ class Source(BaseModel):
     as_of: datetime
     date_evidence: DateEvidence
     evidence_detail: str
+    quote: MarketQuote | None = None
+    """For a market source, the price behind the excerpt (stored in ``market_quotes``)."""
 
     @field_validator("published_at", "retrieved_at", "as_of")
     @classmethod
@@ -60,6 +69,7 @@ class Source(BaseModel):
         as_of: datetime,
         date_evidence: DateEvidence,
         evidence_detail: str,
+        quote: MarketQuote | None = None,
     ) -> Source:
         """Construct a source whose id is a hash of what it says and when."""
         content_sha = hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
@@ -79,6 +89,7 @@ class Source(BaseModel):
             as_of=as_of,
             date_evidence=date_evidence,
             evidence_detail=evidence_detail,
+            quote=quote,
         )
 
 
