@@ -1,7 +1,7 @@
 {
  "kept": 138,
  "licence": "ForecastBench datasets, Forecasting Research Institute, CC BY-SA 4.0",
- "model_release": "qwen2.5:7b 2024-09-19",
+ "model_release": "nvidia/nemotron-3-ultra-550b-a55b:free 2026-06-04 (OpenRouter listing date)",
  "removed": {
   "not a market question (dataset questions are M6's)": 250,
   "not resolved to 0 or 1 in the resolution set": 112
