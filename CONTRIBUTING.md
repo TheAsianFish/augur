@@ -22,14 +22,21 @@ installs Metaculus's template bot and does not support 3.14.
 | `make check` | The quality gate: `ruff format --check`, `ruff check`, `mypy --strict`, unit tests. Offline, under two minutes. This is all CI runs on a pull request. |
 | `make test` | Unit tests only. |
 | `make test-integration` | Tests that need a local Ollama or live credentials; each skips with its reason when the requirement is missing. The OpenRouter ones call `:free` models only. |
-| `make eval` | (M3) Replays the committed backtest ledgers and recordings and re-scores them. Offline, free. |
-| `make backtest ARGS=...` | (M4) Runs a new backtest (local model by default). Manual; never in per-PR CI. |
-| `make results` | (M3) Renders RESULTS.md from the ledger and result files. A test fails if the committed file differs. |
+| `make eval` | Scans every committed ledger for leakage, re-scores the ForecastBench backtest and checks RESULTS.md against a fresh render. Offline, free. |
+| `make backtest ARGS=...` | The ForecastBench backtest (no retrieval, the configured model, local by default), then its resolution. Resumable; hours on a CPU. Manual; never in per-PR CI. |
+| `make results` | Re-renders RESULTS.md's generated blocks (between `<!-- augur:begin NAME -->` markers) from the committed ledgers and snapshots. A test fails if the committed file differs. |
 | `augur forecast --tournament minibench` | Dry run: the live listing with `METACULUS_TOKEN`, the committed samples in `data/samples/` without it. Add `--submit` to post. Probes the model chains first (`--no-probe` to skip). `--reforecast` re-forecasts questions already forecast, in the bot-testing-area only. |
 | `augur models list` | Each configured route with its listed price, listing date and whether it is in the frontier tier. No model calls. |
 | `augur models probe [--route E:M ...] [--burst N]` | One short call per route, recorded in the ledger; `--burst N` then measures each free route's real rate limit (stops at the first refusal; free routes only). Prints the OpenRouter key's credit and daily free allowance. |
 | `augur models snapshot` | Refreshes the committed copy of OpenRouter's model list (`augur/llm/openrouter_models.json`), used when the live list cannot be fetched. |
 | `augur ledger check PATH...` | Scans ledgers for leakage and for forecasts submitted below the floor; exits 1 on any violation. |
+| `augur resolve [--ledger L]` | Appends resolutions for the ledger's live and dry-run questions, plus the community aggregate and Metaculus's own scores where the API shows them (a bot token sees none on scored tournaments: `scripts/resolution_visibility.py`). `--forecastbench SET` resolves a backtest; `--manual POST VALUE --evidence URL` records one by hand. |
+| `augur score LEDGER...` | Brier, log and baseline scores, and paired head-to-head and Brier differences against every reference (shadow template, community, market, always 50%, base rate) with clustered bootstrap intervals and the detectable effect. `--cluster week` for live questions. |
+| `augur baseline [--ledger L] [--post ID ...]` | Runs Metaculus's real template bot unpublished on questions Augur forecast, with Augur's first forecast route, and records it as a `template` reference. Needs `uv sync --extra baseline`. |
+| `augur standings --round SLUG [--out F] [--ledger L ...]` | A MiniBench round's leaderboard: rank 1, Augur, the best template bot, the best house bot, the community aggregates, a listed open-source bot; each question Augur did not forecast explained from the ledgers. `--from F` renders a saved snapshot offline. |
+| `augur report [--check]` | What `make results` runs. |
+| `augur backtest forecastbench --questions Q --resolutions R` | What `make backtest` runs. |
+| `augur ledger import PATH... --out DB` | Rebuilds one SQLite ledger from JSONL exports (files or a directory, such as a checkout of the `ledger` branch); the leakage triggers re-check every row. |
 | `augur ledger export DB OUT` | Writes a ledger as JSONL, one row per line, byte-stable; the scheduled workflow pushes one per run to the `ledger` branch. |
 | `augur forecast ... --coverage PATH` | Also writes the run's coverage report as JSON: each question forecast in time, missed, skipped or failed, and why (also in the ledger's `question_outcomes`). |
 | `python3 scripts/poll.py` | The scheduled workflow's first job: standard library only, lists open questions this account has not forecast and sets `has_work`. Needs `METACULUS_TOKEN` and `AUGUR_SCHEDULE`. |
