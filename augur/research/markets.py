@@ -122,6 +122,34 @@ _STOPWORDS = frozenset(
         "yes",
     ]
 )
+_MONTHS = frozenset(
+    [
+        "january",
+        "february",
+        "march",
+        "april",
+        "may",
+        "june",
+        "july",
+        "august",
+        "september",
+        "october",
+        "november",
+        "december",
+        "jan",
+        "feb",
+        "mar",
+        "apr",
+        "jun",
+        "jul",
+        "aug",
+        "sep",
+        "sept",
+        "oct",
+        "nov",
+        "dec",
+    ]
+)
 _WORD = re.compile(r"[a-z0-9][a-z0-9.\-']*")
 
 
@@ -134,11 +162,18 @@ class MarketUrls:
 
 
 def keywords(title: str, limit: int = 8) -> list[str]:
-    """The content words of a question title, in order, without repeats."""
+    """The content words of a question title, in order, without repeats.
+
+    Dates are not content: month names and bare numbers (days, years) are
+    dropped, or every question about "26 November 2026" would match every
+    market that closes that day.
+    """
     seen: list[str] = []
     for word in _WORD.findall(title.lower()):
         word = word.strip(".-'")
-        if len(word) < 2 or word in _STOPWORDS or word in seen:
+        if len(word) < 2 or word in _STOPWORDS or word in _MONTHS or word in seen:
+            continue
+        if not any(ch.isalpha() for ch in word):
             continue
         seen.append(word)
     return seen[:limit]

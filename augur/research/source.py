@@ -5,12 +5,15 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from augur.clock import ensure_utc, to_iso
 from augur.research.quotes import MarketQuote
+
+if TYPE_CHECKING:
+    from augur.questions import Question
 
 
 class DateEvidence(StrEnum):
@@ -100,4 +103,21 @@ class Searcher(Protocol):
 
     async def search(self, query: str, as_of: datetime, limit: int) -> list[Source]:
         """Sources relevant to ``query`` that can be dated at or before ``as_of``."""
+        ...
+
+
+@runtime_checkable
+class QuestionSearcher(Protocol):
+    """A searcher that looks up the question itself, once, rather than each planned query.
+
+    The markets searcher is one: the question's own community prediction and
+    the markets most like its title. The researcher puts what it finds first.
+    """
+
+    name: str
+
+    async def search(self, query: str, as_of: datetime, limit: int) -> list[Source]: ...
+
+    async def search_question(self, q: Question, as_of: datetime, limit: int) -> list[Source]:
+        """Sources about ``q`` itself that can be dated at or before ``as_of``."""
         ...

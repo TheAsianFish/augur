@@ -81,6 +81,13 @@ def _parser() -> argparse.ArgumentParser:
     fc.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
     fc.add_argument("--no-asknews", action="store_true", help="skip AskNews even with keys")
     fc.add_argument(
+        "--markets",
+        action="store_true",
+        help="add the markets searcher: the question's own community prediction where the "
+        "token sees it and similar Manifold, Polymarket and Kalshi markets, priced as of the "
+        "cutoff (off by default until the replay evaluation's rule admits it; PLAN.md, M5)",
+    )
+    fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
     )
     fc.add_argument(
@@ -244,6 +251,8 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
         client = (
             MetaculusClient.from_settings(settings, http) if settings.has_metaculus_token else None
         )
+        if args.markets and not settings.is_replay:
+            searchers.append(MarketsSearcher(http, clock, metaculus=client))
         if client is None:
             print("METACULUS_TOKEN is not set: dry run on the committed sample questions.")
         with Ledger.open(ledger_path, clock) as ledger:

@@ -12,10 +12,11 @@ from augur.clock import FixedClock
 from augur.errors import SearchError
 from augur.leakage import RunMode, admit_source, scan_ledger
 from augur.ledger import Ledger
+from augur.questions import Question
 from augur.ratelimit import RateLimiter
 from augur.research.markets import MarketsSearcher, keywords, metaculus_aggregate_at, overlap
 from augur.research.quotes import MarketQuote
-from augur.research.source import DateEvidence
+from augur.research.source import DateEvidence, QuestionSearcher, Source
 from tests.fakes.markets import (
     AFTER,
     AS_OF,
@@ -26,7 +27,7 @@ from tests.fakes.markets import (
     FakeMarkets,
     FakeMetaculus,
 )
-from tests.helpers import binary_question
+from tests.helpers import binary_question, market_source
 
 NOW = datetime(2026, 11, 19, tzinfo=UTC)
 
@@ -201,9 +202,69 @@ def test_keywords_and_overlap() -> None:
         "york",
         "mets",
         "win",
-        "2026",
         "world",
         "series",
     ]
     assert overlap("mets world series", "Will the Mets win the World Series?") == 1.0
     assert overlap("mets world series", "Who wins the Super Bowl?") == 0.0
+
+
+def test_dates_are_not_content() -> None:
+    # The first coverage run matched the Ibovespa to "released on November 26, 2026".
+    query = " ".join(keywords("What will the Ibovespa close at on 26 November 2026?"))
+    assert query == "ibovespa close"
+    assert overlap(query, "Will the next model be released on November 26, 2026?") == 0.0
+
+
+class QuestionOnly:
+    """A question-level searcher: one call per question, never per planned query."""
+
+    name = "markets"
+
+    def __init__(self) -> None:
+        self.question_calls = 0
+        self.query_calls = 0
+
+    async def search(self, query: str, as_of: datetime, limit: int) -> list[Source]:
+        self.query_calls += 1
+        return []
+
+    async def search_question(self, q: Question, as_of: datetime, limit: int) -> list[Source]:
+        self.question_calls += 1
+        return [market_source(as_of - timedelta(hours=1), as_of=as_of)]
+
+
+async def test_the_question_level_search_runs_once_and_goes_first(tmp_path: Path) -> None:
+    from augur.agents.calls import Budget, CallRecorder
+    from augur.agents.researcher import Researcher
+    from augur.llm.endpoints import PRESETS, Route
+    from augur.llm.router import Router
+    from tests.fakes.llm import ScriptedProvider
+    from tests.fakes.search import FixedSearcher
+    from tests.helpers import free_catalog
+
+    q, _ = binary_question(AS_OF - timedelta(days=1), title="Will the test event happen?")
+    clock = FixedClock(AS_OF)
+    route = Route(endpoint=PRESETS["ollama"], model="qwen2.5:7b")
+    router = Router.single(route, ScriptedProvider(), free_catalog(route), clock)
+    markets, fixed = QuestionOnly(), FixedSearcher()
+    assert isinstance(markets, QuestionSearcher)
+    assert not isinstance(fixed, QuestionSearcher)
+    with Ledger.open(tmp_path / "l.sqlite", clock) as ledger:
+        run_id = ledger.start_run(
+            mode=RunMode.DRY_RUN,
+            tournament="t",
+            provider="replay",
+            model="m",
+            settings={},
+            code_version="test",
+        )
+        ledger.record_question(run_id, q, AS_OF, {})
+        calls = CallRecorder(router, ledger, clock, Budget(1.0, 1.0))
+        researcher = Researcher(
+            calls=calls, ledger=ledger, searchers=[fixed, markets], mode=RunMode.DRY_RUN
+        )
+        result = await researcher.research(run_id, q, AS_OF)
+    assert (markets.question_calls, markets.query_calls) == (1, 0)
+    assert result.sources[0].searcher == "markets"
+    assert len(fixed.calls) >= 1
