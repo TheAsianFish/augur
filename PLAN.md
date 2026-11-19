@@ -101,6 +101,74 @@ template, with its paired bootstrap interval clustered by opening week.
 The same rule and report apply against the community prediction where the
 API shows it (it does not to a bot token on scored tournaments; M4).
 
+**M5's predictions and decision rules, committed 2026-11-19 before any
+replay run.** The replay evaluation compares arms on the same resolved
+binary questions. The arms:
+
+- **(a) price-only:** the market's price as of the cutoff, no model;
+- **(b) Augur without prices:** the forecaster draws on the recorded
+  research (none for ForecastBench), median;
+- **(c) blend:** a fixed log-odds blend, one third Augur (b) and two
+  thirds the price (a), both clipped to [0.01, 0.99]. The weight is
+  AIA Forecaster's, fixed now and never fitted;
+- **(d) Augur with prices:** the same forecaster, with the market source
+  shown to it as the first source of the brief, median.
+
+The settings arms come from (b)'s own draws, with no new calls: 1 draw
+against 3, and the median against the mean, the mean of log-odds and
+extremized log-odds (factor 1.5, fixed now).
+
+The corpora:
+
+- **C1:** ForecastBench 2026-05-24, 139 market questions. Arm (b) is
+  M4's `qwen2.5:7b` run (1 draw, no retrieval); arms (a) and (c) only.
+- **C2:** ForecastBench 2026-06-21, market questions resolved to 0 or 1
+  (frozen 2026-06-11). Arms (a) to (d), 3 draws, on
+  `nvidia/nemotron-3-ultra-550b-a55b:free`. That model answered most of
+  the bot's live forecasts in M3, and it was listed on 2026-06-04, before
+  the freeze, so the release gate admits it.
+- **C3:** live questions in the committed ledgers that have resolved. On
+  2026-11-19 that is none, so C3 is the harness plus a count of 0.
+
+The price comes from the market's own API as of the freeze instant (a
+Manifold bet, a Polymarket price-history point). The Metaculus community
+prediction is hidden from the bot's token, and INFER has no public price
+API, so those questions have no usable price.
+
+Predictions:
+
+| # | Prediction | Corpus |
+|---|------------|--------|
+| P1 | The price alone beats Augur without prices: the interval of Brier(b) − Brier(a) is above 0. | C1, C2 |
+| P2 | The blend beats Augur without prices: the interval of Brier(c) − Brier(b) is below 0. | C1, C2 |
+| P3 | Against the price alone, the blend is worse on C1 (point estimate; a near-constant model only pulls the price toward 50%), and within ±0.01 Brier on C2 (the interval includes 0). | C1, C2 |
+| P4 | Showing the price to the model (the market searcher's effect, which the survey scores at r = +0.34) improves Brier by at least 0.03, with an interval of Brier(d) − Brier(b) below 0. The model still under-uses the price: the point estimate of Brier(d) − Brier(a) is above 0. | C2 |
+| P5 | The as-of price matches ForecastBench's recorded freeze value within 0.01 on at least 90% of priced questions. A usable exact price is found for at least 90% of Polymarket and Manifold questions, 0% of Metaculus and INFER questions. On live MiniBench questions (search, not an exact match), a similar market about the same event is the top hit for under 25% of a round's questions, judged by hand. | C2, MiniBench 2026-11-16 |
+| P6 | Three draws against one: \|ΔBrier\| < 0.01, interval includes 0. Mean of log-odds against the median: \|ΔBrier\| < 0.005. Extremizing at 1.5 is worse than the median (point estimate), with an interval that includes 0. | C2 |
+
+Research depth cannot be varied on C1 or C2, which have no retrieval. It
+runs on C3 once live questions resolve.
+
+**Decision rules** (M7's replacement rule: a variant replaces the default
+only if its paired interval against the default excludes 0 in its favour,
+or it is no worse and cheaper; neither variant here is cheaper):
+
+- **Markets searcher:** it becomes the live default only if the interval of
+  Brier(d) − Brier(b) on C2 lies below 0. Until then it is behind
+  `--markets`.
+- **Blend:** it enters the live default only if (c) is not worse than (b) on
+  C2, with the interval of Brier(c) − Brier(b) lying below 0. Live, it
+  applies only to an *exact* price of the same question. On Metaculus that
+  is the question's own community prediction, where the API shows it to the
+  bot. A similar market found by search is shown to the model and never
+  blended.
+
+**What these corpora can and cannot say.** On C1 and C2 every question is
+itself a market, so the exact price exists by construction. That is the
+best case for prices; most MiniBench questions are not markets (P5), so
+C2's price-only score is an upper bound on what prices bring live. A
+finding on C2 is a finding about one free model on one question set.
+
 **Status after M4 (2026-11-19).** Q1: *not yet resolvable*; no live
 question with both an Augur and a shadow-template forecast has resolved,
 and the floor has kept Augur out of scored rounds until a frontier model
