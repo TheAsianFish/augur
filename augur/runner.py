@@ -52,6 +52,7 @@ from augur.llm.router import Router
 from augur.log import get_logger
 from augur.metaculus import MetaculusClient
 from augur.predictions import (
+    BinaryPrediction,
     Prediction,
     aggregate,
     binary_probability,
@@ -61,6 +62,7 @@ from augur.predictions import (
     values_json,
 )
 from augur.questions import Question, question_from_post
+from augur.replay import blend, exact_price
 from augur.research.source import Searcher
 
 log = get_logger(__name__)
@@ -208,8 +210,12 @@ class ForecastRun:
         client: MetaculusClient | None,
         out: TextIO,
         probe_providers: Mapping[str, Provider] | None = None,
+        blend_exact_price: bool = False,
     ) -> None:
         self._settings = settings
+        # M5's blend: a binary forecast is combined, one third to two thirds in
+        # log-odds, with the question's own community prediction when research found it.
+        self._blend_exact_price = blend_exact_price
         self._clock = clock
         self._ledger = ledger
         self._router = router
@@ -531,6 +537,12 @@ class ForecastRun:
             prediction, method = aggregate(q, [m.prediction for m in members])
         except ValueError as exc:
             raise AugurError(f"could not combine the members ({exc})") from None
+        own_price = exact_price(research) if self._blend_exact_price else None
+        if not isinstance(prediction, BinaryPrediction):
+            own_price = None
+        if own_price is not None and isinstance(prediction, BinaryPrediction):
+            prediction = BinaryPrediction(blend(prediction.probability, own_price.probability))
+            method = f"blend of the {method} (1/3) and the community prediction (2/3)"
         problems = check(q, prediction)
         if problems:
             raise AugurError(
@@ -556,6 +568,7 @@ class ForecastRun:
             research=research,
             cutoff=cutoff,
             requested=n,
+            blended_with=own_price,
         )
         report = QuestionReport(q, "forecast", prediction=prediction, members=members)
         report.comment = comment

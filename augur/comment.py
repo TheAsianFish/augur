@@ -13,6 +13,7 @@ from augur.agents.forecaster import MemberForecast
 from augur.agents.researcher import ResearchResult
 from augur.predictions import BinaryPrediction, Prediction, summary
 from augur.questions import Question
+from augur.research.quotes import MarketQuote
 from augur.research.source import DateEvidence, Source
 
 MAX_COMMENT_CHARS = 9000
@@ -23,6 +24,9 @@ _EVIDENCE = {
     DateEvidence.REVISION_TIMESTAMP: "revision of",
     DateEvidence.ARCHIVE_CAPTURE: "captured",
     DateEvidence.PROVIDER_PUBLISHED_BOUNDED: "published",
+    DateEvidence.MARKET_TRADE: "price set by a trade on",
+    DateEvidence.PRICE_HISTORY: "price as of",
+    DateEvidence.AGGREGATE_HISTORY: "aggregate as of",
     DateEvidence.NONE: "dated (unproven)",
 }
 
@@ -58,6 +62,7 @@ def render_comment(
     research: ResearchResult,
     cutoff: datetime,
     requested: int,
+    blended_with: MarketQuote | None = None,
 ) -> str:
     """Markdown for the private comment. Pure: the same inputs give the same text."""
     ordered = sorted(members, key=lambda m: m.member)
@@ -77,6 +82,17 @@ def render_comment(
             else "."
         ),
         "",
+        *(
+            [
+                f"The forecasters' median was then blended in log-odds with the community "
+                f"prediction of {blended_with.probability:.1%} (set "
+                f"{blended_with.price_time:%Y-%m-%d %H:%M} UTC), one third to two thirds, a "
+                "weight fixed in advance.",
+                "",
+            ]
+            if blended_with is not None
+            else []
+        ),
         f"**Research** (only sources dated at or before {cutoff:%Y-%m-%d %H:%M} UTC):",
         "",
         _clip(research.brief, MAX_BRIEF_CHARS),

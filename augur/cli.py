@@ -45,7 +45,14 @@ from augur.llm.registry import FRONTIER_TIER_NAME, in_frontier_tier
 from augur.log import configure_logging, get_logger
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
-from augur.replay import WITH_PRICES_SUFFIX, price_research, record_prices, recorded_prices
+from augur.replay import (
+    LIVE_BLEND,
+    LIVE_MARKETS,
+    WITH_PRICES_SUFFIX,
+    price_research,
+    record_prices,
+    recorded_prices,
+)
 from augur.research.asknews import AskNewsSearcher
 from augur.research.markets import MarketsSearcher
 from augur.research.source import Searcher
@@ -82,10 +89,18 @@ def _parser() -> argparse.ArgumentParser:
     fc.add_argument("--no-asknews", action="store_true", help="skip AskNews even with keys")
     fc.add_argument(
         "--markets",
-        action="store_true",
-        help="add the markets searcher: the question's own community prediction where the "
-        "token sees it and similar Manifold, Polymarket and Kalshi markets, priced as of the "
-        "cutoff (off by default until the replay evaluation's rule admits it; PLAN.md, M5)",
+        action=argparse.BooleanOptionalAction,
+        default=LIVE_MARKETS,
+        help="the markets searcher: the question's own community prediction where the token "
+        "sees it and similar Manifold, Polymarket and Kalshi markets, priced as of the cutoff "
+        "(the default follows the replay evaluation's rule; PLAN.md, M5)",
+    )
+    fc.add_argument(
+        "--blend",
+        action=argparse.BooleanOptionalAction,
+        default=LIVE_BLEND,
+        help="blend a binary forecast with the question's own community prediction, when the "
+        "markets searcher finds it, one third to two thirds in log-odds (default per M5's rule)",
     )
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
@@ -265,6 +280,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                 client=client,
                 out=sys.stdout,
                 probe_providers=probe_providers,
+                blend_exact_price=bool(args.markets and args.blend),
             )
             try:
                 report = await run.run(

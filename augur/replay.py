@@ -49,6 +49,10 @@ BLEND_WEIGHT = 1.0 / 3.0
 EXTREMIZE = 1.5
 """The extremizing factor of the settings arm, fixed before any run."""
 CLIP = (0.01, 0.99)
+LIVE_MARKETS = False
+"""Whether ``augur forecast`` runs the markets searcher by default (M5's decision rule)."""
+LIVE_BLEND = False
+"""Whether a live binary forecast is blended with its own community prediction (M5's rule)."""
 PRICED_PLATFORMS = ("manifold", "polymarket")
 PRICES_SUFFIX = ":prices"
 WITH_PRICES_SUFFIX = ":with-prices"
@@ -80,6 +84,19 @@ def blend(augur: float, price: float, weight: float = BLEND_WEIGHT) -> float:
 
 def mean_logodds(ps: Sequence[float], factor: float = 1.0) -> float:
     return sigmoid(factor * statistics.fmean(logit(p) for p in ps))
+
+
+def exact_price(research: ResearchResult) -> MarketQuote | None:
+    """The question's own community prediction among the research's sources, if any.
+
+    Only an exact price of the same question is ever blended; a similar market
+    found by search is shown to the model and never blended.
+    """
+    for source in research.sources:
+        quote = source.quote
+        if quote is not None and quote.match == "exact" and quote.platform == "metaculus":
+            return quote
+    return None
 
 
 # -- recording prices ---------------------------------------------------------
