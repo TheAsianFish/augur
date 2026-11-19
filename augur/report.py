@@ -259,6 +259,22 @@ def render_standings(root: Path) -> str:
             kept.append("#### " + line[3:] if line.startswith("## ") else line)
         while kept and not kept[-1].strip():
             kept.pop()
+        board = round_.board()
+        bots = sorted(
+            (e for e in board.entries if e.user is not None and e.user.is_bot),
+            key=lambda e: e.score,
+        )
+        if bots:
+            mid = bots[len(bots) // 2]
+            average = mid.average
+            kept += [
+                "",
+                f"Median bot by summed score (the line Q5 predicts Augur clears): "
+                f"{mid.score:.1f} over {mid.coverage:g} questions"
+                + (f", {average:.2f} a question" if average is not None else "")
+                + f" (rank {mid.rank}; the middle of {len(bots)} bot entries, many of which "
+                "covered only part of the round, which a summed score punishes).",
+            ]
         reasons: dict[str, int] = {}
         forecast = 0
         for q in round_.questions:
