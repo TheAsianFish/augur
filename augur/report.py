@@ -113,7 +113,7 @@ def render_forecastbench(root: Path) -> str:
             f"| {_signed(c.head_to_head, 1)} | {c.head_to_head.mde:.1f} |"
         )
     removed = "; ".join(f"{n} {why}" for why, n in source["removed"].items())
-    started = runs[0][1][:16].replace("T", " ") if runs else "?"
+    freezes = sorted({s.opened.strftime("%Y-%m-%d %H:%M") for s in loaded.scored})
     lines = [
         f"Question set `{Path(source['urls']['questions']).name}` (ForecastBench, "
         f"CC BY-SA 4.0): {source['total']} questions; removed {removed}; "
@@ -123,9 +123,9 @@ def render_forecastbench(root: Path) -> str:
         *rows,
         "",
         f"Method: {len(runs)} backtest run(s) in `{FORECASTBENCH_LEDGER}` "
-        f"(first {started} UTC; code {', '.join(sorted({str(r[3]) for r in runs}))}); "
+        f"(code {', '.join(sorted({str(r[3]) for r in runs}))}); "
         f"{', '.join(str(d) for d in draws)} draw(s) per question, median; clock pinned to "
-        "each question's freeze date; no sources. "
+        f"each question's freeze date ({', '.join(freezes)} UTC); no sources. "
         f"{calls} model calls ({failed or 0} failed), {out_tokens or 0:,} output tokens, "
         f"{(ms or 0) / 3_600_000:.1f} h of model time on a 4-core CPU, cost ${cost or 0:.2f}. "
         f"Outcomes: {', '.join(f'{k} {v}' for k, v in sorted(outcomes.items()))}. "
@@ -338,7 +338,18 @@ def render(text: str, root: Path = REPO, only: Sequence[str] | None = None) -> s
 
 
 def check(path: Path, root: Path = REPO) -> list[str]:
-    """The names of the blocks in ``path`` that differ from a fresh render."""
+    """The names of the blocks in ``path`` that differ from a fresh render.
+
+    Refuses while a committed ledger has unsaved write-ahead-log content: a
+    reader sees it, git does not, so the check would pass here and fail on a
+    clean checkout.
+    """
+    pending = [p.name for p in sorted((root / LEDGERS).glob("*.sqlite-wal")) if p.stat().st_size]
+    if pending:
+        raise ReportError(
+            f"{', '.join(pending)} hold rows not yet in the committed files; finish or close "
+            "the writer (sqlite3 FILE 'PRAGMA wal_checkpoint(TRUNCATE)') and run again"
+        )
     text = path.read_text(encoding="utf-8")
     fresh = render(text, root)
     if fresh == text:
