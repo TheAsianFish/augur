@@ -70,3 +70,8 @@ def test_cli_report_writes_then_checks(
     assert "stale in: demo" in capsys.readouterr().out
     assert main(["report", "--path", str(path)]) == 0
     assert main(["report", "--path", str(path), "--check"]) == 0
+
+
+def test_the_committed_results_match_a_fresh_render() -> None:
+    stale = report.check(REPO / "RESULTS.md", REPO)
+    assert stale == [], f"RESULTS.md blocks {stale} differ from a render: run `make results`"
