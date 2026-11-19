@@ -444,7 +444,7 @@ documented ones.
   bounds; Metaculus gives each open tail 0.05.
 - *The ForecastBench number uses one draw, not five.* On a 4-core CPU,
   concurrency does not raise `qwen2.5:7b`'s throughput, and five draws on
-  139 questions would take about 12 hours. Market questions only (dataset
+  139 questions would take about 15 hours (five times the 3.1 h one draw took). Market questions only (dataset
   questions ask about several horizons at once; the loader grows in M6),
   from the 2026-05-24 set: 139 of 500 resolved to 0 or 1.
 - *The shadow template is the real `TemplateBot`* (forecasting-tools 0.3.7)

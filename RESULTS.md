@@ -64,17 +64,39 @@ markets settled before it), which is a property of the sample, not of the
 model.
 
 <!-- augur:begin forecastbench -->
-No resolved question in `data/ledgers/m4-forecastbench-qwen.sqlite` yet: run `augur resolve --forecastbench` on it.
+Question set `2026-05-24-llm.json` (ForecastBench, CC BY-SA 4.0): 500 questions; removed 250 not a market question (dataset questions are M6's); 111 not resolved to 0 or 1 in the resolution set; **139 scored** (139 binary, 40.3% resolved Yes).
+
+| Forecaster | Brier [95% CI] | Baseline score | Augur minus it: Brier [95% CI] | MDE (Brier) | Augur over it: head-to-head [95% CI] | MDE (points) |
+|---|---|---|---|---|---|---|
+| **Augur**, qwen2.5:7b, no retrieval | 0.2395 [0.1929, 0.2895] | -7.9 [-30.9, 12.9] | | | | |
+| Market price at the freeze date (not shown to Augur) | 0.1311 | 41.4 | +0.1084 [+0.0582, +0.1612] | 0.0740 | -34.2 [-50.9, -19.0] | 22.8 |
+| Always 50% | 0.2500 | 0.0 | -0.0105 [-0.0571, +0.0395] | 0.0691 | -5.5 [-21.4, +9.0] | 22.0 |
+| Base rate (40%) | 0.2406 | 2.7 | -0.0011 [-0.0432, +0.0427] | 0.0614 | -7.4 [-22.0, +5.8] | 20.2 |
+
+Method: 1 backtest run(s) in `data/ledgers/m4-forecastbench-qwen.sqlite` (code 0.1.0.dev0+8e787a7faf8c); 1 draw(s) per question, median; clock pinned to each question's freeze date (2026-05-14 00:00 UTC); no sources. 139 model calls (0 failed), 32,185 output tokens, 3.1 h of model time on a 4-core CPU, cost $0.00. Outcomes: forecast 139. Intervals: paired bootstrap over questions, 10,000 resamples, seed 20261119; MDE is the true difference this n would detect with 80% power at the 5% level. The base rate is the scored set's own, known only after the fact.
 <!-- augur:end forecastbench -->
 
-FORECASTBENCH_INTERPRETATION
+**What it says.** Without sources, `qwen2.5:7b` in Augur's forecaster
+prompt is no better than a constant: Brier 0.2395 against 0.2500 for always
+50% and 0.2406 for the set's own base rate, and both paired intervals span
+zero. The market's price at the freeze date, which the model never saw,
+scores 0.1311; Augur is behind it by 0.108 Brier [0.058, 0.161], well past
+the detectable effect at n = 139. So the run measured the floor a pipeline
+starts from, not a forecaster: a small model's prior about events after its
+training cut-off carries almost no information, and the price of a liquid
+market carries most of what is knowable. That is the gap retrieval (M5's
+market prices and news, M6's backtest) and a frontier model have to close.
+For scale only, El Lahib et al. report 0.244 with no retrieval for
+gpt-oss-120b on their own 93 questions (arXiv 2602.00758): the same
+neighbourhood, on different questions and a different model, so not a
+comparison. Nothing was predicted for this number before the run.
 
 **One draw, not five.** The plan said "the M1 pipeline", five draws and the
 median. On this 4-core CPU `qwen2.5:7b` decodes about the same number of
 tokens a second whether one request runs or five run at once
 (`scripts/ollama_throughput.py`, `data/runs/m4-qwen-throughput.txt`), so
-five draws cost five times the model time in the block above, about 12
-hours. The run used `AUGUR_FORECASTERS=1`; the five-draw run is under To
+five draws cost five times the model time in the block above (3.1 h),
+about 15 hours. The run used `AUGUR_FORECASTERS=1`; the five-draw run is under To
 measure. The outside evidence on what the median adds is small: AIA
 Forecaster's ablation went from 0.1182 (one draw) to 0.1138 (median of
 several), arXiv 2511.07678.
@@ -114,7 +136,7 @@ reason; a live comparison should run the template at Augur's forecast time. The 
 HTTP 429 on all 15 template calls (an upstream shared pool).
 
 <!-- augur:begin live-scores -->
-Live questions in the committed ledgers: 6; posted by Augur: 6 (bot-testing-area 6). Reference forecasts recorded: community on 6, template on 3. With a resolution in the ledger: 0; annulled 0; scored **0**.
+Live questions in the committed ledgers: 6; posted by Augur: 6 (bot-testing-area 6). Reference forecasts recorded: community on 6, market on 0, template on 3. With a resolution in the ledger: 0; annulled 0; scored **0**.
 
 Nothing is scored yet, so no interval and no detectable effect can be computed from data. Until there is a measured spread, the detectable effect at the sizes this season can reach, for a per-question spread of 32 points (PLAN.md, from the Spring 2026 winner's interval; a paired difference against the same-model template is likely tighter, and M4's first resolved round replaces this with the measured one):
 
@@ -215,7 +237,7 @@ missed, and why).
 | `m3-dryrun-minibench.sqlite` | 1 (dry_run 1) | 1 | 9 | 0 | 0 | 0 | 0 |
 | `m3-live-bot-testing-area-2.sqlite` | 1 (live 1) | 6 | 53 | 6 | 6 | 0 | 6 |
 | `m3-live-bot-testing-area.sqlite` | 1 (live 1) | 5 | 43 | 5 | 5 | 0 | 0 |
-| `m4-forecastbench-qwen.sqlite` | 1 (backtest 1) | 21 | 20 | 20 | 0 | 0 | 0 |
+| `m4-forecastbench-qwen.sqlite` | 1 (backtest 1) | 139 | 139 | 139 | 0 | 139 | 139 |
 | `m4-shadow-template.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 3 |
 <!-- augur:end ledgers -->
 
@@ -567,7 +589,7 @@ works against the real API; they say nothing yet about accuracy.
 | This repository's own cron delay and coverage, and the first scheduled runs on `main` | Private, and no GitHub credentials here, so the `ledger` branch cannot be read | After merge, with `AUGUR_SCHEDULE=minibench`: `git fetch origin ledger && git worktree add /tmp/ledger FETCH_HEAD && augur ledger import /tmp/ledger/ledger --out /tmp/live.sqlite && augur standings --round minibench --ledger /tmp/live.sqlite` (forecast, skipped, missed and why per question); the run times are the `*.txt` files' timestamps against the two cron lines; billed minutes: `gh api repos/TheAsianFish/augur/actions/runs --jq '.workflow_runs[] \| select(.event=="schedule") \| [.created_at, .run_started_at, .updated_at]'` |
 | Augur against the same-model shadow template and the community prediction on resolved live questions (Q1) | No live MiniBench forecast yet (the floor), and a bot token sees no resolution on scored tournaments | After each forecast run: `uv sync --extra baseline && augur baseline --ledger L` (same model as Augur, AskNews keys set so the template searches as it does on the leaderboard); after resolution: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` read from the question page), then `augur score L data/ledgers/m4-shadow-template.sqlite --mode live --cluster week` |
 | Augur's score beside Metaculus's own for one resolved question of each type | The API hides resolutions and scores from this bot account (0 of 80) | `augur resolve` records `my_forecasts.score_data` whenever the API returns it, and `augur score` prints each `check` line; with a personal (non-bot) token, `python3 scripts/resolution_visibility.py` first shows whether that account sees them |
-| The ForecastBench number with five draws, as the pipeline runs live | About 12 hours of CPU on 4 cores | `AUGUR_FORECASTERS=5 make backtest FB_LEDGER=data/ledgers/m4-forecastbench-qwen-5.sqlite`, then `make results` after adding the ledger to the report |
+| The ForecastBench number with five draws, as the pipeline runs live | About 15 hours of CPU on 4 cores (five times the measured 3.1 h) | `AUGUR_FORECASTERS=5 make backtest FB_LEDGER=data/ledgers/m4-forecastbench-qwen-5.sqlite`, then `make results` after adding the ledger to the report |
 | The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
 | Groq, Gemini and GitHub Models free tiers | No `GROQ_API_KEY`, `GEMINI_API_KEY` or `GITHUB_TOKEN` here; the presets are configured, not exercised | `AUGUR_FORECAST_MODELS=groq:<model> augur models probe --burst 30` (and `gemini:`, `github:`) |
 | Tokens-per-minute limits | OpenRouter sends no token-limit header and the bursts are tiny | the same burst on Groq, which sends `x-ratelimit-limit-tokens` |

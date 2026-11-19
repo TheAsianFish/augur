@@ -201,7 +201,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
-FB_README_ROW
+| M4, ForecastBench 2026-05-24, 139 resolved market questions, `qwen2.5:7b` with no retrieval, one draw, local CPU ($0) | Brier 0.2395 [0.193, 0.290]: no better than always 50% (0.2500) or the base rate (0.2406); the market price it never saw scores 0.1311, 0.108 better [0.058, 0.161]. Without sources a small model is a constant; not comparable to published ForecastBench systems |
 | M4, scoring against Metaculus's own `score_math.py` (pinned commit) | Spot baseline and spot peer scores match to 1e-9 on 8 cases of every type, open tails included, after fixing one bug the check found (an out-of-range outcome scored 34.7 points too high) |
 | M4, what a bot token sees of resolved questions | 0 of 80 resolved posts (two MiniBench rounds, Fall and Spring 2026) show a resolution, an aggregate or a score |
 | M4, MiniBench 2026-11-02 standings (435 entries, 59 questions) | Rank 1 averaged 22.77 spot peer points a question, the best template bot 3.66, the community aggregates 5.06 to 7.56, the median bot 50.0 summed over 19 questions; Augur has no entry (the floor has kept it out until a frontier model answers) |
