@@ -1,0 +1,157 @@
+# augur standings, rendered offline from the committed snapshots (data/standings/*.json), fetched 2026-11-19
+# Augur's account: Augur-bot-1 (GET /api/users/me/). Ledgers read for missed questions: data/ledgers/m3-dryrun-minibench.sqlite, data/ledgers/m3-dryrun-minibench-2.sqlite
+
+# augur standings --from data/standings/minibench-2026-11-02.json --ledger data/ledgers/m3-dryrun-minibench.sqlite --ledger data/ledgers/m3-dryrun-minibench-2.sqlite
+## MiniBench - 2026-11-02 (`minibench-2026-11-02`)
+
+Finalized: no. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:05.413788Z from https://www.metaculus.com/api/leaderboards/project/33135/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | takeoff.watch | bot | 59 | 22.77 [17.36, 29.05] | 1343.4 |
+| Best template bot | 107 | metac-claude-opus-5-5-high+asknews | Metaculus template bot | 59 | 3.66 [-0.97, 7.94] | 216.0 |
+| Best Metaculus house bot (not the template) | 3 | metac-autocast-experimental | Metaculus house bot (not the template) | 59 | 16.34 [10.92, 21.58] | 964.2 |
+| Community prediction | 80 | community prediction (unweighted) | community prediction | 59 | 5.06 [4.08, 6.12] | 298.6 |
+| Community prediction | 63 | community prediction (recency_weighted) | community prediction | 59 | 6.17 [4.77, 7.69] | 364.2 |
+| Community prediction | 48 | community prediction (reputation_weighted) | community prediction | 59 | 7.56 [6.13, 9.07] | 446.2 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Best listed open-source bot: no listed open-source bot in this round.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+### Questions Augur did not forecast (minibench-2026-11-02)
+
+0 of 60 questions forecast and submitted; 60 not forecast.
+
+- post 46368, question 46601 [resolved] What total revenue will Nebius Group report for Q3 2026?: no run saw it
+- post 46369, question 46602 [resolved] How many people will have applied to Kyrgyzstan's CEC to run in the January 2027 presid...: no run saw it
+- post 46370, question 46603 [resolved] Will Germany beat Serbia in their UEFA Nations League match on 13 November 2026?: no run saw it
+- post 46371, question 46604 [resolved] What will the EU aggregate gas storage filling level be for gas day 12 November 2026?: no run saw it
+- post 46372, question 46605 [resolved] What will Hon Hai (Foxconn) report as net profit attributable to owners of the parent f...: no run saw it
+- post 46373, question 46606 [resolved] How will Dáil Éireann's 12 November 2026 Second Stage proceedings on the Non-Fatal Offe...: no run saw it
+- post 46374, question 46607 [resolved] What will the ONS's first estimate of UK GDP growth be for Q3 2026 (quarter-on-quarter)?: no run saw it
+- post 46375, question 46608 [resolved] What will be the result of the Italy vs France UEFA Nations League match on 12 November...: no run saw it
+- post 46376, question 46609 [resolved] Will Spain's Congress convalidate Real Decreto-ley 29/2026 on the social function of ho...: no run saw it
+- post 46377, question 46610 [resolved] Will Pete Hegseth still be serving as U.S. Secretary of Defense on November 12, 2026?: no run saw it
+- post 46378, question 46611 [resolved] What will the October 2026 US PPI for final demand (seasonally adjusted, month-over-mon...: no run saw it
+- post 46379, question 46612 [resolved] What will Serbia's year-on-year consumer price inflation be in October 2026?: no run saw it
+- post 46380, question 46613 [resolved] What will Rosstat's preliminary estimate of Russia's Q3 2026 GDP growth (year-on-year) be?: no run saw it
+- post 46381, question 46614 [resolved] How many drones will Ukraine's Air Force report Russia launched at Ukraine on the night...: no run saw it
+- post 46382, question 46615 [resolved] How many first-place votes will the winner of the 2026 National League MVP Award receive?: no run saw it
+- post 46383, question 46616 [closed] Which band will Rosstat's October 2026 annual CPI inflation figure fall into?: no run saw it
+- post 46384, question 46617 [resolved] How many total goals will be scored in the Singapore vs Paraguay match on 13 November 2...: no run saw it
+- post 46385, question 46618 [resolved] What will India's All-India CPI inflation rate (year-on-year) for October 2026 be?: no run saw it
+- post 46386, question 46619 [resolved] How many commercial ship crossings of the Strait of Hormuz will be recorded on 12 Novem...: no run saw it
+- post 46387, question 46620 [resolved] What will Japan's October 2026 domestic corporate goods price index (CGPI) year-on-year...: no run saw it
+- post 46388, question 46621 [resolved] Will Czechia reach the semi-finals of the 2026 IIHF Women's World Championship?: no run saw it
+- post 46389, question 46622 [resolved] Will rhinovirus account for more than 53.5% of SRAG cases with positive viral results o...: no run saw it
+- post 46390, question 46623 [resolved] What cumulative measles death toll (confirmed + suspected) will Bangladesh's DGHS repor...: no run saw it
+- post 46391, question 46624 [resolved] What will be the result of the Singapore vs Paraguay match at the Mizuho Blue Challenge...: no run saw it
+- post 46392, question 46625 [resolved] In the InfoGripe bulletin for epidemiological week 44 of 2026 (expected 12 November 202...: no run saw it
+- post 46393, question 46626 [resolved] Will at least 450 MEPs vote in favour of the European Parliament's resolution on furthe...: no run saw it
+- post 46394, question 46627 [resolved] How many patients will Mendoza's Ministry of Health have confirmed as infected with *Se...: no run saw it
+- post 46395, question 46628 [resolved] Will the AAA national average price of regular gasoline be below $4.05 per gallon on No...: no run saw it
+- post 46396, question 46629 [resolved] How many turkey poults will USDA NASS report as net placed in the United States during ...: no run saw it
+- post 46397, question 46630 [resolved] What total revenue will Applied Materials report for Q4 FY2026 (quarter ended October 2...: no run saw it
+- post 46398, question 46631 [resolved] What percentage of respiratory specimens tested for influenza in U.S. clinical laborato...: no run saw it
+- post 46399, question 46632 [resolved] Will Russia's State Duma adopt in first reading, before 13 November 2026, a bill moving...: no run saw it
+- post 46400, question 46633 [resolved] What will the National Bank of Poland's EUR/PLN reference rate be on 13 November 2026?: no run saw it
+- post 46401, question 46634 [resolved] How many Washington dairy herds will WSDA have confirmed H5N1-positive as of November 1...: no run saw it
+- post 46402, question 46635 [resolved] Will Judge McFadden have granted Comey's motion to dismiss the D.C. criminal informatio...: no run saw it
+- post 46403, question 46636 [resolved] Will Applied Materials' Q1 FY2027 revenue guidance midpoint be at or above $11.0 billion?: no run saw it
+- post 46404, question 46637 [resolved] Will the winner of the 2026 American League MVP Award be a unanimous selection?: no run saw it
+- post 46405, question 46638 [resolved] What will be the seasonally adjusted month-on-month percentage change in New Zealand's ...: no run saw it
+- post 46406, question 46639 [resolved] What will the EIA report as the week-over-week change in U.S. commercial crude oil inve...: no run saw it
+- post 46407, question 46640 [resolved] Which candidate will lead Alaska's U.S. Senate race in first-choice votes as of Novembe...: no run saw it
+- post 46408, question 46641 [resolved] What will Argentina's month-on-month inflation (INDEC national CPI) be for October 2026?: no run saw it
+- post 46409, question 46642 [resolved] What will Samolet's BO-P16 bond close at on 13 November 2026, as a percentage of par?: no run saw it
+- post 46410, question 46643 [resolved] How many federal units will Fiocruz's InfoGripe SE 44 bulletin (released 12 November 20...: no run saw it
+- post 46411, question 46644 [resolved] How many new suspected measles cases will Bangladesh's DGHS report for the 24 hours to ...: no run saw it
+- post 46412, question 46645 [resolved] Will the Detroit Red Wings beat the Florida Panthers in their November 12, 2026 game?: no run saw it
+- post 46413, question 46646 [resolved] How many of Brazil's 27 state capitals will the InfoGripe bulletin of 12 November 2026 ...: no run saw it
+- post 46414, question 46647 [resolved] Will AST publish the practical-driving-test calendar or a candidate convocation for its...: no run saw it
+- post 46415, question 46648 [resolved] Will Levent Alpöge and Ethan Sussman publicly post a manuscript proving four-dimensiona...: no run saw it
+- post 46416, question 46649 [resolved] What will Statistics Poland's flash estimate of Poland's Q3 2026 GDP growth be?: no run saw it
+- post 46417, question 46650 [resolved] What will the IEA's November 2026 Oil Market Report say about the change in world oil d...: no run saw it
+- post 46418, question 46651 [resolved] What will the month-over-month change in US producer prices excluding food, energy, and...: no run saw it
+- post 46419, question 46652 [resolved] How many Fifth Circuit news announcements concerning the Judge Ada Brown misconduct pro...: no run saw it
+- post 46420, question 46653 [resolved] Will a federal grand jury in Washington, D.C. have returned and publicly disclosed an i...: no run saw it
+- post 46421, question 46654 [resolved] What will the IEA's November 2026 Oil Market Report give as Venezuela's crude oil suppl...: no run saw it
+- post 46422, question 46655 [resolved] By how many percentage points will Okta (OKTA) outperform or underperform the software ...: no run saw it
+- post 46423, question 46656 [resolved] Will a second televised debate between Taipei mayoral candidates Chiang Wan-an and Puma...: no run saw it
+- post 46424, question 46657 [resolved] What national wholesale price for graded, loose, white Large shell eggs will the USDA A...: no run saw it
+- post 46425, question 46658 [resolved] Will the operating rooms of Hospital Privado de Mendoza be open for new surgeries on No...: no run saw it
+- post 46426, question 46659 [resolved] Will James Comey have at least two federal criminal cases pending against him on Novemb...: no run saw it
+- post 46427, question 46660 [resolved] Will SRS or DOE have publicly stated a cause for the October 28, 2026 Savannah River Na...: no run saw it
+
+# augur standings --from data/standings/minibench.json --ledger data/ledgers/m3-dryrun-minibench.sqlite --ledger data/ledgers/m3-dryrun-minibench-2.sqlite
+## MiniBench (`minibench`)
+
+Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:08.935168Z from https://www.metaculus.com/api/leaderboards/project/33169/.
+
+The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 2026-12-04T00:00:00Z); there is nothing to compare.
+
+### Questions Augur did not forecast (minibench)
+
+0 of 60 questions forecast and submitted; 60 not forecast.
+
+- post 46561, question 46821 [closed] Will Volodymyr Zelenskyy attend the Special European Council in Brussels in person on 2...: no run saw it
+- post 46562, question 46822 [closed] How many posts will Donald Trump publish on Truth Social on November 26, 2026 (ET)?: no run saw it
+- post 46563, question 46823 [closed] What will Magazine Luiza (MGLU3) close at on Friday, November 27, 2026?: no run saw it
+- post 46564, question 46824 [closed] What will be Grupo Casas Bahia's (BHIA3) closing share price on 27 November 2026?: no run saw it
+- post 46565, question 46825 [closed] Will a televised debate featuring at least three of Sánchez, Feijóo, Abascal and Colau ...: no run saw it
+- post 46566, question 46826 [closed] Will Alibaba make a non-preview Qwen4 model available on a pay-as-you-go API basis befo...: no run saw it
+- post 46567, question 46827 [closed] What will the Ibovespa close at on 26 November 2026?: no run saw it
+- post 46568, question 46828 [closed] Will the Detroit Lions beat the Chicago Bears in their Thanksgiving Day game on Novembe...: no run saw it
+- post 46569, question 46829 [closed] Will the InfoGripe bulletin for epidemiological week 46 of 2026 report a national growt...: no run saw it
+- post 46570, question 46830 [closed] Eagles at Cowboys on Thanksgiving 2026: will Dallas win by 7+ points, win by 1-6 points...: no run saw it
+- post 46571, question 46831 [closed] Which of Nvidia, AMD, Broadcom, or Micron will post the highest percentage change in cl...: no run saw it
+- post 46572, question 46832 [closed] What will the Tokyo (Ku-area) core CPI year-on-year inflation rate be for November 2026?: no run saw it
+- post 46573, question 46833 [closed] Will Argentina's Senate give media sanción to a bill suspending or eliminating the PASO...: no run saw it
+- post 46574, question 46834 [closed] Will Lebanon's cabinet refer the Dahr al-Baidar explosives case to the Judicial Council...: no run saw it
+- post 46575, question 46835 [closed] Will Mexican federal authorities have confirmed recovery of all nine radioactive packag...: no run saw it
+- post 46576, question 46836 [closed] What will the Nasdaq Composite (^IXIC) close at on Friday, November 27, 2026?: no run saw it
+- post 46577, question 46837 [closed] How many cumulative confirmed measles cases will Mexico's daily measles bulletin report...: no run saw it
+- post 46578, question 46838 [closed] What stage will the BCP have reached in disposing of Ueno Bank's assets and liabilities...: no run saw it
+- post 46579, question 46839 [closed] How many AIS-visible commercial ship crossings of the Strait of Hormuz will hormuz.now ...: no run saw it
+- post 46580, question 46840 [closed] What will Brazil's IPCA-15 monthly inflation rate be for November 2026?: no run saw it
+- post 46581, question 46841 [closed] As of 26 November 2026, will Russia be listed among the teams in the IIHF's official fi...: no run saw it
+- post 46582, question 46842 [closed] How many total 2026 measles-associated deaths will CDC's measles data page report as of...: no run saw it
+- post 46583, question 46843 [closed] How many viewers (millions, combined average across channels) will Spain's 26 November ...: no run saw it
+- post 46584, question 46844 [closed] Will EU leaders at the 26–27 November 2026 Special European Council agree on additional...: no run saw it
+- post 46585, question 46845 [closed] Will a division (bloc vote) be held on Malaysia's Supply Bill 2027 in the Dewan Rakyat ...: no run saw it
+- post 46586, question 46846 [closed] By 27 November 2026, will Maersk publicly state that personal data was accessed or disc...: no run saw it
+- post 46587, question 46847 [closed] How much precipitation will San Francisco International Airport record on Thanksgiving ...: no run saw it
+- post 46588, question 46848 [closed] By 27 November 2026, how many of the two Bundibugyo-specific vaccine candidates (ChAdOx...: no run saw it
+- post 46589, question 46849 [closed] Will the U.S. Trustee's official committee of unsecured creditors in The Children's Pla...: no run saw it
+- post 46590, question 46850 [closed] What will President Lee Jae-myung's job approval rating be in Gallup Korea's weekly pol...: no run saw it
+- post 46591, question 46851 [closed] How many postal ballots will Correos report as admitted for Spain's 29 November 2026 ge...: no run saw it
+- post 46592, question 46852 [closed] Will Strategy (MSTR) close below $100 on Friday, November 27, 2026?: no run saw it
+- post 46593, question 46853 [closed] What rating will MasterChef Celebrity (Telefe) record for its Thursday, November 26, 20...: no run saw it
+- post 46594, question 46854 [closed] What will the Northern Sierra 8-Station Precipitation Index be for November 26, 2026 (w...: no run saw it
+- post 46595, question 46855 [closed] What will SpaceX's (SPCX) closing share price be on Friday, November 27, 2026?: no run saw it
+- post 46596, question 46856 [closed] Will the FDA approve BridgeBio's BBP-418 (ribitol) for limb-girdle muscular dystrophy t...: no run saw it
+- post 46597, question 46857 [closed] What will be the highest significant wave height at NDBC buoy 46026 (18 NM west of San ...: no run saw it
+- post 46598, question 46858 [closed] What will France's provisional year-on-year CPI inflation be for November 2026?: no run saw it
+- post 46599, question 46859 [closed] Will Plus Ultra operate a scheduled Madrid–Lima passenger flight on 26 November 2026?: no run saw it
+- post 46600, question 46860 [closed] How many subscribers will Russell Brand's YouTube channel show on 27 November 2026?: no run saw it
+- post 46601, question 46861 [closed] Will front-month ICE Brent crude futures (January 2027 contract) settle above $100.00 p...: no run saw it
+- post 46602, question 46862 [closed] What will Nvidia's (NVDA) closing share price be on Friday, November 27, 2026?: no run saw it
+- post 46603, question 46863 [closed] Will the European Council's 26–27 November 2026 conclusions explicitly reference the EU...: no run saw it
+- post 46604, question 46864 [closed] How many drones will Russia launch at Ukraine overnight on 26–27 November 2026?: no run saw it
+- post 46605, question 46865 [closed] What will Dabom's November 27, 2026 consumer price for a 30-egg pack of special-grade (...: no run saw it
+- post 46606, question 46866 [closed] What value will the Crypto Fear & Greed Index record for November 27, 2026?: no run saw it
+- post 46607, question 46867 [closed] What will Anthropic (ANT) close at on Friday, November 27, 2026?: no run saw it
+- post 46608, question 46868 [closed] Will at least one of the two Ir-192 sources stolen from the Rivers State radiography fa...: no run saw it
+- post 46609, question 46869 [closed] How many confirmed U.S. measles cases for 2026 will CDC report in its November 27, 2026...: no run saw it
+- post 46610, question 46870 [closed] Will the CBRT's November 2026 Financial Stability Report devote a dedicated box to the ...: no run saw it
+- post 46611, question 46871 [closed] Will Ituri province report at least 10 more new confirmed Ebola cases than Nord-Kivu pr...: no run saw it
+- post 46612, question 46872 [closed] Will Dan S. Sullivan publicly concede Alaska's 2026 U.S. Senate race by November 27, 2026?: no run saw it
+- post 46613, question 46873 [closed] Which party's member will GPS name as its candidate for Sarawak's Bawang Assan seat bef...: no run saw it
+- post 46614, question 46874 [closed] What will be the last date for filing claims and objections in Delhi's SIR, as of Novem...: no run saw it
+- post 46615, question 46875 [closed] On Black Friday (November 27, 2026), what will be the deepest percentage-off discount a...: no run saw it
+- post 46616, question 46876 [closed] How many confirmed measles cases will Wisconsin DHS report for 2026 as of November 27, ...: no run saw it
+- post 46617, question 46877 [closed] What 2026 cumulative dengue case count will Colombia's INS report in the latest weekly ...: no run saw it
+- post 46618, question 46878 [closed] How many storms will the UK–Ireland–Netherlands storm-naming group have named by the en...: no run saw it
+- post 46619, question 46879 [closed] What will be the highest observed water level (ft above MLLW) at NOAA's La Jolla, CA ti...: no run saw it
+- post 46620, question 46880 [closed] Will the Banco Central del Paraguay announce a payment start date for ueno bank CDA hol...: forecast in a dry run, not submitted
