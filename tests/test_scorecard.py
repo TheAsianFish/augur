@@ -249,7 +249,7 @@ def test_the_same_ledger_twice_counts_each_question_once(world: World) -> None:
     assert len(load([world.path, world.path]).scored) == 5
 
 
-def test_a_ledger_without_a_resolutions_table_is_skipped(tmp_path: Path) -> None:
+def test_an_empty_file_contributes_nothing(tmp_path: Path) -> None:
     import sqlite3
 
     old = tmp_path / "old.sqlite"
@@ -257,6 +257,48 @@ def test_a_ledger_without_a_resolutions_table_is_skipped(tmp_path: Path) -> None
     loaded = load([old])
     assert loaded.scored == []
     assert (loaded.unresolved, loaded.annulled) == (0, 0)
+
+
+def _two_ledgers(tmp_path: Path) -> tuple[Path, Path, int]:
+    """A dry-run 0.9 in one ledger; the posted 0.2 and the resolution (No) in another."""
+    clock = FixedClock(T0)
+    post = binary_post(7001, 8001, opened=OPENED["q1"])
+    dry, live = tmp_path / "a-dry.sqlite", tmp_path / "b-live.sqlite"
+    with Ledger.open(dry, clock) as ledger:
+        run = _run(ledger, RunMode.DRY_RUN, "minibench")
+        qid = _post(ledger, run, post)
+        _aggregate(ledger, run, qid, {"probability": 0.9})
+    with Ledger.open(live, clock) as ledger:
+        run = _run(ledger, RunMode.LIVE, "bot-testing-area")
+        _post(ledger, run, post)
+        _aggregate(ledger, run, qid, {"probability": 0.2})
+        ledger.record_submission(
+            run_id=run,
+            question_id=qid,
+            post_id=7001,
+            kind="forecast",
+            payload=[{}],
+            status="submitted",
+            http_status=201,
+            response_excerpt="",
+        )
+        _resolve(ledger, qid, "binary", "resolved", "no")
+    return dry, live, qid
+
+
+def test_the_posted_forecast_wins_whatever_the_ledger_order(tmp_path: Path) -> None:
+    dry, live, qid = _two_ledgers(tmp_path)
+    for paths in ([dry, live], [live, dry]):
+        [scored] = load(paths).scored
+        assert scored.question_id == qid
+        assert scored.augur == {"probability": 0.2}
+        assert scored.submitted
+
+
+def test_a_question_in_several_ledgers_is_counted_once(tmp_path: Path) -> None:
+    dry, _live, _qid = _two_ledgers(tmp_path)
+    loaded = load([dry, dry])
+    assert (len(loaded.scored), loaded.unresolved) == (0, 1)
 
 
 def test_summarise_binary_numbers_by_hand(world: World) -> None:

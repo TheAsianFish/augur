@@ -50,6 +50,8 @@ from augur.score import (
 )
 
 Cluster = Literal["question", "week", "source"]
+MIN_P = 0.001
+MAX_P = 0.999
 
 
 @dataclass(frozen=True)
@@ -70,13 +72,19 @@ class ScoredQuestion:
     metaculus: dict[str, float] = field(default_factory=dict)
 
     def p(self, values: dict[str, Any]) -> float:
-        return outcome_probability(
+        """The probability on the outcome; binary and option probabilities are held to
+        [0.001, 0.999], the range Metaculus accepts, so a market price of 0 or 1 is
+        scored as the most extreme forecast a bot could post, not as certainty."""
+        p = outcome_probability(
             self.question_type,
             values,
             self.resolution,
             options=self.options or None,
             scaling=self.scaling,
         )
+        if self.question_type in ("binary", "multiple_choice"):
+            return min(MAX_P, max(MIN_P, p))
+        return p
 
     def baseline(self, values: dict[str, Any]) -> float:
         p = self.p(values)
@@ -108,15 +116,6 @@ class Loaded:
     unresolved: int = 0
     annulled: int = 0
     unscorable: list[str] = field(default_factory=list)
-
-
-def _latest_by_question(
-    conn: sqlite3.Connection, sql: str, params: Sequence[Any] = ()
-) -> dict[Any, sqlite3.Row]:
-    out: dict[Any, sqlite3.Row] = {}
-    for row in conn.execute(sql, params):
-        out[row[0]] = row
-    return out
 
 
 @dataclass
@@ -155,21 +154,65 @@ class _Shared:
                 mine_scores[str(name)] = (str(at), float(score))
 
 
+@dataclass(frozen=True)
+class _Candidate:
+    """One aggregate forecast, with everything needed to score it."""
+
+    posted: bool
+    recorded_at: str
+    order: int
+    question_id: int
+    post_id: int
+    question_type: str
+    title: str
+    open_time: str
+    payload: dict[str, Any]
+    values: dict[str, Any]
+    tournament: str
+    model: str
+
+
 def load(paths: Sequence[Path], *, modes: Sequence[str] | None = None) -> Loaded:
-    """Every question with an Augur aggregate in the ledgers at ``paths``."""
+    """Every question with an Augur aggregate in the ledgers at ``paths``.
+
+    Each question is counted once however many ledgers hold it. Its forecast
+    is the posted one if any ledger posted it, otherwise the latest; the
+    order of ``paths`` never decides. Ledgers from before schema 5 (no
+    ``resolutions`` table) still contribute forecasts.
+    """
     result = Loaded(scored=[])
     shared = _Shared()
-    usable: list[Path] = []
+    best: dict[int, _Candidate] = {}
+    order = 0
     for path in paths:
         with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
+            conn.row_factory = sqlite3.Row
             if _has_table(conn, "resolutions"):
                 shared.read(conn)
-                usable.append(path)
-    seen: set[int] = set()
-    for path in usable:
-        with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
-            conn.row_factory = sqlite3.Row
-            _load_one(conn, result, seen, modes, shared)
+            if not _has_table(conn, "forecasts"):
+                continue
+            for c in _candidates(conn, modes):
+                order += 1
+                c = _Candidate(**{**c.__dict__, "order": order})
+                key = (c.posted, c.recorded_at, c.order)
+                held = best.get(c.question_id)
+                if held is None or key > (held.posted, held.recorded_at, held.order):
+                    best[c.question_id] = c
+    for qid, c in best.items():
+        res = shared.resolutions.get(qid)
+        if res is None:
+            result.unresolved += 1
+            continue
+        if res[1] != "resolved":
+            result.annulled += 1
+            continue
+        try:
+            scored = _scored(c, str(res[2]), shared)
+            scored.p(scored.augur)
+        except (ScoringError, ValueError, KeyError) as exc:
+            result.unscorable.append(f"{qid}: {exc}")
+            continue
+        result.scored.append(scored)
     result.scored.sort(key=lambda s: (s.opened, s.question_id))
     return result
 
@@ -181,79 +224,73 @@ def _has_table(conn: sqlite3.Connection, name: str) -> bool:
     return row is not None
 
 
-def _load_one(
-    conn: sqlite3.Connection,
-    result: Loaded,
-    seen: set[int],
-    modes: Sequence[str] | None,
-    shared: _Shared,
-) -> None:
+def _candidates(conn: sqlite3.Connection, modes: Sequence[str] | None) -> list[_Candidate]:
     mode_sql = ""
     params: list[Any] = []
     if modes:
         mode_sql = f" AND r.mode IN ({', '.join('?' for _ in modes)})"
         params = list(modes)
-    # Posted forecasts sort after unposted ones, then by time: the last row wins.
     # Only "?" placeholders are formatted into the text; no input reaches it.
     sql = (
-        "SELECT f.question_id, f.values_json, f.run_id, r.mode, r.tournament, r.model, "  # noqa: S608
+        "SELECT f.question_id, f.values_json, f.recorded_at, r.tournament, r.model, "  # noqa: S608
+        "q.post_id, q.type, q.title, q.open_time, q.payload_json, "
         "EXISTS (SELECT 1 FROM submissions s WHERE s.run_id = f.run_id "
         "  AND s.question_id = f.question_id AND s.kind = 'forecast' "
         "  AND s.status = 'submitted') AS posted "
         "FROM forecasts f JOIN runs r ON r.run_id = f.run_id "
-        f"WHERE f.kind = 'aggregate'{mode_sql} "
-        "ORDER BY posted, f.recorded_at, f.rowid"
+        "JOIN questions q ON q.run_id = f.run_id AND q.question_id = f.question_id "
+        f"WHERE f.kind = 'aggregate'{mode_sql} ORDER BY f.rowid"
     )
-    forecasts = _latest_by_question(conn, sql, params)
-    for qid, f in forecasts.items():
-        qid = int(qid)
-        if qid in seen:
+    out: list[_Candidate] = []
+    for row in conn.execute(sql, params):
+        values = row["values_json"]
+        if values is None:
             continue
-        res = shared.resolutions.get(qid)
-        if res is None:
-            result.unresolved += 1
-            continue
-        if res[1] != "resolved":
-            result.annulled += 1
-            continue
-        q = conn.execute(
-            "SELECT post_id, type, title, open_time, payload_json FROM questions "
-            "WHERE run_id = ? AND question_id = ?",
-            (f["run_id"], qid),
-        ).fetchone()
-        payload = json.loads(q["payload_json"])
-        options: tuple[str, ...] = ()
-        scaling = None
-        source = str(f["tournament"])
-        if isinstance(payload.get("question"), dict):
-            question = question_from_post(payload)
-            options = tuple(question.options or ())
-            scaling = question.scaling
-        elif "fb_id" in payload:
-            source = str(payload.get("source"))
-        try:
-            scored = ScoredQuestion(
-                question_id=qid,
-                post_id=int(q["post_id"]),
-                question_type=str(q["type"]),
-                title=str(q["title"]),
-                opened=parse_iso(str(q["open_time"])),
-                resolution=str(res[2]),
-                source=source,
-                submitted=bool(f["posted"]),
-                model=str(f["model"]),
-                augur=json.loads(f["values_json"]),
-                references={k: v for k, (_, v) in shared.references.get(qid, {}).items()},
-                options=options,
-                scaling=scaling,
-                metaculus={k: v for k, (_, v) in shared.metaculus.get(qid, {}).items()},
+        out.append(
+            _Candidate(
+                posted=bool(row["posted"]),
+                recorded_at=str(row["recorded_at"]),
+                order=0,
+                question_id=int(row["question_id"]),
+                post_id=int(row["post_id"]),
+                question_type=str(row["type"]),
+                title=str(row["title"]),
+                open_time=str(row["open_time"]),
+                payload=json.loads(row["payload_json"]),
+                values=json.loads(values),
+                tournament=str(row["tournament"]),
+                model=str(row["model"]),
             )
-            scored.p(scored.augur)
-        except (ScoringError, ValueError, KeyError) as exc:
-            result.unscorable.append(f"{qid}: {exc}")
-            continue
-        seen.add(qid)
-        result.scored.append(scored)
+        )
+    return out
+
+
+def _scored(c: _Candidate, resolution: str, shared: _Shared) -> ScoredQuestion:
+    options: tuple[str, ...] = ()
+    scaling = None
+    source = c.tournament
+    if isinstance(c.payload.get("question"), dict):
+        question = question_from_post(c.payload)
+        options = tuple(question.options or ())
+        scaling = question.scaling
+    elif "fb_id" in c.payload:
+        source = str(c.payload.get("source"))
+    return ScoredQuestion(
+        question_id=c.question_id,
+        post_id=c.post_id,
+        question_type=c.question_type,
+        title=c.title,
+        opened=parse_iso(c.open_time),
+        resolution=resolution,
+        source=source,
+        submitted=c.posted,
+        model=c.model,
+        augur=c.values,
+        references={k: v for k, (_, v) in shared.references.get(c.question_id, {}).items()},
+        options=options,
+        scaling=scaling,
+        metaculus={k: v for k, (_, v) in shared.metaculus.get(c.question_id, {}).items()},
+    )
 
 
 # -- the numbers -------------------------------------------------------------
