@@ -1,8 +1,7 @@
 # Augur
 
-**Status: in progress.** M4 of 10 (scoring checked against Metaculus's own
-code, the shadow template bot, standings, and the first scored number); see
-[PLAN.md](PLAN.md).
+**Status: in progress.** M5 of 10 (market prices as of the cutoff, and the
+bot measured against simply reading the market); see [PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -187,6 +186,8 @@ and what finished is posted.
 | Percentiles to a CDF | Linear between six stated percentiles in Metaculus's unscaled space, exponential tails, isotonic repair of a non-monotone answer, then the least uniform mixing that clears the server's minimum step | Asking the model for 201 numbers; a parametric fit | The server's rules are hard constraints (minimum and maximum step, exact or open ends); building to them, and checking against an independent transliteration in the fake server, means no live forecast is rejected. |
 | Deadlines | Each question stops at its close less 5 minutes (never past the run's own deadline); draws still running are cancelled and charged the worst case; the finished ones are posted | One timeout for the whole run | A MiniBench question is open for 3 hours; a forecast posted after close scores nothing, and a cancelled request may still be billed. |
 | Schedule | Cron every 90 min on two offset lines, plus a self-dispatch chain (`AUGUR_CHAIN_MINUTES`) once public | Cron every 20 to 30 min, as many bots use | Measured: GitHub dropped about 95% of short-interval ticks on public bot repositories, and every 30 min would bill more than the shared allowance while private. A `workflow_dispatch` from the job's own token is not subject to the scheduler. |
+| Market prices | The market's own API as of the cutoff (Manifold's last bet, Polymarket's last history point, Kalshi's last candle), filtered client-side too; dated by that trade or point | ForecastBench's published freeze value; today's price | A price is a source like any other and must pass the leakage gate. ForecastBench's own value sometimes matches a price from hours after the freeze (M5). |
+| Using a price | Shown to the model as a source; blended (⅓ Augur, ⅔ price in log-odds, a weight fixed in advance) only with the question's own community prediction | Blending any similar market; fitting the weight | A searched market may ask something different. A fitted weight on 101 questions would be tuned to them. Both turned on only because rules stated before the run held. |
 | Live record | Each scheduled run pushes its ledger as JSONL to a `ledger` branch, one new file per run | Actions artifacts | Artifacts expire; M5's replay evaluation needs every live source forever. |
 | Submit floor | Live tournaments need a frontier-tier hosted model | Submit whatever model answers | An expired key must never post small-model forecasts. |
 | Comments | Private, rendered from the members' own reasoning | Boilerplate | Prize rules require the reasoning that produced the forecast. |
@@ -201,6 +202,8 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M5, the price alone against the bot: ForecastBench 2026-06-21, 101 resolved Polymarket and Manifold questions, the free model that answers live (`nemotron-3-ultra:free`), three draws, each price read as of the freeze ($0) | Brier: the market price alone 0.106; Augur without it 0.240; Augur shown the price 0.143, better than without by 0.097 [0.054, 0.144] but still 0.037 [0.003, 0.073] worse than the price it was shown; a fixed blend (⅓ Augur in log-odds) 0.129. On these questions the price alone beats every version of the bot, so its score is what the price gives it |
+| M5, how often a live question has a market: 59 questions of the 2026-11-16 MiniBench round, judged by hand | 2 of 59 had a market about the same event; 0 showed the community prediction to the bot's token |
 | M4, ForecastBench 2026-05-24, 139 resolved market questions, `qwen2.5:7b` with no retrieval, one draw, local CPU ($0) | Brier 0.2395 [0.193, 0.290]: no better than always 50% (0.2500) or the base rate (0.2406); the market price it never saw scores 0.1311, 0.108 better [0.058, 0.161]. Without sources a small model is a constant; not comparable to published ForecastBench systems |
 | M4, scoring against Metaculus's own `score_math.py` (pinned commit) | Spot baseline and spot peer scores match to 1e-9 on 8 cases of every type, open tails included, after fixing one bug the check found (an out-of-range outcome scored 34.7 points too high) |
 | M4, what a bot token sees of resolved questions | 0 of 80 resolved posts (two MiniBench rounds, Fall and Spring 2026) show a resolution, an aggregate or a score |
@@ -243,15 +246,19 @@ difference needs about 300 resolved questions.
 - The ForecastBench number uses one forecaster draw (CPU time), market
   questions only, and no retrieval; it is not comparable to published
   ForecastBench results with search and frontier models.
+- The M5 replay is one free model on ForecastBench market questions, where
+  every question is itself a market: the best case for prices. Live, most
+  MiniBench questions have no market (2 of 59), and a bot token sees no
+  community prediction, so the blend will rarely fire. Research depth waits
+  on resolved live questions (none yet).
 
 ## Roadmap
 
 M2 (done) one OpenAI-compatible provider with probed model chains, and the
 repository public at its merge; M3 (done) every question type, a deadline
 per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
-first scored number; M5 market
-prices and the community prior, and a replay evaluation on the hosted
-models; M6 the leakage-proof backtest; M7 ablations; M8 calibration; M9
+first scored number; M5 (done) market
+prices as of the cutoff and the replay evaluation against the price; M6 the leakage-proof backtest; M7 ablations; M8 calibration; M9
 "does it know when it does not know"; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 
