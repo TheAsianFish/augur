@@ -10,7 +10,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from augur import report, scorecard, standings
+from augur import baseline, report, scorecard, standings
 from augur.backtest import PinnedClock, run_forecastbench
 from augur.clock import SystemClock
 from augur.config import Settings
@@ -177,6 +177,7 @@ def _parser() -> argparse.ArgumentParser:
     )
 
     standings.add_parser(sub)
+    baseline.add_parser(sub)
 
     led = sub.add_parser("ledger", help="inspect a ledger")
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
@@ -505,6 +506,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_models(args, settings))
         if args.command == "backtest":
             return asyncio.run(_backtest(args, settings))
+        if args.command == "baseline":
+            return asyncio.run(baseline.main(args, settings))
         if args.command == "resolve":
             return asyncio.run(_resolve(args, settings))
         if args.command == "score":
