@@ -268,15 +268,15 @@ def test_summarise_binary_numbers_by_hand(world: World) -> None:
     # MC 0.5 (of 3 options), numeric 0.05 (the mass below the range).
     # Baseline: 100 * (ln p + ln N) / ln N with N = 2 for binary:
     #   q1 67.807, q2 48.543, q3 -32.193; MC N = 3: 36.907;
-    #   numeric: 100 * (ln 0.05 - ln 0.025) / 2 = 34.657 (a uniform forecast puts 0.025 below).
+    #   numeric: 100 * (ln 0.05 - ln 0.05) / 2 = 0 (the baseline puts 0.05 beyond an open bound).
     assert b(0.8) == pytest.approx(67.807, abs=1e-3)
     assert b(0.7) == pytest.approx(48.543, abs=1e-3)
     assert b(0.4) == pytest.approx(-32.193, abs=1e-3)
     mc = 100 * (math.log(0.5) + math.log(3)) / math.log(3)
     assert mc == pytest.approx(36.907, abs=1e-3)
-    numeric = 50 * math.log(2)
+    numeric = 0.0
     expected = (b(0.8) + b(0.7) + b(0.4) + mc + numeric) / 5
-    assert expected == pytest.approx(31.144, abs=1e-3)
+    assert expected == pytest.approx(24.213, abs=1e-3)
     assert summary.baseline.mean == pytest.approx(expected)
     assert summary.baseline.n == 5
     assert summary.baseline.clusters == 5

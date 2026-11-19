@@ -9,8 +9,8 @@ units:
   the outcome fell in (:func:`outcome_probability`);
 - **baseline score**: ``100 * ln(p * N) / ln(N)`` for binary (N = 2) and
   multiple choice (N options), so a uniform forecast scores 0; for numeric
-  and discrete, ``100 * ln(p / b) / 2`` where ``b`` is the mass a uniform
-  forecast puts in that bucket (5% spread over the open tails);
+  and discrete, ``100 * ln(p / b) / 2`` where ``b`` is the baseline's mass
+  in that bucket (0.05 beyond an open bound, the rest spread evenly);
 - **head-to-head**: ``100 * ln(p_a / p_b)``, halved for numeric and
   discrete; a **peer score** is the mean head-to-head against every other
   forecaster;
@@ -175,13 +175,20 @@ def baseline_score(
 
 
 def uniform_mass(bucket: int, scaling: Scaling) -> float:
-    """The mass Metaculus's uniform baseline puts in ``bucket``."""
+    """The mass Metaculus's baseline puts in ``bucket``.
+
+    0.05 in an out-of-range bucket, and the rest spread evenly over the
+    inner buckets: ``(1 - 0.05 * open_bounds) / n``. This is Metaculus's
+    ``score_math.py`` as of commit 8d7ac79 (the tail is 0.05 for each open
+    bound, not 0.05 shared between them).
+    """
     n = scaling.inbound_outcome_count
     open_bounds = int(scaling.open_lower_bound) + int(scaling.open_upper_bound)
     if bucket in (0, n + 1):
-        if not open_bounds:
-            raise ScoringError("an out-of-range outcome on a question with closed bounds")
-        return TAIL_MASS / open_bounds
+        side_open = scaling.open_lower_bound if bucket == 0 else scaling.open_upper_bound
+        if not side_open:
+            raise ScoringError("an out-of-range outcome on a closed bound")
+        return TAIL_MASS
     return (1.0 - TAIL_MASS * open_bounds) / n
 
 

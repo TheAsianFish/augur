@@ -119,7 +119,7 @@ def test_bucket_index_matches_metaculus_rule() -> None:
     assert bucket_index(ABOVE, OPEN) == 201
 
 
-def test_uniform_forecast_scores_zero_on_numeric_questions() -> None:
+def test_uniform_forecast_scores_zero_inside_the_range() -> None:
     for scaling in (CLOSED, OPEN):
         cdf = uniform_cdf(scaling)
         p = outcome_probability("numeric", {"cdf": cdf}, "37.3", scaling=scaling)
@@ -138,10 +138,11 @@ def test_numeric_baseline_by_hand() -> None:
         69.3147, abs=1e-4
     )
     # Open on both sides: 0.9 spread over 200 inner buckets = 0.0045 each, and
-    # 0.025 in each tail. Mass 0.05 below the range: 50 * ln(0.05 / 0.025) = 34.6574
-    assert uniform_mass(0, OPEN) == pytest.approx(0.025)
+    # 0.05 for each tail. Mass 0.1 below the range: 50 * ln(0.1 / 0.05) = 34.6574
+    assert uniform_mass(0, OPEN) == pytest.approx(0.05)
+    assert uniform_mass(201, OPEN) == pytest.approx(0.05)
     assert uniform_mass(5, OPEN) == pytest.approx(0.0045)
-    assert baseline_score("numeric", 0.05, bucket=0, scaling=OPEN) == pytest.approx(
+    assert baseline_score("numeric", 0.1, bucket=0, scaling=OPEN) == pytest.approx(
         34.6574, abs=1e-4
     )
 
@@ -165,9 +166,13 @@ def test_discrete_bucket_and_score_by_hand() -> None:
     )
 
 
-def test_out_of_range_on_closed_bounds_is_an_error() -> None:
-    with pytest.raises(ScoringError, match="closed bounds"):
+def test_out_of_range_on_a_closed_bound_is_an_error() -> None:
+    with pytest.raises(ScoringError, match="closed bound"):
         uniform_mass(0, CLOSED)
+    half = Scaling(range_min=0, range_max=1, open_lower_bound=False, open_upper_bound=True)
+    with pytest.raises(ScoringError, match="closed bound"):
+        uniform_mass(0, half)
+    assert uniform_mass(201, half) == pytest.approx(0.05)
 
 
 def test_wrong_cdf_length_is_refused() -> None:
