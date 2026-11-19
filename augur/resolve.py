@@ -68,7 +68,7 @@ def _ledger_questions(conn: sqlite3.Connection, live: bool) -> list[tuple[int, i
     rows = conn.execute(
         f"SELECT q.question_id, q.post_id, q.type, q.payload_json FROM questions q "  # noqa: S608
         f"JOIN runs r ON r.run_id = q.run_id WHERE r.mode IN ({marks}) "
-        f"ORDER BY q.recorded_at",
+        f"ORDER BY q.recorded_at, q.rowid",
         modes,
     ).fetchall()
     latest: dict[int, tuple[int, int, str, str]] = {}
@@ -193,7 +193,11 @@ def _references(ledger: Ledger, q: Question, raw_q: dict[str, Any], report: Reso
                 continue
             latest = agg.get("latest")
             values = community_values(q, latest)
-            if values is not None and isinstance(latest, dict):
+            if (
+                values is not None
+                and isinstance(latest, dict)
+                and not _seen_reference(ledger, q.question_id, "community", values)
+            ):
                 start = latest.get("start_time")
                 as_of = (
                     datetime.fromtimestamp(float(start), tz=UTC)
@@ -214,6 +218,8 @@ def _references(ledger: Ledger, q: Question, raw_q: dict[str, Any], report: Reso
                 )
                 report.references += 1
             for name, score in _scores(agg.get("score_data")):
+                if _seen_score(ledger, q.question_id, "community", f"{method}:{name}", score):
+                    continue
                 ledger.record_metaculus_score(
                     question_id=q.question_id,
                     post_id=q.post_id,
@@ -226,6 +232,8 @@ def _references(ledger: Ledger, q: Question, raw_q: dict[str, Any], report: Reso
     mine = raw_q.get("my_forecasts")
     if isinstance(mine, dict):
         for name, score in _scores(mine.get("score_data")):
+            if _seen_score(ledger, q.question_id, "augur", name, score):
+                continue
             ledger.record_metaculus_score(
                 question_id=q.question_id,
                 post_id=q.post_id,
@@ -234,6 +242,27 @@ def _references(ledger: Ledger, q: Question, raw_q: dict[str, Any], report: Reso
                 score=score,
             )
             report.scores += 1
+
+
+def _seen_reference(
+    ledger: Ledger, question_id: int, forecaster: str, values: dict[str, Any]
+) -> bool:
+    """True when the latest such reference already holds exactly these values."""
+    row = ledger.connection.execute(
+        "SELECT values_json FROM reference_forecasts WHERE question_id = ? AND forecaster = ? "
+        "ORDER BY recorded_at DESC, rowid DESC LIMIT 1",
+        (question_id, forecaster),
+    ).fetchone()
+    return row is not None and json.loads(row[0]) == values
+
+
+def _seen_score(ledger: Ledger, question_id: int, forecaster: str, name: str, score: float) -> bool:
+    row = ledger.connection.execute(
+        "SELECT score FROM metaculus_scores WHERE question_id = ? AND forecaster = ? "
+        "AND score_type = ? ORDER BY recorded_at DESC, rowid DESC LIMIT 1",
+        (question_id, forecaster, name),
+    ).fetchone()
+    return row is not None and float(row[0]) == score
 
 
 def _scores(data: object) -> list[tuple[str, float]]:
@@ -312,7 +341,13 @@ def resolve_manual(
         raise AugurError(f"post {post_id} is not in this ledger; resolve only questions it holds")
     if not evidence.strip():
         raise AugurError("a manual resolution needs --evidence (the page or source it came from)")
-    q = question_from_post(json.loads(row[2]))
+    try:
+        q = question_from_post(json.loads(row[2]))
+    except ValueError:
+        raise AugurError(
+            f"post {post_id} is not a Metaculus question (a backtest question?); resolve a "
+            "ForecastBench ledger with --forecastbench"
+        ) from None
     found = resolution_value(q, value)
     if found is None:
         raise AugurError("give the value the question resolved to, or 'annulled'")
