@@ -10,6 +10,7 @@ misbehaves exactly the way a leak would need.
 from __future__ import annotations
 
 import json
+import math
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -30,15 +31,27 @@ def _ms(t: datetime) -> int:
     return int(t.timestamp() * 1000)
 
 
+def _json(body: Any) -> httpx.Response:
+    """A JSON reply that may carry NaN, as a non-compliant server's can (httpx refuses it)."""
+    return httpx.Response(
+        200, content=json.dumps(body), headers={"content-type": "application/json"}
+    )
+
+
 class FakeMarkets:
-    def __init__(self, *, ignore_bounds: bool = True, only_late: bool = False) -> None:
+    def __init__(
+        self, *, ignore_bounds: bool = True, only_late: bool = False, nan_point: bool = False
+    ) -> None:
         self.ignore_bounds = ignore_bounds
         self.only_late = only_late
+        self.nan_point = nan_point
         self.requests: list[httpx.Request] = []
 
     # Each platform's history: (time, price). The later point is the answer.
     def _points(self) -> list[tuple[datetime, float]]:
         early = [(BEFORE - timedelta(days=1), 0.30), (BEFORE, 0.40)]
+        if self.nan_point:  # the latest point before the cutoff has no number
+            early.append((BEFORE + timedelta(hours=1), math.nan))
         late = [(AFTER, 0.97)]
         return late if self.only_late else early + late
 
@@ -64,7 +77,7 @@ class FakeMarkets:
                 for t, p in self._points()
                 if self.ignore_bounds or _ms(t) < cutoff
             ]
-            return httpx.Response(200, json=sorted(bets, key=lambda b: -b["createdTime"]))
+            return _json(sorted(bets, key=lambda b: -b["createdTime"]))
         if path.endswith("/search-markets"):
             return httpx.Response(
                 200,
@@ -118,7 +131,7 @@ class FakeMarkets:
             for t, p in self._points()
             if self.ignore_bounds or t.timestamp() <= end
         ]
-        return httpx.Response(200, json={"history": history})
+        return _json({"history": history})
 
     def _kalshi(self, path: str, params: httpx.QueryParams) -> httpx.Response:
         market = {

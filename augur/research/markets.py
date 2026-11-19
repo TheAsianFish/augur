@@ -35,6 +35,7 @@ history with no point in the :data:`STALE_AFTER` before ``as_of`` is no price.
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -403,6 +404,8 @@ class MarketsSearcher:
             created, after = bet.get("createdTime"), bet.get("probAfter")
             if not isinstance(created, int | float) or not isinstance(after, int | float):
                 continue
+            if not (math.isfinite(created) and math.isfinite(after)):
+                continue  # a NaN would pass the clamp below and fail MarketQuote mid-run
             if created > _ms(as_of):
                 continue  # a server that ignored beforeTime: never read past as_of
             if last is None or created > last[0]:
@@ -500,6 +503,8 @@ class MarketsSearcher:
                 continue
             t, p = point.get("t"), point.get("p")
             if not isinstance(t, int | float) or not isinstance(p, int | float):
+                continue
+            if not (math.isfinite(t) and math.isfinite(p)):
                 continue
             if t > end:
                 continue  # never read past as_of, whatever the server sent
@@ -603,6 +608,8 @@ class MarketsSearcher:
             try:
                 p = float(raw)
             except (TypeError, ValueError):
+                continue
+            if not math.isfinite(p):
                 continue
             if last is None or t > last[0]:
                 last = (t, p)

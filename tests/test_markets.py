@@ -79,6 +79,19 @@ async def test_only_late_prices_means_no_price(platform: str, market_id: str) ->
         assert await s.exact_quote(platform, market_id, AS_OF) is None
 
 
+@pytest.mark.parametrize(
+    ("platform", "market_id"),
+    [("manifold", MANIFOLD_ID), ("polymarket", POLY_CONDITION), ("kalshi", KALSHI_TICKER)],
+)
+async def test_a_nan_price_is_skipped_not_raised(platform: str, market_id: str) -> None:
+    # A NaN passes min/max clamping; unskipped it would fail MarketQuote and abort the run.
+    s, http = searcher(FakeMarkets(nan_point=True))
+    async with http:
+        quote = await s.exact_quote(platform, market_id, AS_OF)
+    assert quote is not None
+    assert quote.probability == pytest.approx(0.40)
+
+
 async def test_the_request_bounds_are_the_cutoff() -> None:
     fake = FakeMarkets(ignore_bounds=False)
     s, http = searcher(fake)
