@@ -10,10 +10,12 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from augur.backtest import PinnedClock, run_forecastbench
 from augur.clock import SystemClock
 from augur.config import Settings
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
 from augur.export import export_jsonl
+from augur.forecastbench import load_set
 from augur.leakage import scan_ledger
 from augur.ledger import Ledger
 from augur.llm.catalog import (
@@ -43,7 +45,7 @@ from augur.ratelimit import RateLimiter
 from augur.research.asknews import AskNewsSearcher
 from augur.research.source import Searcher
 from augur.research.wikipedia import WikipediaSearcher
-from augur.runner import TOURNAMENTS, ForecastRun, format_probe
+from augur.runner import TOURNAMENTS, ForecastRun, code_version, format_probe
 
 log = get_logger("augur.cli")
 
@@ -115,6 +117,22 @@ def _parser() -> argparse.ArgumentParser:
         "snapshot", help="refresh the committed copy of OpenRouter's model list"
     )
     snap.add_argument("--out", type=Path, default=SNAPSHOT_PATH)
+
+    bt = sub.add_parser("backtest", help="forecast resolved questions with the clock pinned")
+    bt_sub = bt.add_subparsers(dest="backtest_command", required=True)
+    fb = bt_sub.add_parser(
+        "forecastbench",
+        help="ForecastBench market questions, no retrieval, as of each freeze date",
+        description=(
+            "Forecast the eligible questions of one ForecastBench question set with the "
+            "configured forecast model and no retrieval. Resumable: questions that already "
+            "have an aggregate in the ledger are not forecast again."
+        ),
+    )
+    fb.add_argument("--questions", type=Path, required=True, help="question set JSON")
+    fb.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
+    fb.add_argument("--limit", type=int, help="forecast only the first N eligible questions")
+    fb.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
 
     led = sub.add_parser("ledger", help="inspect a ledger")
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
@@ -311,6 +329,42 @@ async def _models(args: argparse.Namespace, settings: Settings) -> int:
         return 0 if answering or args.route else 1
 
 
+async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
+    if settings.is_replay:
+        raise ConfigError("a backtest needs a live model; set AUGUR_PROVIDER or the chains")
+    answering = settings.chains()["forecast"][0]
+    released, _ = release_bound(answering, load_snapshot())
+    if released is None:
+        raise ConfigError(
+            f"{answering.key} has no known release date, so a backtest cannot rule out that "
+            "it remembers the outcomes; use a model with one (augur models list)"
+        )
+    report = load_set(args.questions, args.resolutions, released=released, limit=args.limit)
+    print("\n".join(report.lines()))
+    clock = PinnedClock(SystemClock().now())
+    ledger_path: Path = args.ledger or settings.ledger_path
+    async with default_http_client() as http:
+        router = build_router(settings, http, load_snapshot(), clock)
+        with Ledger.open(ledger_path, clock) as ledger:
+            try:
+                result = await run_forecastbench(
+                    questions=report.kept,
+                    tournament=f"forecastbench:{report.question_set}",
+                    settings=settings,
+                    router=router,
+                    ledger=ledger,
+                    clock=clock,
+                    code_version=code_version(),
+                )
+            finally:
+                await router.aclose()
+    print(
+        f"ledger: {ledger_path} (run {result.run_id}): {result.forecast} forecast, "
+        f"{result.resumed} done earlier, {result.skipped} skipped, {result.failed} failed"
+    )
+    return 1 if result.failed else 0
+
+
 def _ledger_check(paths: Sequence[Path]) -> int:
     bad = 0
     for path in paths:
@@ -333,6 +387,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_forecast(args, settings))
         if args.command == "models":
             return asyncio.run(_models(args, settings))
+        if args.command == "backtest":
+            return asyncio.run(_backtest(args, settings))
         if args.ledger_command == "export":
             if not args.db.exists():
                 raise AugurError(f"no ledger at {args.db}")
