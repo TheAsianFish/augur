@@ -274,6 +274,13 @@ def clustered_bootstrap(
     return Estimate(mean, low, high, len(values), k, se, (Z_95 + Z_POWER_80) * se, resamples, seed)
 
 
+def detectable_effect(sd: float, n: int) -> float:
+    """The MDE for ``n`` independent questions whose per-question values have spread ``sd``."""
+    if n < 1:
+        raise ScoringError("n must be at least 1")
+    return (Z_95 + Z_POWER_80) * sd / math.sqrt(n)
+
+
 def paired(
     a: Sequence[float],
     b: Sequence[float],

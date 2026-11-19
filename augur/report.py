@@ -24,8 +24,12 @@ from contextlib import closing
 from dataclasses import dataclass
 from pathlib import Path
 
-from augur import scorecard
-from augur.score import Estimate
+from augur import scorecard, standings
+from augur.score import Estimate, detectable_effect
+
+# The spread of one bot's per-question spot peer score, derived in PLAN.md from
+# the Spring 2026 winner's interval: 3.71 / 1.96 * sqrt(288) = 32 points.
+PEER_SD = 32.0
 
 REPO = Path(__file__).resolve().parent.parent
 LEDGERS = Path("data/ledgers")
@@ -172,11 +176,20 @@ def render_live(root: Path) -> str:
         "",
     ]
     if not loaded.scored:
-        lines.append(
+        lines += [
             "Nothing is scored yet, so no interval and no detectable effect can be computed "
-            "from data; the detectable effect at the sizes this season can reach is in the "
-            "table below."
-        )
+            "from data. Until there is a measured spread, the detectable effect at the sizes "
+            f"this season can reach, for a per-question spread of {PEER_SD:.0f} points "
+            "(PLAN.md, from the Spring 2026 winner's interval; a paired difference against "
+            "the same-model template is likely tighter, and M4's first resolved round "
+            "replaces this with the measured one):",
+            "",
+            "| Resolved questions | Detectable mean difference (points per question, "
+            "80% power, 5% two-sided) |",
+            "|---|---|",
+        ]
+        for n in (30, 60, 120, 300):
+            lines.append(f"| {n} | {detectable_effect(PEER_SD, n):.1f} |")
         return "\n".join(lines) + "\n"
     summary = scorecard.summarise(loaded.scored, cluster="week")
     lines += [
@@ -226,6 +239,43 @@ def render_ledgers(root: Path) -> str:
     return "\n".join(rows) + "\n"
 
 
+STANDINGS = Path("data/standings")
+
+
+def render_standings(root: Path) -> str:
+    """Each committed round snapshot: the table, and why Augur has no row in it."""
+    ledgers = _ledgers(root)
+    outcomes = standings.read_outcomes(ledgers)
+    parts: list[str] = []
+    for path in sorted((root / STANDINGS).glob("*.json")):
+        round_ = standings.load_snapshot(path)
+        text = standings.render(round_, None)
+        kept: list[str] = []
+        for line in text.splitlines():
+            if line.startswith("### Questions Augur did not forecast"):
+                break
+            kept.append("#### " + line[3:] if line.startswith("## ") else line)
+        while kept and not kept[-1].strip():
+            kept.pop()
+        reasons: dict[str, int] = {}
+        forecast = 0
+        for q in round_.questions:
+            done, why = standings.explain(q, outcomes)
+            if done:
+                forecast += 1
+            else:
+                reasons[why] = reasons.get(why, 0) + 1
+        why = "; ".join(f"{n} {r}" for r, n in sorted(reasons.items(), key=lambda x: -x[1]))
+        kept += [
+            "",
+            f"Questions in the round: {len(round_.questions)}; forecast and submitted by Augur: "
+            f"{forecast}; not forecast: {why or 'none'} (from the committed ledgers; "
+            f"`augur standings --from {path.relative_to(root)} --ledger ...` lists each one).",
+        ]
+        parts.append("\n".join(kept))
+    return "\n\n".join(parts) + "\n" if parts else "No standings snapshot committed.\n"
+
+
 def _has(conn: sqlite3.Connection, table: str) -> bool:
     return (
         conn.execute(
@@ -246,6 +296,7 @@ BLOCKS: dict[str, Block] = {
         Block("forecastbench", render_forecastbench),
         Block("live-scores", render_live),
         Block("ledgers", render_ledgers),
+        Block("standings", render_standings),
     )
 }
 
