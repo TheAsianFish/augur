@@ -258,15 +258,13 @@ def clustered_bootstrap(
     if k < 2:
         return Estimate(mean, mean, mean, len(values), k, math.nan, math.nan, 0, seed)
     rng = random.Random(seed)
+    totals = [s for s, _ in sums]
+    counts = [c for _, c in sums]
+    index = range(k)
     means: list[float] = []
     for _ in range(resamples):
-        total = 0.0
-        count = 0
-        for _ in range(k):
-            s, c = sums[rng.randrange(k)]
-            total += s
-            count += c
-        means.append(total / count)
+        picks = rng.choices(index, k=k)
+        means.append(sum(totals[i] for i in picks) / sum(counts[i] for i in picks))
     means.sort()
     alpha = (1.0 - level) / 2.0
     low = means[min(resamples - 1, max(0, math.floor(alpha * resamples)))]
