@@ -1,0 +1,48 @@
+Cadence simulation against measured MiniBench windows and GitHub cron behaviour
+command: python3 scripts/cadence.py
+inputs: data/runs/m3-question-windows.json (fetched 2026-11-18T18:23:32Z, 954 questions over 219.4 days), data/runs/m3-cron-delay.json (fetched 2026-11-18T19:38:16Z)
+parameters: job 8 min (billed 8), margin 15 min, target 99%, 200 reps, seed 20261118
+on-time model: delays from 174 runs of 2 complete-coverage repo(s) (p50 9.1, p99 107.8, max 175.7 min), dropped-tick probability 0.57%
+
+on-time model (caught = share of question-replications with >= margin left; '2 ticks' = share of questions with two ticks that would each catch them at the p99 delay, i.e. surviving one dropped tick; left in minutes; billed minutes per 30 days on a private repo):
+cadence                                      ticks/d  caught 1.5h win   3h win 2 ticks  no run  p1 left   worst   poll   fcst  total
+every 20 min at +7                                72  99.91%   99.63%  100.00%   76.4%   0.00%     36.2    -8.0   2148    806   2954
+every 30 min at +0                                48  99.44%   97.62%  100.00%   49.4%   0.04%     21.8    -7.9   1432    735   2167
+every 30 min at +7                                48  99.42%   97.54%  100.00%   47.8%   0.04%     21.6    -7.9   1432    733   2164
+every 30 min at +13                               48  99.42%   97.54%  100.00%   45.8%   0.03%     21.5    -8.0   1432    732   2164
+every 30 min at +23                               48  99.44%   97.62%  100.00%   51.6%   0.04%     21.9    -8.0   1432    734   2166
+every 60 min at +0                                24  95.95%   83.10%   99.92%    0.0%   1.46%     -inf    -8.0    716    591   1307
+every 60 min at +7                                24  95.81%   82.48%   99.93%    0.0%   1.65%     -inf    -8.0    716    587   1303
+every 60 min at +17                               24  96.02%   83.36%   99.93%    0.0%   1.63%     -inf    -8.0    716    591   1307
+every 60 min at +37                               24  96.21%   84.11%   99.94%    0.0%   1.45%     -inf    -8.0    716    594   1310
+every 60 min at +52                               24  96.01%   83.27%   99.94%    0.0%   1.42%     -inf    -8.0    716    594   1310
+every 90 min at +0                                16  91.58%   66.72%   99.25%    0.0%   3.85%     -inf    -8.0    477    502    979
+every 90 min at +7                                16  91.71%   67.21%   99.27%    0.0%   3.91%     -inf    -8.0    477    504    981
+every 90 min at +17                               16  92.18%   69.34%   99.22%    0.0%   3.80%     -inf    -8.0    477    507    984
+every 90 min at +37                               16  91.50%   66.11%   99.34%    0.0%   3.74%     -inf    -8.0    477    510    987
+every 120 min at +0                               12  86.97%   54.58%   96.97%    0.0%   7.42%     -inf    -8.0    358    433    791
+every 120 min at +7                               12  86.91%   54.44%   96.93%    0.0%   7.73%     -inf    -8.0    358    431    789
+every 120 min at +17                              12  86.98%   54.24%   97.09%    0.0%   7.97%     -inf    -8.0    358    428    786
+every 120 min at +37                              12  86.84%   53.69%   97.07%    0.0%   7.61%     -inf    -8.0    358    433    791
+every 60 min at +0 + fallback 30 min later        48  99.44%   97.62%  100.00%   49.4%   0.04%     21.8    -7.9   1432    735   2167
+every 60 min at +7 + fallback 30 min later        48  99.42%   97.54%  100.00%   47.8%   0.04%     21.6    -7.9   1432    733   2164
+every 60 min at +17 + fallback 30 min later       48  99.45%   97.68%  100.00%   49.4%   0.04%     22.1    -8.0   1432    734   2166
+every 60 min at +37 + fallback 30 min later       48  99.42%   97.54%  100.00%   47.8%   0.04%     21.6    -7.9   1432    733   2164
+every 60 min at +52 + fallback 30 min later       48  99.42%   97.55%  100.00%   52.3%   0.04%     21.9    -8.0   1432    735   2166
+every 90 min at +0 + fallback 45 min later        32  97.43%   89.13%  100.00%    5.9%   0.39%      0.8    -8.0    955    653   1607
+every 90 min at +7 + fallback 45 min later        32  97.56%   89.68%  100.00%    7.5%   0.39%      1.4    -8.0    955    650   1605
+every 90 min at +17 + fallback 45 min later       32  97.84%   90.87%  100.00%    6.6%   0.36%      3.3    -8.0    955    651   1605
+every 90 min at +37 + fallback 45 min later       32  97.28%   88.48%  100.00%    8.1%   0.40%      0.8    -8.0    955    653   1607
+every 120 min at +0 + fallback 60 min later       24  95.95%   83.10%   99.92%    0.0%   1.46%     -inf    -8.0    716    591   1307
+every 120 min at +7 + fallback 60 min later       24  95.81%   82.48%   99.93%    0.0%   1.65%     -inf    -8.0    716    587   1303
+every 120 min at +17 + fallback 60 min later      24  96.02%   83.36%   99.93%    0.0%   1.63%     -inf    -8.0    716    591   1307
+every 120 min at +37 + fallback 60 min later      24  96.21%   84.11%   99.94%    0.0%   1.45%     -inf    -8.0    716    594   1310
+
+throttled model (gaps between schedule runs resampled from 2265 gaps of 51 repos; p50 347, p90 497 min; independent of the cron): caught 37.42% (1.5h windows 18.84%, 3h windows 43.15%), p1 left -inf min
+
+recommendation (on-time model):
+all windows: cheapest plain cadence with caught >= 99% is every 30 min at +13: cron '13,43 * * * *'; caught 99.42%, about 2164 billed minutes per 30 days (1432 poll + 732 forecast)
+  only 45.8% of questions have a second tick in time, so a dropped tick loses the others
+3h windows only: cheapest plain cadence with caught >= 99% is every 90 min at +0: cron '0 0,3,6,9,12,15,18,21 * * *' | '30 1,4,7,10,13,16,19,22 * * *'; caught 99.25%, about 979 billed minutes per 30 days (477 poll + 502 forecast)
+  only 0.0% of questions have a second tick in time, so a dropped tick loses the others; a second line 45 min later (every 90 min at +0 + fallback 45 min later: cron '0,45 0,3,6,9,12,15,18,21 * * *' | '15 2,5,8,11,14,17,20,23 * * *' | '30 1,4,7,10,13,16,19,22 * * *') gives caught 100.00%, two ticks 7.7%, about 1607 billed minutes
+if the schedule is throttled as on most public forks, no cron cadence helps: 37.4% caught; the fallback then has to be a trigger outside GitHub's scheduler (a workflow_dispatch from an external cron).

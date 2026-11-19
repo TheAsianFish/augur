@@ -1,0 +1,79 @@
+{
+ "cost_usd": 0.0,
+ "failed": 0,
+ "forecast": 6,
+ "listed": 6,
+ "missed": 0,
+ "mode": "live",
+ "questions": [
+  {
+   "minutes_left": 60794.1,
+   "post_id": 43323,
+   "question_id": 43325,
+   "reason": "",
+   "seconds": 286.8,
+   "status": "forecast",
+   "submitted": true,
+   "type": "numeric"
+  },
+  {
+   "minutes_left": 62232.1,
+   "post_id": 43327,
+   "question_id": 43332,
+   "reason": "",
+   "seconds": 60.0,
+   "status": "forecast",
+   "submitted": true,
+   "type": "binary"
+  },
+  {
+   "minutes_left": 62231.2,
+   "post_id": 43321,
+   "question_id": 43322,
+   "reason": "",
+   "seconds": 115.5,
+   "status": "forecast",
+   "submitted": true,
+   "type": "discrete"
+  },
+  {
+   "minutes_left": 945308.2,
+   "post_id": 45517,
+   "question_id": 45708,
+   "reason": "",
+   "seconds": 176.9,
+   "status": "forecast",
+   "submitted": true,
+   "type": "discrete"
+  },
+  {
+   "minutes_left": 982624.6,
+   "post_id": 46224,
+   "question_id": 46451,
+   "reason": "",
+   "seconds": 159.4,
+   "status": "forecast",
+   "submitted": true,
+   "type": "numeric"
+  },
+  {
+   "minutes_left": 1034943.5,
+   "post_id": 46223,
+   "question_id": 46450,
+   "reason": "",
+   "seconds": 124.0,
+   "status": "forecast",
+   "submitted": true,
+   "type": "multiple_choice"
+  }
+ ],
+ "reasons": {
+  "failed": {},
+  "missed": {},
+  "skipped": {}
+ },
+ "run_id": "run_53eeaa89f3784e2a8bbf",
+ "skipped": 0,
+ "source": "metaculus:bot-testing-area",
+ "submitted": 6
+}

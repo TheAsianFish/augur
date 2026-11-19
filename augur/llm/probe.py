@@ -28,7 +28,7 @@ from pydantic import SecretStr
 from augur.clock import to_iso
 from augur.errors import EmptyAnswerError, FallbackError, ProviderError
 from augur.ledger import Ledger
-from augur.llm.base import LlmRequest, LlmResponse, Message, Provider
+from augur.llm.base import Effort, LlmRequest, LlmResponse, Message, Provider
 from augur.llm.catalog import Catalog, Price, price_for, release_bound
 from augur.llm.endpoints import Endpoint, Route
 from augur.llm.registry import in_frontier_tier
@@ -44,9 +44,12 @@ PROBE_TIMEOUT_S = 30.0
 ANSWERING = frozenset({"answered", "empty"})
 
 
-def probe_request(model: str, max_tokens: int = PROBE_MAX_TOKENS) -> LlmRequest:
+def probe_request(
+    model: str, max_tokens: int = PROBE_MAX_TOKENS, reasoning_effort: Effort | None = None
+) -> LlmRequest:
     return LlmRequest(
         model=model,
+        reasoning_effort=reasoning_effort,
         messages=(Message(role="user", content=PROBE_PROMPT),),
         temperature=0.0,
         max_tokens=max_tokens,
@@ -122,7 +125,7 @@ async def probe_routes(
             continue
         provider = providers[route.endpoint.name]
         t0 = time.perf_counter()
-        request = probe_request(route.model)
+        request = probe_request(route.model, reasoning_effort=route.reasoning_effort)
         try:
             response = await provider.complete(request)
         except ProviderError as exc:
@@ -194,6 +197,10 @@ def record_probes(
                 "endpoint": r.route.endpoint.name,
                 "endpoint_host": r.route.endpoint.host,
                 "model": r.route.model,
+                "reasoning_effort": r.route.reasoning_effort,
+                "reasoning_effort_applied": None
+                if r.route.effort_applied is None
+                else int(r.route.effort_applied),
                 "roles": ",".join(r.roles),
                 "outcome": r.outcome,
                 "http_status": r.http_status,

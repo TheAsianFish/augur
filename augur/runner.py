@@ -1,22 +1,44 @@
-"""``augur forecast``: list (or load) questions, skip, cap, forecast, submit or print."""
+"""``augur forecast``: list (or load) questions, skip, cap, forecast, submit or print.
+
+A live round leaves each question open for a few hours, so every question
+gets a deadline (its close minus a margin, and never past the run's own
+deadline): research and the forecaster draws stop there, and the best
+ensemble finished by then is posted. Questions are taken soonest-closing
+first. Every question the run saw ends with one outcome row in the ledger
+(forecast, missed, skipped or failed, and why): the run's coverage report.
+"""
 
 from __future__ import annotations
 
+import asyncio
 import json
 import math
+import re
 import subprocess
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal, TextIO
 
 import structlog
 
 import augur
-from augur.agents.calls import MIN_COOL_S, Budget, BudgetExceededError, CallRecorder
-from augur.agents.forecaster import MemberForecast, draw_forecasts
-from augur.agents.researcher import Researcher, ResearchResult
-from augur.aggregate import median
+from augur.agents.calls import (
+    MIN_COOL_S,
+    Budget,
+    BudgetExceededError,
+    CallRecorder,
+    estimate_cost,
+)
+from augur.agents.forecaster import MemberForecast, draw_forecasts, forecaster_request
+from augur.agents.researcher import (
+    BRIEF_MAX_TOKENS,
+    PLAN_MAX_TOKENS,
+    Researcher,
+    ResearchResult,
+)
 from augur.clock import Clock
 from augur.comment import render_comment
 from augur.config import Settings
@@ -29,6 +51,15 @@ from augur.llm.registry import FRONTIER_TIER_NAME, PRACTICE_TOURNAMENTS, in_fron
 from augur.llm.router import Router
 from augur.log import get_logger
 from augur.metaculus import MetaculusClient
+from augur.predictions import (
+    Prediction,
+    aggregate,
+    binary_probability,
+    check,
+    forecast_payload,
+    summary,
+    values_json,
+)
 from augur.questions import Question, question_from_post
 from augur.research.source import Searcher
 
@@ -42,7 +73,14 @@ TOURNAMENTS: dict[str, str] = {
 }
 SAMPLES_DIR = Path(__file__).resolve().parent.parent / "data" / "samples" / "minibench"
 
-Status = Literal["forecast", "skipped", "failed"]
+Status = Literal["forecast", "missed", "skipped", "failed"]
+STATUSES: tuple[Status, ...] = ("forecast", "missed", "skipped", "failed")
+# Research may use at most this share of a question's time; the draws get the rest.
+RESEARCH_SHARE = 0.5
+# Kept back from a question's deadline for the comparison, the re-read and the posts.
+SUBMIT_RESERVE_S = 30.0
+# Rough size of the research brief and the question text, for the cost estimate.
+ESTIMATED_BRIEF_CHARS = 2500
 
 
 @dataclass
@@ -50,10 +88,18 @@ class QuestionReport:
     question: Question
     status: Status
     reason: str = ""
-    probability: float | None = None
+    prediction: Prediction | None = None
     members: list[MemberForecast] = field(default_factory=list)
     comment: str = ""
     submitted: bool = False
+    minutes_left: float | None = None
+    seconds: float | None = None
+    cost_usd: float = 0.0
+
+    @property
+    def probability(self) -> float | None:
+        """The binary forecast's probability (``None`` for other types)."""
+        return binary_probability(self.prediction)
 
 
 @dataclass
@@ -66,6 +112,43 @@ class RunReport:
 
     def count(self, status: Status) -> int:
         return sum(1 for r in self.reports if r.status == status)
+
+    def coverage(self) -> dict[str, Any]:
+        """Questions forecast in time, missed, skipped and failed, with the reasons."""
+        reasons: dict[str, dict[str, int]] = {s: {} for s in STATUSES if s != "forecast"}
+        for r in self.reports:
+            if r.status != "forecast":
+                key = _reason_key(r.reason)
+                reasons[r.status][key] = reasons[r.status].get(key, 0) + 1
+        return {
+            "run_id": self.run_id,
+            "mode": self.mode.value,
+            "source": self.source,
+            "listed": len(self.reports),
+            **{s: self.count(s) for s in STATUSES},
+            "submitted": sum(1 for r in self.reports if r.submitted),
+            "cost_usd": round(self.cost_usd, 6),
+            "reasons": reasons,
+            "questions": [
+                {
+                    "question_id": r.question.question_id,
+                    "post_id": r.question.post_id,
+                    "type": r.question.type,
+                    "status": r.status,
+                    "submitted": r.submitted,
+                    "reason": r.reason,
+                    "minutes_left": None if r.minutes_left is None else round(r.minutes_left, 1),
+                    "seconds": None if r.seconds is None else round(r.seconds, 1),
+                }
+                for r in self.reports
+            ],
+        }
+
+
+def _reason_key(reason: str) -> str:
+    """Reasons grouped for the summary: the text before any detail in parentheses."""
+    head = reason.split(" (", 1)[0].split(";", 1)[0]
+    return re.sub(r"\d+(?:\.\d+)?", "N", head).strip() or "unspecified"
 
 
 def load_samples(directory: Path) -> list[tuple[Question, dict[str, Any]]]:
@@ -135,6 +218,7 @@ class ForecastRun:
         self._reforecast = False
         self._scored = False
         self._searchers = list(searchers)
+        self._run_deadline = clock.now() + timedelta(minutes=settings.run_deadline_minutes)
         self._client = client
         self._out = out
 
@@ -206,57 +290,141 @@ class ForecastRun:
                 else "no forecasting model answered the probe"
             )
 
+        run_started = self._clock.now()
+        self._run_deadline = run_started + timedelta(minutes=self._settings.run_deadline_minutes)
         candidates = await self._candidates(slug, samples if use_samples else None, use_samples)
+        # Soonest-closing first: under a cap or a deadline, the question that
+        # closes next is the one that cannot wait for the next run.
+        candidates.sort(key=lambda c: (c[0].scheduled_close_time, c[0].question_id))
         reports: list[QuestionReport] = []
         chosen: list[tuple[Question, dict[str, Any]]] = []
         for q, post in candidates:
-            reason = self._skip_reason(q, live_listing=not use_samples)
+            status, reason = self._skip_reason(q, live_listing=not use_samples)
             if reason is None and len(chosen) >= max_questions:
-                reason = f"over the cap of {max_questions} questions per run"
+                status, reason = "skipped", f"over the cap of {max_questions} questions per run"
             if reason:
-                skipped = QuestionReport(q, "skipped", reason)
+                skipped = QuestionReport(
+                    q, status, reason, minutes_left=self._minutes_left(q, live=not use_samples)
+                )
                 if mode is RunMode.LIVE and q.already_forecast(self._clock.now()):
                     await self._repair_comment(run_id, q, post, skipped)
                 reports.append(skipped)
                 log.info("question skipped", question_id=q.question_id, reason=skipped.reason)
             else:
                 chosen.append((q, post))
+        if chosen:
+            each = self._estimate_question_cost(chosen[0][0])
+            self._print(
+                f"estimated worst case ${each:.4f} a question, ${each * len(chosen):.4f} for "
+                f"{len(chosen)} (caps ${self._settings.max_cost_per_question:.2f} a question, "
+                f"${self._settings.max_cost_per_run:.2f} a run)"
+            )
 
         stop_reason = ""
         for q, post in chosen:
             if stop_reason or no_model:
                 reports.append(QuestionReport(q, "skipped", stop_reason or no_model))
                 continue
+            budget_s = self._time_budget_s(q, live=not use_samples)
+            if budget_s is not None and budget_s < self._settings.min_forecast_minutes * 60:
+                left = self._minutes_left(q, live=True)
+                reports.append(
+                    QuestionReport(
+                        q,
+                        "missed",
+                        f"too little time left ({budget_s / 60:.1f} min before its deadline, "
+                        f"under the {self._settings.min_forecast_minutes:g} a forecast needs)",
+                        minutes_left=left,
+                    )
+                )
+                continue
             structlog.contextvars.bind_contextvars(question_id=q.question_id)
+            t0 = time.perf_counter()
+            spent_before = budget.spent_question.get(q.question_id, 0.0)
             try:
-                reports.append(await self._forecast(run_id, mode, calls, q, post))
+                outcome = await self._forecast(run_id, mode, calls, q, post, budget_s)
             except BelowFloorError as exc:
                 log.warning("question skipped by the floor", question_id=q.question_id)
-                reports.append(QuestionReport(q, "skipped", f"submit floor: {exc}"))
+                outcome = QuestionReport(q, "skipped", f"submit floor: {exc}")
             except BudgetExceededError as exc:
                 stop_reason = str(exc)
-                reports.append(QuestionReport(q, "failed", stop_reason))
+                outcome = QuestionReport(q, "failed", stop_reason)
             except AugurError as exc:
                 log.error("question failed", question_id=q.question_id, error=str(exc))
-                reports.append(QuestionReport(q, "failed", str(exc)))
+                outcome = QuestionReport(q, "failed", str(exc))
+            outcome.seconds = time.perf_counter() - t0
+            outcome.cost_usd = budget.spent_question.get(q.question_id, 0.0) - spent_before
+            outcome.minutes_left = self._minutes_left(q, live=not use_samples)
+            reports.append(outcome)
         structlog.contextvars.unbind_contextvars("question_id")
         report = RunReport(run_id, mode, source, reports, budget.spent_run)
+        for r in reports:
+            self._ledger.record_outcome(
+                run_id=run_id,
+                question_id=r.question.question_id,
+                post_id=r.question.post_id,
+                question_type=r.question.type,
+                status=r.status,
+                reason=r.reason,
+                submitted=r.submitted,
+                closes_at=r.question.scheduled_close_time,
+                minutes_left=r.minutes_left,
+                cost_usd=r.cost_usd,
+                seconds=r.seconds,
+            )
         log.info(
             "run finished",
             forecast=report.count("forecast"),
+            missed=report.count("missed"),
             skipped=report.count("skipped"),
             failed=report.count("failed"),
             cost_usd=round(report.cost_usd, 6),
         )
         structlog.contextvars.unbind_contextvars("run_id")
+        submitted = sum(1 for r in reports if r.submitted)
         self._print(
-            f"done: {report.count('forecast')} forecast, {report.count('skipped')} skipped, "
-            f"{report.count('failed')} failed; estimated cost ${report.cost_usd:.4f}"
+            f"coverage: {len(reports)} listed; {report.count('forecast')} forecast in time "
+            f"({submitted} submitted), {report.count('missed')} missed, "
+            f"{report.count('skipped')} skipped, {report.count('failed')} failed; "
+            f"estimated cost ${report.cost_usd:.4f}"
         )
         for r in reports:
             if r.status != "forecast":
                 self._print(f"  {r.status}: {r.question.url} {r.reason}")
         return report
+
+    def _minutes_left(self, q: Question, *, live: bool) -> float | None:
+        if not live:
+            return None
+        return (q.scheduled_close_time - self._clock.now()).total_seconds() / 60
+
+    def _time_budget_s(self, q: Question, *, live: bool) -> float | None:
+        """Seconds until this question's deadline: its close less the margin, and
+        never past the run's deadline. ``None`` for committed samples (no window)."""
+        now = self._clock.now()
+        run_left = (self._run_deadline - now).total_seconds()
+        if not live:
+            return max(0.0, run_left)
+        margin = timedelta(minutes=self._settings.close_margin_minutes)
+        close_left = (q.scheduled_close_time - margin - now).total_seconds()
+        return max(0.0, min(close_left, run_left))
+
+    def _estimate_question_cost(self, q: Question) -> float:
+        """Worst case for one question on the first route of each chain: the
+        planner and the brief at their token caps, and every forecaster draw."""
+        total = 0.0
+        research = self._router.chain("research")[0]
+        forecast = self._router.chain("forecast")[0]
+        research_price = self._router.price(research)
+        forecast_price = self._router.price(forecast)
+        if research_price is not None:
+            total += research_price.cost(len(q.title) // 3 + 200, PLAN_MAX_TOKENS)
+            total += research_price.cost(4000, BRIEF_MAX_TOKENS)
+        if forecast_price is not None:
+            brief = ResearchResult(queries=[], sources=[], brief="x" * ESTIMATED_BRIEF_CHARS)
+            request = forecaster_request(q, self._clock.now(), brief, 0)
+            total += self._settings.forecasters * estimate_cost(request, forecast_price)
+        return total
 
     async def _candidates(
         self, slug: str, samples: Path | None, use_samples: bool
@@ -266,8 +434,9 @@ class ForecastRun:
         client = self._live_client()
         listed = await client.list_open_questions(slug)
         detailed: list[tuple[Question, dict[str, Any]]] = []
+        now = self._clock.now()
         for q, post in listed:
-            if q.type != "binary":
+            if q.unsupported_reason() is not None or not q.is_open(now):
                 detailed.append((q, post))
                 continue
             # Only the detail carries my_forecasts, which the skip rule needs.
@@ -277,15 +446,18 @@ class ForecastRun:
                 log.warning("detail fetch failed", post_id=q.post_id, error=str(exc))
         return detailed
 
-    def _skip_reason(self, q: Question, *, live_listing: bool) -> str | None:
+    def _skip_reason(self, q: Question, *, live_listing: bool) -> tuple[Status, str | None]:
         now = self._clock.now()
-        if q.type != "binary":
-            return f"{q.type} questions are not forecast yet (binary only until M3)"
+        unsupported = q.unsupported_reason()
+        if unsupported:
+            return "skipped", unsupported
         if live_listing and not q.is_open(now):
-            return "not open now"
+            if now >= q.scheduled_close_time:
+                return "missed", "closed before this run reached it"
+            return "skipped", "not open now"
         if live_listing and q.already_forecast(now) and not self._reforecast:
-            return "already forecast by this account"
-        return None
+            return "skipped", "already forecast by this account"
+        return "forecast", None
 
     async def _forecast(
         self,
@@ -294,8 +466,10 @@ class ForecastRun:
         calls: CallRecorder,
         q: Question,
         post: dict[str, Any],
+        budget_s: float | None = None,
     ) -> QuestionReport:
         cutoff = self._clock.now()
+        started = time.monotonic()
         self._ledger.record_question(run_id, q, cutoff, post)
         researcher = Researcher(
             calls=calls,
@@ -303,8 +477,27 @@ class ForecastRun:
             searchers=self._searchers,
             mode=mode,
         )
-        research = await researcher.research(run_id, q, cutoff)
+        research_s = None if budget_s is None else budget_s * RESEARCH_SHARE
+        try:
+            async with asyncio.timeout(research_s):
+                research = await researcher.research(run_id, q, cutoff)
+        except TimeoutError:
+            log.warning("research stopped at its deadline", seconds=research_s)
+            research = ResearchResult(
+                queries=[],
+                sources=[],
+                brief=(
+                    "Research did not finish within its share of this question's time, so "
+                    "the forecasters saw no brief."
+                ),
+                errors=["research stopped at its deadline"],
+            )
         n = self._settings.forecasters
+        draws_s = (
+            None
+            if budget_s is None
+            else max(1.0, budget_s - (time.monotonic() - started) - SUBMIT_RESERVE_S)
+        )
         members, errors = await draw_forecasts(
             calls=calls,
             run_id=run_id,
@@ -313,6 +506,7 @@ class ForecastRun:
             research=research,
             n=n,
             concurrency=n,
+            timeout_s=draws_s,
         )
         needed = math.ceil(n / 2)
         if len(members) < needed:
@@ -327,29 +521,43 @@ class ForecastRun:
                 kind="member",
                 member=m.member,
                 method="draw",
-                probability=m.probability,
+                probability=binary_probability(m.prediction),
                 reasoning=m.reasoning,
                 call_id=m.call_id,
+                question_type=q.type,
+                values=values_json(m.prediction),
             )
-        probability = round(median([m.probability for m in members]), 3)
+        try:
+            prediction, method = aggregate(q, [m.prediction for m in members])
+        except ValueError as exc:
+            raise AugurError(f"could not combine the members ({exc})") from None
+        problems = check(q, prediction)
+        if problems:
+            raise AugurError(
+                "the combined forecast breaks Metaculus's rules, so it is not posted: "
+                + "; ".join(problems)
+            )
         self._ledger.record_forecast(
             run_id=run_id,
             question_id=q.question_id,
             kind="aggregate",
             member=None,
-            method="median",
-            probability=probability,
-            reasoning=f"median of {len(members)} members",
+            method=method,
+            probability=binary_probability(prediction),
+            reasoning=f"{method} of {len(members)} members",
             call_id=None,
+            question_type=q.type,
+            values=values_json(prediction),
         )
         comment = render_comment(
-            probability=probability,
+            q=q,
+            prediction=prediction,
             members=members,
             research=research,
             cutoff=cutoff,
             requested=n,
         )
-        report = QuestionReport(q, "forecast", probability=probability, members=members)
+        report = QuestionReport(q, "forecast", prediction=prediction, members=members)
         report.comment = comment
         await self._deliver(run_id, mode, q, report, research)
         return report
@@ -362,32 +570,34 @@ class ForecastRun:
         report: QuestionReport,
         research: ResearchResult,
     ) -> None:
-        if report.probability is None:
+        if report.prediction is None:
             raise AugurError("internal: delivering a question with no forecast")
-        forecast_payload = MetaculusClient.binary_payload(q.question_id, report.probability)
+        payload = forecast_payload(q.question_id, report.prediction)
         comment_payload = MetaculusClient.comment_payload(q.post_id, report.comment)
-        spread = " ".join(f"{m.probability * 100:.0f}%" for m in report.members)
+        spread = " | ".join(summary(q, m.prediction) for m in report.members)
         self._print("")
         self._print(f"== {q.title}")
-        self._print(f"   {q.url}")
+        self._print(f"   {q.url} ({q.type})")
         self._print(
             f"   sources: {len(research.sources)} admitted, {len(research.rejected)} rejected; "
-            f"members: {spread}; median: {report.probability * 100:.1f}%"
+            f"members: {spread}"
         )
+        self._print(f"   combined: {summary(q, report.prediction)}")
         if mode is not RunMode.LIVE:
-            for kind, payload in (("forecast", forecast_payload), ("comment", comment_payload)):
+            for kind, body in (("forecast", payload), ("comment", comment_payload)):
                 self._ledger.record_submission(
                     run_id=run_id,
                     question_id=q.question_id,
                     post_id=q.post_id,
                     kind=kind,
-                    payload=payload,
+                    payload=body,
                     status="dry_run",
                     http_status=None,
                     response_excerpt=None,
                 )
             self._print("   would POST /api/questions/forecast/ (dry run, not sent):")
-            self._print("   " + json.dumps(forecast_payload))
+            shown = json.dumps(payload)
+            self._print("   " + (shown if len(shown) <= 400 else shown[:400] + " …"))
             self._print("   would POST /api/comments/create/ as a private comment (dry run):")
             for line in report.comment.splitlines():
                 self._print("   | " + line)
@@ -424,7 +634,7 @@ class ForecastRun:
             report.reason = "already forecast by this account (checked again before submitting)"
             return
         try:
-            await self._submit(run_id, q, "forecast", forecast_payload, report)
+            await self._submit(run_id, q, "forecast", payload, report)
         except MetaculusError:
             # The server may have taken the forecast and failed to answer. Keep
             # the comment as unsent so a later run that sees the forecast
@@ -442,7 +652,7 @@ class ForecastRun:
             raise
         await self._submit(run_id, q, "comment", comment_payload, report)
         report.submitted = True
-        self._print(f"   submitted {report.probability * 100:.1f}%; posted this private comment:")
+        self._print(f"   submitted {summary(q, report.prediction)}; posted this private comment:")
         for line in report.comment.splitlines():
             self._print("   | " + line)
 
@@ -457,9 +667,9 @@ class ForecastRun:
         client = self._live_client()
         try:
             if kind == "forecast":
-                if report.probability is None:
-                    raise AugurError("internal: submitting a question with no forecast")
-                result = await client.submit_binary(q.question_id, report.probability)
+                if not isinstance(payload, list):
+                    raise AugurError("internal: a forecast payload is a list")
+                result = await client.submit_forecast(payload)
             else:
                 result = await client.create_private_comment(q.post_id, report.comment)
         except MetaculusError as exc:

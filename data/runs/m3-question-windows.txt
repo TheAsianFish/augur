@@ -1,0 +1,113 @@
+MiniBench question windows
+command: python3 scripts/question_windows.py --interval 2
+fetched: 2026-11-18T18:23:32Z (36 requests)
+rounds: minibench, minibench-2026-11-02, minibench-2026-10-19, minibench-2026-10-05, minibench-2026-09-21, minibench-2026-09-07, minibench-2026-08-24, minibench-2026-08-10, minibench-2026-07-27, minibench-2026-07-13, minibench-2026-06-29, minibench-2026-06-15, minibench-2026-06-01, minibench-2026-05-18, minibench-2026-05-04, minibench-2026-04-20
+round slugs tried and not found: minibench-2026-04-06, minibench-2026-03-23
+
+questions: 954 in 16 rounds
+by type: binary 503, discrete 165, multiple_choice 70, numeric 216
+window (scheduled close - open): n=954 min 1.50h median 3.00h p90 3.00h max 3.00h
+window values: 1.50h x225, 3.00h x729
+gap between consecutive distinct opens, within a round: n=936 min 0.00h median 0.67h p90 3.47h max 115.64h
+questions sharing an open instant with another: 2
+opens by UTC hour: 00:58 01:49 02:40 03:45 04:37 05:47 06:55 07:42 08:40 09:40 10:45 11:39 12:39 13:38 14:26 15:50 16:36 17:44 18:38 19:38 20:26 21:38 22:20 23:24
+
+per round:
+  minibench-2026-04-20: anchor 2026-04-13T06:15:31Z, 58 questions (binary 30, multiple_choice 15, numeric 13)
+    opens 2026-04-13T06:15:31Z .. 2026-04-17T10:45:45Z (span 100.5h), last close 2026-04-17T12:15:45Z
+    windows: n=58 min 1.50h median 1.50h p90 1.50h max 1.50h
+    gaps: n=57 min 0.00h median 1.12h p90 4.21h max 12.15h
+    share opened within the first N days of the round: 1d 50% 2d 78% 3d 90% 4d 97% 7d 100% 14d 100%
+  minibench-2026-05-04: anchor 2026-05-04T00:00:00Z, 60 questions (binary 23, multiple_choice 15, numeric 22)
+    opens 2026-05-04T00:00:00Z .. 2026-05-09T09:25:04Z (span 129.4h), last close 2026-05-09T10:55:04Z
+    windows: n=60 min 1.50h median 1.50h p90 1.50h max 1.50h
+    gaps: n=57 min 0.01h median 1.10h p90 4.36h max 28.03h
+    share opened within the first N days of the round: 1d 52% 2d 73% 3d 85% 4d 93% 7d 100% 14d 100%
+  minibench-2026-05-18: anchor 2026-05-18T00:00:00Z, 60 questions (binary 47, multiple_choice 2, numeric 11)
+    opens 2026-05-18T02:18:42Z .. 2026-05-24T19:43:22Z (span 161.4h), last close 2026-05-24T21:13:22Z
+    windows: n=60 min 1.50h median 1.50h p90 1.50h max 1.50h
+    gaps: n=59 min 0.04h median 1.52h p90 7.46h max 16.64h
+    share opened within the first N days of the round: 1d 13% 2d 22% 3d 38% 4d 52% 7d 100% 14d 100%
+  minibench-2026-06-01: anchor 2026-06-01T00:00:00Z, 60 questions (binary 42, discrete 9, multiple_choice 1, numeric 8)
+    opens 2026-06-01T00:05:22Z .. 2026-06-07T11:20:35Z (span 155.3h), last close 2026-06-07T14:20:35Z
+    windows: n=60 min 1.50h median 1.50h p90 3.00h max 3.00h
+    gaps: n=59 min 0.08h median 1.90h p90 6.21h max 13.13h
+    share opened within the first N days of the round: 1d 17% 2d 43% 3d 65% 4d 78% 7d 100% 14d 100%
+  minibench-2026-06-15: anchor 2026-06-15T00:00:00Z, 60 questions (binary 44, discrete 6, multiple_choice 5, numeric 5)
+    opens 2026-06-15T00:48:27Z .. 2026-06-19T16:00:05Z (span 111.2h), last close 2026-06-19T19:00:05Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.02h median 1.17h p90 3.77h max 12.93h
+    share opened within the first N days of the round: 1d 30% 2d 63% 3d 92% 4d 97% 7d 100% 14d 100%
+  minibench-2026-06-29: anchor 2026-06-29T00:00:00Z, 60 questions (binary 36, discrete 7, multiple_choice 2, numeric 15)
+    opens 2026-06-29T00:27:24Z .. 2026-07-02T19:48:57Z (span 91.4h), last close 2026-07-02T22:48:57Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.00h median 0.48h p90 2.74h max 21.48h
+    share opened within the first N days of the round: 1d 65% 2d 85% 3d 97% 4d 100% 7d 100% 14d 100%
+  minibench-2026-07-13: anchor 2026-07-13T00:00:00Z, 60 questions (binary 38, discrete 13, multiple_choice 1, numeric 8)
+    opens 2026-07-13T00:19:45Z .. 2026-07-16T19:21:47Z (span 91.0h), last close 2026-07-16T22:21:47Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.01h median 0.42h p90 2.09h max 44.48h
+    share opened within the first N days of the round: 1d 75% 2d 98% 3d 98% 4d 100% 7d 100% 14d 100%
+  minibench-2026-07-27: anchor 2026-07-27T00:00:00Z, 60 questions (binary 33, discrete 15, multiple_choice 4, numeric 8)
+    opens 2026-07-27T00:05:18Z .. 2026-08-01T01:16:44Z (span 121.2h), last close 2026-08-01T04:16:44Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.00h median 0.44h p90 2.12h max 77.55h
+    share opened within the first N days of the round: 1d 82% 2d 98% 3d 98% 4d 98% 7d 100% 14d 100%
+  minibench-2026-08-10: anchor 2026-08-10T00:00:00Z, 57 questions (binary 28, discrete 16, numeric 13)
+    opens 2026-08-10T00:00:00Z .. 2026-08-12T10:56:02Z (span 58.9h), last close 2026-08-12T13:56:02Z
+    windows: n=57 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=56 min 0.01h median 0.53h p90 2.33h max 13.69h
+    share opened within the first N days of the round: 1d 81% 2d 95% 3d 100% 4d 100% 7d 100% 14d 100%
+  minibench-2026-08-24: anchor 2026-08-24T00:00:00Z, 60 questions (binary 23, discrete 14, multiple_choice 2, numeric 21)
+    opens 2026-08-24T00:00:00Z .. 2026-08-25T19:04:35Z (span 43.1h), last close 2026-08-25T22:04:35Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.00h median 0.39h p90 1.58h max 4.36h
+    share opened within the first N days of the round: 1d 77% 2d 100% 3d 100% 4d 100% 7d 100% 14d 100%
+  minibench-2026-09-07: anchor 2026-09-07T00:00:00Z, 60 questions (binary 25, discrete 15, multiple_choice 4, numeric 16)
+    opens 2026-09-07T00:13:51Z .. 2026-09-10T03:56:04Z (span 75.7h), last close 2026-09-10T06:56:04Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.02h median 0.51h p90 1.88h max 28.49h
+    share opened within the first N days of the round: 1d 73% 2d 98% 3d 98% 4d 100% 7d 100% 14d 100%
+  minibench-2026-09-21: anchor 2026-09-21T00:00:00Z, 60 questions (binary 30, discrete 11, multiple_choice 3, numeric 16)
+    opens 2026-09-21T00:26:23Z .. 2026-09-23T23:49:06Z (span 71.4h), last close 2026-09-24T02:49:06Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.01h median 0.56h p90 2.75h max 9.58h
+    share opened within the first N days of the round: 1d 73% 2d 93% 3d 100% 4d 100% 7d 100% 14d 100%
+  minibench-2026-10-05: anchor 2026-10-05T00:00:00Z, 60 questions (binary 35, discrete 10, multiple_choice 3, numeric 12)
+    opens 2026-10-05T00:07:31Z .. 2026-10-12T16:16:44Z (span 184.2h), last close 2026-10-12T19:16:44Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.02h median 0.58h p90 2.97h max 115.64h
+    share opened within the first N days of the round: 1d 75% 2d 92% 3d 98% 4d 98% 7d 98% 14d 100%
+  minibench-2026-10-19: anchor 2026-10-19T00:00:00Z, 60 questions (binary 28, discrete 12, multiple_choice 1, numeric 19)
+    opens 2026-10-19T00:19:04Z .. 2026-10-26T05:01:38Z (span 172.7h), last close 2026-10-26T08:01:38Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.03h median 0.71h p90 3.15h max 56.66h
+    share opened within the first N days of the round: 1d 60% 2d 92% 3d 93% 4d 97% 7d 98% 14d 100%
+  minibench-2026-11-02: anchor 2026-11-02T00:00:00Z, 60 questions (binary 19, discrete 22, multiple_choice 6, numeric 13)
+    opens 2026-11-02T00:45:11Z .. 2026-11-03T22:41:51Z (span 45.9h), last close 2026-11-04T01:41:51Z
+    windows: n=60 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=59 min 0.02h median 0.41h p90 2.15h max 6.87h
+    share opened within the first N days of the round: 1d 77% 2d 100% 3d 100% 4d 100% 7d 100% 14d 100%
+  minibench: anchor 2026-11-16T00:00:00Z, 59 questions (binary 22, discrete 15, multiple_choice 6, numeric 16)
+    opens 2026-11-16T00:04:51Z .. 2026-11-18T12:34:49Z (span 60.5h), last close 2026-11-18T15:34:49Z
+    windows: n=59 min 3.00h median 3.00h p90 3.00h max 3.00h
+    gaps: n=58 min 0.01h median 0.64h p90 1.88h max 9.89h
+    share opened within the first N days of the round: 1d 68% 2d 95% 3d 100% 4d 100% 7d 100% 14d 100%
+
+note: Rounds before the current one are found only by slug: minibench (current), then minibench-YYYY-MM-DD at 14-day steps back from its start_date, stopping after 2 consecutive 404s or 40 rounds. A round off that grid would be missed.
+note: MiniBench projects are unlisted, so /api/projects/tournaments/ does not return them.
+note: Window = scheduled_close_time - open_time from the API. Gaps are between distinct open instants within one round (not across rounds).
+note: First N days are counted from the round's start_date, or from its first open when a question opened before start_date.
+note: minibench: project says questions_count=60, the post listing returned 59 posts.
+note: minibench-2026-10-19: project says questions_count=59, the post listing returned 60 posts.
+note: minibench-2026-10-05: project says questions_count=59, the post listing returned 60 posts.
+note: minibench-2026-09-21: project says questions_count=58, the post listing returned 60 posts.
+note: minibench-2026-09-07: project says questions_count=58, the post listing returned 60 posts.
+note: minibench-2026-08-24: project says questions_count=59, the post listing returned 60 posts.
+note: minibench-2026-08-10: project says questions_count=55, the post listing returned 57 posts.
+note: minibench-2026-07-27: project says questions_count=59, the post listing returned 60 posts.
+note: minibench-2026-07-13: project says questions_count=59, the post listing returned 60 posts.
+note: minibench-2026-06-29: project says questions_count=58, the post listing returned 60 posts.
+note: minibench-2026-06-01: project says questions_count=59, the post listing returned 60 posts.
+note: minibench-2026-05-18: project says questions_count=52, the post listing returned 60 posts.
+note: minibench-2026-04-20: project says questions_count=57, the post listing returned 58 posts.

@@ -292,7 +292,7 @@ async def test_the_last_check_catches_a_below_tier_answer_the_router_let_through
     [q] = [x for x in report.reports if x.question.question_id == 501]
     assert GEMMA.model in p.models_called(FORECASTER_SYSTEM), "the router fell through"
     assert q.status == "skipped"
-    assert "below the frontier-2026-11 tier; nothing posted" in q.reason
+    assert "below the frontier-2026-11b tier; nothing posted" in q.reason
     assert fake.forecasts == []
     assert fake.comments == []
     refused = ledger.connection.execute(
@@ -417,7 +417,7 @@ async def test_a_scored_run_skips_everything_when_no_frontier_model_answers_the_
     )
     [q] = [x for x in report.reports if x.question.question_id == 501]
     assert q.status == "skipped"
-    assert "no frontier-2026-11 model answered the probe" in q.reason
+    assert "no frontier-2026-11b model answered the probe" in q.reason
     assert p.requests == [], "no question cost a model call"
     assert fake.forecasts == []
     ledger.close()
@@ -514,4 +514,97 @@ async def test_an_empty_answer_is_charged_the_worst_case(tmp_path: Path) -> None
     ).fetchone()
     assert empty_cost > 0
     assert budget.spent_run >= empty_cost
+    led.close()
+
+
+# Reasoning effort per route
+
+
+async def test_the_effort_is_sent_and_recorded_with_each_call(tmp_path: Path) -> None:
+    high = Route(endpoint=OR, model=GPT.model, reasoning_effort="high")
+    r, p = router([high, GPT])
+    led, run_id, qid = ledger_with_question(tmp_path)
+    calls = CallRecorder(r, led, FixedClock(T0), Budget(1.0, 1.0))
+    done = await calls.complete(CallContext(run_id, qid, "forecaster", 0), forecast_request(), [])
+    assert done.route == high
+    assert p.requests[0].model == GPT.model
+    assert p.requests[0].reasoning_effort == "high"
+    assert led.connection.execute(
+        "SELECT model, reasoning_effort, reasoning_effort_applied FROM llm_calls "
+        "WHERE role = 'forecaster'"
+    ).fetchall() == [(GPT.model, "high", 1)]
+    # The same call on the plain twin records NULL.
+    r2, p2 = router([GPT])
+    await CallRecorder(r2, led, FixedClock(T0), Budget(1.0, 1.0)).complete(
+        CallContext(run_id, qid, "forecaster", 1), forecast_request(), []
+    )
+    assert p2.requests[0].reasoning_effort is None
+    assert led.connection.execute(
+        "SELECT reasoning_effort, reasoning_effort_applied FROM llm_calls WHERE member = 1"
+    ).fetchall() == [(None, None)]
+    led.close()
+
+
+async def test_an_effort_on_ollama_is_recorded_as_not_applied(tmp_path: Path) -> None:
+    local = Route(endpoint=PRESETS["ollama"], model="qwen2.5:7b", reasoning_effort="high")
+    r = Router.single(local, RoutedProvider(), catalog_of(), FixedClock(T0))
+    led, run_id, qid = ledger_with_question(tmp_path)
+    calls = CallRecorder(r, led, FixedClock(T0), Budget(1.0, 1.0))
+    await calls.complete(CallContext(run_id, qid, "forecaster", 0), forecast_request(), [])
+    assert led.connection.execute(
+        "SELECT reasoning_effort, reasoning_effort_applied FROM llm_calls"
+    ).fetchall() == [("high", 0)]
+    led.close()
+
+
+async def test_a_high_effort_call_still_reserves_max_tokens_and_hits_the_cap(
+    tmp_path: Path,
+) -> None:
+    from augur.agents.calls import BudgetExceededError, estimate_cost
+    from augur.llm.catalog import price_for
+
+    high = Route(endpoint=OR, model=GPT.model, reasoning_effort="xhigh")
+    price = price_for(high, CATALOG)
+    assert price is not None
+    request = forecast_request().model_copy(update={"max_tokens": 4000})
+    worst = estimate_cost(request, price)
+    assert worst >= 4000 * 10.0 / 1e6, "reasoning bills as output: reserved at max_tokens"
+    assert estimate_cost(request.model_copy(update={"reasoning_effort": "xhigh"}), price) == worst
+    r, p = router([high])
+    led, run_id, qid = ledger_with_question(tmp_path)
+    budget = Budget(max_per_question=worst * 0.9, max_per_run=100.0)
+    calls = CallRecorder(r, led, FixedClock(T0), budget)
+    with pytest.raises(BudgetExceededError):
+        await calls.complete(CallContext(run_id, qid, "forecaster", 0), request, [])
+    assert p.requests == [], "refused before the host was called"
+    led.close()
+
+
+def test_the_probe_records_the_effort(tmp_path: Path) -> None:
+    from augur.llm.probe import ProbeResult, record_probes
+
+    led, _, _ = ledger_with_question(tmp_path)
+    high = Route(endpoint=OR, model=GPT.model, reasoning_effort="high")
+    result = ProbeResult(
+        route=high,
+        roles=["forecast"],
+        outcome="answered",
+        detail="",
+        price=None,
+        listed_on=None,
+        release_basis="unknown",
+        in_tier=True,
+    )
+    record_probes(led, [result], "probe_x", None)
+    assert led.connection.execute(
+        "SELECT route, model, reasoning_effort, reasoning_effort_applied FROM model_probes"
+    ).fetchall() == [(high.key, GPT.model, "high", 1)]
+    led.close()
+
+
+def test_the_effort_columns_arrive_by_migration(tmp_path: Path) -> None:
+    led, _, _ = ledger_with_question(tmp_path)
+    assert led.schema_version() >= 3
+    cols = {row[1] for row in led.connection.execute("PRAGMA table_info(llm_calls)")}
+    assert {"reasoning_effort", "reasoning_effort_applied"} <= cols
     led.close()

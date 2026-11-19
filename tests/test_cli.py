@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -48,7 +49,7 @@ def test_submit_to_minibench_with_a_local_model_is_refused_before_any_call(
     )
     err = capsys.readouterr().err
     assert code == 2
-    assert "frontier-2026-11" in err
+    assert "frontier-2026-11b" in err
     assert "not-a-real-token" not in err
 
 
@@ -69,7 +70,16 @@ def test_a_replay_run_never_fetches_the_model_list(
     monkeypatch.delenv("METACULUS_TOKEN", raising=False)
     monkeypatch.setenv("AUGUR_PROVIDER", "replay")
     monkeypatch.setenv("AUGUR_REPLAY_PATH", str(recording))
-    code = main(["forecast", "--ledger", str(tmp_path / "l.sqlite")])
+    coverage = tmp_path / "out" / "coverage.json"
+    code = main(["forecast", "--ledger", str(tmp_path / "l.sqlite"), "--coverage", str(coverage)])
     out = capsys.readouterr().out
     assert code == 1, "every draw misses the empty recording, so the question fails"
     assert "1 failed" in out
+    report = json.loads(coverage.read_text())
+    assert report["failed"] == 1
+    assert report["questions"][0]["status"] == "failed"
+
+    exported = tmp_path / "l.jsonl"
+    assert main(["ledger", "export", str(tmp_path / "l.sqlite"), str(exported)]) == 0
+    tables = {json.loads(line)["table"] for line in exported.read_text().splitlines()}
+    assert {"runs", "llm_calls", "question_outcomes"} <= tables

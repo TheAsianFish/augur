@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 
 import httpx
@@ -17,7 +18,9 @@ from augur.errors import (
     ProviderError,
     RateLimitedError,
 )
-from augur.llm.endpoints import Endpoint
+from augur.llm.base import Effort
+from augur.llm.endpoints import PRESETS, Endpoint
+from augur.llm.ollama import OllamaProvider
 from augur.llm.openai_compat import OpenAICompatProvider, limiter_for, retry_after
 from augur.ratelimit import RateLimiter
 
@@ -294,3 +297,64 @@ async def test_compat_a_timeout_is_unavailable_and_passes_the_probe_timeout() ->
         await p.complete(REQ)
     assert len(seen) == 1
     assert seen[0] == {"connect": 30.0, "read": 30.0, "write": 30.0, "pool": 30.0}
+
+
+async def _body_for(endpoint: Endpoint, effort: Effort | None) -> dict[str, object]:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return compat_ok(request)
+
+    req = REQ.model_copy(update={"reasoning_effort": effort})
+    await compat(httpx.MockTransport(handler), endpoint=endpoint).complete(req)
+    body: dict[str, object] = json.loads(seen[0].content)
+    return body
+
+
+GENERIC = Endpoint(name="myhost", base_url="https://example.com/v1", billing="free")
+
+
+async def test_effort_goes_to_openrouter_as_a_reasoning_object() -> None:
+    body = await _body_for(OR, "high")
+    assert body["reasoning"] == {"effort": "high"}
+    assert "reasoning_effort" not in body
+    by_host = Endpoint(name="mine", base_url="https://openrouter.ai/api/v1", billing="unpriced")
+    assert (await _body_for(by_host, "low"))["reasoning"] == {"effort": "low"}
+
+
+async def test_effort_goes_to_other_hosts_as_reasoning_effort() -> None:
+    body = await _body_for(GENERIC, "xhigh")
+    assert body["reasoning_effort"] == "xhigh"
+    assert "reasoning" not in body
+
+
+async def test_no_effort_sends_neither_field() -> None:
+    for endpoint in (OR, GENERIC):
+        body = await _body_for(endpoint, None)
+        assert "reasoning" not in body
+        assert "reasoning_effort" not in body
+
+
+async def test_ollama_ignores_the_effort() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"message": {"content": "ok"}})
+
+    p = OllamaProvider(client(httpx.MockTransport(handler)), PRESETS["ollama"].base_url)
+    req = REQ.model_copy(update={"reasoning_effort": "high"})
+    await p.complete(req)
+    await p.complete(req)
+    assert b"effort" not in seen[0].content
+    assert b"effort" not in seen[1].content
+
+
+def test_request_hash_is_unchanged_without_effort_and_differs_with_it() -> None:
+    assert REQ.reasoning_effort is None
+    assert REQ.model_copy(update={"reasoning_effort": "high"}).request_hash() != REQ.request_hash()
+    legacy = REQ.model_dump(mode="json")
+    del legacy["reasoning_effort"]
+    canonical = json.dumps(legacy, sort_keys=True, separators=(",", ":"))
+    assert REQ.request_hash() == hashlib.sha256(canonical.encode()).hexdigest()

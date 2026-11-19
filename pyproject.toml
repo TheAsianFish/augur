@@ -17,6 +17,7 @@ augur = "augur.cli:main"
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.170.15",
     "mypy>=1.13",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
@@ -45,7 +46,7 @@ ignore = ["S101", "S311", "RUF001", "RUF002", "RUF003"]
 strict = true
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
-files = ["augur", "tests"]
+files = ["augur", "tests", "scripts"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

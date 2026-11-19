@@ -1,0 +1,81 @@
+{
+ "cost_usd": 0.0,
+ "failed": 0,
+ "forecast": 5,
+ "listed": 6,
+ "missed": 0,
+ "mode": "live",
+ "questions": [
+  {
+   "minutes_left": 62250.0,
+   "post_id": 43327,
+   "question_id": 43332,
+   "reason": "already forecast by this account",
+   "seconds": null,
+   "status": "skipped",
+   "submitted": false,
+   "type": "binary"
+  },
+  {
+   "minutes_left": 60808.4,
+   "post_id": 43323,
+   "question_id": 43325,
+   "reason": "",
+   "seconds": 157.5,
+   "status": "forecast",
+   "submitted": true,
+   "type": "numeric"
+  },
+  {
+   "minutes_left": 62246.4,
+   "post_id": 43321,
+   "question_id": 43322,
+   "reason": "",
+   "seconds": 120.9,
+   "status": "forecast",
+   "submitted": true,
+   "type": "discrete"
+  },
+  {
+   "minutes_left": 945325.4,
+   "post_id": 45517,
+   "question_id": 45708,
+   "reason": "",
+   "seconds": 61.4,
+   "status": "forecast",
+   "submitted": true,
+   "type": "discrete"
+  },
+  {
+   "minutes_left": 982641.2,
+   "post_id": 46224,
+   "question_id": 46451,
+   "reason": "",
+   "seconds": 192.3,
+   "status": "forecast",
+   "submitted": true,
+   "type": "numeric"
+  },
+  {
+   "minutes_left": 1034960.2,
+   "post_id": 46223,
+   "question_id": 46450,
+   "reason": "",
+   "seconds": 117.3,
+   "status": "forecast",
+   "submitted": true,
+   "type": "multiple_choice"
+  }
+ ],
+ "reasons": {
+  "failed": {},
+  "missed": {},
+  "skipped": {
+   "already forecast by this account": 1
+  }
+ },
+ "run_id": "run_54da3c1e0de34ee694d0",
+ "skipped": 1,
+ "source": "metaculus:bot-testing-area",
+ "submitted": 5
+}

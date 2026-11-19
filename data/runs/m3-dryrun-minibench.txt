@@ -1,0 +1,12 @@
+run run_a7ecf33859024cea9457 (dry_run) on metaculus:minibench
+models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free, openrouter:inclusionai/ling-3.2-flash:free, openrouter:google/gemma-4-31b-it:free; research: openrouter:inclusionai/ling-3.2-flash:free, openrouter:google/gemma-4-26b-a4b-it:free, openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+probe:
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered       1142 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+  openrouter:inclusionai/ling-3.2-flash:free       answered       1293 ms  $0/$0 per M            listed 2026-11-13  below tier  [research+forecast]
+  openrouter:google/gemma-4-31b-it:free            rate_limited    760 ms  $0/$0 per M            listed 2026-04-02  below tier  [forecast]
+  openrouter:google/gemma-4-26b-a4b-it:free        rate_limited   2969 ms  $0/$0 per M            listed 2026-04-03  below tier  [research]
+estimated worst case $0.0000 a question, $0.0000 for 1 (caps $0.50 a question, $5.00 a run)
+coverage: 1 listed; 0 forecast in time (0 submitted), 0 missed, 0 skipped, 1 failed; estimated cost $0.0000
+  failed: https://www.metaculus.com/questions/46620/ only 2 of 5 forecasters answered (need 3): member 0: no 'Probability: NN%' line in the answer; the draw is dropped; member 3: no model in the forecast chain could answer: openrouter (openrouter.ai) rate-limited google/gemma-4-31b-it:free (HTTP 429): {"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok","provider_name":"Google AI Studio","i; add models to AUGUR_FORECAST_MODELS or retry later; member 4: no 'Probability: NN%' line in the answer; the draw is dropped
+ledger: data/ledgers/m3-dryrun-minibench.sqlite (run run_a7ecf33859024cea9457)
+exit 1

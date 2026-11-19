@@ -13,6 +13,7 @@ from pathlib import Path
 from augur.clock import SystemClock
 from augur.config import Settings
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
+from augur.export import export_jsonl
 from augur.leakage import scan_ledger
 from augur.ledger import Ledger
 from augur.llm.catalog import (
@@ -55,7 +56,8 @@ def _parser() -> argparse.ArgumentParser:
         "forecast",
         help="forecast open questions (a dry run unless --submit)",
         description=(
-            "Forecast a tournament's open binary questions. Without METACULUS_TOKEN it runs "
+            "Forecast a tournament's open binary, multiple-choice, numeric and discrete "
+            "questions, soonest-closing first. Without METACULUS_TOKEN it runs "
             "on the committed sample questions; with it, on the live listing. Nothing is "
             "posted unless --submit is given."
         ),
@@ -72,6 +74,11 @@ def _parser() -> argparse.ArgumentParser:
     fc.add_argument("--no-asknews", action="store_true", help="skip AskNews even with keys")
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
+    )
+    fc.add_argument(
+        "--coverage",
+        type=Path,
+        help="write the run's coverage report (forecast, missed, skipped, failed) as JSON",
     )
     fc.add_argument(
         "--reforecast",
@@ -113,6 +120,11 @@ def _parser() -> argparse.ArgumentParser:
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
     check = led_sub.add_parser("check", help="scan a ledger for leakage; exit 1 on a violation")
     check.add_argument("paths", type=Path, nargs="+")
+    export = led_sub.add_parser(
+        "export", help="write a ledger as JSONL, one row per line, byte-stable"
+    )
+    export.add_argument("db", type=Path)
+    export.add_argument("out", type=Path)
     return parser
 
 
@@ -165,6 +177,11 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
             finally:
                 await router.aclose()
         print(f"ledger: {ledger_path} (run {report.run_id})")
+        if args.coverage is not None:
+            args.coverage.parent.mkdir(parents=True, exist_ok=True)
+            args.coverage.write_text(
+                json.dumps(report.coverage(), indent=1, sort_keys=True) + "\n", encoding="utf-8"
+            )
         return 1 if report.count("failed") else 0
 
 
@@ -213,6 +230,7 @@ async def _models(args: argparse.Namespace, settings: Settings) -> int:
                 listed, basis = release_bound(route, catalog)
                 print(
                     f"  {route.key:<48} "
+                    + f"effort {route.reasoning_effort or '-':<7} "
                     + (
                         f"${price.usd_per_million_input:g}/${price.usd_per_million_output:g} per M"
                         if price
@@ -315,6 +333,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_forecast(args, settings))
         if args.command == "models":
             return asyncio.run(_models(args, settings))
+        if args.ledger_command == "export":
+            if not args.db.exists():
+                raise AugurError(f"no ledger at {args.db}")
+            counts = export_jsonl(args.db, args.out)
+            print(f"{args.out}: {sum(counts.values())} rows from {len(counts)} tables")
+            return 0
         return _ledger_check(args.paths)
     except AugurError as exc:
         print(f"augur: {exc}", file=sys.stderr)

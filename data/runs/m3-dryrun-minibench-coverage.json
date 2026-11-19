@@ -1,0 +1,31 @@
+{
+ "cost_usd": 0.0,
+ "failed": 1,
+ "forecast": 0,
+ "listed": 1,
+ "missed": 0,
+ "mode": "dry_run",
+ "questions": [
+  {
+   "minutes_left": 164.6,
+   "post_id": 46620,
+   "question_id": 46880,
+   "reason": "only 2 of 5 forecasters answered (need 3): member 0: no 'Probability: NN%' line in the answer; the draw is dropped; member 3: no model in the forecast chain could answer: openrouter (openrouter.ai) rate-limited google/gemma-4-31b-it:free (HTTP 429): {\"error\":{\"message\":\"Provider returned error\",\"code\":429,\"metadata\":{\"raw\":\"google/gemma-4-31b-it:free is temporarily rate-limited upstream. Please retry shortly, or add your own provider key to use your own limits: https://openrouter.ai/workspaces/default/byok\",\"provider_name\":\"Google AI Studio\",\"i; add models to AUGUR_FORECAST_MODELS or retry later; member 4: no 'Probability: NN%' line in the answer; the draw is dropped",
+   "seconds": 70.8,
+   "status": "failed",
+   "submitted": false,
+   "type": "binary"
+  }
+ ],
+ "reasons": {
+  "failed": {
+   "only N of N forecasters answered": 1
+  },
+  "missed": {},
+  "skipped": {}
+ },
+ "run_id": "run_a7ecf33859024cea9457",
+ "skipped": 0,
+ "source": "metaculus:minibench",
+ "submitted": 0
+}

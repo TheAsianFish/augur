@@ -54,3 +54,34 @@ PY
 7. Then, with a frontier model first in `AUGUR_FORECAST_MODELS`:
    `augur models probe`, and `augur forecast --tournament minibench --submit`
    during an open round (M3 adds the schedule that does this unattended).
+
+## Turning on the schedule (when M3 merges)
+
+The scheduled workflow (`.github/workflows/tournament.yml`) does nothing
+until the variables below are set: unset `AUGUR_SCHEDULE` is the kill switch.
+
+1. Merge the M3 pull request with CI green. Only `main` ever posts.
+2. Repository variables (Settings → Secrets and variables → Actions →
+   Variables):
+   - `AUGUR_FORECAST_MODELS`: a frontier-tier model first, e.g.
+     `openrouter:openai/gpt-5.4@high,openrouter:anthropic/claude-opus-5`
+     (the tier is `frontier-2026-11b`; `augur models list` shows it).
+   - `AUGUR_RESEARCH_MODELS`: a cheap or free chain, e.g.
+     `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free,openrouter:inclusionai/ling-3.2-flash:free`.
+   - `AUGUR_MAX_COST_PER_RUN`: `1.00` to start (a question costs at most
+     about $0.35 at GPT-5.4's listed price).
+   - `AUGUR_SCHEDULE=minibench`. While `AUGUR_SUBMIT` is unset, scheduled
+     runs only poll: a dry run posts nothing, so every tick would forecast
+     the same questions again. For a dry run, dispatch one by hand:
+     `gh workflow run tournament.yml --ref main -f tournament=minibench`.
+3. Check one manual run first:
+   `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f submit=true`;
+   it posts only in the practice area, and its export appears on the
+   `ledger` branch.
+4. Then set `AUGUR_SUBMIT=true` before the round opens (about 2026-11-30).
+5. Once the repository is public, set `AUGUR_CHAIN_MINUTES=60`: GitHub's
+   scheduler was measured to drop most ticks (RESULTS.md M3), and the chain
+   dispatches each next run itself. While private, its waiting would bill
+   about 43,000 minutes a month (a 60-minute job, 24 times a day), so leave
+   it unset (the workflow also refuses to chain on a private repository).
+6. Kill switch: set `AUGUR_SCHEDULE=off`.

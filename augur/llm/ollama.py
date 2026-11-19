@@ -8,7 +8,10 @@ import httpx
 
 from augur.errors import ProviderError
 from augur.llm.base import LlmRequest, LlmResponse
+from augur.log import get_logger
 from augur.ratelimit import RateLimiter
+
+log = get_logger(__name__)
 
 
 class OllamaProvider:
@@ -24,6 +27,7 @@ class OllamaProvider:
         self._num_ctx = num_ctx
         self._http = http
         self._base_url = base_url.rstrip("/")
+        self._effort_logged = False
         self._limiter = limiter or RateLimiter(10, burst=10, max_concurrent=1)
 
     @property
@@ -31,6 +35,9 @@ class OllamaProvider:
         return "ollama"
 
     async def complete(self, request: LlmRequest) -> LlmResponse:
+        if request.reasoning_effort is not None and not self._effort_logged:
+            self._effort_logged = True
+            log.debug("ollama ignores reasoning effort", effort=request.reasoning_effort)
         options: dict[str, Any] = {
             "temperature": request.temperature,
             "num_predict": request.max_tokens,

@@ -10,6 +10,7 @@ from augur.aggregate import median
 from augur.comment import MAX_COMMENT_CHARS, render_comment
 from augur.errors import ForecastParseError
 from augur.llm.endpoints import PRESETS, Route
+from augur.predictions import BinaryPrediction
 
 from .conftest import T0
 from .helpers import binary_question, source
@@ -76,11 +77,14 @@ def test_median() -> None:
 
 
 LOCAL = Route(endpoint=PRESETS["ollama"], model="qwen2.5:7b")
+BINARY_Q = binary_question(T0)[0]
 
 
 def _members(*pcts: int, route: Route = LOCAL) -> list[MemberForecast]:
     return [
-        MemberForecast(i, p / 100, f"Reasoning of member {i}. " * 3, f"call_{i}", route)
+        MemberForecast(
+            i, BinaryPrediction(p / 100), f"Reasoning of member {i}. " * 3, f"call_{i}", route
+        )
         for i, p in enumerate(pcts)
     ]
 
@@ -89,7 +93,8 @@ def test_comment_reflects_members_brief_and_dated_sources() -> None:
     s = source(T0 - timedelta(days=4), retrieved_at=T0, url="https://en.wikipedia.org/x")
     research = ResearchResult(queries=["q"], sources=[s], brief="Status quo holds [S1].")
     text = render_comment(
-        probability=0.3,
+        q=BINARY_Q,
+        prediction=BinaryPrediction(0.3),
         members=_members(30, 20, 40, 35, 25),
         research=research,
         cutoff=T0,
@@ -105,9 +110,12 @@ def test_comment_reflects_members_brief_and_dated_sources() -> None:
 
 def test_comment_says_when_draws_failed_and_stays_short() -> None:
     research = ResearchResult(queries=[], sources=[], brief="x " * 5000)
-    members = [MemberForecast(i, 0.5, "word " * 2000, f"c{i}", LOCAL) for i in range(3)]
+    members = [
+        MemberForecast(i, BinaryPrediction(0.5), "word " * 2000, f"c{i}", LOCAL) for i in range(3)
+    ]
     text = render_comment(
-        probability=0.5,
+        q=BINARY_Q,
+        prediction=BinaryPrediction(0.5),
         members=members,
         research=research,
         cutoff=T0,
@@ -122,7 +130,12 @@ def test_comment_names_every_model_that_answered() -> None:
     other = Route(endpoint=PRESETS["openrouter"], model="openai/gpt-5.1")
     members = _members(30, 40) + _members(50, route=other)
     text = render_comment(
-        probability=0.4, members=members, research=research, cutoff=T0, requested=3
+        q=BINARY_Q,
+        prediction=BinaryPrediction(0.4),
+        members=members,
+        research=research,
+        cutoff=T0,
+        requested=3,
     )
     assert "by openai/gpt-5.1 and qwen2.5:7b." in text
 
