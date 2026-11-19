@@ -8,6 +8,7 @@ import json
 import os
 import sys
 from collections.abc import Sequence
+from datetime import date
 from pathlib import Path
 
 from augur import baseline, report, scorecard, standings
@@ -44,7 +45,9 @@ from augur.llm.registry import FRONTIER_TIER_NAME, in_frontier_tier
 from augur.log import configure_logging, get_logger
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
+from augur.replay import WITH_PRICES_SUFFIX, price_research, record_prices, recorded_prices
 from augur.research.asknews import AskNewsSearcher
+from augur.research.markets import MarketsSearcher
 from augur.research.source import Searcher
 from augur.research.wikipedia import WikipediaSearcher
 from augur.resolve import resolve_forecastbench, resolve_manual, resolve_metaculus
@@ -136,6 +139,25 @@ def _parser() -> argparse.ArgumentParser:
     fb.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
     fb.add_argument("--limit", type=int, help="forecast only the first N eligible questions")
     fb.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
+    fb.add_argument(
+        "--prices",
+        type=Path,
+        help="arm (d): show each question's price recorded by `augur backtest prices` in this "
+        "ledger as the brief's only source, and skip questions without one",
+    )
+    bp = bt_sub.add_parser(
+        "prices",
+        help="record each ForecastBench market question's exact price as of its freeze date",
+        description=(
+            "Fetch each eligible question's price from its market's public API as of the "
+            "freeze instant (Manifold's last bet, Polymarket's last price-history point, "
+            "the Metaculus aggregate where the token sees it) and record it as a dated "
+            "market source. No model is called. Free."
+        ),
+    )
+    bp.add_argument("--questions", type=Path, required=True, help="question set JSON")
+    bp.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
+    bp.add_argument("--ledger", type=Path, required=True, help="the ledger to write")
 
     res = sub.add_parser(
         "resolve",
@@ -380,7 +402,28 @@ async def _models(args: argparse.Namespace, settings: Settings) -> int:
         return 0 if answering or args.route else 1
 
 
+async def _backtest_prices(args: argparse.Namespace, settings: Settings) -> int:
+    report = load_set(args.questions, args.resolutions, released=date.min)
+    print("\n".join(report.lines()))
+    clock = SystemClock()
+    async with default_http_client() as http:
+        metaculus = MetaculusClient.from_settings(settings, http)
+        searcher = MarketsSearcher(http, clock, metaculus=metaculus)
+        with Ledger.open(args.ledger, clock) as ledger:
+            result = await record_prices(
+                questions=report.kept,
+                tournament=f"forecastbench:{report.question_set}",
+                searcher=searcher,
+                ledger=ledger,
+                code_version=code_version(),
+            )
+    print(f"ledger: {args.ledger} {result.line()}")
+    return 0
+
+
 async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
+    if args.backtest_command == "prices":
+        return await _backtest_prices(args, settings)
     if settings.is_replay:
         raise ConfigError("a backtest needs a live model; set AUGUR_PROVIDER or the chains")
     answering = settings.chains()["forecast"][0]
@@ -394,6 +437,15 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     print("\n".join(report.lines()))
     clock = PinnedClock(SystemClock().now())
     ledger_path: Path = args.ledger or settings.ledger_path
+    tournament = f"forecastbench:{report.question_set}"
+    research = None
+    extra: dict[str, object] = {}
+    if args.prices is not None:
+        prices = recorded_prices(args.prices, tournament)
+        print(f"{len(prices)} recorded prices in {args.prices}")
+        research = price_research(prices)
+        extra = {"retrieval": "recorded market price", "prices_ledger": str(args.prices)}
+        tournament += WITH_PRICES_SUFFIX
     async with default_http_client() as http:
         # Rate-limit cool-downs run on the wall clock: a pinned clock never
         # reaches the end of a cool-down, so one 429 would fail every later question.
@@ -402,12 +454,14 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
             try:
                 result = await run_forecastbench(
                     questions=report.kept,
-                    tournament=f"forecastbench:{report.question_set}",
+                    tournament=tournament,
                     settings=settings,
                     router=router,
                     ledger=ledger,
                     clock=clock,
                     code_version=code_version(),
+                    research_for=research,
+                    extra_settings=extra,
                 )
             finally:
                 await router.aclose()

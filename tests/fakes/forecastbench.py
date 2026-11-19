@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
+from augur.agents.researcher import ResearchResult
 from augur.backtest import BacktestResult, PinnedClock, run_forecastbench
 from augur.clock import FixedClock
 from augur.config import Settings
@@ -130,6 +132,7 @@ async def run_backtest(
     percents: tuple[float | None, ...] = (30,),
     tournament: str = f"forecastbench:{QUESTION_SET}",
     forecasters: int = 3,
+    research_for: Callable[[FBQuestion], ResearchResult | None] | None = None,
 ) -> BacktestResult:
     """Run the backtest with a scripted provider; the ledger is closed on return."""
     clock = PinnedClock(datetime(2026, 1, 1, tzinfo=UTC))
@@ -152,4 +155,5 @@ async def run_backtest(
             clock=clock,
             code_version="test",
             out=lambda _line: None,
+            research_for=research_for,
         )

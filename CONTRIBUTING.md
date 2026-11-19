@@ -36,6 +36,8 @@ installs Metaculus's template bot and does not support 3.14.
 | `augur standings --round SLUG [--out F] [--ledger L ...]` | A MiniBench round's leaderboard: rank 1, Augur, the best template bot, the best house bot, the community aggregates, a listed open-source bot; each question Augur did not forecast explained from the ledgers. `--from F` renders a saved snapshot offline. |
 | `augur report [--check]` | What `make results` runs. |
 | `augur backtest forecastbench --questions Q --resolutions R` | What `make backtest` runs. |
+| `augur backtest prices --questions Q --resolutions R --ledger L` | Records each ForecastBench market question's exact price as of its freeze instant (Manifold's last bet, Polymarket's last history point, the Metaculus aggregate where the token sees it) as a dated market source. No model call; free. |
+| `augur backtest forecastbench ... --prices L` | The replay evaluation's arm (d): the recorded price is the brief's only source; questions without one are skipped. |
 | `augur ledger import PATH... --out DB` | Rebuilds one SQLite ledger from JSONL exports (files or a directory, such as a checkout of the `ledger` branch); the leakage triggers re-check every row. |
 | `augur ledger export DB OUT` | Writes a ledger as JSONL, one row per line, byte-stable; the scheduled workflow pushes one per run to the `ledger` branch. |
 | `augur forecast ... --coverage PATH` | Also writes the run's coverage report as JSON: each question forecast in time, missed, skipped or failed, and why (also in the ledger's `question_outcomes`). |
