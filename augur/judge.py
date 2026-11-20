@@ -29,6 +29,7 @@ its rates are reported.
 from __future__ import annotations
 
 import json
+import math
 import re
 import sqlite3
 from collections.abc import Sequence
@@ -134,10 +135,13 @@ def parse_scores(text: str, n: int) -> dict[int, tuple[int, str]]:
         if isinstance(score, bool) or not isinstance(score, int | float | str):
             continue
         try:
-            value = int(float(score))
+            number = float(score)
         except ValueError:
             continue
-        if 0 <= value <= 4 and float(score) == value and 1 <= index <= n:
+        if not math.isfinite(number):  # json.loads reads Infinity and 1e999
+            continue
+        value = int(number)
+        if 0 <= value <= 4 and number == value and 1 <= index <= n:
             found[index] = (value, str(item.get("reason", ""))[:300])
     return found
 
