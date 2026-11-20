@@ -245,6 +245,20 @@ def test_mode_filter_keeps_only_those_runs(world: World) -> None:
     assert dry["q1"].submitted is False
 
 
+def test_an_unrestricted_run_is_scored_only_when_named(world: World) -> None:
+    clock = FixedClock(T0 + timedelta(days=30))
+    with Ledger.open(world.path, clock) as ledger:
+        leaky = _run(ledger, RunMode.UNRESTRICTED, "minibench")
+        _post(ledger, leaky, binary_post(1002, world.ids["q2"], opened=OPENED["q2"], title="q2"))
+        _aggregate(ledger, leaky, world.ids["q2"], {"probability": 0.01})
+    # Later than every other forecast of q2, yet the default scorecard ignores it.
+    assert _by_id(load([world.path]), world)["q2"].augur == {"probability": 0.3}
+    named = load([world.path], modes=["unrestricted"])
+    assert [(s.question_id, s.augur) for s in named.scored] == [
+        (world.ids["q2"], {"probability": 0.01})
+    ]
+
+
 def test_the_same_ledger_twice_counts_each_question_once(world: World) -> None:
     assert len(load([world.path, world.path]).scored) == 5
 

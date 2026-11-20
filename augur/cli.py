@@ -270,7 +270,12 @@ def _parser() -> argparse.ArgumentParser:
         default="question",
         help="what the bootstrap resamples: questions, opening weeks or sources",
     )
-    sc.add_argument("--mode", action="append", choices=("live", "dry_run", "backtest"))
+    sc.add_argument(
+        "--mode",
+        action="append",
+        choices=("live", "dry_run", "backtest", "unrestricted"),
+        help="runs to score (repeatable); by default every mode but unrestricted",
+    )
     sc.add_argument("--resamples", type=int, default=10_000)
 
     rep = sub.add_parser(
