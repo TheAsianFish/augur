@@ -11,14 +11,26 @@ from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 
+import httpx
+
 from augur import baseline, report, scorecard, standings
-from augur.backtest import PinnedClock, run_forecastbench
+from augur.backtest import (
+    PLAN_SUFFIX,
+    PinnedClock,
+    Retrieval,
+    plan_queries,
+    read_queries,
+    run_forecastbench,
+    sample,
+    write_queries,
+)
 from augur.clock import SystemClock
 from augur.config import Settings
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
 from augur.export import export_jsonl
-from augur.forecastbench import load_set
+from augur.forecastbench import FBQuestion, load_set
 from augur.importer import import_exports
+from augur.judge import judge_arm
 from augur.leakage import scan_ledger
 from augur.ledger import Ledger
 from augur.llm.catalog import (
@@ -56,6 +68,7 @@ from augur.replay import (
 from augur.research.asknews import AskNewsSearcher
 from augur.research.markets import MarketsSearcher
 from augur.research.source import Searcher
+from augur.research.wayback import WaybackSearcher
 from augur.research.wikipedia import WikipediaSearcher
 from augur.resolve import resolve_forecastbench, resolve_manual, resolve_metaculus
 from augur.runner import TOURNAMENTS, ForecastRun, code_version, format_probe
@@ -162,6 +175,41 @@ def _parser() -> argparse.ArgumentParser:
     fb.add_argument("--limit", type=int, help="forecast only the first N eligible questions")
     fb.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
     fb.add_argument(
+        "--retrieval",
+        choices=("none", "open", "now"),
+        default="none",
+        help="none (the default); open: research each question as of its open instant "
+        "(a backtest); now: research as of this moment, Q2's leaky arm (an unrestricted run, "
+        "never scored as a backtest)",
+    )
+    fb.add_argument(
+        "--searchers",
+        default="wikipedia,wayback",
+        help="comma-separated searchers for --retrieval (wikipedia, wayback)",
+    )
+    fb.add_argument(
+        "--queries",
+        type=Path,
+        help="planned queries per question (JSON from --plan-out), shared by every arm",
+    )
+    fb.add_argument(
+        "--plan-out",
+        type=Path,
+        help="only plan each question's queries as of its open instant and write them here",
+    )
+    fb.add_argument(
+        "--loop",
+        type=int,
+        default=0,
+        metavar="STEPS",
+        help="with --retrieval: the bounded research loop with this many searches",
+    )
+    fb.add_argument(
+        "--sample",
+        type=int,
+        help="only the first N eligible questions in question-id order (a fixed sample)",
+    )
+    fb.add_argument(
         "--prices",
         type=Path,
         help="arm (d): show each question's price recorded by `augur backtest prices` in this "
@@ -181,6 +229,19 @@ def _parser() -> argparse.ArgumentParser:
     bp.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
     bp.add_argument("--ledger", type=Path, required=True, help="the ledger to write")
 
+    jd = sub.add_parser(
+        "judge",
+        help="rate each source a backtest arm showed its forecasters for leakage (0 to 4)",
+        description=(
+            "Rate every source the forecasters of one arm were shown, with El Lahib et al.'s "
+            "0 to 4 leakage rubric, using the first research model. The judge sees the "
+            "resolution. Resumable: questions already judged are skipped."
+        ),
+    )
+    jd.add_argument("--ledger", type=Path, required=True, help="the arm's ledger")
+    jd.add_argument("--tournament", required=True, help="the arm's tournament label")
+    jd.add_argument("--questions", type=Path, required=True, help="question set JSON")
+    jd.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
     res = sub.add_parser(
         "resolve",
         help="append resolutions (and references Metaculus exposes) to a ledger",
@@ -460,11 +521,18 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
         )
     report = load_set(args.questions, args.resolutions, released=released, limit=args.limit)
     print("\n".join(report.lines()))
+    questions = sample(report.kept, args.sample)
+    if args.sample is not None:
+        print(f"  sample  {len(questions):>4} (first {args.sample} by question id)")
     clock = PinnedClock(SystemClock().now())
     ledger_path: Path = args.ledger or settings.ledger_path
     tournament = f"forecastbench:{report.question_set}"
     research = None
     extra: dict[str, object] = {}
+    if args.plan_out is not None or args.retrieval != "none":
+        if args.prices is not None:
+            raise ConfigError("--prices is its own arm; do not combine it with --retrieval")
+        return await _backtest_research(args, settings, questions, tournament, ledger_path)
     if args.prices is not None:
         prices = recorded_prices(args.prices, tournament)
         print(f"{len(prices)} recorded prices in {args.prices}")
@@ -478,7 +546,7 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
         with Ledger.open(ledger_path, clock) as ledger:
             try:
                 result = await run_forecastbench(
-                    questions=report.kept,
+                    questions=questions,
                     tournament=tournament,
                     settings=settings,
                     router=router,
@@ -494,6 +562,108 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
         f"ledger: {ledger_path} (run {result.run_id}): {result.forecast} forecast, "
         f"{result.resumed} done earlier, {result.skipped} skipped, {result.failed} failed"
     )
+    return 1 if result.failed else 0
+
+
+def _backtest_searchers(names: str, http: httpx.AsyncClient) -> list[Searcher]:
+    # Searchers stamp ``retrieved_at`` with the real time; ``as_of`` is the cutoff.
+    clock = SystemClock()
+    found: list[Searcher] = []
+    for name in (n.strip() for n in names.split(",") if n.strip()):
+        if name == "wikipedia":
+            found.append(WikipediaSearcher(http, clock))
+        elif name == "wayback":
+            found.append(WaybackSearcher(http, clock))
+        else:
+            raise ConfigError(
+                f"unknown backtest searcher {name!r}; use wikipedia and/or wayback "
+                "(AskNews and markets cannot prove dates for a backtest here)"
+            )
+    return found
+
+
+async def _backtest_research(
+    args: argparse.Namespace,
+    settings: Settings,
+    questions: list[FBQuestion],
+    tournament: str,
+    ledger_path: Path,
+) -> int:
+    """Q2's arms and the research loop: plan, or research as of open or now, then forecast."""
+    queries: dict[int, list[str]] | None = None
+    if args.queries is not None:
+        queries = read_queries(args.queries)
+        missing = [q for q in questions if q.question_id not in queries]
+        print(f"{len(queries)} planned question(s) in {args.queries}; {len(missing)} unplanned")
+    clock = PinnedClock(SystemClock().now())
+    async with default_http_client() as http:
+        router = build_router(settings, http, load_snapshot(), SystemClock())
+        try:
+            with Ledger.open(ledger_path, clock) as ledger:
+                if args.plan_out is not None:
+                    planned = await plan_queries(
+                        questions=questions,
+                        tournament=tournament + PLAN_SUFFIX,
+                        settings=settings,
+                        router=router,
+                        ledger=ledger,
+                        clock=clock,
+                        code_version=code_version(),
+                    )
+                    write_queries(args.plan_out, planned)
+                    print(f"planned {len(planned)} question(s); wrote {args.plan_out}")
+                    return 0
+                retrieval = Retrieval(
+                    searchers=_backtest_searchers(args.searchers, http),
+                    as_of="now" if args.retrieval == "now" else "open",
+                    queries=queries,
+                    loop_steps=args.loop,
+                )
+                result = await run_forecastbench(
+                    questions=questions,
+                    tournament=tournament + "+" + retrieval.label(),
+                    settings=settings,
+                    router=router,
+                    ledger=ledger,
+                    clock=clock,
+                    code_version=code_version(),
+                    retrieval=retrieval,
+                    wall_clock=SystemClock(),
+                    extra_settings={"queries_file": str(args.queries) if args.queries else None},
+                )
+        finally:
+            await router.aclose()
+    print(
+        f"ledger: {ledger_path} (run {result.run_id}): {result.forecast} forecast, "
+        f"{result.resumed} done earlier, {result.skipped} skipped, {result.failed} failed"
+    )
+    return 1 if result.failed else 0
+
+
+async def _judge(args: argparse.Namespace, settings: Settings) -> int:
+    report = load_set(args.questions, args.resolutions, released=date.min)
+    clock = SystemClock()
+    async with default_http_client() as http:
+        router = build_router(settings, http, load_snapshot(), clock)
+        try:
+            with Ledger.open(args.ledger, clock) as ledger:
+                result = await judge_arm(
+                    ledger=ledger,
+                    tournament=args.tournament,
+                    questions=report.kept,
+                    settings=settings,
+                    router=router,
+                    clock=clock,
+                    code_version=code_version(),
+                )
+        finally:
+            await router.aclose()
+    print(
+        f"judge run {result.run_id}: {result.judged} judged, {result.resumed} done earlier, "
+        f"{len(result.failed)} failed of {result.questions}"
+    )
+    for line in result.failed:
+        print(f"  failed: {line}")
     return 1 if result.failed else 0
 
 
@@ -587,6 +757,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_models(args, settings))
         if args.command == "backtest":
             return asyncio.run(_backtest(args, settings))
+        if args.command == "judge":
+            return asyncio.run(_judge(args, settings))
         if args.command == "baseline":
             return asyncio.run(baseline.main(args, settings))
         if args.command == "resolve":
