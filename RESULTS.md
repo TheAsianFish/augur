@@ -4,16 +4,173 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M5 sets the bot against the
-market price on resolved ForecastBench questions (the price alone wins); M4
-has the first scored number and the scoring it rests on; the first live
-score waits on a scored round (see Q1 and Q5 below).
+committed file differs from a fresh render. M6 measures what leakage is
+worth on a retrieval backtest (Q2) and tries an iterative research loop; M5
+sets the bot against the market price on resolved ForecastBench questions
+(the price alone wins); M4 has the first scored number and the scoring it
+rests on; the first live score waits on a scored round (see Q1 and Q5
+below).
 
 ## M6: what leakage is worth, and the research loop (2026-11-20)
 
+**Question.** If a backtest's retrieval is not cut at the question's open
+date, how much better does the bot look than it is (Q2)? And does an
+iterative research loop beat the one-pass brief on sources it is allowed to
+read? The design, the predictions P7 to P11 and the decision rules were
+committed to PLAN.md (`e391152`) before any run.
+
+**Method.** C2's fixed sample: the first 64 of its 138 eligible questions
+in question-id order (a hash, so unrelated to topic or outcome); 47 have an
+as-of price from M5, 17 (Metaculus and INFER) do not. One model in every
+role, `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04, a week
+before the 2026-06-11 freeze; the release gate now checks every route at
+call time), 3 draws, median. The planner wrote three queries per question
+once, as of its open instant (`data/backtest/m6-c2-queries.json`, ledger
+`m6-c2-plan.sqlite`), and every arm read that plan, so O and T differ only
+in when the searchers read: Wikipedia (the revision current at the cutoff)
+and Wayback (the newest capture at or before the cutoff of each non-market
+URL the question names). N is M5's no-retrieval run of the same model on
+the same questions. T is recorded as an `unrestricted` run (cutoff = the
+moment it ran, 2026-11-20), never as a backtest. The judge is the same free
+model with El Lahib et al.'s rubric, shown the question, its open date and
+its resolution; the reference labels are a second, independent rating of a
+hash-drawn sample of 40 shown sources (20 from O, 20 from T) against the
+same rubric, made blind to the judge's scores. Cost $0 (free model); the
+arms ran 04:36 to 06:01 UTC with three processes sharing one key.
+Commands: `make backtest-q2` (each step is one line of it); ledgers
+`data/ledgers/m6-c2-{plan,open,now,loop}.sqlite`; labels
+`data/judge/m6-reference-labels.json`.
+
 <!-- augur:begin leakage -->
-The M6 arms' ledgers are not committed yet.
+C2's fixed sample: the first 64 eligible questions by question id; 64 were forecast by every arm. Model `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04, before the 2026-06-11 freeze) in every role, 3 draws, median. Lower Brier is better; a negative difference favours the first arm.
+
+| Arm | Brier [95% interval] | Log score | n |
+|---|---|---|---|
+| N: no retrieval | 0.2045 [0.1284, 0.2859] | -0.697 | 64 |
+| O: one pass, sources as of open | 0.1887 [0.1173, 0.2642] | -0.563 | 64 |
+| T: one pass, sources as of today (leaky on purpose) | 0.0628 [0.0239, 0.1096] | -0.192 | 64 |
+
+| Paired difference | Brier [95% interval] (MDE) |
+|---|---|
+| T − N (what retrieval as of today is worth) | -0.1418 [-0.2170, -0.0741] (0.1023) |
+| O − N (what leak-free retrieval is worth) | -0.0158 [-0.0503, +0.0170] (0.0483) |
+| T − O (the leak, same queries) | -0.1259 [-0.1930, -0.0652] (0.0919) |
+
+**Edge over the price** (the as-of price from M5, on the 47 priced questions of the sample; a negative difference would be an edge):
+
+| Arm minus the price | Brier [95% interval] (MDE) |
+|---|---|
+| N − price | +0.1156 [+0.0256, +0.2077] (0.1300) |
+| O − price | +0.0934 [+0.0125, +0.1761] (0.1164) |
+| T − price | -0.0456 [-0.1168, +0.0222] (0.0992) |
+| L − price (loop sample, n = 29) | +0.1577 [+0.0442, +0.2815] (0.1697) |
+
+Unpriced questions of the sample (Metaculus and INFER, n = 17; no price to set beside): N 0.1112 [0.0311, 0.2168]; O 0.1128 [0.0271, 0.2316]; T 0.0230 [0.0007, 0.0529].
+
+**The research loop** (the first 40 of the sample; 40 forecast by the loop and the one pass):
+
+| Arm | Brier [95% interval] | Log score | n |
+|---|---|---|---|
+| N: no retrieval | 0.2304 [0.1336, 0.3377] | -0.800 | 40 |
+| O: one pass, sources as of open | 0.2056 [0.1148, 0.3040] | -0.615 | 40 |
+| L: research loop, sources as of open | 0.2317 [0.1317, 0.3386] | -0.793 | 40 |
+| L − O (loop against one pass) | +0.0261 [-0.0050, +0.0596] (MDE 0.0460) | | |
+
+Cost per question forecast ($0: free model): successful model calls (of which research), output tokens, wall seconds.
+
+| Arm | Questions | Calls (research) | Output tokens | Seconds |
+|---|---|---|---|---|
+| O | 64 | 4.0 (1.0) | 4,174 | 79 |
+| T | 64 | 4.0 (1.0) | 3,720 | 66 |
+| L | 40 | 6.0 (3.0) | 4,955 | 91 |
+
+**The judge** (the same free model, El Lahib et al.'s 0 to 4 rubric, against each question's open instant, shown the resolution). Major leakage is a score of 3 or 4.
+
+| Arm | Questions judged | Sources | Scores 0/1/2/3/4 | Sources at 3+ | Questions with a source at 3+ |
+|---|---|---|---|---|---|
+| O | 64 | 324 | 323/0/0/0/1 | 1/324 (0%) | 1/64 (2%) |
+| T | 64 | 336 | 204/50/13/22/47 | 69/336 (21%) | 40/64 (62%) |
+
+**Judge against the reference labels** (40 sources): exact agreement with 0 and 1 merged 90.0%, quadratic weighted kappa 0.90; on major leakage (3+ against 0 to 2) 97.5% agreement, kappa 0.91 (labels 7, judge 6 at 3+). The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.
+
+Questions where the judge found a source at 3+ in T (n = 40), the nearest to the paper's selection: N 0.2580 [0.1580, 0.3665]; O 0.2300 [0.1381, 0.3302]; T 0.0439 [0.0048, 0.0942].
+
+Beside the published experiment (not the same protocol): no retrieval 0.244; leak-free (score 0) 0.242; leaky (scores 3-4) 0.108 (gap 0.136). Here: N 0.2045, O 0.1887, T 0.0628 (gap N − T 0.1418).
+
+Predictions stated in PLAN.md before the run:
+
+- P7 (Q2): retrieval as of today improves Brier by at least 0.05 with the interval below 0: **held**; as of open no better than none by more than 0.02: **held**.
+- P8 (the judge flags at least 30% of T's questions and under 10% of O's): T 62% **held**, O 2% **held**.
+- P9 (judge against the labels, here the reference labels: kappa at least 0.6, major-leak agreement at least 85%): **held**, **held**.
+- P10 (loop within ±0.02 of the one pass, interval including 0; more calls): **failed**, **held**.
+- P11 (N, O and L all worse than the price, interval above 0; T's point estimate above 0): N **held**, O **held**, L **held**, T **failed**.
 <!-- augur:end leakage -->
+
+**What it shows.**
+
+- **Leakage is worth about as much here as in the published audit.**
+  Researched as of today, the same free model on the same questions with
+  the same queries scores 0.063 against 0.205 without retrieval, 0.142
+  better [0.074, 0.217]; El Lahib et al.'s leaky arm moved 0.244 to 0.108
+  (0.136). My prediction was that naive retrieval as of today would leak
+  less than their arm, which keeps only documents their judge rated 3 or 4;
+  it did not. The mechanism is visible in the sources: today's Wikipedia
+  leads with the outcome ("She won a third term in the 2026 election";
+  "the governor-elect of Florida"). The judge found a source at 3 or 4 for
+  40 of the 64 questions, and on those 40 the gap is wider still (0.258 to
+  0.044).
+- **Leak-free retrieval is worth almost nothing to this model.** As of the
+  open instant the same searches score 0.189, 0.016 better than none with
+  an interval that includes 0 [−0.050, +0.017], as El Lahib et al. found
+  (0.244 to 0.242). So almost all of what a leaky backtest credits to
+  retrieval is the leak.
+- **A leaky backtest would erase a real gap to the market.** On the 47
+  priced questions the bot trails the as-of price by 0.093 [0.013, 0.176]
+  with leak-free sources and draws level with it with today's (−0.046
+  [−0.117, +0.022]). That is the Copier Line's warning made concrete: an
+  apparent edge over the market on a backtest is the first number to
+  suspect.
+- **The gate leaves a residual leak, and the judge finds it.** Of 324
+  sources the forecasters saw in arm O, the judge rated one at 4: the
+  revision of "2026 United States House of Representatives elections"
+  saved on 2026-06-10, one day before the cutoff, which reads "As of
+  November 2026, 58 representatives ... (24 Democrats and 36 Republicans)
+  have announced their retirement". MediaWiki renders an old revision with
+  today's templates, and an "as of" sentence built from a template carried
+  November's count into a June page. It decided one question (Republican
+  retirements between 24 and 27: N 0.35, O 0.01, resolved No), worth
+  −0.002 of O's mean. So the residual leak rate is 1 of 64 questions here,
+  and the date gate alone cannot catch it: it is the judge's job.
+- **The judge is usable on this rubric.** Against the reference labels it
+  agrees on 90% (0 and 1 merged) with a quadratic weighted kappa of 0.90,
+  and on "3 or 4" for 39 of 40 (kappa 0.91), against 76.1% and 0.85 for
+  the paper's judge against two annotators. The labels are a second rating
+  by a stronger model (Claude Opus 5.5), blind to the judge, not yet
+  checked by hand; 20 of them come from arm O, where both raters gave 0 to
+  all 20, so the agreement rests mostly on the 20 from T.
+- **The research loop did not help, and cost more.** On the first 40
+  questions the loop (3 searches, a written belief after each) scored
+  0.232 against the one pass's 0.206: 0.026 worse [−0.005, +0.060], with
+  six model calls a question instead of four and 91 seconds instead of 79.
+  P10 failed: the point estimate is outside ±0.02, on the wrong side. One
+  likely reason is in the design: the forecasters read the loop's last
+  belief (at most 120 words) instead of a 250-word brief written from every
+  excerpt. Another is the model: Metaculus's agentic bots beat the template
+  by 7.7 to 16.2 points a question on frontier models with live search,
+  and none of that transfers to a free model reading Wikipedia revisions.
+  Under the replacement rule the one pass stays the default.
+
+**Unfair or missing comparisons, named.** One free model, one ForecastBench
+set, 64 questions (40 for the loop): the MDE of the paired differences is
+0.05 to 0.10 Brier, so only the leak itself is resolved. El Lahib et al.
+used Metaculus questions, Google results and gpt-oss-120b; the arms here
+read Wikipedia revisions and Wayback captures, and the archive refused or
+timed out on many connections (12 of O's and 11 of T's Wayback URLs failed
+after retries), so most sources are Wikipedia: 249 Wikipedia and 40 Wayback
+sources were shown in O, 264 and 39 in T. Past Metaculus tournaments could
+not be used (a bot token sees no resolutions; `augur/resolved.py` kept 0 of
+269 resolved posts). The planner's query plan is shared, so the arms test
+the instant of reading, not what a leaky planner would search for.
 
 ## M5: market prices, and the bot that ships against them (2026-11-19)
 
@@ -510,6 +667,9 @@ missed, and why).
 | `m5-replay-c1-prices.sqlite` | 1 (backtest 1) | 139 | 0 | 0 | 0 | 0 | 0 |
 | `m5-replay-c2-prices.sqlite` | 2 (backtest 2) | 138 | 303 | 101 | 0 | 0 | 0 |
 | `m5-replay-c2.sqlite` | 4 (backtest 4) | 138 | 419 | 138 | 0 | 138 | 138 |
+| `m6-c2-loop.sqlite` | 2 (backtest 2) | 40 | 239 | 40 | 0 | 0 | 0 |
+| `m6-c2-now.sqlite` | 4 (unrestricted 4) | 64 | 328 | 64 | 0 | 0 | 0 |
+| `m6-c2-open.sqlite` | 3 (backtest 3) | 64 | 320 | 64 | 0 | 0 | 0 |
 | `m6-c2-plan.sqlite` | 1 (backtest 1) | 64 | 64 | 0 | 0 | 0 | 0 |
 <!-- augur:end ledgers -->
 
@@ -865,6 +1025,10 @@ works against the real API; they say nothing yet about accuracy.
 | The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
 | The replay evaluation (arms b and d on C2) on the frontier model the floor requires live | Nothing paid without the maintainer's say-so; C2 ran on the free model that answered live in M3 | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high AUGUR_FORECASTERS=3 augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --ledger data/ledgers/m5-replay-c2-gpt54.sqlite`, then the same with `--prices data/ledgers/m5-replay-c2-prices.sqlite` (into a copy of that ledger). C2's free run used 430,222 input and 727,642 output tokens over 717 draws: about $12 at GPT-5.4's listed $2.50/$15 per million, more at high effort. The listing date (2026-03) is before the 2026-06-11 freeze, so the gate admits it |
 | Research depth, and the similar-market (search) half of the markets searcher, on replayed live research (C3) | No live question with an Augur forecast has resolved (C3 = 0); C1 and C2 have no retrieval, and their price is exact by construction | Once live questions resolve: `augur resolve --ledger L` (or `--manual`), then the replay arms on the ledger's recorded sources (M7's harness) |
+| The judge against labels made by hand (P9 as planned) | The 40 labels in `data/judge/m6-reference-labels.json` are a second, blind model rating; no one has yet scored them by hand | `uv run python scripts/judge_sample.py --per-arm 20 --sheet sheet.md --out /tmp/labels.json` (the same 40 sources, in the same order), score each by hand on the rubric in `augur/judge.py`, copy the scores into `data/judge/m6-reference-labels.json` (setting its `rater`), then `make results`; free |
+| Q2 on past Metaculus tournaments (the corpus El Lahib et al. used) | `augur/resolved.py` loads them, but this bot token sees no resolution on any scored tournament: 0 kept of 59 (MiniBench 2026-11-02), 60 (2026-10-19) and 150 (Summer 2026 FutureEval, first three pages) resolved posts, every binary one with its resolution hidden | With a personal (non-bot) token in `METACULUS_TOKEN`: `load_tournament(client, "minibench-2026-11-02", released=...)` then `write_snapshot`, and the same three arms on that snapshot (a `--metaculus SNAPSHOT` loader option for `augur backtest`) |
+| Q2 and the loop on the frontier model the floor requires live | Nothing paid without the maintainer's say-so | `make backtest-q2` with `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-sonnet-5.5` and `AUGUR_RESEARCH_MODELS` the same, into fresh ledgers. The free run's tokens per question (RESULTS, M6 cost table) put the four arms at roughly $10 to $20 at Sonnet 5.5's listed $2/$10 per million |
+| A scored MiniBench round under the proposed floor, with the shadow template beside it (Q1, Q5) | The maintainer approves the re-based tier and a route first; the key reports a $1 limit | Approve a route from RESULTS.md's floor table, then `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-haiku-5.5 augur forecast --tournament minibench --submit` (worst case $0.92 a 60-question round at Haiku 5.5's listed prices) and `augur baseline --ledger L` on the same model; after resolution `augur score L --mode live --cluster week` and `augur standings --round minibench-2026-11-16 --ledger L` |
 | Groq, Gemini and GitHub Models free tiers | No `GROQ_API_KEY`, `GEMINI_API_KEY` or `GITHUB_TOKEN` here; the presets are configured, not exercised | `AUGUR_FORECAST_MODELS=groq:<model> augur models probe --burst 30` (and `gemini:`, `github:`) |
 | Tokens-per-minute limits | OpenRouter sends no token-limit header and the bursts are tiny | the same burst on Groq, which sends `x-ratelimit-limit-tokens` |
 | AskNews sources | No `ASKNEWS_CLIENT_ID`/`ASKNEWS_CLIENT_SECRET` in the build environment; the searcher is tested only against recorded payloads | `make test-integration` with both set, then `augur forecast --tournament minibench` |

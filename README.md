@@ -1,7 +1,8 @@
 # Augur
 
-**Status: in progress.** M5 of 10 (market prices as of the cutoff, and the
-bot measured against simply reading the market); see [PLAN.md](PLAN.md).
+**Status: in progress.** M6 of 10 (a retrieval backtest that cannot read
+the future, and a measurement of what it is worth when it can); see
+[PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -98,10 +99,10 @@ flowchart LR
   PROBE --> ROUTER{router<br/>ordered chain per role,<br/>fallback, floor}
   CAT[OpenRouter model list<br/>prices, listing dates] --> ROUTER
   RUN --> RES[researcher<br/>plan queries]
-  RES --> S[searchers as_of cutoff<br/>Wikipedia revisions, AskNews]
+  RES --> S[searchers as_of cutoff<br/>Wikipedia revisions, Wayback captures,<br/>AskNews, market prices]
   S --> LED[(ledger<br/>SQLite, append-only)]
   LED --> GATE{leakage gate<br/>proven date <= cutoff}
-  GATE -->|admitted only| BRIEF[brief citing S1..Sn]
+  GATE -->|admitted only| BRIEF[one-pass brief, or the loop:<br/>belief, unknown, next query]
   BRIEF --> FC[5 forecaster draws<br/>probability, option lines<br/>or six percentiles]
   FC --> MED[combine by type<br/>median, per-option median,<br/>mean of CDFs]
   MED --> VALID{Metaculus's<br/>validity rules}
@@ -116,6 +117,9 @@ flowchart LR
   RESV[augur resolve<br/>Metaculus, ForecastBench, manual] --> LED
   LED --> SCORE[augur score<br/>Metaculus scores, paired<br/>clustered bootstrap, MDE]
   LB[leaderboard API] --> STAND[augur standings]
+  BT[augur backtest<br/>clock pinned to open,<br/>or as of now: unrestricted] --> RES
+  LED --> JUDGE[augur judge<br/>0-4 leakage rubric]
+  JUDGE --> LED
   SCORE & STAND --> REPORT[augur report<br/>RESULTS.md blocks, drift test]
 ```
 
@@ -124,14 +128,15 @@ flowchart LR
 | `augur/metaculus.py` | Typed `httpx` client: list, detail (`my_forecasts`), a forecast of any type, private comment; token bucket and `Retry-After`. |
 | `augur/predictions.py`, `augur/distributions.py` | What a forecast is per type, how members combine, the payload; percentiles to the CDF Metaculus accepts, its validity rules mirrored from the server, property-tested. |
 | `augur/llm/` | `endpoints` (presets and `AUGUR_ENDPOINT_*`, `endpoint:model` routes), `openai_compat` (one provider for every OpenAI-compatible host, sorting refusals into rate-limited, out-of-credit, auth, unavailable, empty), `router` (the chain per role, cool-downs, the floor), `catalog` (OpenRouter's model list: prices, listing dates), `probe` (opening probe, burst limit measurement), `registry` (frontier tier, local release dates), `ollama`, `replay`. |
-| `augur/research/` | `Source` record with `date_evidence`; `wikipedia` (the revision current at `as_of`), `asknews` (bounded by `end_timestamp`). |
+| `augur/research/` | `Source` record with `date_evidence`; `wikipedia` (the revision current at `as_of`), `wayback` (the newest capture at or before `as_of` of each URL the question names, its own timestamp compared, never the query's day bound), `asknews` (bounded by `end_timestamp`), `markets` (prices as of the cutoff). |
 | `augur/leakage.py` | The gate, and `scan_ledger`, which re-checks every stored row. |
 | `augur/ledger.py` | Numbered migrations; every table refuses `UPDATE` and `DELETE`. |
-| `augur/agents/` | Researcher, forecaster draws, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
+| `augur/agents/` | Researcher (one pass, or a bounded loop that writes a belief and what is still unknown and picks the next query), forecaster draws, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
 | `augur/comment.py` | The private comment, built only from the members' reasoning and the cited sources. |
 | `augur/score.py`, `augur/scorecard.py` | Metaculus's baseline, head-to-head and peer scores for every type (matched to its own `score_math.py`), Brier and log score; scoring every resolved forecast against the template, the community, a market price, 50% and the base rate with a paired, clustered bootstrap and the minimum detectable effect. |
 | `augur/resolve.py`, `augur/baseline.py`, `augur/standings.py` | Resolutions (hidden ones counted, not guessed), the shadow template run unpublished on Augur's model, and each round's leaderboard beside Augur. |
-| `augur/forecastbench.py`, `augur/backtest.py` | ForecastBench question sets, eligibility filters, and the bot's own forecaster run with the clock pinned to each question's freeze date. |
+| `augur/forecastbench.py`, `augur/resolved.py`, `augur/backtest.py` | Resolved questions (ForecastBench sets; past Metaculus tournaments where the token sees resolutions) with eligibility filters, and the bot's own researcher and forecaster run with the clock pinned to each question's open instant, every route's release date checked at call time; Q2's leaky arm as an `unrestricted` run. |
+| `augur/judge.py`, `augur/q2.py` | The leakage judge (El Lahib et al.'s 0 to 4 rubric, checked against hand labels) and Q2's scoring: arms, paired differences, edge over the price. |
 | `augur/report.py`, `augur/importer.py` | RESULTS.md's generated blocks (a test fails on drift); one ledger rebuilt from the `ledger` branch's exports. |
 | `augur/runner.py`, `augur/cli.py` | `augur forecast` (soonest-closing first, a deadline per question, a coverage report), `augur models list|probe|snapshot`, `augur ledger check|export`. |
 | `.github/workflows/tournament.yml`, `scripts/` | The schedule: `poll.py` (standard library) decides whether to install anything; the forecast job posts from `main` only and `push_ledger.sh` commits each run's export to the `ledger` branch. `question_windows.py`, `cron_delay.py` and `cadence.py` measured how often it must run. |
@@ -152,6 +157,13 @@ three times, so a bug in one layer is caught by the next:
    not admit.
 3. `tests/test_leakage.py` scans every ledger committed under `data/ledgers/`
    and plants one violation of each kind to prove the scan finds it.
+
+M6 measures what the rule is worth (Q2): the same questions researched as
+of their open instant and as of today, and a judge that reads every source
+the forecasters saw for information from after the question opened. The
+"as of today" arm is recorded in a mode of its own (`unrestricted`): its
+cutoff is the moment it ran, so the gate and the triggers still hold, and
+nothing in it can be scored as a backtest.
 
 M2 adds a second rule held the same way: **a scored forecast comes only from
 a frontier-tier model**, even when the models in front of it fail mid-run.
@@ -202,6 +214,8 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M6, what leakage is worth (Q2): ForecastBench 2026-06-21, a fixed sample of 64 resolved questions, the same free model in every role, three draws, one shared query plan, Wikipedia revisions and Wayback captures ($0) | Brier: no retrieval 0.205; sources as of each question's open date 0.189, no better than none (−0.016 [−0.050, +0.017]); the same searches as of today 0.063, 0.142 better [0.074, 0.217], about the gap El Lahib et al. published (0.244 to 0.108). On the 47 priced questions, read as of open the bot trails the market price by 0.093 [0.013, 0.176]; read as of today it draws level with it (−0.046 [−0.117, +0.022]). A leaky backtest would have erased a real gap to the market |
+| M6, a bounded research loop (3 searches, a written belief and open question after each) against the one-pass brief, the first 40 of the sample | 0.026 Brier worse [−0.005, +0.060], with 6 model calls a question instead of 4; not adopted (the replacement rule needs an interval below 0) |
 | M5, the price alone against the bot: ForecastBench 2026-06-21, 101 resolved Polymarket and Manifold questions, the free model that answers live (`nemotron-3-ultra:free`), three draws, each price read as of the freeze ($0) | Brier: the market price alone 0.106; Augur without it 0.240; Augur shown the price 0.143, better than without by 0.097 [0.054, 0.144] but still 0.037 [0.003, 0.073] worse than the price it was shown; a fixed blend (⅓ Augur in log-odds) 0.129. On these questions the price alone beats every version of the bot, so its score is what the price gives it |
 | M5, how often a live question has a market: 59 questions of the 2026-11-16 MiniBench round, judged by hand | 2 of 59 had a market about the same event; 0 showed the community prediction to the bot's token |
 | M4, ForecastBench 2026-05-24, 139 resolved market questions, `qwen2.5:7b` with no retrieval, one draw, local CPU ($0) | Brier 0.2395 [0.193, 0.290]: no better than always 50% (0.2500) or the base rate (0.2406); the market price it never saw scores 0.1311, 0.108 better [0.058, 0.161]. Without sources a small model is a constant; not comparable to published ForecastBench systems |
@@ -227,8 +241,12 @@ difference needs about 300 resolved questions.
 
 - Wikipedia's search ranks today's index, so *which* pages are chosen can
   reflect later events even though each page's *text* is the revision as of
-  the cutoff. Old revisions are also rendered with today's templates. Both
-  matter for backtests (M6), where the judge audit measures the residual.
+  the cutoff. Old revisions are also rendered with today's templates. M6's
+  judge audits what the forecasters were shown for the residual.
+- M6 is one free model on one ForecastBench set. The Wayback archive refused
+  or timed out on many connections from the build machine, so most backtest
+  sources are Wikipedia revisions. Past Metaculus tournaments cannot be a
+  backtest corpus with a bot token (it sees no resolutions).
 - No frontier model has answered yet: the only key here has a $1 limit that
   may not be the sponsorship, so only free models were called. Until a
   frontier model answers, the floor keeps the bot out of scored
@@ -258,7 +276,8 @@ M2 (done) one OpenAI-compatible provider with probed model chains, and the
 repository public at its merge; M3 (done) every question type, a deadline
 per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
 first scored number; M5 (done) market
-prices as of the cutoff and the replay evaluation against the price; M6 the leakage-proof backtest; M7 ablations; M8 calibration; M9
+prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
+backtest, what leakage is worth, and a first research loop; M7 ablations; M8 calibration; M9
 "does it know when it does not know"; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 

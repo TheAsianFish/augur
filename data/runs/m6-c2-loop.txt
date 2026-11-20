@@ -1,0 +1,111 @@
+2026-06-21-llm.json: 138 questions
+  kept     138
+  sample    40 (first 40 by question id)
+64 planned question(s) in data/backtest/m6-c2-queries.json; 0 unplanned
+[1/40] manifold:2sLApOCEll p=0.99 outcome=1 (76 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:39:36.074454Z"}
+{"attempt": 1, "error": "ConnectError: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:39:36.321494Z"}
+[2/40] manifold:PucZntcA92 p=0.01 outcome=0 (79 s)
+[3/40] polymarket:0xef720745be0a15b63c392854dacae4227a9deafe11fdf6afe79bdf45754dd10a p=0.97 outcome=1 (64 s)
+[4/40] polymarket:0x66bbf6d55e0296278858b3147689f3df9259374f158f9f028b608baa322a639c p=0.18 outcome=1 (83 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:43:22.593751Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:43:32.596506Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:43:42.606314Z"}
+{"error": "Wayback request for 'https://www.gao.gov/blog/what-impoundment-control-act-and-what-gaos-role' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:43:42.606456Z", "url": "https://www.gao.gov/blog/what-impoundment-control-act-and-what-gaos-role"}
+[5/40] metaculus:38166 p=0.03 outcome=0 (108 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:45:10.331317Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:45:20.342865Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:45:30.350333Z"}
+{"error": "Wayback request for 'https://en.wikipedia.org/wiki/2026_FIFA_World_Cup' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:45:30.350484Z", "url": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:45:40.361245Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:45:50.373404Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:46:00.384955Z"}
+{"error": "Wayback request for 'https://inside.fifa.com/fifa-world-ranking/men' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:46:00.385085Z", "url": "https://inside.fifa.com/fifa-world-ranking/men"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:46:10.397265Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:46:22.581149Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:46:32.586915Z"}
+{"error": "Wayback request for 'https://journals.sagepub.com/doi/abs/10.1177/10693971231176149' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:46:32.587079Z", "url": "https://journals.sagepub.com/doi/abs/10.1177/10693971231176149"}
+[6/40] metaculus:43343 p=0.32 outcome=0 (157 s)
+[7/40] polymarket:0x3f0bc2757babb8bb9971c9f782fe81f9db734c12d84822f1120a90681c991ff8 p=0.68 outcome=0 (50 s)
+[8/40] polymarket:0xd73237bb27cdc455578e9a0788c358bd79609d394f43a270bde10cde4788105f p=0.55 outcome=0 (95 s)
+[9/40] metaculus:38940 p=0.01 outcome=0 (98 s)
+[10/40] manifold:dSaVvMLpLbwaLLUGfGfK p=0.03 outcome=0 (72 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:02.709437Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:12.718275Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:22.729245Z"}
+{"error": "Wayback request for 'https://www.reuters.com/markets/commodities/uae-says-it-quits-opec-opec-statement-2026-04-28/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:53:22.729375Z", "url": "https://www.reuters.com/markets/commodities/uae-says-it-quits-opec-opec-statement-2026-04-28/"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:32.740651Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:42.751365Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:52.763281Z"}
+{"error": "Wayback request for 'https://www.reuters.com/world/iran/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:53:52.763435Z", "url": "https://www.reuters.com/world/iran/"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:02.770932Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:12.822587Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:22.857127Z"}
+{"error": "Wayback request for 'https://www.reuters.com/business/energy/oil-prices-rise-no-end-iran-war-stand-off-seems-sight-2026-04-28/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:54:22.857255Z", "url": "https://www.reuters.com/business/energy/oil-prices-rise-no-end-iran-war-stand-off-seems-sight-2026-04-28/"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:32.868678Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:42.880252Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:52.893308Z"}
+{"error": "Wayback request for 'https://www.reuters.com/business/energy/what-is-opec-how-does-it-affect-oil-prices-2026-04-28/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:54:52.893455Z", "url": "https://www.reuters.com/business/energy/what-is-opec-how-does-it-affect-oil-prices-2026-04-28/"}
+[11/40] metaculus:43333 p=0.18 outcome=0 (221 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:56:44.850877Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:56:54.863044Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:57:04.866238Z"}
+{"error": "Wayback request for 'https://democrats.org/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:57:04.866384Z", "url": "https://democrats.org/"}
+[12/40] polymarket:0x399b69600812f9997ee0dcac06c74c9351f230baa53765eacbc443a77bc520b9 p=0.99 outcome=0 (75 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:57:58.383968Z"}
+[13/40] manifold:YEdvVluF5xAGBq6lrvfD p=0.08 outcome=1 (89 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:59:27.834663Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:59:37.839684Z"}
+[14/40] polymarket:0x5187c6fefe08cf4513e08dd31a514b698aaebc18c259b9a98c8170cca2b7d6e8 p=0.02 outcome=0 (75 s)
+[15/40] metaculus:42151 p=0.01 outcome=0 (103 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:02:26.211881Z"}
+[16/40] manifold:RdhCc6L2dl p=0.95 outcome=1 (76 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:03:41.858539Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:03:51.870827Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:04:01.926189Z"}
+{"error": "Wayback request for 'https://www.binance.com/en/trade/ZEC_USDT' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:04:01.926340Z", "url": "https://www.binance.com/en/trade/ZEC_USDT"}
+[17/40] polymarket:0x280f534844278583edf4371c96e28dfe4c03bd93ba3cbfce9175ee3821dfa12f p=0.01 outcome=1 (129 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:05:50.982600Z"}
+[18/40] metaculus:39142 p=0.01 outcome=0 (103 s)
+[19/40] metaculus:43283 p=0.08 outcome=1 (144 s)
+[20/40] manifold:ZQvUHx5d2tphDz1tJSMM p=0.05 outcome=0 (66 s)
+[21/40] manifold:0PE59gu09y p=0.12 outcome=1 (121 s)
+[22/40] polymarket:0xa4d72632ac0ddadcac5247ffc586a193f1bc3bc839cf9ce993c2471e0d599cca p=0.28 outcome=1 (89 s)
+[23/40] manifold:hdNqANszg0 p=0.01 outcome=0 (75 s)
+{"error": "no 'Probability: NN%' line in the answer; the draw is dropped", "event": "forecaster failed", "level": "warning", "member": 2, "timestamp": "2026-11-20T05:17:11.273064Z"}
+[24/40] metaculus:40938 p=0.36 outcome=0 (91 s)
+[25/40] manifold:2lZdlsyUPh p=0.12 outcome=1 (137 s)
+[26/40] polymarket:0x672d648903d96946882cd200c78253414f3bebf5143dab64add5fc0d23077f96 p=0.02 outcome=0 (55 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:20:32.593035Z"}
+[27/40] polymarket:0xde6e8331eaaf0b212f688a04f6c4ff5f895ab633a467cb3e9f3da48fce7c6801 p=0.26 outcome=0 (116 s)
+[28/40] manifold:NqZNZgILEL p=0.01 outcome=0 (54 s)
+[29/40] manifold:n8ZROwk6GKcLyurigsf1 p=0.75 outcome=1 (62 s)
+[30/40] polymarket:0x0efcc493f7e7578cd5808b29e08c2535dee61c2a1fe841696e76e7892b29cca8 p=0.35 outcome=1 (81 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:25:49.742437Z"}
+[31/40] metaculus:43435 p=0.95 outcome=1 (97 s)
+[32/40] polymarket:0x174018cba2df7afe76f434e8ca93e55c76f2eb13015a5caf941ce6d270ba6264 p=0.63 outcome=1 (73 s)
+[33/40] polymarket:0x91b6939a95e9626fe3598483d37f2ad80fccac3d8a7a2ac8c9a4d9a4007661df p=0.03 outcome=0 (47 s)
+[34/40] polymarket:0x9777a1c22720f62ad2f4c6d9f8434d97ca898c53234f13b7b04072e5c29f1335 p=0.04 outcome=0 (74 s)
+[35/40] metaculus:43525 p=0.25 outcome=0 (51 s)
+[36/40] manifold:ZhSyLhtQ0Q p=0.99 outcome=1 (69 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:32:36.580007Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:32:46.587521Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:32:56.599201Z"}
+{"error": "Wayback request for 'https://en.wikipedia.org/wiki/FIFA_World_Cup' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:32:56.599358Z", "url": "https://en.wikipedia.org/wiki/FIFA_World_Cup"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:33:06.610845Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:33:16.614302Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:33:26.685182Z"}
+{"error": "Wayback request for 'https://en.wikipedia.org/wiki/Association_football' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:33:26.685326Z", "url": "https://en.wikipedia.org/wiki/Association_football"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:33:36.697124Z"}
+[37/40] metaculus:41090 p=0.32 outcome=0 (137 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:34:53.670638Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:35:03.682854Z"}
+[38/40] polymarket:0xba8526e4bf87c26c043d7048d364508d066117c173a91f2c56a82128fdc9102c p=0.98 outcome=0 (82 s)
+[39/40] polymarket:0x802b8daacb36b5ea95011670cd004bffe3df70bc9a774da929fbd99074411e91 p=0.12 outcome=0 (90 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:37:45.842355Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:37:55.853599Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:38:05.865901Z"}
+{"error": "Wayback request for 'https://portwatch.imf.org/pages/cb5856222a5b4105adc6ee7e880a1730' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:38:05.866031Z", "url": "https://portwatch.imf.org/pages/cb5856222a5b4105adc6ee7e880a1730"}
+[40/40] manifold:RcNs5ch6qU p=0.02 outcome=0 (89 s)
+ledger: /tmp/m6/m6-c2-loop.sqlite (run run_905c1e0601e246b0828e): 40 forecast, 0 done earlier, 0 skipped, 0 failed
+EXIT 0

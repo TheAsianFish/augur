@@ -1,0 +1,5 @@
+2026-06-21-llm.json: 138 questions
+  kept     138
+  sample    64 (first 64 by question id)
+planned 64 question(s); wrote data/backtest/m6-c2-queries.json
+EXIT 0
