@@ -52,7 +52,7 @@ from augur.research.source import DateEvidence, Source
 log = get_logger(__name__)
 
 JUDGE_PREFIX = "judge:"
-JUDGE_MAX_TOKENS = 4000
+JUDGE_MAX_TOKENS = 8000  # 4,000 ran out on reasoning for some long source sets
 MAJOR = 3
 """Scores at or above this are "major leakage", as in the paper."""
 

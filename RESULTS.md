@@ -9,6 +9,12 @@ market price on resolved ForecastBench questions (the price alone wins); M4
 has the first scored number and the scoring it rests on; the first live
 score waits on a scored round (see Q1 and Q5 below).
 
+## M6: what leakage is worth, and the research loop (2026-11-20)
+
+<!-- augur:begin leakage -->
+The M6 arms' ledgers are not committed yet.
+<!-- augur:end leakage -->
+
 ## M5: market prices, and the bot that ships against them (2026-11-19)
 
 **Question.** How much of a forecast's score could a copier get by reading

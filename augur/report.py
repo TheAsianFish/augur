@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from augur import replay, scorecard, standings
+from augur import q2, replay, scorecard, standings
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
@@ -645,6 +645,206 @@ def _count(path: Path, sql: str) -> int:
         return int(conn.execute(sql).fetchone()[0])
 
 
+# -- Q2: what leakage is worth, and the research loop (M6) -------------------------
+
+Q2_SET = "data/forecastbench/2026-06-21"
+Q2_TOURNAMENT = "forecastbench:2026-06-21-llm.json"
+Q2_SAMPLE = 64
+Q2_LOOP_SAMPLE = 40
+Q2_LABELS = Path("data/judge/m6-reference-labels.json")
+Q2_ARMS = {
+    "N": (LEDGERS / "m5-replay-c2.sqlite", Q2_TOURNAMENT),
+    "O": (LEDGERS / "m6-c2-open.sqlite", Q2_TOURNAMENT + "+onepass-asof-open"),
+    "T": (LEDGERS / "m6-c2-now.sqlite", Q2_TOURNAMENT + "+onepass-asof-now"),
+    "L": (LEDGERS / "m6-c2-loop.sqlite", Q2_TOURNAMENT + "+loop3-asof-open"),
+}
+# El Lahib et al. (ACL 2026), gpt-oss-120b, 93 questions with a score-4 document.
+PUBLISHED = {"no retrieval": 0.244, "leak-free (score 0)": 0.242, "leaky (scores 3-4)": 0.108}
+
+
+def _q2(root: Path) -> q2.Q2 | None:
+    arms = {
+        a: q2.ArmSource(root / path, tournament)
+        for a, (path, tournament) in Q2_ARMS.items()
+        if (root / path).exists()
+    }
+    if not {"N", "O", "T"} <= arms.keys():
+        return None
+    report = load_set(
+        root / f"{Q2_SET}-llm.subset.json",
+        root / f"{Q2_SET}_resolution_set.subset.json",
+        released=date.min,
+    )
+    return q2.score_q2(
+        questions=report.kept,
+        sample=Q2_SAMPLE,
+        loop_sample=Q2_LOOP_SAMPLE,
+        arms=arms,
+        prices=q2.ArmSource(root / LEDGERS / "m5-replay-c2-prices.sqlite", Q2_TOURNAMENT),
+        labels=root / Q2_LABELS,
+    )
+
+
+def _pct(k: int, n: int) -> str:
+    return f"{k}/{n} ({100 * k / n:.0f}%)" if n else "0/0"
+
+
+def render_leakage(root: Path) -> str:
+    s = _q2(root)
+    if s is None:
+        return "The M6 arms' ledgers are not committed yet.\n"
+    arm = {r.arm: r for r in s.arms}
+    out = [
+        f"C2's fixed sample: the first {Q2_SAMPLE} eligible questions by question id; "
+        f"{s.sample} were forecast by every arm. Model `nvidia/nemotron-3-ultra-550b-a55b:free` "
+        "(listed 2026-06-04, before the 2026-06-11 freeze) in every role, 3 draws, median. "
+        "Lower Brier is better; a negative difference favours the first arm.",
+        "",
+        "| Arm | Brier [95% interval] | Log score | n |",
+        "|---|---|---|---|",
+    ]
+    out += [
+        f"| {r.arm}: {q2.ARM_NAMES[r.arm]} | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |"
+        for r in s.arms
+    ]
+    out += ["", "| Paired difference | Brier [95% interval] (MDE) |", "|---|---|"]
+    out += [f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in s.diffs]
+    out += [
+        "",
+        f"**Edge over the price** (the as-of price from M5, on the {s.priced} priced questions "
+        "of the sample; a negative difference would be an edge):",
+        "",
+        "| Arm minus the price | Brier [95% interval] (MDE) |",
+        "|---|---|",
+    ]
+    out += [f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in s.edge]
+    if s.unpriced:
+        n = s.unpriced[0].n
+        out += [
+            "",
+            f"Unpriced questions of the sample (Metaculus and INFER, n = {n}; no price to set "
+            "beside): " + "; ".join(f"{r.arm} {_est(r.brier, 4)}" for r in s.unpriced) + ".",
+        ]
+    if s.loop_arms:
+        out += [
+            "",
+            f"**The research loop** (the first {Q2_LOOP_SAMPLE} of the sample; {s.loop_n} "
+            "forecast by the loop and the one pass):",
+            "",
+            "| Arm | Brier [95% interval] | Log score | n |",
+            "|---|---|---|---|",
+        ]
+        out += [
+            f"| {r.arm}: {q2.ARM_NAMES[r.arm]} | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |"
+            for r in s.loop_arms
+        ]
+        out += [
+            f"| {d.label} | {_signed(d.brier, 4)} (MDE {d.brier.mde:.4f}) | | |"
+            for d in s.loop_diffs
+        ]
+    if s.costs:
+        out += [
+            "",
+            "Cost per question forecast ($0: free model): successful model calls (of which "
+            "research), output tokens, wall seconds.",
+            "",
+            "| Arm | Questions | Calls (research) | Output tokens | Seconds |",
+            "|---|---|---|---|---|",
+        ]
+        out += [
+            f"| {c.arm} | {c.questions} | {c.calls:.1f} ({c.research_calls:.1f}) | "
+            f"{c.output_tokens:,.0f} | {c.seconds:.0f} |"
+            for c in s.costs
+        ]
+    if s.judges:
+        out += [
+            "",
+            "**The judge** (the same free model, El Lahib et al.'s 0 to 4 rubric, against each "
+            "question's open instant, shown the resolution). Major leakage is a score of 3 or 4.",
+            "",
+            "| Arm | Questions judged | Sources | Scores 0/1/2/3/4 | Sources at 3+ | "
+            "Questions with a source at 3+ |",
+            "|---|---|---|---|---|---|",
+        ]
+        out += [
+            f"| {j.arm} | {j.questions} | {j.sources} | {'/'.join(map(str, j.by_score))} | "
+            f"{_pct(j.major_sources, j.sources)} | {_pct(j.major_questions, j.questions)} |"
+            for j in s.judges
+        ]
+    if s.agree is not None:
+        a = s.agree
+        out += [
+            "",
+            f"**Judge against the reference labels** ({a.n} sources): exact agreement with "
+            f"0 and 1 merged {a.exact_merged:.1%}, quadratic weighted kappa {a.qwk:.2f}; "
+            f"on major leakage (3+ against 0 to 2) {a.major_agree:.1%} agreement, "
+            f"kappa {a.major_kappa:.2f} (labels {a.human_major}, judge {a.judge_major} at 3+). "
+            "The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.",
+        ]
+    if s.flagged:
+        out += [
+            "",
+            f"Questions where the judge found a source at 3+ in T (n = {s.flagged_n}), the "
+            "nearest to the paper's selection: "
+            + "; ".join(f"{r.arm} {_est(r.brier, 4)}" for r in s.flagged)
+            + ".",
+        ]
+    out += [
+        "",
+        "Beside the published experiment (not the same protocol): "
+        + "; ".join(f"{k} {v:.3f}" for k, v in PUBLISHED.items())
+        + f" (gap {PUBLISHED['no retrieval'] - PUBLISHED['leaky (scores 3-4)']:.3f}). "
+        f"Here: N {arm['N'].brier.mean:.4f}, O {arm['O'].brier.mean:.4f}, "
+        f"T {arm['T'].brier.mean:.4f} (gap N − T {arm['N'].brier.mean - arm['T'].brier.mean:.4f}).",
+        "",
+        *_q2_verdicts(s),
+    ]
+    return "\n".join(out) + "\n"
+
+
+def _q2_verdicts(s: q2.Q2) -> list[str]:
+    d = {x.label.split(" ")[0]: x.brier for x in s.diffs}
+    lines = ["Predictions stated in PLAN.md before the run:", ""]
+    tn, on = d["T"], d["O"]
+    lines.append(
+        f"- P7 (Q2): retrieval as of today improves Brier by at least 0.05 with the interval "
+        f"below 0: {_held(-tn.mean >= 0.05 and tn.high < 0)}; as of open no better than none by "
+        f"more than 0.02: {_held(-on.mean <= 0.02)}."
+    )
+    j = {x.arm: x for x in s.judges}
+    if "O" in j and "T" in j:
+        t_rate = j["T"].major_questions / j["T"].questions
+        o_rate = j["O"].major_questions / j["O"].questions
+        lines.append(
+            f"- P8 (the judge flags at least 30% of T's questions and under 10% of O's): "
+            f"T {t_rate:.0%} {_held(t_rate >= 0.30)}, O {o_rate:.0%} {_held(o_rate < 0.10)}."
+        )
+    if s.agree is not None:
+        lines.append(
+            "- P9 (judge against the labels, here the reference labels: kappa at least 0.6, "
+            f"major-leak agreement at least 85%): {_held(s.agree.qwk >= 0.6)}, "
+            f"{_held(s.agree.major_agree >= 0.85)}."
+        )
+    if s.loop_diffs:
+        lo = s.loop_diffs[0].brier
+        costs = {c.arm: c for c in s.costs}
+        more = "L" in costs and "O" in costs and costs["L"].calls > costs["O"].calls
+        lines.append(
+            f"- P10 (loop within ±0.02 of the one pass, interval including 0; more calls): "
+            f"{_held(abs(lo.mean) <= 0.02 and lo.low <= 0 <= lo.high)}, {_held(more)}."
+        )
+    edge = {x.label.split(" ")[0]: x.brier for x in s.edge}
+    worse = [a for a in ("N", "O", "L") if a in edge]
+    lines.append(
+        "- P11 (N, O and L all worse than the price, interval above 0; T's point estimate "
+        "above 0): "
+        + ", ".join(f"{a} {_held(edge[a].low > 0)}" for a in worse)
+        + (f", T {_held(edge['T'].mean > 0)}" if "T" in edge else "")
+        + "."
+    )
+    return lines
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -654,6 +854,7 @@ BLOCKS: dict[str, Block] = {
         Block("standings", render_standings),
         Block("templates", render_templates),
         Block("replay", render_replay),
+        Block("leakage", render_leakage),
     )
 }
 
