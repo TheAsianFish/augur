@@ -176,6 +176,13 @@ sources were shown in O, 264 and 39 in T. Past Metaculus tournaments could
 not be used (a bot token sees no resolutions; `augur/resolved.py` kept 0 of
 269 resolved posts). The planner's query plan is shared, so the arms test
 the instant of reading, not what a leaky planner would search for.
+The bootstrap resamples questions as independent, but several share a
+subject and their sources (the Thanedar and MI-13 primaries, the
+impoundment questions), so every interval here is probably somewhat too
+narrow. Not every question got all 3 draws (N has 3 questions with 2, T
+and L one each). The as-of price is the market's last trade before the
+freeze, and on Manifold that can be old: 7 of the 47 priced questions had
+no bet in the 7 days before the freeze, and one had none for 198 days.
 
 ## M5: market prices, and the bot that ships against them (2026-11-19)
 
