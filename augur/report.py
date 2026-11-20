@@ -26,6 +26,8 @@ from datetime import date
 from pathlib import Path
 
 from augur import replay, scorecard, standings
+from augur.clock import to_iso
+from augur.config import Settings
 from augur.forecastbench import load_set
 from augur.score import Estimate, detectable_effect
 
@@ -296,6 +298,118 @@ def render_standings(root: Path) -> str:
     return "\n\n".join(parts) + "\n" if parts else "No standings snapshot committed.\n"
 
 
+TEMPLATES_SNAPSHOT = STANDINGS / "minibench-2026-11-02.json"
+
+
+def _usd(value: float | None) -> str:
+    return "n/a" if value is None else f"${value:.2f}"
+
+
+def render_templates(root: Path) -> str:
+    """Template bots by model, agent against template, and the proposed template-based floor."""
+    from augur.llm import catalog as llm_catalog
+    from augur.llm.registry import FRONTIER_TIER_NAME
+
+    round_ = standings.load_snapshot(root / TEMPLATES_SNAPSHOT)
+    board = round_.board()
+    models = llm_catalog.load_snapshot(root / "augur" / "llm" / "openrouter_models.json")
+    rows = standings.template_table(round_)
+    plain = [r for r in rows if not r.variant]
+    nonneg = [r for r in plain if (r.average or 0.0) >= 0]
+    out = [
+        f"Source: {round_.source_url}, fetched {to_iso(round_.fetched_at)}; round "
+        f"`{round_.round.slug}`, score type {board.score_type}. The snapshot's finalized flag is "
+        f"{'yes' if board.finalized else 'no'}. Averages are Metaculus's summed spot peer score "
+        "divided by questions covered; intervals are Metaculus's, rescaled the same way.",
+        "",
+        f"**1. Template bots (`metac-<model>+asknews`).** {len(rows)} entries "
+        f"({len(plain)} plain, {len(rows) - len(plain)} experiment variants); "
+        f"{len(nonneg)} plain templates average >= 0.",
+        "",
+        "| Model | Bot | Rank | Avg spot peer score / question [interval] | Questions |",
+        "|---|---|---|---|---|",
+    ]
+    for r in rows:
+        out.append(
+            f"| {r.label}{' ' + r.variant if r.variant else ''} | `{r.name}` | "
+            f"{r.rank if r.rank is not None else '-'} | {standings._fmt_avg(r.entry)} | "
+            f"{standings._fmt_questions(r.entry.coverage)} |"
+        )
+    pairs, lone_agents, lone_templates = standings.agent_vs_template(round_)
+    out += [
+        "",
+        "**2. Agent harness against template, same model.** `metac-agent-X` is matched to the "
+        "plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`). Each difference is a "
+        "difference of two averages, with no paired interval: the two bots' per-question scores "
+        "are not in the snapshot.",
+        "",
+        "| Model | Agent avg | Template avg | Agent minus template |",
+        "|---|---|---|---|",
+    ]
+    for p in pairs:
+        out.append(
+            f"| {p.model} | {p.agent.average:.2f} | {p.template.average:.2f} | "
+            f"{p.difference:+.2f} |"
+        )
+    out += [
+        "",
+        f"Unmatched agents: {', '.join(lone_agents) or 'none'}. "
+        f"Templates with no agent: {', '.join(lone_templates) or 'none'}.",
+    ]
+    admitted, rejected, frontier = standings.admitted_by_template(round_, models)
+    draws = int(Settings.model_fields["forecasters"].default)
+    t_in, t_out = standings.question_tokens(draws)
+    out += [
+        "",
+        f"**3. Proposed floor: admit a model iff its template's average spot peer score is >= 0.** "
+        f"{len(admitted)} admitted, {len(rejected)} not, of {len(admitted) + len(rejected)} "
+        "models (a model with templates at two effort settings counts once, by its unsuffixed "
+        "bot). Worst case per question, from the constants in the agents: one planner "
+        f"call, one brief and {draws} draws, {t_in:,} input and {t_out:,} output tokens in all, "
+        f"priced at the OpenRouter list ({models.fetched_at:%Y-%m-%d}); a round is "
+        f"{standings.ROUND_QUESTIONS} questions. Where several listings share the name, the "
+        "dearest prices it.",
+        "",
+        "| Model | Template avg | OpenRouter id (match by name) | $/M in | $/M out | "
+        f"Per question | Per {standings.ROUND_QUESTIONS}-question round |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for a in admitted:
+        listing = (
+            f"`{a.priced_id}`"
+            + (f" (+{len(a.listed_ids) - 1} more)" if len(a.listed_ids) > 1 else "")
+            if a.priced_id
+            else "not listed"
+        )
+        pin = f"{a.usd_per_million_input:g}" if a.usd_per_million_input is not None else "n/a"
+        pout = f"{a.usd_per_million_output:g}" if a.usd_per_million_output is not None else "n/a"
+        out.append(
+            f"| {a.template.key} | {a.template.average:.2f} | {listing} | {pin} | {pout} | "
+            f"{_usd(a.per_question)} | {_usd(a.per_round)} |"
+        )
+    out += [
+        "",
+        "Not admitted (average < 0): "
+        + (", ".join(f"{r.key} ({r.average:.1f})" for r in rejected) or "none")
+        + ".",
+        "",
+        f"Current frontier tier (`{FRONTIER_TIER_NAME}`) without template evidence in this "
+        "round: "
+        + (", ".join(f"`{n}`" for n, r in frontier if r is None) or "none")
+        + ". With evidence: "
+        + (
+            ", ".join(
+                f"`{n}` ({r.average:+.1f})"
+                for n, r in frontier
+                if r is not None and r.average is not None
+            )
+            or "none"
+        )
+        + ".",
+    ]
+    return "\n".join(out) + "\n"
+
+
 # -- the replay evaluation (M5) ---------------------------------------------------
 
 
@@ -531,6 +645,7 @@ BLOCKS: dict[str, Block] = {
         Block("live-scores", render_live),
         Block("ledgers", render_ledgers),
         Block("standings", render_standings),
+        Block("templates", render_templates),
         Block("replay", render_replay),
     )
 }

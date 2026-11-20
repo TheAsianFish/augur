@@ -242,6 +242,34 @@ free model on one question set; El Lahib et al.'s leaky arm keeps only
 documents their judge rated 3 or 4, while T is naive retrieval as of
 today, so T's gap is expected to be smaller than their 0.244 to 0.108.
 
+**Proposed submit floor, re-based on the latest round (2026-11-20; for
+the maintainer to approve, not applied in code).** The tier
+`frontier-2026-11b` is argued from the Spring 2026 survey, and the
+November leaderboard has overtaken it: in the finalized MiniBench
+2026-11-02 round only 4 of 54 plain template bots averaged at or above 0,
+and the templates on last year's flagships sit well below it
+(`augur standings`, RESULTS.md "Template bots by model"). The proposal:
+
+- **Rule:** a model is admitted only if its Metaculus template bot's
+  average spot peer score in the latest finalized MiniBench round is at
+  or above 0. The tier is renamed at each review and the ledger records
+  the name, as now.
+- **Admitted on 2026-11-02's evidence:** `claude-opus-5-5` (+3.66),
+  `gemini-3-8-flash` (+2.76), `claude-sonnet-5-5` (+2.39),
+  `claude-haiku-5-5` (+0.87). Every interval includes 0, so this is the
+  weakest rule the evidence supports, not proof any of them adds value.
+- **Dropped for want of current evidence:** `gpt-5`, `gpt-5-1`,
+  `gemini-2-5-pro`, `claude-opus-4-1`, `claude-sonnet-4-5` (no template
+  in the round), and the "GPT-5.4, r = +0.42" justification for
+  `gpt-5-4`, which also has no template there.
+- **Cost:** the worst case of one 60-question round on each admitted
+  route is printed beside the table (from the agents' token ceilings and
+  OpenRouter's list prices): about $37 on Opus 5.5, $18 on Sonnet 5.5,
+  $7.6 on Gemini 3.8 Flash and $0.9 on Haiku 5.5, against a key that
+  reports a $1 limit. Nothing is spent until the maintainer approves a
+  route and the key covers it; the scored round with `augur baseline`
+  beside it stays under To measure until then.
+
 **Status after M4 (2026-11-19).** Q1: *not yet resolvable*; no live
 question with both an Augur and a shadow-template forecast has resolved,
 and the floor has kept Augur out of scored rounds until a frontier model

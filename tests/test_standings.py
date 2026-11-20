@@ -16,6 +16,7 @@ from augur.config import Settings
 from augur.errors import ConfigError
 from augur.leakage import RunMode
 from augur.ledger import Ledger
+from augur.llm.catalog import Catalog
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
 from tests.fakes.metaculus import FAKE_TOKEN, FIXTURES, FakeMetaculus, binary_post
@@ -326,3 +327,131 @@ async def test_main_saves_and_renders_a_snapshot(
     assert await standings.main(again, settings) == 0
     assert capsys.readouterr().out == printed
     assert FAKE_TOKEN not in out.read_text(encoding="utf-8")
+
+
+# -- template bots, the agent harness and the template-based floor -----------------------
+
+
+def _board(entries: list[tuple[str, float, float]]) -> standings.RoundStandings:
+    raw = {
+        "entries": [
+            {
+                "user": {"id": i, "username": name, "is_bot": True},
+                "score": score,
+                "coverage": cov,
+                "rank": i,
+                "ci_lower": score - 10,
+                "ci_upper": score + 10,
+            }
+            for i, (name, score, cov) in enumerate(entries, start=1)
+        ]
+    }
+    return standings.RoundStandings(
+        round=standings.RoundInfo(id=1, slug="r", name="R"),
+        leaderboard_raw=raw,
+        questions=[],
+        fetched_at=NOW,
+        source_url="https://example.test/lb",
+    )
+
+
+def _catalog() -> Catalog:
+    payload = {
+        "data": [
+            {
+                "id": "anthropic/claude-opus-5.5",
+                "created": 1_771_804_800,
+                "pricing": {"prompt": "0.000004", "completion": "0.00002"},
+            },
+            {
+                "id": "anthropic/claude-opus-5.5:batch",
+                "created": 1_771_804_800,
+                "pricing": {"prompt": "0.000002", "completion": "0.00001"},
+            },
+        ]
+    }
+    return Catalog.from_api(payload, NOW, "snapshot")
+
+
+_SMALL = [
+    ("metac-agent-claude-opus-5-5", 600.0, 60),
+    ("metac-claude-opus-5-5-high+asknews", 120.0, 60),
+    ("metac-claude-code-latest", 500.0, 60),
+    ("metac-agent-grok-4-7", 300.0, 60),
+    ("metac-grok-4-7-high+asknews", -60.0, 60),
+    ("metac-agent-orphan", 100.0, 50),
+    ("metac-gpt-4-1+asknews[optimized-prompt]", 10.0, 60),
+    ("metac-gpt-4-1+asknews", 0.0, 60),
+    ("metac-autocast", 900.0, 60),
+]
+
+
+def test_template_names_exclude_agents_and_other_house_bots() -> None:
+    assert standings.template_parts("metac-claude-opus-5-5-high+asknews") == (
+        "claude-opus-5-5-high",
+        "",
+    )
+    assert standings.template_parts("metac-gpt-4-1+asknews[optimized-prompt]") == (
+        "gpt-4-1",
+        "[optimized-prompt]",
+    )
+    for name in ("metac-agent-grok-4-7", "metac-claude-code-latest", "metac-autocast"):
+        assert standings.template_parts(name) is None
+
+
+def test_template_table_sorted_by_average_with_variants_marked() -> None:
+    rows = standings.template_table(_board([(n, s, c) for n, s, c in _SMALL]))
+    assert [r.name for r in rows] == [
+        "metac-claude-opus-5-5-high+asknews",
+        "metac-gpt-4-1+asknews[optimized-prompt]",
+        "metac-gpt-4-1+asknews",
+        "metac-grok-4-7-high+asknews",
+    ]
+    assert rows[0].average == 2.0
+    assert rows[0].key == "claude-opus-5-5"
+    assert [r.variant for r in rows] == ["", "[optimized-prompt]", "", ""]
+
+
+def test_agent_vs_template_matches_through_the_effort_suffix_and_names_the_rest() -> None:
+    pairs, lone_agents, lone_templates = standings.agent_vs_template(
+        _board([(n, s, c) for n, s, c in _SMALL])
+    )
+    assert [(p.model, round(p.difference, 6)) for p in pairs] == [
+        ("claude-opus-5-5", 8.0),  # 10.0 - 2.0
+        ("grok-4-7", 6.0),  # 5.0 - (-1.0)
+    ]
+    assert lone_agents == ["metac-agent-orphan"]
+    assert lone_templates == ["metac-gpt-4-1+asknews"]  # the variant never pairs or lists
+
+
+def test_floor_admits_at_zero_and_above_and_rejects_below() -> None:
+    admitted, rejected, frontier = standings.admitted_by_template(
+        _board([(n, s, c) for n, s, c in _SMALL]), _catalog(), draws=5
+    )
+    assert [a.template.key for a in admitted] == ["claude-opus-5-5", "gpt-4-1"]  # 0.0 admitted
+    assert [r.key for r in rejected] == ["grok-4-7"]
+    by_name = dict(frontier)
+    assert by_name["claude-opus-5-5"] is not None
+    assert by_name["gpt-5"] is None
+
+
+def test_worst_case_cost_arithmetic_and_unlisted_models() -> None:
+    from augur.agents.forecaster import FORECAST_MAX_TOKENS
+    from augur.agents.researcher import BRIEF_MAX_TOKENS, PLAN_MAX_TOKENS
+
+    tokens_in, tokens_out = standings.question_tokens(5)
+    assert tokens_in == 1_500 + 6_000 + 5 * 3_000
+    assert tokens_out == PLAN_MAX_TOKENS + BRIEF_MAX_TOKENS + 5 * FORECAST_MAX_TOKENS
+    admitted, _, _ = standings.admitted_by_template(
+        _board([(n, s, c) for n, s, c in _SMALL]), _catalog(), draws=5
+    )
+    opus, gpt = admitted
+    # The dearest of the two listings prices it (the :batch one is half).
+    assert opus.priced_id == "anthropic/claude-opus-5.5"
+    assert opus.listed_ids == ("anthropic/claude-opus-5.5", "anthropic/claude-opus-5.5:batch")
+    expected = (tokens_in * 4.0 + tokens_out * 20.0) / 1e6
+    assert opus.per_question == pytest.approx(expected)
+    assert opus.per_round == pytest.approx(expected * 60)
+    assert gpt.listed_ids == ()
+    assert gpt.per_question is None
+    assert gpt.per_round is None
