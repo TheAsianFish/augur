@@ -754,4 +754,11 @@ async def main(args: argparse.Namespace, settings: Settings) -> int:
         args.out.write_text(snapshot_text(round_), encoding="utf-8")
     outcomes = read_outcomes(ledgers) if ledgers else None
     print(render(round_, outcomes), end="")
+    if round_.board().finalized:
+        # Every template by model and the agent-minus-template gap for each model pair.
+        from augur.llm.catalog import load_snapshot as load_catalog
+        from augur.report import templates_markdown
+
+        print(f"\n### Template bots and the agent harness ({round_.round.slug})\n")
+        print(templates_markdown(round_, load_catalog()), end="")
     return 0

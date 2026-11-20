@@ -29,6 +29,7 @@ from augur import replay, scorecard, standings
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
+from augur.llm.catalog import Catalog
 from augur.score import Estimate, detectable_effect
 
 # The spread of one bot's per-question spot peer score, derived in PLAN.md from
@@ -308,11 +309,17 @@ def _usd(value: float | None) -> str:
 def render_templates(root: Path) -> str:
     """Template bots by model, agent against template, and the proposed template-based floor."""
     from augur.llm import catalog as llm_catalog
-    from augur.llm.registry import FRONTIER_TIER_NAME
 
     round_ = standings.load_snapshot(root / TEMPLATES_SNAPSHOT)
-    board = round_.board()
     models = llm_catalog.load_snapshot(root / "augur" / "llm" / "openrouter_models.json")
+    return templates_markdown(round_, models)
+
+
+def templates_markdown(round_: standings.RoundStandings, models: Catalog) -> str:
+    """The three template tables for one saved round (also printed by ``augur standings``)."""
+    from augur.llm.registry import FRONTIER_TIER_NAME
+
+    board = round_.board()
     rows = standings.template_table(round_)
     plain = [r for r in rows if not r.variant]
     nonneg = [r for r in plain if (r.average or 0.0) >= 0]
