@@ -1,0 +1,288 @@
+{
+ "rubric": "El Lahib et al. 0-4 (augur/judge.py)",
+ "sample": "first 20 shown sources per arm (O, T) by SHA-256 of the source id, drawn before any judge score was read",
+ "rater": "A provisional reference rating, not hand labels: a second, stronger model reading each source as the forecasters saw it, against the question's open date and its resolution, blind to the judge's scores. It was not made through the pipeline, so no model call is recorded. Replace with hand labels and set by_hand to true (RESULTS.md, To measure).",
+ "by_hand": false,
+ "labels": [
+  {
+   "arm": "O",
+   "question_id": 151146078589021,
+   "source_id": "src_8403b5516d3a7e60",
+   "score": 0,
+   "note": "Pre-cutoff revision; primary not yet held, no results."
+  },
+  {
+   "arm": "O",
+   "question_id": 506626029926802,
+   "source_id": "src_e1d487b19abeb120",
+   "score": 0,
+   "note": "Pre-cutoff biography; no July 2026 rating information."
+  },
+  {
+   "arm": "O",
+   "question_id": 1231096238284199,
+   "source_id": "src_4570cf26966a59d7",
+   "score": 0,
+   "note": "DNC homepage boilerplate; nothing about NY-13 primary."
+  },
+  {
+   "arm": "O",
+   "question_id": 453768701205687,
+   "source_id": "src_65ffd2615dd74876",
+   "score": 0,
+   "note": "Pre-cutoff Michigan Senate page; unrelated to MI-13 result."
+  },
+  {
+   "arm": "O",
+   "question_id": 1231096238284199,
+   "source_id": "src_65ffd2615dd74876",
+   "score": 0,
+   "note": "Michigan Senate page; irrelevant to NY-13, pre-cutoff."
+  },
+  {
+   "arm": "O",
+   "question_id": 2059776377057179,
+   "source_id": "src_65ffd2615dd74876",
+   "score": 0,
+   "note": "Michigan Senate page; irrelevant to WA-03, pre-cutoff."
+  },
+  {
+   "arm": "O",
+   "question_id": 1749854028238370,
+   "source_id": "src_9e046e4d0c8b25ec",
+   "score": 0,
+   "note": "2025 season only; pre-cutoff, nothing on 2026 outcome."
+  },
+  {
+   "arm": "O",
+   "question_id": 811613781412092,
+   "source_id": "src_74e647cdfc6274ee",
+   "score": 0,
+   "note": "Delta-8-THC article; irrelevant, pre-cutoff."
+  },
+  {
+   "arm": "O",
+   "question_id": 493694526644125,
+   "source_id": "src_3233ffb94bea72bf",
+   "score": 0,
+   "note": "Project 2025 overview, pre-cutoff; nothing on mail-ballot ban."
+  },
+  {
+   "arm": "O",
+   "question_id": 793199423051785,
+   "source_id": "src_30ca2583ae3fe258",
+   "score": 0,
+   "note": "Albanian protests, pre-cutoff; unrelated to AI boycott."
+  },
+  {
+   "arm": "O",
+   "question_id": 1132731213047940,
+   "source_id": "src_4c3d5b2bc30370a4",
+   "score": 0,
+   "note": "Outlook.com history, pre-cutoff; no post-cutoff facts."
+  },
+  {
+   "arm": "O",
+   "question_id": 275227287573683,
+   "source_id": "src_6ec82ee0e083dd34",
+   "score": 0,
+   "note": "Generic federal government article; pre-cutoff, irrelevant."
+  },
+  {
+   "arm": "O",
+   "question_id": 1808192240781719,
+   "source_id": "src_654eb769edc23117",
+   "score": 0,
+   "note": "Archived events page snippet; no relevant content."
+  },
+  {
+   "arm": "O",
+   "question_id": 1835870634819746,
+   "source_id": "src_b347cf7b0f5cdab9",
+   "score": 0,
+   "note": "Pre-cutoff; council dissolved Feb 2026, no later election info."
+  },
+  {
+   "arm": "O",
+   "question_id": 438407097718369,
+   "source_id": "src_d5f3eebb7d3bde91",
+   "score": 0,
+   "note": "April 2026 oil market news; pre-cutoff."
+  },
+  {
+   "arm": "O",
+   "question_id": 1508056951275903,
+   "source_id": "src_9c3a0eb0b1e16620",
+   "score": 0,
+   "note": "Pre-cutoff Alaska overview; no primary results."
+  },
+  {
+   "arm": "O",
+   "question_id": 1734839736211965,
+   "source_id": "src_e9560e8cbe1563f2",
+   "score": 0,
+   "note": "Empty generic defense pact article; pre-cutoff."
+  },
+  {
+   "arm": "O",
+   "question_id": 867612968185562,
+   "source_id": "src_d436e024562f11cc",
+   "score": 0,
+   "note": "Generic IMO description; pre-cutoff, no 2026 results."
+  },
+  {
+   "arm": "O",
+   "question_id": 1743386473092519,
+   "source_id": "src_91c635387cf83d3b",
+   "score": 0,
+   "note": "Jurassic World film article; irrelevant."
+  },
+  {
+   "arm": "O",
+   "question_id": 632066482610994,
+   "source_id": "src_d0eadb99738a1a76",
+   "score": 0,
+   "note": "Generic SCOTUS article; pre-cutoff, nothing on cert grants."
+  },
+  {
+   "arm": "T",
+   "question_id": 1743386473092519,
+   "source_id": "src_6e84a132e8038402",
+   "score": 1,
+   "note": "Post-cutoff U-17 World Cup page; related sport, no senior World Cup scoring info."
+  },
+  {
+   "arm": "T",
+   "question_id": 151146078589021,
+   "source_id": "src_0f74ddc98459fee2",
+   "score": 4,
+   "note": "States she won 2026 general vs Braun, so she advanced from primary."
+  },
+  {
+   "arm": "T",
+   "question_id": 1542757340100043,
+   "source_id": "src_7ec0406ac47fe14f",
+   "score": 4,
+   "note": "States Donalds became Republican nominee in August 2026 and governor-elect."
+  },
+  {
+   "arm": "T",
+   "question_id": 1132731213047940,
+   "source_id": "src_351cb781847083e7",
+   "score": 0,
+   "note": "Revision post-cutoff but content is old history; no new facts."
+  },
+  {
+   "arm": "T",
+   "question_id": 1381510762070099,
+   "source_id": "src_cd7b06a7135541b2",
+   "score": 4,
+   "note": "2026 majors listed: AO and US Open finals only; no Wimbledon title, answer computable."
+  },
+  {
+   "arm": "T",
+   "question_id": 242234586834258,
+   "source_id": "src_f746104aee16f60d",
+   "score": 1,
+   "note": "Says World Cup held June-July; no results on host nations."
+  },
+  {
+   "arm": "T",
+   "question_id": 633131297440556,
+   "source_id": "src_f746104aee16f60d",
+   "score": 0,
+   "note": "Post-cutoff US overview; nothing about Waymo."
+  },
+  {
+   "arm": "T",
+   "question_id": 793199423051785,
+   "source_id": "src_f746104aee16f60d",
+   "score": 0,
+   "note": "Post-cutoff US overview; nothing about AI boycott protests."
+  },
+  {
+   "arm": "T",
+   "question_id": 1758739330119694,
+   "source_id": "src_f746104aee16f60d",
+   "score": 1,
+   "note": "Says World Cup held June-July; no finalists given."
+  },
+  {
+   "arm": "T",
+   "question_id": 225185498061240,
+   "source_id": "src_fa57fe47faf03214",
+   "score": 4,
+   "note": "States Collins lost Senate re-election bid; Democrats won Maine Senate."
+  },
+  {
+   "arm": "T",
+   "question_id": 1664050811699049,
+   "source_id": "src_9886117b58918fe3",
+   "score": 0,
+   "note": "Cultural impact article excerpt; no post-cutoff marriage information."
+  },
+  {
+   "arm": "T",
+   "question_id": 847877868422429,
+   "source_id": "src_150426d269c9f5b7",
+   "score": 3,
+   "note": "Kansas flip; Democrats flipped eight Trump-state seats, implying Senate control; House not covered."
+  },
+  {
+   "arm": "T",
+   "question_id": 1132731213047940,
+   "source_id": "src_be55bc5966538e9c",
+   "score": 0,
+   "note": "Teams history; no post-cutoff content beyond old facts."
+  },
+  {
+   "arm": "T",
+   "question_id": 1116142034823124,
+   "source_id": "src_1c61fddbe9fcc789",
+   "score": 1,
+   "note": "Post-cutoff 2026 ATP page; first-title list, no US Open result."
+  },
+  {
+   "arm": "T",
+   "question_id": 811613781412092,
+   "source_id": "src_a1dd4b9e9253707b",
+   "score": 0,
+   "note": "Prop 50 redistricting; irrelevant to SB 253/261."
+  },
+  {
+   "arm": "T",
+   "question_id": 858885463701640,
+   "source_id": "src_26cbb936542b26db",
+   "score": 1,
+   "note": "Post-cutoff WC aggregate page; Spain champions, nothing about Group F."
+  },
+  {
+   "arm": "T",
+   "question_id": 1540958018226088,
+   "source_id": "src_cf5b623f20344cc7",
+   "score": 4,
+   "note": "States Rays won AL pennant, beating Guardians in ALCS."
+  },
+  {
+   "arm": "T",
+   "question_id": 480034378093431,
+   "source_id": "src_9666f3c325ac4d54",
+   "score": 3,
+   "note": "AfD 43.8% list vote, CDU lost all constituencies; majority not directly computable."
+  },
+  {
+   "arm": "T",
+   "question_id": 1749854028238370,
+   "source_id": "src_39db7877a15dc59b",
+   "score": 0,
+   "note": "2007 Mets season; old content despite later revision date."
+  },
+  {
+   "arm": "T",
+   "question_id": 1734839736211965,
+   "source_id": "src_980cba8fe41e6cda",
+   "score": 2,
+   "note": "Trilateral pact signed August 2026 with excluded states; suggests none by June 30."
+  }
+ ]
+}

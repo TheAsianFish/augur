@@ -1,6 +1,6 @@
 {
  "augur_username": "Augur-bot-1",
- "fetched_at": "2026-11-19T05:00:05.413788Z",
+ "fetched_at": "2026-11-20T04:36:14.128494Z",
  "leaderboard": {
   "bot_exclusion_status": 0,
   "display_config": null,
@@ -8,7 +8,7 @@
   "entries": [
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211660Z",
+    "calculated_on": "2026-11-20T03:00:05.008513Z",
     "ci_lower": 1024.3336914727163,
     "ci_upper": 1713.873517834211,
     "contribution_count": 59,
@@ -16,8 +16,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.19897427787346947,
-    "prize": 198.97427787346948,
+    "percent_prize": 0.19897427787346952,
+    "prize": 198.97427787346953,
     "rank": 1,
     "rank_ci_lower": 1,
     "rank_ci_upper": 1,
@@ -34,7 +34,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211688Z",
+    "calculated_on": "2026-11-20T03:00:05.008560Z",
     "ci_lower": 623.1789921298683,
     "ci_upper": 1519.208427904476,
     "contribution_count": 59,
@@ -60,7 +60,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211711Z",
+    "calculated_on": "2026-11-20T03:00:05.008585Z",
     "ci_lower": 719.5661249058459,
     "ci_upper": 1383.6269490627194,
     "contribution_count": 59,
@@ -68,8 +68,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.11991989045205734,
-    "prize": 119.91989045205733,
+    "percent_prize": 0.11991989045205736,
+    "prize": 119.91989045205736,
     "rank": 2,
     "rank_ci_lower": 2,
     "rank_ci_upper": 10,
@@ -86,7 +86,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211734Z",
+    "calculated_on": "2026-11-20T03:00:05.008609Z",
     "ci_lower": 644.4245528424043,
     "ci_upper": 1273.2575172046904,
     "contribution_count": 59,
@@ -99,9 +99,9 @@
     "rank": 3,
     "rank_ci_lower": 2,
     "rank_ci_upper": 11,
-    "score": 964.1629068503826,
+    "score": 964.1629068503825,
     "show_when_excluded": false,
-    "take": 929610.1109461795,
+    "take": 929610.1109461793,
     "user": {
      "id": 302274,
      "is_bot": true,
@@ -119,7 +119,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211756Z",
+    "calculated_on": "2026-11-20T03:00:05.008632Z",
     "ci_lower": 678.1600454220734,
     "ci_upper": 1206.0702566329555,
     "contribution_count": 59,
@@ -127,8 +127,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.09676680053621473,
-    "prize": 96.76680053621473,
+    "percent_prize": 0.09676680053621475,
+    "prize": 96.76680053621476,
     "rank": 3,
     "rank_ci_lower": 2,
     "rank_ci_upper": 8,
@@ -145,7 +145,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211779Z",
+    "calculated_on": "2026-11-20T03:00:05.008656Z",
     "ci_lower": 656.9910360799676,
     "ci_upper": 1222.1943478213886,
     "contribution_count": 59,
@@ -153,8 +153,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.09637800503629688,
-    "prize": 96.37800503629688,
+    "percent_prize": 0.09637800503629691,
+    "prize": 96.37800503629691,
     "rank": 4,
     "rank_ci_lower": 2,
     "rank_ci_upper": 12,
@@ -171,7 +171,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211801Z",
+    "calculated_on": "2026-11-20T03:00:05.008680Z",
     "ci_lower": 653.175475601172,
     "ci_upper": 1175.7360816813039,
     "contribution_count": 59,
@@ -179,8 +179,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.09225116672260458,
-    "prize": 92.25116672260458,
+    "percent_prize": 0.09225116672260461,
+    "prize": 92.25116672260461,
     "rank": 5,
     "rank_ci_lower": 2,
     "rank_ci_upper": 10,
@@ -197,7 +197,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211823Z",
+    "calculated_on": "2026-11-20T03:00:05.008703Z",
     "ci_lower": 504.2134745157356,
     "ci_upper": 1254.7262567799226,
     "contribution_count": 59,
@@ -237,7 +237,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211845Z",
+    "calculated_on": "2026-11-20T03:00:05.008725Z",
     "ci_lower": 611.9202488108536,
     "ci_upper": 1115.5913522587248,
     "contribution_count": 59,
@@ -245,8 +245,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.08247747802761109,
-    "prize": 82.47747802761108,
+    "percent_prize": 0.0824774780276111,
+    "prize": 82.4774780276111,
     "rank": 6,
     "rank_ci_lower": 3,
     "rank_ci_upper": 16,
@@ -263,7 +263,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211867Z",
+    "calculated_on": "2026-11-20T03:00:05.008748Z",
     "ci_lower": 534.7720619410354,
     "ci_upper": 1158.1554094560995,
     "contribution_count": 59,
@@ -276,9 +276,9 @@
     "rank": 7,
     "rank_ci_lower": 2,
     "rank_ci_upper": 25,
-    "score": 840.704916884395,
+    "score": 840.7049168843952,
     "show_when_excluded": false,
-    "take": 706784.7572735974,
+    "take": 706784.7572735978,
     "user": {
      "id": 310710,
      "is_bot": true,
@@ -289,7 +289,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211888Z",
+    "calculated_on": "2026-11-20T03:00:05.008771Z",
     "ci_lower": 531.2109167426701,
     "ci_upper": 1128.1987769398847,
     "contribution_count": 59,
@@ -322,7 +322,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211909Z",
+    "calculated_on": "2026-11-20T03:00:05.008806Z",
     "ci_lower": 439.9225610522724,
     "ci_upper": 965.7947450307037,
     "contribution_count": 59,
@@ -330,8 +330,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.054534216944555555,
-    "prize": 54.53421694455555,
+    "percent_prize": 0.05453421694455556,
+    "prize": 54.53421694455556,
     "rank": 7,
     "rank_ci_lower": 5,
     "rank_ci_upper": 37,
@@ -348,7 +348,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211931Z",
+    "calculated_on": "2026-11-20T03:00:05.008840Z",
     "ci_lower": 394.017178463647,
     "ci_upper": 997.2050235708231,
     "contribution_count": 59,
@@ -356,14 +356,14 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.053772588798866656,
-    "prize": 53.77258879886666,
+    "percent_prize": 0.053772588798866636,
+    "prize": 53.772588798866636,
     "rank": 8,
     "rank_ci_lower": 5,
     "rank_ci_upper": 45,
-    "score": 698.3874727301763,
+    "score": 698.3874727301761,
     "show_when_excluded": false,
-    "take": 487745.0620664428,
+    "take": 487745.0620664425,
     "user": {
      "id": 308873,
      "is_bot": true,
@@ -374,7 +374,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211952Z",
+    "calculated_on": "2026-11-20T03:00:05.008876Z",
     "ci_lower": 350.25097349941166,
     "ci_upper": 1002.2096554133278,
     "contribution_count": 59,
@@ -414,7 +414,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211974Z",
+    "calculated_on": "2026-11-20T03:00:05.008913Z",
     "ci_lower": 441.58816567555385,
     "ci_upper": 968.5130973731675,
     "contribution_count": 59,
@@ -422,14 +422,14 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.05179575023299492,
-    "prize": 51.79575023299492,
+    "percent_prize": 0.05179575023299495,
+    "prize": 51.79575023299495,
     "rank": 9,
     "rank_ci_lower": 3,
     "rank_ci_upper": 57,
-    "score": 685.4298787000004,
+    "score": 685.4298787000005,
     "show_when_excluded": false,
-    "take": 469814.1186146972,
+    "take": 469814.11861469736,
     "user": {
      "id": 309036,
      "is_bot": true,
@@ -440,7 +440,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.211995Z",
+    "calculated_on": "2026-11-20T03:00:05.008952Z",
     "ci_lower": 314.4203083468191,
     "ci_upper": 979.9400480674077,
     "contribution_count": 59,
@@ -448,14 +448,14 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.051051604850168415,
-    "prize": 51.05160485016842,
+    "percent_prize": 0.051051604850168394,
+    "prize": 51.051604850168395,
     "rank": 10,
     "rank_ci_lower": 4,
     "rank_ci_upper": 74,
-    "score": 680.4883076974168,
+    "score": 680.4883076974165,
     "show_when_excluded": false,
-    "take": 463064.33691289416,
+    "take": 463064.33691289386,
     "user": {
      "id": 310280,
      "is_bot": true,
@@ -466,7 +466,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212016Z",
+    "calculated_on": "2026-11-20T03:00:05.008988Z",
     "ci_lower": 366.0546068510365,
     "ci_upper": 1017.6468243420074,
     "contribution_count": 53,
@@ -474,8 +474,8 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.05105068021035102,
-    "prize": 51.050680210351025,
+    "percent_prize": 0.05105068021035103,
+    "prize": 51.05068021035103,
     "rank": 10,
     "rank_ci_lower": 3,
     "rank_ci_upper": 73,
@@ -492,7 +492,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212038Z",
+    "calculated_on": "2026-11-20T03:00:05.009013Z",
     "ci_lower": 319.1200828845867,
     "ci_upper": 1017.7568068281353,
     "contribution_count": 59,
@@ -500,14 +500,14 @@
     "excluded": false,
     "exclusion_status": 0,
     "medal": null,
-    "percent_prize": 0.05102754031480926,
-    "prize": 51.02754031480926,
+    "percent_prize": 0.05102754031480925,
+    "prize": 51.02754031480925,
     "rank": 12,
     "rank_ci_lower": 4,
     "rank_ci_upper": 68,
-    "score": 680.3279056374016,
+    "score": 680.3279056374015,
     "show_when_excluded": false,
-    "take": 462846.0591889732,
+    "take": 462846.0591889731,
     "user": {
      "id": 309212,
      "is_bot": true,
@@ -518,7 +518,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212070Z",
+    "calculated_on": "2026-11-20T03:00:05.009043Z",
     "ci_lower": 303.8136449014157,
     "ci_upper": 1088.849751245021,
     "contribution_count": 59,
@@ -544,7 +544,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212092Z",
+    "calculated_on": "2026-11-20T03:00:05.009078Z",
     "ci_lower": 345.40383896392035,
     "ci_upper": 1030.3211268396276,
     "contribution_count": 59,
@@ -557,9 +557,9 @@
     "rank": 13,
     "rank_ci_lower": 3,
     "rank_ci_upper": 70,
-    "score": 676.0999646301804,
+    "score": 676.0999646301805,
     "show_when_excluded": false,
-    "take": 457111.16217293113,
+    "take": 457111.1621729313,
     "user": {
      "id": 277919,
      "is_bot": true,
@@ -570,7 +570,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212114Z",
+    "calculated_on": "2026-11-20T03:00:05.009114Z",
     "ci_lower": 442.32510989743525,
     "ci_upper": 898.5843416609634,
     "contribution_count": 59,
@@ -596,7 +596,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212135Z",
+    "calculated_on": "2026-11-20T03:00:05.009139Z",
     "ci_lower": 337.6819469836596,
     "ci_upper": 983.5060367897559,
     "contribution_count": 59,
@@ -609,9 +609,9 @@
     "rank": 15,
     "rank_ci_lower": 6,
     "rank_ci_upper": 64,
-    "score": 669.3483720805361,
+    "score": 669.3483720805363,
     "show_when_excluded": false,
-    "take": 448027.2432068639,
+    "take": 448027.243206864,
     "user": {
      "id": 309063,
      "is_bot": true,
@@ -636,7 +636,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212156Z",
+    "calculated_on": "2026-11-20T03:00:05.009163Z",
     "ci_lower": 241.8307806181115,
     "ci_upper": 1052.3873994142284,
     "contribution_count": 59,
@@ -662,7 +662,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212177Z",
+    "calculated_on": "2026-11-20T03:00:05.009267Z",
     "ci_lower": 306.66952629104236,
     "ci_upper": 1022.0624332576466,
     "contribution_count": 59,
@@ -688,7 +688,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212199Z",
+    "calculated_on": "2026-11-20T03:00:05.009293Z",
     "ci_lower": 366.4611080827578,
     "ci_upper": 903.5188724269161,
     "contribution_count": 58,
@@ -701,9 +701,9 @@
     "rank": 15,
     "rank_ci_lower": 7,
     "rank_ci_upper": 54,
-    "score": 645.2401333217897,
+    "score": 645.2401333217898,
     "show_when_excluded": false,
-    "take": 416334.8296491209,
+    "take": 416334.8296491211,
     "user": {
      "id": 309671,
      "is_bot": true,
@@ -714,7 +714,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212220Z",
+    "calculated_on": "2026-11-20T03:00:05.009323Z",
     "ci_lower": 174.98491947987227,
     "ci_upper": 1041.9386905658253,
     "contribution_count": 59,
@@ -754,7 +754,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212242Z",
+    "calculated_on": "2026-11-20T03:00:05.009378Z",
     "ci_lower": 400.3796192250969,
     "ci_upper": 850.4549247541338,
     "contribution_count": 59,
@@ -780,7 +780,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212263Z",
+    "calculated_on": "2026-11-20T03:00:05.009420Z",
     "ci_lower": 280.71510797077576,
     "ci_upper": 929.6755237420969,
     "contribution_count": 59,
@@ -806,7 +806,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212284Z",
+    "calculated_on": "2026-11-20T03:00:05.009461Z",
     "ci_lower": 318.886133198823,
     "ci_upper": 920.3001965204053,
     "contribution_count": 59,
@@ -840,7 +840,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212305Z",
+    "calculated_on": "2026-11-20T03:00:05.009484Z",
     "ci_lower": 285.2904681741155,
     "ci_upper": 909.6561241495582,
     "contribution_count": 59,
@@ -866,7 +866,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212326Z",
+    "calculated_on": "2026-11-20T03:00:05.009507Z",
     "ci_lower": 371.67377667801225,
     "ci_upper": 837.1648460523172,
     "contribution_count": 56,
@@ -892,7 +892,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212347Z",
+    "calculated_on": "2026-11-20T03:00:05.009530Z",
     "ci_lower": 203.5603429656514,
     "ci_upper": 1002.7889618986555,
     "contribution_count": 59,
@@ -918,7 +918,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212368Z",
+    "calculated_on": "2026-11-20T03:00:05.009554Z",
     "ci_lower": 325.68161211467117,
     "ci_upper": 863.5731658796825,
     "contribution_count": 59,
@@ -944,7 +944,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212389Z",
+    "calculated_on": "2026-11-20T03:00:05.009582Z",
     "ci_lower": 263.571824327912,
     "ci_upper": 876.9920999926808,
     "contribution_count": 59,
@@ -957,9 +957,9 @@
     "rank": 22,
     "rank_ci_lower": 8,
     "rank_ci_upper": 86,
-    "score": 585.3974401072844,
+    "score": 585.3974401072843,
     "show_when_excluded": false,
-    "take": 342690.16288416163,
+    "take": 342690.1628841615,
     "user": {
      "id": 311803,
      "is_bot": true,
@@ -970,7 +970,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212410Z",
+    "calculated_on": "2026-11-20T03:00:05.009621Z",
     "ci_lower": 271.1319433224746,
     "ci_upper": 927.3544008868246,
     "contribution_count": 59,
@@ -996,7 +996,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212430Z",
+    "calculated_on": "2026-11-20T03:00:05.009658Z",
     "ci_lower": 372.1050870015219,
     "ci_upper": 793.0292284378644,
     "contribution_count": 59,
@@ -1022,7 +1022,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212451Z",
+    "calculated_on": "2026-11-20T03:00:05.009700Z",
     "ci_lower": 261.5564402135632,
     "ci_upper": 863.6740860422241,
     "contribution_count": 59,
@@ -1035,9 +1035,9 @@
     "rank": 24,
     "rank_ci_lower": 7,
     "rank_ci_upper": 93,
-    "score": 578.3667113525659,
+    "score": 578.3667113525657,
     "show_when_excluded": false,
-    "take": 334508.05280078226,
+    "take": 334508.0528007821,
     "user": {
      "id": 311682,
      "is_bot": true,
@@ -1048,7 +1048,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212471Z",
+    "calculated_on": "2026-11-20T03:00:05.009732Z",
     "ci_lower": 300.0424774468928,
     "ci_upper": 794.7151796152215,
     "contribution_count": 59,
@@ -1074,7 +1074,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212492Z",
+    "calculated_on": "2026-11-20T03:00:05.009755Z",
     "ci_lower": 177.40453019939724,
     "ci_upper": 843.7408314765349,
     "contribution_count": 59,
@@ -1100,7 +1100,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212514Z",
+    "calculated_on": "2026-11-20T03:00:05.009778Z",
     "ci_lower": 164.90749544068103,
     "ci_upper": 865.5473618499532,
     "contribution_count": 59,
@@ -1126,7 +1126,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212536Z",
+    "calculated_on": "2026-11-20T03:00:05.009801Z",
     "ci_lower": 262.7782677125291,
     "ci_upper": 792.8471382490532,
     "contribution_count": 59,
@@ -1139,9 +1139,9 @@
     "rank": 28,
     "rank_ci_lower": 14,
     "rank_ci_upper": 86,
-    "score": 533.8991514634082,
+    "score": 533.8991514634083,
     "show_when_excluded": false,
-    "take": 285048.3039333473,
+    "take": 285048.3039333474,
     "user": {
      "id": 220077,
      "is_bot": true,
@@ -1152,7 +1152,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212570Z",
+    "calculated_on": "2026-11-20T03:00:05.009823Z",
     "ci_lower": 267.52435704300774,
     "ci_upper": 797.7008653824473,
     "contribution_count": 59,
@@ -1165,9 +1165,9 @@
     "rank": 29,
     "rank_ci_lower": 8,
     "rank_ci_upper": 88,
-    "score": 532.7707122735854,
+    "score": 532.7707122735857,
     "show_when_excluded": false,
-    "take": 283844.63185650355,
+    "take": 283844.63185650384,
     "user": {
      "id": 311700,
      "is_bot": true,
@@ -1178,7 +1178,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212592Z",
+    "calculated_on": "2026-11-20T03:00:05.009846Z",
     "ci_lower": 352.68019872516527,
     "ci_upper": 706.0176028122523,
     "contribution_count": 59,
@@ -1204,7 +1204,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212613Z",
+    "calculated_on": "2026-11-20T03:00:05.009869Z",
     "ci_lower": 228.87603162876613,
     "ci_upper": 844.805514523906,
     "contribution_count": 59,
@@ -1230,7 +1230,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212636Z",
+    "calculated_on": "2026-11-20T03:00:05.009891Z",
     "ci_lower": 350.0545083540164,
     "ci_upper": 708.8764600237755,
     "contribution_count": 59,
@@ -1243,9 +1243,9 @@
     "rank": 31,
     "rank_ci_lower": 15,
     "rank_ci_upper": 67,
-    "score": 522.8923127446259,
+    "score": 522.892312744626,
     "show_when_excluded": false,
-    "take": 273416.37072742364,
+    "take": 273416.37072742375,
     "user": {
      "id": 309572,
      "is_bot": true,
@@ -1256,7 +1256,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212657Z",
+    "calculated_on": "2026-11-20T03:00:05.009913Z",
     "ci_lower": 186.71587493359212,
     "ci_upper": 839.3212837718823,
     "contribution_count": 59,
@@ -1282,7 +1282,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212678Z",
+    "calculated_on": "2026-11-20T03:00:05.009935Z",
     "ci_lower": 283.4001180328782,
     "ci_upper": 740.7681528230801,
     "contribution_count": 59,
@@ -1308,7 +1308,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212699Z",
+    "calculated_on": "2026-11-20T03:00:05.009958Z",
     "ci_lower": 2.4035080612139983,
     "ci_upper": 977.9856208132538,
     "contribution_count": 58,
@@ -1321,9 +1321,9 @@
     "rank": 34,
     "rank_ci_lower": 7,
     "rank_ci_upper": 204,
-    "score": 513.7457390271326,
+    "score": 513.7457390271327,
     "show_when_excluded": false,
-    "take": 263934.6843685346,
+    "take": 263934.6843685347,
     "user": {
      "id": 311427,
      "is_bot": true,
@@ -1334,7 +1334,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212720Z",
+    "calculated_on": "2026-11-20T03:00:05.009999Z",
     "ci_lower": 314.287495435806,
     "ci_upper": 707.3652547819898,
     "contribution_count": 59,
@@ -1347,9 +1347,9 @@
     "rank": 34,
     "rank_ci_lower": 17,
     "rank_ci_upper": 77,
-    "score": 506.2392452227073,
+    "score": 506.2392452227072,
     "show_when_excluded": false,
-    "take": 256278.1734036564,
+    "take": 256278.17340365628,
     "user": {
      "id": 303346,
      "is_bot": true,
@@ -1360,7 +1360,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212742Z",
+    "calculated_on": "2026-11-20T03:00:05.010036Z",
     "ci_lower": 250.37943172001502,
     "ci_upper": 740.9514375089179,
     "contribution_count": 59,
@@ -1386,7 +1386,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212763Z",
+    "calculated_on": "2026-11-20T03:00:05.010074Z",
     "ci_lower": 191.31978546844442,
     "ci_upper": 792.5743360215519,
     "contribution_count": 54,
@@ -1399,9 +1399,9 @@
     "rank": 35,
     "rank_ci_lower": 13,
     "rank_ci_upper": 113,
-    "score": 502.65851212174664,
+    "score": 502.6585121217467,
     "show_when_excluded": false,
-    "take": 252665.57980844812,
+    "take": 252665.57980844818,
     "user": {
      "id": 309407,
      "is_bot": true,
@@ -1412,7 +1412,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212784Z",
+    "calculated_on": "2026-11-20T03:00:05.010111Z",
     "ci_lower": 295.4603339338208,
     "ci_upper": 703.3823098861086,
     "contribution_count": 59,
@@ -1438,7 +1438,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212806Z",
+    "calculated_on": "2026-11-20T03:00:05.010151Z",
     "ci_lower": 272.29469027871306,
     "ci_upper": 703.6867911213067,
     "contribution_count": 59,
@@ -1451,9 +1451,9 @@
     "rank": 37,
     "rank_ci_lower": 21,
     "rank_ci_upper": 85,
-    "score": 492.5723436103053,
+    "score": 492.57234361030527,
     "show_when_excluded": false,
-    "take": 242627.5136897487,
+    "take": 242627.51368974865,
     "user": {
      "id": 311283,
      "is_bot": true,
@@ -1464,7 +1464,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212827Z",
+    "calculated_on": "2026-11-20T03:00:05.010190Z",
     "ci_lower": 158.16771563444263,
     "ci_upper": 798.6074986126127,
     "contribution_count": 59,
@@ -1477,9 +1477,9 @@
     "rank": 38,
     "rank_ci_lower": 9,
     "rank_ci_upper": 127,
-    "score": 491.6075025967207,
+    "score": 491.6075025967206,
     "show_when_excluded": false,
-    "take": 241677.93660938472,
+    "take": 241677.93660938466,
     "user": {
      "id": 311603,
      "is_bot": true,
@@ -1490,7 +1490,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212848Z",
+    "calculated_on": "2026-11-20T03:00:05.010229Z",
     "ci_lower": 163.19728021785753,
     "ci_upper": 770.3121084895489,
     "contribution_count": 59,
@@ -1516,7 +1516,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212870Z",
+    "calculated_on": "2026-11-20T03:00:05.010269Z",
     "ci_lower": 225.33193390942773,
     "ci_upper": 747.6561817776187,
     "contribution_count": 53,
@@ -1542,7 +1542,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212891Z",
+    "calculated_on": "2026-11-20T03:00:05.010311Z",
     "ci_lower": 266.3493084433248,
     "ci_upper": 704.01411974108,
     "contribution_count": 51,
@@ -1568,7 +1568,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212912Z",
+    "calculated_on": "2026-11-20T03:00:05.010368Z",
     "ci_lower": 129.40170404189047,
     "ci_upper": 871.0102598672797,
     "contribution_count": 59,
@@ -1594,7 +1594,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212933Z",
+    "calculated_on": "2026-11-20T03:00:05.010404Z",
     "ci_lower": 120.91851935078748,
     "ci_upper": 792.947605043392,
     "contribution_count": 59,
@@ -1607,9 +1607,9 @@
     "rank": 42,
     "rank_ci_lower": 10,
     "rank_ci_upper": 142,
-    "score": 479.88020616843045,
+    "score": 479.8802061684305,
     "show_when_excluded": false,
-    "take": 230285.01227225532,
+    "take": 230285.01227225538,
     "user": {
      "id": 308086,
      "is_bot": true,
@@ -1620,7 +1620,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212954Z",
+    "calculated_on": "2026-11-20T03:00:05.010470Z",
     "ci_lower": 260.53027266126395,
     "ci_upper": 682.7725072328614,
     "contribution_count": 59,
@@ -1633,9 +1633,9 @@
     "rank": 43,
     "rank_ci_lower": 13,
     "rank_ci_upper": 98,
-    "score": 469.34742925444675,
+    "score": 469.3474292544468,
     "show_when_excluded": false,
-    "take": 220287.0093477579,
+    "take": 220287.00934775796,
     "user": {
      "id": 309396,
      "is_bot": true,
@@ -1646,7 +1646,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212975Z",
+    "calculated_on": "2026-11-20T03:00:05.010494Z",
     "ci_lower": 176.8907484007723,
     "ci_upper": 803.3752221782686,
     "contribution_count": 59,
@@ -1672,7 +1672,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.212996Z",
+    "calculated_on": "2026-11-20T03:00:05.010517Z",
     "ci_lower": 251.75719705905888,
     "ci_upper": 669.2900104011418,
     "contribution_count": 59,
@@ -1685,9 +1685,9 @@
     "rank": 44,
     "rank_ci_lower": 24,
     "rank_ci_upper": 90,
-    "score": 460.47395464367804,
+    "score": 460.47395464367787,
     "show_when_excluded": false,
-    "take": 212036.26290518805,
+    "take": 212036.2629051879,
     "user": {
      "id": 309334,
      "is_bot": true,
@@ -1698,7 +1698,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213017Z",
+    "calculated_on": "2026-11-20T03:00:05.010543Z",
     "ci_lower": 178.14629714672245,
     "ci_upper": 710.0123154354818,
     "contribution_count": 59,
@@ -1724,7 +1724,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213038Z",
+    "calculated_on": "2026-11-20T03:00:05.010565Z",
     "ci_lower": 222.68053848984795,
     "ci_upper": 682.157961061495,
     "contribution_count": 59,
@@ -1750,7 +1750,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213059Z",
+    "calculated_on": "2026-11-20T03:00:05.010588Z",
     "ci_lower": 148.65969866918107,
     "ci_upper": 705.1578150406883,
     "contribution_count": 59,
@@ -1776,7 +1776,7 @@
    },
    {
     "aggregation_method": "reputation_weighted",
-    "calculated_on": "2026-11-14T11:49:23.213081Z",
+    "calculated_on": "2026-11-20T03:00:05.010614Z",
     "ci_lower": 361.4449820984199,
     "ci_upper": 535.0539184456561,
     "contribution_count": 59,
@@ -1796,7 +1796,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213102Z",
+    "calculated_on": "2026-11-20T03:00:05.010636Z",
     "ci_lower": 89.17013871660376,
     "ci_upper": 779.6484018632526,
     "contribution_count": 59,
@@ -1830,7 +1830,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213124Z",
+    "calculated_on": "2026-11-20T03:00:05.010659Z",
     "ci_lower": 219.85345957997157,
     "ci_upper": 658.8093106287228,
     "contribution_count": 51,
@@ -1856,7 +1856,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213145Z",
+    "calculated_on": "2026-11-20T03:00:05.010682Z",
     "ci_lower": 126.68756769500146,
     "ci_upper": 717.4939094521679,
     "contribution_count": 59,
@@ -1882,7 +1882,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213166Z",
+    "calculated_on": "2026-11-20T03:00:05.010704Z",
     "ci_lower": 177.2099806174243,
     "ci_upper": 695.9815844797358,
     "contribution_count": 59,
@@ -1908,7 +1908,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213187Z",
+    "calculated_on": "2026-11-20T03:00:05.010726Z",
     "ci_lower": 45.970536644394265,
     "ci_upper": 757.2588254784971,
     "contribution_count": 59,
@@ -1934,7 +1934,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213208Z",
+    "calculated_on": "2026-11-20T03:00:05.010749Z",
     "ci_lower": 171.67621156638245,
     "ci_upper": 676.8888658021365,
     "contribution_count": 54,
@@ -1947,9 +1947,9 @@
     "rank": 52,
     "rank_ci_lower": 27,
     "rank_ci_upper": 121,
-    "score": 419.8568522553388,
+    "score": 419.8568522553389,
     "show_when_excluded": false,
-    "take": 176279.77638576142,
+    "take": 176279.77638576145,
     "user": {
      "id": 311181,
      "is_bot": true,
@@ -1960,7 +1960,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213230Z",
+    "calculated_on": "2026-11-20T03:00:05.010772Z",
     "ci_lower": 108.04265106100877,
     "ci_upper": 772.0572079995202,
     "contribution_count": 59,
@@ -1973,9 +1973,9 @@
     "rank": 53,
     "rank_ci_lower": 10,
     "rank_ci_upper": 153,
-    "score": 412.24437739031845,
+    "score": 412.2443773903185,
     "show_when_excluded": false,
-    "take": 169945.4266899313,
+    "take": 169945.42668993134,
     "user": {
      "id": 284634,
      "is_bot": true,
@@ -1986,7 +1986,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213251Z",
+    "calculated_on": "2026-11-20T03:00:05.010794Z",
     "ci_lower": 212.33874590070303,
     "ci_upper": 615.1416451718119,
     "contribution_count": 59,
@@ -1999,9 +1999,9 @@
     "rank": 53,
     "rank_ci_lower": 30,
     "rank_ci_upper": 106,
-    "score": 411.048931830868,
+    "score": 411.04893183086796,
     "show_when_excluded": false,
-    "take": 168961.22435929757,
+    "take": 168961.22435929754,
     "user": {
      "id": 310900,
      "is_bot": true,
@@ -2012,7 +2012,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213273Z",
+    "calculated_on": "2026-11-20T03:00:05.010816Z",
     "ci_lower": 134.8286708235835,
     "ci_upper": 670.5617949611222,
     "contribution_count": 59,
@@ -2038,7 +2038,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213294Z",
+    "calculated_on": "2026-11-20T03:00:05.010839Z",
     "ci_lower": 11.385280382174606,
     "ci_upper": 818.6003179267052,
     "contribution_count": 59,
@@ -2051,9 +2051,9 @@
     "rank": 55,
     "rank_ci_lower": 10,
     "rank_ci_upper": 195,
-    "score": 408.07763757563396,
+    "score": 408.07763757563384,
     "show_when_excluded": false,
-    "take": 166527.35828931045,
+    "take": 166527.35828931036,
     "user": {
      "id": 310761,
      "is_bot": true,
@@ -2064,7 +2064,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213315Z",
+    "calculated_on": "2026-11-20T03:00:05.010861Z",
     "ci_lower": 185.13511949326033,
     "ci_upper": 621.4133899559312,
     "contribution_count": 38,
@@ -2090,7 +2090,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213338Z",
+    "calculated_on": "2026-11-20T03:00:05.010885Z",
     "ci_lower": -167.83645144956566,
     "ci_upper": 847.8835943662508,
     "contribution_count": 59,
@@ -2130,7 +2130,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213359Z",
+    "calculated_on": "2026-11-20T03:00:05.010907Z",
     "ci_lower": 81.50216390650729,
     "ci_upper": 671.0092185787337,
     "contribution_count": 59,
@@ -2143,9 +2143,9 @@
     "rank": 56,
     "rank_ci_lower": 15,
     "rank_ci_upper": 163,
-    "score": 392.54311930726993,
+    "score": 392.54311930727,
     "show_when_excluded": false,
-    "take": 154090.10051548155,
+    "take": 154090.1005154816,
     "user": {
      "id": 278292,
      "is_bot": true,
@@ -2168,7 +2168,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213380Z",
+    "calculated_on": "2026-11-20T03:00:05.010929Z",
     "ci_lower": 181.92834743504858,
     "ci_upper": 596.8475259741613,
     "contribution_count": 59,
@@ -2194,7 +2194,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213400Z",
+    "calculated_on": "2026-11-20T03:00:05.010952Z",
     "ci_lower": 163.10771180644292,
     "ci_upper": 607.3978870810038,
     "contribution_count": 59,
@@ -2207,9 +2207,9 @@
     "rank": 57,
     "rank_ci_lower": 14,
     "rank_ci_upper": 134,
-    "score": 385.9847128631343,
+    "score": 385.98471286313423,
     "show_when_excluded": false,
-    "take": 148984.19856403623,
+    "take": 148984.1985640362,
     "user": {
      "id": 310490,
      "is_bot": true,
@@ -2220,7 +2220,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213422Z",
+    "calculated_on": "2026-11-20T03:00:05.010974Z",
     "ci_lower": 72.62202726088245,
     "ci_upper": 677.7829146903764,
     "contribution_count": 59,
@@ -2246,7 +2246,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213444Z",
+    "calculated_on": "2026-11-20T03:00:05.010997Z",
     "ci_lower": -72.94696562128631,
     "ci_upper": 789.0737228992399,
     "contribution_count": 58,
@@ -2272,7 +2272,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213465Z",
+    "calculated_on": "2026-11-20T03:00:05.011019Z",
     "ci_lower": 133.83736132345146,
     "ci_upper": 610.2130403808883,
     "contribution_count": 59,
@@ -2298,7 +2298,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213486Z",
+    "calculated_on": "2026-11-20T03:00:05.011041Z",
     "ci_lower": 100.25280545266787,
     "ci_upper": 628.3398988655924,
     "contribution_count": 59,
@@ -2324,7 +2324,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213507Z",
+    "calculated_on": "2026-11-20T03:00:05.011064Z",
     "ci_lower": -254.0714067199886,
     "ci_upper": 787.4351511989031,
     "contribution_count": 59,
@@ -2350,7 +2350,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213528Z",
+    "calculated_on": "2026-11-20T03:00:05.011086Z",
     "ci_lower": 17.728525105073114,
     "ci_upper": 672.9558784336215,
     "contribution_count": 59,
@@ -2363,9 +2363,9 @@
     "rank": 63,
     "rank_ci_lower": 22,
     "rank_ci_upper": 191,
-    "score": 365.23113638533124,
+    "score": 365.2311363853313,
     "show_when_excluded": false,
-    "take": 133393.78298532043,
+    "take": 133393.78298532046,
     "user": {
      "id": 309062,
      "is_bot": true,
@@ -2390,7 +2390,7 @@
    },
    {
     "aggregation_method": "recency_weighted",
-    "calculated_on": "2026-11-14T11:49:23.213549Z",
+    "calculated_on": "2026-11-20T03:00:05.011109Z",
     "ci_lower": 281.1743011280229,
     "ci_upper": 453.6634258412001,
     "contribution_count": 59,
@@ -2410,7 +2410,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213582Z",
+    "calculated_on": "2026-11-20T03:00:05.011132Z",
     "ci_lower": -56.36392462929875,
     "ci_upper": 753.5318561847662,
     "contribution_count": 59,
@@ -2436,7 +2436,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213603Z",
+    "calculated_on": "2026-11-20T03:00:05.011154Z",
     "ci_lower": 23.612250396211238,
     "ci_upper": 671.4403307462038,
     "contribution_count": 59,
@@ -2462,7 +2462,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213624Z",
+    "calculated_on": "2026-11-20T03:00:05.011176Z",
     "ci_lower": 24.82054812143678,
     "ci_upper": 675.304185507519,
     "contribution_count": 59,
@@ -2488,7 +2488,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213645Z",
+    "calculated_on": "2026-11-20T03:00:05.011199Z",
     "ci_lower": 114.66141428913527,
     "ci_upper": 577.1419137348188,
     "contribution_count": 59,
@@ -2514,7 +2514,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213666Z",
+    "calculated_on": "2026-11-20T03:00:05.016382Z",
     "ci_lower": 92.01389359401945,
     "ci_upper": 561.6820050170162,
     "contribution_count": 59,
@@ -2527,9 +2527,9 @@
     "rank": 67,
     "rank_ci_lower": 32,
     "rank_ci_upper": 154,
-    "score": 342.03660998396094,
+    "score": 342.036609983961,
     "show_when_excluded": false,
-    "take": 116989.04256932021,
+    "take": 116989.04256932026,
     "user": {
      "id": 309669,
      "is_bot": true,
@@ -2540,7 +2540,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213686Z",
+    "calculated_on": "2026-11-20T03:00:05.016452Z",
     "ci_lower": -49.69310996391018,
     "ci_upper": 660.7139204157575,
     "contribution_count": 59,
@@ -2553,9 +2553,9 @@
     "rank": 68,
     "rank_ci_lower": 18,
     "rank_ci_upper": 224,
-    "score": 339.0856816370732,
+    "score": 339.08568163707315,
     "show_when_excluded": false,
-    "take": 114979.09949127857,
+    "take": 114979.09949127852,
     "user": {
      "id": 311494,
      "is_bot": true,
@@ -2566,7 +2566,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213708Z",
+    "calculated_on": "2026-11-20T03:00:05.016487Z",
     "ci_lower": 182.14875217700472,
     "ci_upper": 494.0838684566243,
     "contribution_count": 31,
@@ -2592,7 +2592,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213728Z",
+    "calculated_on": "2026-11-20T03:00:05.016523Z",
     "ci_lower": 165.71785049910997,
     "ci_upper": 498.57689336777395,
     "contribution_count": 59,
@@ -2605,9 +2605,9 @@
     "rank": 70,
     "rank_ci_lower": 48,
     "rank_ci_upper": 125,
-    "score": 334.88202519382804,
+    "score": 334.882025193828,
     "show_when_excluded": false,
-    "take": 112145.97079791968,
+    "take": 112145.97079791964,
     "user": {
      "id": 310866,
      "is_bot": true,
@@ -2618,7 +2618,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213750Z",
+    "calculated_on": "2026-11-20T03:00:05.016570Z",
     "ci_lower": 66.3043880933928,
     "ci_upper": 582.8419041617486,
     "contribution_count": 59,
@@ -2631,9 +2631,9 @@
     "rank": 70,
     "rank_ci_lower": 32,
     "rank_ci_upper": 161,
-    "score": 333.68941054340434,
+    "score": 333.6894105434044,
     "show_when_excluded": false,
-    "take": 111348.62270880464,
+    "take": 111348.62270880469,
     "user": {
      "id": 310525,
      "is_bot": true,
@@ -2644,7 +2644,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213771Z",
+    "calculated_on": "2026-11-20T03:00:05.016605Z",
     "ci_lower": -64.76929700473298,
     "ci_upper": 683.5201812649152,
     "contribution_count": 59,
@@ -2657,9 +2657,9 @@
     "rank": 71,
     "rank_ci_lower": 23,
     "rank_ci_upper": 235,
-    "score": 333.5489832131226,
+    "score": 333.5489832131225,
     "show_when_excluded": false,
-    "take": 111254.92420250794,
+    "take": 111254.92420250787,
     "user": {
      "id": 309982,
      "is_bot": true,
@@ -2670,7 +2670,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213791Z",
+    "calculated_on": "2026-11-20T03:00:05.016640Z",
     "ci_lower": 152.92797230176282,
     "ci_upper": 514.7351816047101,
     "contribution_count": 59,
@@ -2696,7 +2696,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213812Z",
+    "calculated_on": "2026-11-20T03:00:05.016675Z",
     "ci_lower": 102.35898786448288,
     "ci_upper": 560.2384933486703,
     "contribution_count": 59,
@@ -2722,7 +2722,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213832Z",
+    "calculated_on": "2026-11-20T03:00:05.016710Z",
     "ci_lower": 147.25657086475812,
     "ci_upper": 529.2149395498071,
     "contribution_count": 59,
@@ -2748,7 +2748,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213853Z",
+    "calculated_on": "2026-11-20T03:00:05.016745Z",
     "ci_lower": 43.174746349001985,
     "ci_upper": 589.669981738289,
     "contribution_count": 59,
@@ -2788,7 +2788,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213874Z",
+    "calculated_on": "2026-11-20T03:00:05.016781Z",
     "ci_lower": -30.62635713121677,
     "ci_upper": 666.8675169004105,
     "contribution_count": 59,
@@ -2801,9 +2801,9 @@
     "rank": 75,
     "rank_ci_lower": 24,
     "rank_ci_upper": 222,
-    "score": 325.11282244747605,
+    "score": 325.1128224474761,
     "show_when_excluded": false,
-    "take": 105698.34731976409,
+    "take": 105698.34731976413,
     "user": {
      "id": 309385,
      "is_bot": true,
@@ -2828,7 +2828,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213895Z",
+    "calculated_on": "2026-11-20T03:00:05.016816Z",
     "ci_lower": 133.72002412841707,
     "ci_upper": 527.4833057901344,
     "contribution_count": 32,
@@ -2854,7 +2854,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213916Z",
+    "calculated_on": "2026-11-20T03:00:05.016850Z",
     "ci_lower": -69.94191583809942,
     "ci_upper": 684.8899320450683,
     "contribution_count": 59,
@@ -2880,7 +2880,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213937Z",
+    "calculated_on": "2026-11-20T03:00:05.016885Z",
     "ci_lower": 40.22716621298453,
     "ci_upper": 558.2435710983506,
     "contribution_count": 59,
@@ -2893,9 +2893,9 @@
     "rank": 77,
     "rank_ci_lower": 35,
     "rank_ci_upper": 177,
-    "score": 314.5924938887335,
+    "score": 314.59249388873343,
     "show_when_excluded": false,
-    "take": 98968.43721113281,
+    "take": 98968.43721113278,
     "user": {
      "id": 309175,
      "is_bot": true,
@@ -2906,7 +2906,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213958Z",
+    "calculated_on": "2026-11-20T03:00:05.016921Z",
     "ci_lower": -294.50910553989536,
     "ci_upper": 804.1998012775205,
     "contribution_count": 59,
@@ -2932,7 +2932,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.213978Z",
+    "calculated_on": "2026-11-20T03:00:05.016956Z",
     "ci_lower": 76.8314574086715,
     "ci_upper": 534.6682594569182,
     "contribution_count": 22,
@@ -2958,7 +2958,7 @@
    },
    {
     "aggregation_method": "unweighted",
-    "calculated_on": "2026-11-14T11:49:23.213999Z",
+    "calculated_on": "2026-11-20T03:00:05.016994Z",
     "ci_lower": 240.72215908816295,
     "ci_upper": 361.3030053421634,
     "contribution_count": 59,
@@ -2978,7 +2978,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214020Z",
+    "calculated_on": "2026-11-20T03:00:05.017033Z",
     "ci_lower": -184.74544601648452,
     "ci_upper": 698.4650438786925,
     "contribution_count": 59,
@@ -3018,7 +3018,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214041Z",
+    "calculated_on": "2026-11-20T03:00:05.017073Z",
     "ci_lower": -220.71290087802888,
     "ci_upper": 743.6215398412356,
     "contribution_count": 59,
@@ -3044,7 +3044,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214062Z",
+    "calculated_on": "2026-11-20T03:00:05.017115Z",
     "ci_lower": -331.20715194998695,
     "ci_upper": 749.0709917490105,
     "contribution_count": 59,
@@ -3057,9 +3057,9 @@
     "rank": 80,
     "rank_ci_lower": 17,
     "rank_ci_upper": 290,
-    "score": 296.02095739009724,
+    "score": 296.0209573900971,
     "show_when_excluded": false,
-    "take": 87628.40721414976,
+    "take": 87628.4072141497,
     "user": {
      "id": 308774,
      "is_bot": true,
@@ -3070,7 +3070,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214083Z",
+    "calculated_on": "2026-11-20T03:00:05.017157Z",
     "ci_lower": 154.42199298692455,
     "ci_upper": 433.62337931910065,
     "contribution_count": 33,
@@ -3083,9 +3083,9 @@
     "rank": 81,
     "rank_ci_lower": 49,
     "rank_ci_upper": 136,
-    "score": 289.669195294082,
+    "score": 289.66919529408193,
     "show_when_excluded": false,
-    "take": 83908.242702321,
+    "take": 83908.24270232097,
     "user": {
      "id": 309592,
      "is_bot": true,
@@ -3096,7 +3096,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214103Z",
+    "calculated_on": "2026-11-20T03:00:05.017199Z",
     "ci_lower": 5.614079608921928,
     "ci_upper": 551.8428702325803,
     "contribution_count": 46,
@@ -3122,7 +3122,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214124Z",
+    "calculated_on": "2026-11-20T03:00:05.017241Z",
     "ci_lower": 58.42251333580891,
     "ci_upper": 503.6959440357282,
     "contribution_count": 46,
@@ -3135,9 +3135,9 @@
     "rank": 83,
     "rank_ci_lower": 42,
     "rank_ci_upper": 172,
-    "score": 285.26560070173326,
+    "score": 285.2656007017332,
     "show_when_excluded": false,
-    "take": 81376.46294372072,
+    "take": 81376.46294372069,
     "user": {
      "id": 290245,
      "is_bot": true,
@@ -3148,7 +3148,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214145Z",
+    "calculated_on": "2026-11-20T03:00:05.017285Z",
     "ci_lower": -152.49930077429408,
     "ci_upper": 664.8238559418672,
     "contribution_count": 59,
@@ -3174,7 +3174,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214166Z",
+    "calculated_on": "2026-11-20T03:00:05.017327Z",
     "ci_lower": 86.88167173591134,
     "ci_upper": 462.20498205096544,
     "contribution_count": 31,
@@ -3187,9 +3187,9 @@
     "rank": 85,
     "rank_ci_lower": 47,
     "rank_ci_upper": 159,
-    "score": 278.5315784825657,
+    "score": 278.53157848256575,
     "show_when_excluded": false,
-    "take": 77579.84021198965,
+    "take": 77579.84021198968,
     "user": {
      "id": 311653,
      "is_bot": true,
@@ -3200,7 +3200,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214188Z",
+    "calculated_on": "2026-11-20T03:00:05.017385Z",
     "ci_lower": -173.81429840797745,
     "ci_upper": 646.524538821353,
     "contribution_count": 45,
@@ -3213,9 +3213,9 @@
     "rank": 86,
     "rank_ci_lower": 23,
     "rank_ci_upper": 264,
-    "score": 277.77437183546635,
+    "score": 277.7743718354663,
     "show_when_excluded": false,
-    "take": 77158.60164858792,
+    "take": 77158.6016485879,
     "user": {
      "id": 311303,
      "is_bot": true,
@@ -3226,7 +3226,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214209Z",
+    "calculated_on": "2026-11-20T03:00:05.017420Z",
     "ci_lower": -159.46791093133498,
     "ci_upper": 682.2828690753213,
     "contribution_count": 59,
@@ -3239,9 +3239,9 @@
     "rank": 87,
     "rank_ci_lower": 14,
     "rank_ci_upper": 263,
-    "score": 275.53058167008726,
+    "score": 275.5305816700873,
     "show_when_excluded": false,
-    "take": 75917.10143545663,
+    "take": 75917.10143545666,
     "user": {
      "id": 309065,
      "is_bot": true,
@@ -3266,7 +3266,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214230Z",
+    "calculated_on": "2026-11-20T03:00:05.017461Z",
     "ci_lower": 2.6829506145989557,
     "ci_upper": 543.4749551771287,
     "contribution_count": 59,
@@ -3279,9 +3279,9 @@
     "rank": 87,
     "rank_ci_lower": 27,
     "rank_ci_upper": 201,
-    "score": 275.3528999200021,
+    "score": 275.35289992000213,
     "show_when_excluded": false,
-    "take": 75819.21949435468,
+    "take": 75819.21949435471,
     "user": {
      "id": 310069,
      "is_bot": true,
@@ -3292,7 +3292,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214251Z",
+    "calculated_on": "2026-11-20T03:00:05.017503Z",
     "ci_lower": 110.64489349476297,
     "ci_upper": 443.3826951116939,
     "contribution_count": 35,
@@ -3318,7 +3318,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214272Z",
+    "calculated_on": "2026-11-20T03:00:05.017546Z",
     "ci_lower": -237.85449969332117,
     "ci_upper": 724.6395720786927,
     "contribution_count": 58,
@@ -3331,9 +3331,9 @@
     "rank": 89,
     "rank_ci_lower": 21,
     "rank_ci_upper": 277,
-    "score": 271.7089439279566,
+    "score": 271.7089439279567,
     "show_when_excluded": false,
-    "take": 73825.75021044548,
+    "take": 73825.7502104455,
     "user": {
      "id": 310281,
      "is_bot": true,
@@ -3344,7 +3344,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214294Z",
+    "calculated_on": "2026-11-20T03:00:05.017588Z",
     "ci_lower": 39.78395981728613,
     "ci_upper": 499.3579335081039,
     "contribution_count": 52,
@@ -3370,7 +3370,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214315Z",
+    "calculated_on": "2026-11-20T03:00:05.017630Z",
     "ci_lower": -113.80140060611468,
     "ci_upper": 573.8478254485111,
     "contribution_count": 59,
@@ -3396,7 +3396,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214336Z",
+    "calculated_on": "2026-11-20T03:00:05.017673Z",
     "ci_lower": -311.9066551633678,
     "ci_upper": 657.2453711697218,
     "contribution_count": 59,
@@ -3409,9 +3409,9 @@
     "rank": 91,
     "rank_ci_lower": 23,
     "rank_ci_upper": 287,
-    "score": 265.0565882561628,
+    "score": 265.05658825616274,
     "show_when_excluded": false,
-    "take": 70254.99497799702,
+    "take": 70254.99497799699,
     "user": {
      "id": 311229,
      "is_bot": true,
@@ -3422,7 +3422,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214357Z",
+    "calculated_on": "2026-11-20T03:00:05.017715Z",
     "ci_lower": -15.727737732141671,
     "ci_upper": 512.8962362993686,
     "contribution_count": 59,
@@ -3435,9 +3435,9 @@
     "rank": 92,
     "rank_ci_lower": 38,
     "rank_ci_upper": 211,
-    "score": 263.1363229578369,
+    "score": 263.136322957837,
     "show_when_excluded": false,
-    "take": 69240.72445977105,
+    "take": 69240.72445977111,
     "user": {
      "id": 309506,
      "is_bot": true,
@@ -3448,7 +3448,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214378Z",
+    "calculated_on": "2026-11-20T03:00:05.017757Z",
     "ci_lower": -91.07353512842694,
     "ci_upper": 584.1640858250473,
     "contribution_count": 52,
@@ -3474,7 +3474,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214399Z",
+    "calculated_on": "2026-11-20T03:00:05.017862Z",
     "ci_lower": -157.5541999594877,
     "ci_upper": 638.4541410644744,
     "contribution_count": 59,
@@ -3487,9 +3487,9 @@
     "rank": 94,
     "rank_ci_lower": 28,
     "rank_ci_upper": 261,
-    "score": 254.33245740325899,
+    "score": 254.332457403259,
     "show_when_excluded": false,
-    "take": 64684.998888780545,
+    "take": 64684.99888878056,
     "user": {
      "id": 308174,
      "is_bot": true,
@@ -3500,7 +3500,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214420Z",
+    "calculated_on": "2026-11-20T03:00:05.017906Z",
     "ci_lower": 68.96782909275919,
     "ci_upper": 437.3557124177136,
     "contribution_count": 43,
@@ -3526,7 +3526,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214442Z",
+    "calculated_on": "2026-11-20T03:00:05.017951Z",
     "ci_lower": 0.5221126555008543,
     "ci_upper": 485.43294138406185,
     "contribution_count": 59,
@@ -3552,7 +3552,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214463Z",
+    "calculated_on": "2026-11-20T03:00:05.018005Z",
     "ci_lower": -295.76764654000414,
     "ci_upper": 649.9585208428697,
     "contribution_count": 54,
@@ -3565,9 +3565,9 @@
     "rank": 97,
     "rank_ci_lower": 24,
     "rank_ci_upper": 283,
-    "score": 242.87641145264493,
+    "score": 242.87641145264496,
     "show_when_excluded": false,
-    "take": 58988.951240114475,
+    "take": 58988.95124011449,
     "user": {
      "id": 311748,
      "is_bot": true,
@@ -3578,7 +3578,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214484Z",
+    "calculated_on": "2026-11-20T03:00:05.018048Z",
     "ci_lower": 74.1960650277749,
     "ci_upper": 433.2479972718971,
     "contribution_count": 22,
@@ -3604,7 +3604,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214504Z",
+    "calculated_on": "2026-11-20T03:00:05.018090Z",
     "ci_lower": -66.78443710929008,
     "ci_upper": 500.28496814921857,
     "contribution_count": 41,
@@ -3617,9 +3617,9 @@
     "rank": 99,
     "rank_ci_lower": 43,
     "rank_ci_upper": 234,
-    "score": 233.33573654632383,
+    "score": 233.33573654632377,
     "show_when_excluded": false,
-    "take": 54445.56594961544,
+    "take": 54445.56594961542,
     "user": {
      "id": 311194,
      "is_bot": true,
@@ -3630,7 +3630,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214525Z",
+    "calculated_on": "2026-11-20T03:00:05.018131Z",
     "ci_lower": 0.7023291558555561,
     "ci_upper": 494.470260487724,
     "contribution_count": 43,
@@ -3656,7 +3656,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214546Z",
+    "calculated_on": "2026-11-20T03:00:05.018175Z",
     "ci_lower": -125.59976622259401,
     "ci_upper": 545.1330453212707,
     "contribution_count": 51,
@@ -3682,7 +3682,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214578Z",
+    "calculated_on": "2026-11-20T03:00:05.018218Z",
     "ci_lower": -50.823480036587355,
     "ci_upper": 471.55856948988344,
     "contribution_count": 59,
@@ -3708,7 +3708,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214599Z",
+    "calculated_on": "2026-11-20T03:00:05.018259Z",
     "ci_lower": 42.68557057667995,
     "ci_upper": 420.733652236939,
     "contribution_count": 32,
@@ -3734,7 +3734,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214620Z",
+    "calculated_on": "2026-11-20T03:00:05.018302Z",
     "ci_lower": 46.112841027323206,
     "ci_upper": 399.20491546750645,
     "contribution_count": 19,
@@ -3760,7 +3760,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214641Z",
+    "calculated_on": "2026-11-20T03:00:05.018360Z",
     "ci_lower": 76.4350311538213,
     "ci_upper": 359.02504791763226,
     "contribution_count": 31,
@@ -3773,9 +3773,9 @@
     "rank": 105,
     "rank_ci_lower": 71,
     "rank_ci_upper": 161,
-    "score": 218.4729568461634,
+    "score": 218.47295684616344,
     "show_when_excluded": false,
-    "take": 47730.43287310558,
+    "take": 47730.432873105594,
     "user": {
      "id": 311695,
      "is_bot": true,
@@ -3786,7 +3786,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214661Z",
+    "calculated_on": "2026-11-20T03:00:05.018403Z",
     "ci_lower": 1.4116925524660962,
     "ci_upper": 423.005496079058,
     "contribution_count": 59,
@@ -3812,7 +3812,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214682Z",
+    "calculated_on": "2026-11-20T03:00:05.018446Z",
     "ci_lower": -56.96032575578157,
     "ci_upper": 468.5906020617027,
     "contribution_count": 59,
@@ -3851,7 +3851,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214703Z",
+    "calculated_on": "2026-11-20T03:00:05.018488Z",
     "ci_lower": -137.3972915485109,
     "ci_upper": 530.2810171467764,
     "contribution_count": 59,
@@ -3877,7 +3877,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214723Z",
+    "calculated_on": "2026-11-20T03:00:05.018530Z",
     "ci_lower": -20.863420450701327,
     "ci_upper": 424.4889622760496,
     "contribution_count": 53,
@@ -3890,9 +3890,9 @@
     "rank": 108,
     "rank_ci_lower": 62,
     "rank_ci_upper": 214,
-    "score": 209.93781279310937,
+    "score": 209.93781279310943,
     "show_when_excluded": false,
-    "take": 44073.88524035464,
+    "take": 44073.88524035466,
     "user": {
      "id": 311260,
      "is_bot": true,
@@ -3903,7 +3903,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214745Z",
+    "calculated_on": "2026-11-20T03:00:05.018573Z",
     "ci_lower": -14.55157004699852,
     "ci_upper": 418.6465885726201,
     "contribution_count": 59,
@@ -3916,9 +3916,9 @@
     "rank": 109,
     "rank_ci_lower": 66,
     "rank_ci_upper": 211,
-    "score": 206.1942133709329,
+    "score": 206.19421337093294,
     "show_when_excluded": false,
-    "take": 42516.05362765781,
+    "take": 42516.05362765782,
     "user": {
      "id": 308643,
      "is_bot": true,
@@ -3929,7 +3929,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214766Z",
+    "calculated_on": "2026-11-20T03:00:05.018615Z",
     "ci_lower": -39.071164241350594,
     "ci_upper": 436.3718982308782,
     "contribution_count": 59,
@@ -3942,9 +3942,9 @@
     "rank": 110,
     "rank_ci_lower": 55,
     "rank_ci_upper": 224,
-    "score": 201.51834013763897,
+    "score": 201.51834013763903,
     "show_when_excluded": false,
-    "take": 40609.64141182916,
+    "take": 40609.64141182918,
     "user": {
      "id": 309293,
      "is_bot": true,
@@ -3955,7 +3955,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214787Z",
+    "calculated_on": "2026-11-20T03:00:05.018657Z",
     "ci_lower": 47.190832118950965,
     "ci_upper": 397.3620788879127,
     "contribution_count": 17,
@@ -3995,7 +3995,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214808Z",
+    "calculated_on": "2026-11-20T03:00:05.018698Z",
     "ci_lower": -91.43434751567355,
     "ci_upper": 464.85654888887285,
     "contribution_count": 59,
@@ -4021,7 +4021,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214829Z",
+    "calculated_on": "2026-11-20T03:00:05.018740Z",
     "ci_lower": -118.72648277707421,
     "ci_upper": 445.99579624275964,
     "contribution_count": 58,
@@ -4034,9 +4034,9 @@
     "rank": 112,
     "rank_ci_lower": 46,
     "rank_ci_upper": 250,
-    "score": 196.08219619855808,
+    "score": 196.08219619855802,
     "show_when_excluded": false,
-    "take": 38448.227666049825,
+    "take": 38448.2276660498,
     "user": {
      "id": 311808,
      "is_bot": true,
@@ -4047,7 +4047,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214850Z",
+    "calculated_on": "2026-11-20T03:00:05.018783Z",
     "ci_lower": -117.08418638648214,
     "ci_upper": 471.2169653837867,
     "contribution_count": 59,
@@ -4060,9 +4060,9 @@
     "rank": 113,
     "rank_ci_lower": 59,
     "rank_ci_upper": 250,
-    "score": 194.24057775564611,
+    "score": 194.2405777556461,
     "show_when_excluded": false,
-    "take": 37729.4020468472,
+    "take": 37729.40204684719,
     "user": {
      "id": 304232,
      "is_bot": true,
@@ -4073,7 +4073,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214871Z",
+    "calculated_on": "2026-11-20T03:00:05.018827Z",
     "ci_lower": 3.503145296080658,
     "ci_upper": 384.1126538085484,
     "contribution_count": 59,
@@ -4099,7 +4099,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214892Z",
+    "calculated_on": "2026-11-20T03:00:05.018869Z",
     "ci_lower": -123.51071673228088,
     "ci_upper": 463.51167630648155,
     "contribution_count": 59,
@@ -4125,7 +4125,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214913Z",
+    "calculated_on": "2026-11-20T03:00:05.018911Z",
     "ci_lower": -369.42652628131174,
     "ci_upper": 593.1773159952803,
     "contribution_count": 59,
@@ -4151,7 +4151,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214933Z",
+    "calculated_on": "2026-11-20T03:00:05.018953Z",
     "ci_lower": -57.745522991431045,
     "ci_upper": 424.8425032788337,
     "contribution_count": 57,
@@ -4177,7 +4177,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214954Z",
+    "calculated_on": "2026-11-20T03:00:05.018996Z",
     "ci_lower": 28.686067944612194,
     "ci_upper": 346.05552466078774,
     "contribution_count": 44,
@@ -4203,7 +4203,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214975Z",
+    "calculated_on": "2026-11-20T03:00:05.019039Z",
     "ci_lower": -40.82665598708252,
     "ci_upper": 414.5765401603709,
     "contribution_count": 59,
@@ -4216,9 +4216,9 @@
     "rank": 119,
     "rank_ci_lower": 59,
     "rank_ci_upper": 228,
-    "score": 184.07136747759748,
+    "score": 184.0713674775975,
     "show_when_excluded": false,
-    "take": 33882.26832507273,
+    "take": 33882.26832507274,
     "user": {
      "id": 311114,
      "is_bot": true,
@@ -4229,7 +4229,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.214995Z",
+    "calculated_on": "2026-11-20T03:00:05.019081Z",
     "ci_lower": -12.567623889992069,
     "ci_upper": 347.9933000712111,
     "contribution_count": 22,
@@ -4255,7 +4255,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215016Z",
+    "calculated_on": "2026-11-20T03:00:05.019124Z",
     "ci_lower": -144.80868198963555,
     "ci_upper": 435.0066809847268,
     "contribution_count": 59,
@@ -4281,7 +4281,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215037Z",
+    "calculated_on": "2026-11-20T03:00:05.019165Z",
     "ci_lower": 32.447854309133284,
     "ci_upper": 349.9925796711746,
     "contribution_count": 20,
@@ -4307,7 +4307,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215057Z",
+    "calculated_on": "2026-11-20T03:00:05.019206Z",
     "ci_lower": -16.324414034183206,
     "ci_upper": 370.1761723998559,
     "contribution_count": 19,
@@ -4333,7 +4333,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215078Z",
+    "calculated_on": "2026-11-20T03:00:05.019248Z",
     "ci_lower": -243.59488857729465,
     "ci_upper": 521.491868580188,
     "contribution_count": 59,
@@ -4346,9 +4346,9 @@
     "rank": 123,
     "rank_ci_lower": 43,
     "rank_ci_upper": 277,
-    "score": 172.46528923681302,
+    "score": 172.46528923681305,
     "show_when_excluded": false,
-    "take": 29744.275991537572,
+    "take": 29744.275991537583,
     "user": {
      "id": 309709,
      "is_bot": true,
@@ -4359,7 +4359,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215099Z",
+    "calculated_on": "2026-11-20T03:00:05.019290Z",
     "ci_lower": -109.49357966936518,
     "ci_upper": 462.94424172218436,
     "contribution_count": 59,
@@ -4372,9 +4372,9 @@
     "rank": 124,
     "rank_ci_lower": 51,
     "rank_ci_upper": 250,
-    "score": 172.14569348346996,
+    "score": 172.1456934834699,
     "show_when_excluded": false,
-    "take": 29634.13978490479,
+    "take": 29634.13978490477,
     "user": {
      "id": 307855,
      "is_bot": true,
@@ -4385,7 +4385,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215120Z",
+    "calculated_on": "2026-11-20T03:00:05.019352Z",
     "ci_lower": -78.52607534836467,
     "ci_upper": 392.1434685239175,
     "contribution_count": 59,
@@ -4411,7 +4411,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215141Z",
+    "calculated_on": "2026-11-20T03:00:05.019394Z",
     "ci_lower": -123.55924603970729,
     "ci_upper": 437.94643053649344,
     "contribution_count": 51,
@@ -4437,7 +4437,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215163Z",
+    "calculated_on": "2026-11-20T03:00:05.019435Z",
     "ci_lower": -175.96318283534615,
     "ci_upper": 449.12957417754774,
     "contribution_count": 59,
@@ -4463,7 +4463,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215183Z",
+    "calculated_on": "2026-11-20T03:00:05.019477Z",
     "ci_lower": -184.75697820799576,
     "ci_upper": 484.90007908733236,
     "contribution_count": 59,
@@ -4476,9 +4476,9 @@
     "rank": 128,
     "rank_ci_lower": 37,
     "rank_ci_upper": 264,
-    "score": 169.3687988072452,
+    "score": 169.36879880724524,
     "show_when_excluded": false,
-    "take": 28685.79000940911,
+    "take": 28685.790009409116,
     "user": {
      "id": 309271,
      "is_bot": true,
@@ -4489,7 +4489,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215204Z",
+    "calculated_on": "2026-11-20T03:00:05.019519Z",
     "ci_lower": -23.802408906275073,
     "ci_upper": 360.0372870196517,
     "contribution_count": 33,
@@ -4515,7 +4515,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215225Z",
+    "calculated_on": "2026-11-20T03:00:05.019561Z",
     "ci_lower": -22.068757927722192,
     "ci_upper": 361.64692132868,
     "contribution_count": 59,
@@ -4554,7 +4554,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215245Z",
+    "calculated_on": "2026-11-20T03:00:05.019602Z",
     "ci_lower": -141.47475028176098,
     "ci_upper": 438.24528350840814,
     "contribution_count": 59,
@@ -4580,7 +4580,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215266Z",
+    "calculated_on": "2026-11-20T03:00:05.019644Z",
     "ci_lower": -460.78275230355933,
     "ci_upper": 606.9059991671761,
     "contribution_count": 59,
@@ -4606,7 +4606,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215287Z",
+    "calculated_on": "2026-11-20T03:00:05.019686Z",
     "ci_lower": -96.42972316624541,
     "ci_upper": 405.44932932718905,
     "contribution_count": 28,
@@ -4619,9 +4619,9 @@
     "rank": 132,
     "rank_ci_lower": 65,
     "rank_ci_upper": 245,
-    "score": 151.8433163453996,
+    "score": 151.84331634539961,
     "show_when_excluded": false,
-    "take": 23056.392718769093,
+    "take": 23056.3927187691,
     "user": {
      "id": 306977,
      "is_bot": true,
@@ -4632,7 +4632,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215308Z",
+    "calculated_on": "2026-11-20T03:00:05.019727Z",
     "ci_lower": -139.82387209104996,
     "ci_upper": 416.8242676075582,
     "contribution_count": 59,
@@ -4645,9 +4645,9 @@
     "rank": 133,
     "rank_ci_lower": 66,
     "rank_ci_upper": 258,
-    "score": 151.5452437130251,
+    "score": 151.54524371302512,
     "show_when_excluded": false,
-    "take": 22965.96089204017,
+    "take": 22965.960892040177,
     "user": {
      "id": 308418,
      "is_bot": true,
@@ -4658,7 +4658,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215329Z",
+    "calculated_on": "2026-11-20T03:00:05.019770Z",
     "ci_lower": -156.3259933029409,
     "ci_upper": 431.43554942519336,
     "contribution_count": 59,
@@ -4671,9 +4671,9 @@
     "rank": 134,
     "rank_ci_lower": 62,
     "rank_ci_upper": 260,
-    "score": 146.90660311144296,
+    "score": 146.906603111443,
     "show_when_excluded": false,
-    "take": 21581.55003774302,
+    "take": 21581.550037743033,
     "user": {
      "id": 308700,
      "is_bot": true,
@@ -4684,7 +4684,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215349Z",
+    "calculated_on": "2026-11-20T03:00:05.019811Z",
     "ci_lower": -102.24487858467741,
     "ci_upper": 367.32742420588875,
     "contribution_count": 59,
@@ -4710,7 +4710,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215370Z",
+    "calculated_on": "2026-11-20T03:00:05.019854Z",
     "ci_lower": -136.29993535172176,
     "ci_upper": 387.54156200939735,
     "contribution_count": 59,
@@ -4723,9 +4723,9 @@
     "rank": 136,
     "rank_ci_lower": 62,
     "rank_ci_upper": 253,
-    "score": 141.08155312835035,
+    "score": 141.08155312835032,
     "show_when_excluded": false,
-    "take": 19904.004633107543,
+    "take": 19904.004633107535,
     "user": {
      "id": 309566,
      "is_bot": true,
@@ -4749,7 +4749,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215391Z",
+    "calculated_on": "2026-11-20T03:00:05.019895Z",
     "ci_lower": -75.28419057752559,
     "ci_upper": 342.3258844320499,
     "contribution_count": 59,
@@ -4775,7 +4775,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215412Z",
+    "calculated_on": "2026-11-20T03:00:05.019937Z",
     "ci_lower": -110.34886243241172,
     "ci_upper": 371.95311202272694,
     "contribution_count": 59,
@@ -4801,7 +4801,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215433Z",
+    "calculated_on": "2026-11-20T03:00:05.019979Z",
     "ci_lower": -180.0315734158014,
     "ci_upper": 444.85348275541674,
     "contribution_count": 59,
@@ -4827,7 +4827,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215454Z",
+    "calculated_on": "2026-11-20T03:00:05.020019Z",
     "ci_lower": -103.12857262439196,
     "ci_upper": 406.0383067516241,
     "contribution_count": 41,
@@ -4840,9 +4840,9 @@
     "rank": 138,
     "rank_ci_lower": 50,
     "rank_ci_upper": 241,
-    "score": 131.6987442713669,
+    "score": 131.69874427136688,
     "show_when_excluded": false,
-    "take": 17344.559242654897,
+    "take": 17344.55924265489,
     "user": {
      "id": 311485,
      "is_bot": true,
@@ -4853,7 +4853,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215475Z",
+    "calculated_on": "2026-11-20T03:00:05.020061Z",
     "ci_lower": -247.26955851998446,
     "ci_upper": 451.90254601787035,
     "contribution_count": 45,
@@ -4866,9 +4866,9 @@
     "rank": 139,
     "rank_ci_lower": 56,
     "rank_ci_upper": 279,
-    "score": 128.60024572733752,
+    "score": 128.60024572733758,
     "show_when_excluded": false,
-    "take": 16538.023201131593,
+    "take": 16538.023201131607,
     "user": {
      "id": 307896,
      "is_bot": true,
@@ -4879,7 +4879,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215496Z",
+    "calculated_on": "2026-11-20T03:00:05.020103Z",
     "ci_lower": -166.64226026837514,
     "ci_upper": 404.61768849112684,
     "contribution_count": 39,
@@ -4905,7 +4905,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215517Z",
+    "calculated_on": "2026-11-20T03:00:05.020146Z",
     "ci_lower": -529.1489172521111,
     "ci_upper": 715.7603118905336,
     "contribution_count": 59,
@@ -4918,9 +4918,9 @@
     "rank": 141,
     "rank_ci_lower": 16,
     "rank_ci_upper": 306,
-    "score": 124.93708844183362,
+    "score": 124.93708844183371,
     "show_when_excluded": false,
-    "take": 15609.276068322557,
+    "take": 15609.276068322579,
     "user": {
      "id": 278146,
      "is_bot": true,
@@ -4931,7 +4931,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215538Z",
+    "calculated_on": "2026-11-20T03:00:05.020189Z",
     "ci_lower": -73.20938258775764,
     "ci_upper": 295.1440901997064,
     "contribution_count": 40,
@@ -4957,7 +4957,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215570Z",
+    "calculated_on": "2026-11-20T03:00:05.020231Z",
     "ci_lower": -478.81229623197646,
     "ci_upper": 565.3799979326678,
     "contribution_count": 59,
@@ -4970,9 +4970,9 @@
     "rank": 143,
     "rank_ci_lower": 31,
     "rank_ci_upper": 301,
-    "score": 123.15717696239003,
+    "score": 123.15717696239005,
     "show_when_excluded": false,
-    "take": 15167.690237345452,
+    "take": 15167.69023734546,
     "user": {
      "id": 310915,
      "is_bot": true,
@@ -4983,7 +4983,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215592Z",
+    "calculated_on": "2026-11-20T03:00:05.020273Z",
     "ci_lower": -60.15469921597501,
     "ci_upper": 295.00253976521833,
     "contribution_count": 22,
@@ -5009,7 +5009,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215612Z",
+    "calculated_on": "2026-11-20T03:00:05.020314Z",
     "ci_lower": -140.69250424653623,
     "ci_upper": 368.8439400991051,
     "contribution_count": 59,
@@ -5042,7 +5042,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215633Z",
+    "calculated_on": "2026-11-20T03:00:05.020375Z",
     "ci_lower": -197.50446351516084,
     "ci_upper": 394.90489052011765,
     "contribution_count": 32,
@@ -5055,9 +5055,9 @@
     "rank": 145,
     "rank_ci_lower": 59,
     "rank_ci_upper": 267,
-    "score": 121.56391974279377,
+    "score": 121.56391974279379,
     "show_when_excluded": false,
-    "take": 14777.786583232406,
+    "take": 14777.78658323241,
     "user": {
      "id": 311560,
      "is_bot": true,
@@ -5068,7 +5068,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215654Z",
+    "calculated_on": "2026-11-20T03:00:05.020416Z",
     "ci_lower": -31.90766684935861,
     "ci_upper": 298.8581923759569,
     "contribution_count": 17,
@@ -5094,7 +5094,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215676Z",
+    "calculated_on": "2026-11-20T03:00:05.020457Z",
     "ci_lower": -182.6931201534682,
     "ci_upper": 399.3685182174823,
     "contribution_count": 32,
@@ -5120,7 +5120,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215697Z",
+    "calculated_on": "2026-11-20T03:00:05.020512Z",
     "ci_lower": -1.9777367313572032,
     "ci_upper": 228.32692306686872,
     "contribution_count": 34,
@@ -5133,9 +5133,9 @@
     "rank": 148,
     "rank_ci_lower": 106,
     "rank_ci_upper": 202,
-    "score": 112.711881890762,
+    "score": 112.71188189076197,
     "show_when_excluded": false,
-    "take": 12703.968319357084,
+    "take": 12703.968319357076,
     "user": {
      "id": 295010,
      "is_bot": true,
@@ -5146,7 +5146,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215717Z",
+    "calculated_on": "2026-11-20T03:00:05.020553Z",
     "ci_lower": 12.648364031091925,
     "ci_upper": 222.47941659294065,
     "contribution_count": 9,
@@ -5172,7 +5172,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215739Z",
+    "calculated_on": "2026-11-20T03:00:05.020594Z",
     "ci_lower": -204.9100479514171,
     "ci_upper": 381.6566366850817,
     "contribution_count": 59,
@@ -5185,9 +5185,9 @@
     "rank": 150,
     "rank_ci_lower": 67,
     "rank_ci_upper": 267,
-    "score": 102.37126144061615,
+    "score": 102.3712614406162,
     "show_when_excluded": false,
-    "take": 10479.875168942983,
+    "take": 10479.875168942992,
     "user": {
      "id": 310160,
      "is_bot": true,
@@ -5198,7 +5198,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215760Z",
+    "calculated_on": "2026-11-20T03:00:05.020635Z",
     "ci_lower": -125.68993227504089,
     "ci_upper": 365.7778747078962,
     "contribution_count": 28,
@@ -5211,9 +5211,9 @@
     "rank": 151,
     "rank_ci_lower": 64,
     "rank_ci_upper": 249,
-    "score": 99.3602183055712,
+    "score": 99.36021830557118,
     "show_when_excluded": false,
-    "take": 9872.452981730765,
+    "take": 9872.452981730763,
     "user": {
      "id": 309325,
      "is_bot": true,
@@ -5224,7 +5224,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215780Z",
+    "calculated_on": "2026-11-20T03:00:05.020676Z",
     "ci_lower": -319.35125599723006,
     "ci_upper": 475.99374470358833,
     "contribution_count": 59,
@@ -5237,9 +5237,9 @@
     "rank": 152,
     "rank_ci_lower": 53,
     "rank_ci_upper": 287,
-    "score": 98.48115790673582,
+    "score": 98.48115790673587,
     "show_when_excluded": false,
-    "take": 9698.538462651435,
+    "take": 9698.538462651446,
     "user": {
      "id": 311040,
      "is_bot": true,
@@ -5250,7 +5250,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215801Z",
+    "calculated_on": "2026-11-20T03:00:05.020718Z",
     "ci_lower": -27.815733476430985,
     "ci_upper": 245.4505632905143,
     "contribution_count": 10,
@@ -5263,9 +5263,9 @@
     "rank": 153,
     "rank_ci_lower": 93,
     "rank_ci_upper": 220,
-    "score": 97.92634425552681,
+    "score": 97.9263442555268,
     "show_when_excluded": false,
-    "take": 9589.56889925195,
+    "take": 9589.568899251946,
     "user": {
      "id": 311336,
      "is_bot": true,
@@ -5276,7 +5276,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215822Z",
+    "calculated_on": "2026-11-20T03:00:05.020759Z",
     "ci_lower": -33.73164512212518,
     "ci_upper": 295.51641521333306,
     "contribution_count": 7,
@@ -5302,7 +5302,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215844Z",
+    "calculated_on": "2026-11-20T03:00:05.020801Z",
     "ci_lower": -126.08729272500905,
     "ci_upper": 300.6511199393961,
     "contribution_count": 59,
@@ -5315,9 +5315,9 @@
     "rank": 155,
     "rank_ci_lower": 81,
     "rank_ci_upper": 248,
-    "score": 85.94594461862664,
+    "score": 85.94594461862665,
     "show_when_excluded": false,
-    "take": 7386.705396388038,
+    "take": 7386.70539638804,
     "user": {
      "id": 311122,
      "is_bot": true,
@@ -5328,7 +5328,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215865Z",
+    "calculated_on": "2026-11-20T03:00:05.020842Z",
     "ci_lower": -95.60240815950763,
     "ci_upper": 233.29721569103202,
     "contribution_count": 17,
@@ -5354,7 +5354,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215886Z",
+    "calculated_on": "2026-11-20T03:00:05.020883Z",
     "ci_lower": -64.89787107745505,
     "ci_upper": 247.20542984181807,
     "contribution_count": 37,
@@ -5367,9 +5367,9 @@
     "rank": 157,
     "rank_ci_lower": 98,
     "rank_ci_upper": 233,
-    "score": 82.62225756599953,
+    "score": 82.62225756599958,
     "show_when_excluded": false,
-    "take": 6826.437445302367,
+    "take": 6826.437445302374,
     "user": {
      "id": 311787,
      "is_bot": true,
@@ -5380,7 +5380,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215906Z",
+    "calculated_on": "2026-11-20T03:00:05.020923Z",
     "ci_lower": -13.757426790525136,
     "ci_upper": 201.83025894974142,
     "contribution_count": 10,
@@ -5393,9 +5393,9 @@
     "rank": 158,
     "rank_ci_lower": 115,
     "rank_ci_upper": 214,
-    "score": 81.7582249099418,
+    "score": 81.75822490994179,
     "show_when_excluded": false,
-    "take": 6684.407340424628,
+    "take": 6684.4073404246255,
     "user": {
      "id": 311763,
      "is_bot": true,
@@ -5406,7 +5406,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215927Z",
+    "calculated_on": "2026-11-20T03:00:05.020964Z",
     "ci_lower": -44.91860642974268,
     "ci_upper": 207.20732485119944,
     "contribution_count": 24,
@@ -5432,7 +5432,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215949Z",
+    "calculated_on": "2026-11-20T03:00:05.021007Z",
     "ci_lower": -44.8193415897537,
     "ci_upper": 204.8131259315682,
     "contribution_count": 23,
@@ -5458,7 +5458,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215971Z",
+    "calculated_on": "2026-11-20T03:00:05.021049Z",
     "ci_lower": -7.081056987174413,
     "ci_upper": 169.80510872655435,
     "contribution_count": 15,
@@ -5484,7 +5484,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.215992Z",
+    "calculated_on": "2026-11-20T03:00:05.021091Z",
     "ci_lower": -93.02597749009476,
     "ci_upper": 258.5309595707165,
     "contribution_count": 32,
@@ -5497,9 +5497,9 @@
     "rank": 162,
     "rank_ci_lower": 102,
     "rank_ci_upper": 246,
-    "score": 79.48903503584437,
+    "score": 79.48903503584438,
     "show_when_excluded": false,
-    "take": 6318.506690929693,
+    "take": 6318.506690929696,
     "user": {
      "id": 304807,
      "is_bot": true,
@@ -5510,7 +5510,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216012Z",
+    "calculated_on": "2026-11-20T03:00:05.021131Z",
     "ci_lower": -65.3717045591413,
     "ci_upper": 231.56560672820598,
     "contribution_count": 14,
@@ -5536,7 +5536,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216033Z",
+    "calculated_on": "2026-11-20T03:00:05.021172Z",
     "ci_lower": -180.2018810411297,
     "ci_upper": 413.78956325950753,
     "contribution_count": 19,
@@ -5562,7 +5562,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216061Z",
+    "calculated_on": "2026-11-20T03:00:05.021213Z",
     "ci_lower": -292.04908126274825,
     "ci_upper": 379.1830141281523,
     "contribution_count": 59,
@@ -5575,9 +5575,9 @@
     "rank": 165,
     "rank_ci_lower": 62,
     "rank_ci_upper": 281,
-    "score": 74.32909413554044,
+    "score": 74.32909413554039,
     "show_when_excluded": false,
-    "take": 5524.8142350100325,
+    "take": 5524.814235010024,
     "user": {
      "id": 310963,
      "is_bot": true,
@@ -5588,7 +5588,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216082Z",
+    "calculated_on": "2026-11-20T03:00:05.021255Z",
     "ci_lower": -238.3633395899772,
     "ci_upper": 365.4681492255745,
     "contribution_count": 59,
@@ -5614,7 +5614,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216103Z",
+    "calculated_on": "2026-11-20T03:00:05.021296Z",
     "ci_lower": -178.94987925132978,
     "ci_upper": 300.1030122917142,
     "contribution_count": 51,
@@ -5640,7 +5640,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216124Z",
+    "calculated_on": "2026-11-20T03:00:05.021353Z",
     "ci_lower": -367.53269896801464,
     "ci_upper": 446.5264176943751,
     "contribution_count": 59,
@@ -5653,9 +5653,9 @@
     "rank": 168,
     "rank_ci_lower": 62,
     "rank_ci_upper": 293,
-    "score": 66.29816948533396,
+    "score": 66.29816948533393,
     "show_when_excluded": false,
-    "take": 4395.447277106066,
+    "take": 4395.447277106063,
     "user": {
      "id": 309308,
      "is_bot": true,
@@ -5666,7 +5666,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216146Z",
+    "calculated_on": "2026-11-20T03:00:05.026568Z",
     "ci_lower": -129.78994726939885,
     "ci_upper": 257.4412074069633,
     "contribution_count": 21,
@@ -5692,7 +5692,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216166Z",
+    "calculated_on": "2026-11-20T03:00:05.026617Z",
     "ci_lower": -201.16836778154178,
     "ci_upper": 302.36590468969683,
     "contribution_count": 47,
@@ -5705,9 +5705,9 @@
     "rank": 170,
     "rank_ci_lower": 86,
     "rank_ci_upper": 267,
-    "score": 64.59550926625752,
+    "score": 64.59550926625751,
     "show_when_excluded": false,
-    "take": 4172.579817367161,
+    "take": 4172.579817367159,
     "user": {
      "id": 309930,
      "is_bot": true,
@@ -5718,7 +5718,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216187Z",
+    "calculated_on": "2026-11-20T03:00:05.026658Z",
     "ci_lower": -38.77626252232888,
     "ci_upper": 181.3552437744872,
     "contribution_count": 9,
@@ -5744,7 +5744,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216208Z",
+    "calculated_on": "2026-11-20T03:00:05.026699Z",
     "ci_lower": 6.5347705628313015,
     "ci_upper": 144.05341814275423,
     "contribution_count": 6,
@@ -5770,7 +5770,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216229Z",
+    "calculated_on": "2026-11-20T03:00:05.026740Z",
     "ci_lower": -60.25361283640154,
     "ci_upper": 190.1615878086325,
     "contribution_count": 13,
@@ -5783,9 +5783,9 @@
     "rank": 173,
     "rank_ci_lower": 117,
     "rank_ci_upper": 231,
-    "score": 58.5624973632487,
+    "score": 58.562497363248696,
     "show_when_excluded": false,
-    "take": 3429.566097420511,
+    "take": 3429.5660974205102,
     "user": {
      "id": 310734,
      "is_bot": true,
@@ -5796,7 +5796,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216250Z",
+    "calculated_on": "2026-11-20T03:00:05.026780Z",
     "ci_lower": -147.68404562045234,
     "ci_upper": 270.9929696653634,
     "contribution_count": 11,
@@ -5822,7 +5822,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216271Z",
+    "calculated_on": "2026-11-20T03:00:05.026821Z",
     "ci_lower": -275.9819167545575,
     "ci_upper": 360.7494051845404,
     "contribution_count": 59,
@@ -5848,7 +5848,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216292Z",
+    "calculated_on": "2026-11-20T03:00:05.026861Z",
     "ci_lower": -221.42466564291522,
     "ci_upper": 312.97551516525203,
     "contribution_count": 32,
@@ -5874,7 +5874,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216313Z",
+    "calculated_on": "2026-11-20T03:00:05.026899Z",
     "ci_lower": -347.95053111202407,
     "ci_upper": 434.99680850347943,
     "contribution_count": 59,
@@ -5887,9 +5887,9 @@
     "rank": 177,
     "rank_ci_lower": 45,
     "rank_ci_upper": 287,
-    "score": 51.41202436754648,
+    "score": 51.41202436754642,
     "show_when_excluded": false,
-    "take": 2643.196249569193,
+    "take": 2643.1962495691873,
     "user": {
      "id": 310156,
      "is_bot": true,
@@ -5913,7 +5913,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216333Z",
+    "calculated_on": "2026-11-20T03:00:05.026940Z",
     "ci_lower": -113.84140959362192,
     "ci_upper": 185.38437337029242,
     "contribution_count": 19,
@@ -5939,7 +5939,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216355Z",
+    "calculated_on": "2026-11-20T03:00:05.026983Z",
     "ci_lower": -568.8755846263462,
     "ci_upper": 591.5111079899164,
     "contribution_count": 59,
@@ -5952,9 +5952,9 @@
     "rank": 178,
     "rank_ci_lower": 36,
     "rank_ci_upper": 309,
-    "score": 48.55224773351177,
+    "score": 48.552247733511756,
     "show_when_excluded": false,
-    "take": 2357.3207599762986,
+    "take": 2357.3207599762973,
     "user": {
      "id": 297042,
      "is_bot": true,
@@ -5965,7 +5965,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216376Z",
+    "calculated_on": "2026-11-20T03:00:05.027025Z",
     "ci_lower": -296.2345119022245,
     "ci_upper": 362.6268329618769,
     "contribution_count": 59,
@@ -5991,7 +5991,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216397Z",
+    "calculated_on": "2026-11-20T03:00:05.027066Z",
     "ci_lower": -35.95949500767851,
     "ci_upper": 113.83998184808648,
     "contribution_count": 15,
@@ -6017,7 +6017,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216418Z",
+    "calculated_on": "2026-11-20T03:00:05.027107Z",
     "ci_lower": -9.182364977477935,
     "ci_upper": 102.08583119683605,
     "contribution_count": 5,
@@ -6030,9 +6030,9 @@
     "rank": 180,
     "rank_ci_lower": 150,
     "rank_ci_upper": 213,
-    "score": 35.931547038772294,
+    "score": 35.93154703877229,
     "show_when_excluded": false,
-    "take": 1291.076072599506,
+    "take": 1291.0760725995056,
     "user": {
      "id": 311877,
      "is_bot": true,
@@ -6043,7 +6043,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216439Z",
+    "calculated_on": "2026-11-20T03:00:05.027148Z",
     "ci_lower": 0,
     "ci_upper": 98.57745365625867,
     "contribution_count": 2,
@@ -6069,7 +6069,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216460Z",
+    "calculated_on": "2026-11-20T03:00:05.027191Z",
     "ci_lower": -46.64695306037242,
     "ci_upper": 109.33720635794798,
     "contribution_count": 10,
@@ -6095,7 +6095,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216481Z",
+    "calculated_on": "2026-11-20T03:00:05.027233Z",
     "ci_lower": -280.9785507004867,
     "ci_upper": 330.6256785239925,
     "contribution_count": 59,
@@ -6121,7 +6121,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216501Z",
+    "calculated_on": "2026-11-20T03:00:05.027273Z",
     "ci_lower": -271.5679574251522,
     "ci_upper": 344.43772596189825,
     "contribution_count": 59,
@@ -6134,9 +6134,9 @@
     "rank": 184,
     "rank_ci_lower": 60,
     "rank_ci_upper": 274,
-    "score": 32.06796863543519,
+    "score": 32.06796863543518,
     "show_when_excluded": false,
-    "take": 1028.3546124032553,
+    "take": 1028.3546124032544,
     "user": {
      "id": 307514,
      "is_bot": true,
@@ -6147,7 +6147,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216522Z",
+    "calculated_on": "2026-11-20T03:00:05.027314Z",
     "ci_lower": -416.0092061031404,
     "ci_upper": 418.2735855487544,
     "contribution_count": 58,
@@ -6160,9 +6160,9 @@
     "rank": 185,
     "rank_ci_lower": 65,
     "rank_ci_upper": 297,
-    "score": 27.949640955154848,
+    "score": 27.94964095515479,
     "show_when_excluded": false,
-    "take": 781.1824295220692,
+    "take": 781.1824295220661,
     "user": {
      "id": 308780,
      "is_bot": true,
@@ -6173,7 +6173,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216543Z",
+    "calculated_on": "2026-11-20T03:00:05.027381Z",
     "ci_lower": -220.65789076514693,
     "ci_upper": 284.53754242558585,
     "contribution_count": 30,
@@ -6186,9 +6186,9 @@
     "rank": 186,
     "rank_ci_lower": 92,
     "rank_ci_upper": 271,
-    "score": 27.507278677998258,
+    "score": 27.50727867799823,
     "show_when_excluded": false,
-    "take": 756.6503802690576,
+    "take": 756.650380269056,
     "user": {
      "id": 311875,
      "is_bot": true,
@@ -6199,7 +6199,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216575Z",
+    "calculated_on": "2026-11-20T03:00:05.027421Z",
     "ci_lower": -276.0789455290614,
     "ci_upper": 325.46914477289056,
     "contribution_count": 59,
@@ -6212,9 +6212,9 @@
     "rank": 187,
     "rank_ci_lower": 81,
     "rank_ci_upper": 280,
-    "score": 27.05322079449725,
+    "score": 27.053220794497257,
     "show_when_excluded": false,
-    "take": 731.8767553558184,
+    "take": 731.8767553558188,
     "user": {
      "id": 310133,
      "is_bot": true,
@@ -6225,7 +6225,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216596Z",
+    "calculated_on": "2026-11-20T03:00:05.027462Z",
     "ci_lower": -137.6858747988121,
     "ci_upper": 183.58256434192626,
     "contribution_count": 40,
@@ -6238,9 +6238,9 @@
     "rank": 188,
     "rank_ci_lower": 120,
     "rank_ci_upper": 256,
-    "score": 26.479573053232993,
+    "score": 26.479573053232997,
     "show_when_excluded": false,
-    "take": 701.1677890815029,
+    "take": 701.1677890815031,
     "user": {
      "id": 308360,
      "is_bot": true,
@@ -6251,7 +6251,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216617Z",
+    "calculated_on": "2026-11-20T03:00:05.027504Z",
     "ci_lower": -304.75683511486613,
     "ci_upper": 371.0612825464964,
     "contribution_count": 59,
@@ -6264,9 +6264,9 @@
     "rank": 189,
     "rank_ci_lower": 60,
     "rank_ci_upper": 280,
-    "score": 24.907128273171196,
+    "score": 24.90712827317121,
     "show_when_excluded": false,
-    "take": 620.365038816204,
+    "take": 620.3650388162047,
     "user": {
      "id": 310958,
      "is_bot": true,
@@ -6277,7 +6277,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216637Z",
+    "calculated_on": "2026-11-20T03:00:05.027545Z",
     "ci_lower": -112.4839981736607,
     "ci_upper": 123.7128759935287,
     "contribution_count": 16,
@@ -6303,7 +6303,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216658Z",
+    "calculated_on": "2026-11-20T03:00:05.027588Z",
     "ci_lower": -246.37187775497605,
     "ci_upper": 313.4181717357185,
     "contribution_count": 59,
@@ -6316,9 +6316,9 @@
     "rank": 191,
     "rank_ci_lower": 84,
     "rank_ci_upper": 275,
-    "score": 23.77011122441698,
+    "score": 23.770111224416972,
     "show_when_excluded": false,
-    "take": 565.0181876211541,
+    "take": 565.0181876211537,
     "user": {
      "id": 308781,
      "is_bot": true,
@@ -6329,7 +6329,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216680Z",
+    "calculated_on": "2026-11-20T03:00:05.027629Z",
     "ci_lower": -238.33498733013664,
     "ci_upper": 326.90557668590986,
     "contribution_count": 27,
@@ -6355,7 +6355,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216701Z",
+    "calculated_on": "2026-11-20T03:00:05.027671Z",
     "ci_lower": -388.79289630200225,
     "ci_upper": 368.25064678976736,
     "contribution_count": 30,
@@ -6381,7 +6381,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216721Z",
+    "calculated_on": "2026-11-20T03:00:05.027712Z",
     "ci_lower": -136.33921445443363,
     "ci_upper": 155.2841169218902,
     "contribution_count": 7,
@@ -6407,7 +6407,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216742Z",
+    "calculated_on": "2026-11-20T03:00:05.027753Z",
     "ci_lower": -429.64891610043924,
     "ci_upper": 404.31880289557756,
     "contribution_count": 59,
@@ -6420,9 +6420,9 @@
     "rank": 195,
     "rank_ci_lower": 57,
     "rank_ci_upper": 296,
-    "score": 16.529147592629528,
+    "score": 16.5291475926295,
     "show_when_excluded": false,
-    "take": 273.21272013893054,
+    "take": 273.21272013892957,
     "user": {
      "id": 311634,
      "is_bot": true,
@@ -6433,7 +6433,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216763Z",
+    "calculated_on": "2026-11-20T03:00:05.027794Z",
     "ci_lower": 0,
     "ci_upper": 48.08029095901103,
     "contribution_count": 1,
@@ -6459,7 +6459,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216784Z",
+    "calculated_on": "2026-11-20T03:00:05.027849Z",
     "ci_lower": -39.41031455224688,
     "ci_upper": 69.38412125866444,
     "contribution_count": 8,
@@ -6485,7 +6485,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216805Z",
+    "calculated_on": "2026-11-20T03:00:05.027890Z",
     "ci_lower": 0,
     "ci_upper": 41.457026137839776,
     "contribution_count": 1,
@@ -6511,7 +6511,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216826Z",
+    "calculated_on": "2026-11-20T03:00:05.027932Z",
     "ci_lower": -244.9114164046276,
     "ci_upper": 235.56105461714773,
     "contribution_count": 59,
@@ -6524,9 +6524,9 @@
     "rank": 199,
     "rank_ci_lower": 107,
     "rank_ci_upper": 276,
-    "score": 11.954584553322022,
+    "score": 11.954584553322015,
     "show_when_excluded": false,
-    "take": 142.91209184252548,
+    "take": 142.9120918425253,
     "user": {
      "id": 310617,
      "is_bot": true,
@@ -6537,7 +6537,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216847Z",
+    "calculated_on": "2026-11-20T03:00:05.027973Z",
     "ci_lower": -231.32636690448365,
     "ci_upper": 223.5422236983796,
     "contribution_count": 59,
@@ -6563,7 +6563,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216867Z",
+    "calculated_on": "2026-11-20T03:00:05.028014Z",
     "ci_lower": -333.89196122616585,
     "ci_upper": 334.2002748267883,
     "contribution_count": 55,
@@ -6589,7 +6589,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216889Z",
+    "calculated_on": "2026-11-20T03:00:05.028054Z",
     "ci_lower": 0,
     "ci_upper": 27.706089542516494,
     "contribution_count": 2,
@@ -6615,7 +6615,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216910Z",
+    "calculated_on": "2026-11-20T03:00:05.028096Z",
     "ci_lower": -255.62392567659967,
     "ci_upper": 242.99494315088543,
     "contribution_count": 56,
@@ -6641,7 +6641,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216931Z",
+    "calculated_on": "2026-11-20T03:00:05.028136Z",
     "ci_lower": -333.5123991450799,
     "ci_upper": 355.4450278564858,
     "contribution_count": 59,
@@ -6667,7 +6667,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216952Z",
+    "calculated_on": "2026-11-20T03:00:05.028176Z",
     "ci_lower": -180.0993238489566,
     "ci_upper": 185.624034295631,
     "contribution_count": 23,
@@ -6693,7 +6693,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216972Z",
+    "calculated_on": "2026-11-20T03:00:05.028216Z",
     "ci_lower": -143.6284483437091,
     "ci_upper": 129.63634722064037,
     "contribution_count": 17,
@@ -6733,7 +6733,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.216994Z",
+    "calculated_on": "2026-11-20T03:00:05.028257Z",
     "ci_lower": -85.0434869406619,
     "ci_upper": 80.38193987935114,
     "contribution_count": 11,
@@ -6759,7 +6759,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217015Z",
+    "calculated_on": "2026-11-20T03:00:05.028297Z",
     "ci_lower": -4.526653499512532,
     "ci_upper": 0,
     "contribution_count": 1,
@@ -6785,7 +6785,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217036Z",
+    "calculated_on": "2026-11-20T03:00:05.028353Z",
     "ci_lower": -47.5275882087698,
     "ci_upper": 42.29847662399869,
     "contribution_count": 4,
@@ -6811,7 +6811,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217057Z",
+    "calculated_on": "2026-11-20T03:00:05.028395Z",
     "ci_lower": -72.8919503920128,
     "ci_upper": 73.99514167465482,
     "contribution_count": 8,
@@ -6837,7 +6837,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217078Z",
+    "calculated_on": "2026-11-20T03:00:05.028438Z",
     "ci_lower": -103.60214214641299,
     "ci_upper": 89.85212125243994,
     "contribution_count": 14,
@@ -6863,7 +6863,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217098Z",
+    "calculated_on": "2026-11-20T03:00:05.028478Z",
     "ci_lower": -332.2713463539843,
     "ci_upper": 271.9707098199357,
     "contribution_count": 59,
@@ -6876,7 +6876,7 @@
     "rank": 211,
     "rank_ci_lower": 100,
     "rank_ci_upper": 289,
-    "score": -4.569406891672518,
+    "score": -4.569406891672516,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -6902,7 +6902,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217119Z",
+    "calculated_on": "2026-11-20T03:00:05.028519Z",
     "ci_lower": -16.71873005063987,
     "ci_upper": 0,
     "contribution_count": 1,
@@ -6928,7 +6928,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217140Z",
+    "calculated_on": "2026-11-20T03:00:05.028560Z",
     "ci_lower": -612.8519641924892,
     "ci_upper": 594.2911355674051,
     "contribution_count": 56,
@@ -6941,7 +6941,7 @@
     "rank": 212,
     "rank_ci_lower": 16,
     "rank_ci_upper": 305,
-    "score": -6.081399656663166,
+    "score": -6.08139965666318,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -6954,7 +6954,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217161Z",
+    "calculated_on": "2026-11-20T03:00:05.028600Z",
     "ci_lower": -253.82346584930022,
     "ci_upper": 248.70306526712517,
     "contribution_count": 59,
@@ -6993,7 +6993,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217183Z",
+    "calculated_on": "2026-11-20T03:00:05.028640Z",
     "ci_lower": -156.89906480154053,
     "ci_upper": 104.04122075068736,
     "contribution_count": 4,
@@ -7006,7 +7006,7 @@
     "rank": 213,
     "rank_ci_lower": 149,
     "rank_ci_upper": 262,
-    "score": -10.157206120583293,
+    "score": -10.157206120583286,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7019,7 +7019,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217205Z",
+    "calculated_on": "2026-11-20T03:00:05.028683Z",
     "ci_lower": -37.47522566512785,
     "ci_upper": 0,
     "contribution_count": 1,
@@ -7045,7 +7045,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217226Z",
+    "calculated_on": "2026-11-20T03:00:05.028724Z",
     "ci_lower": -307.5480967525678,
     "ci_upper": 236.89055187796248,
     "contribution_count": 24,
@@ -7071,7 +7071,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217247Z",
+    "calculated_on": "2026-11-20T03:00:05.028765Z",
     "ci_lower": -391.9312626555326,
     "ci_upper": 356.51059216207085,
     "contribution_count": 58,
@@ -7084,7 +7084,7 @@
     "rank": 215,
     "rank_ci_lower": 72,
     "rank_ci_upper": 293,
-    "score": -15.349262852405662,
+    "score": -15.349262852405676,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7097,7 +7097,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217268Z",
+    "calculated_on": "2026-11-20T03:00:05.028805Z",
     "ci_lower": -362.521751030378,
     "ci_upper": 287.9856047471064,
     "contribution_count": 49,
@@ -7110,7 +7110,7 @@
     "rank": 216,
     "rank_ci_lower": 95,
     "rank_ci_upper": 292,
-    "score": -17.105320676477977,
+    "score": -17.105320676477948,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7123,7 +7123,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217288Z",
+    "calculated_on": "2026-11-20T03:00:05.028845Z",
     "ci_lower": -50.4751171608413,
     "ci_upper": 0,
     "contribution_count": 2,
@@ -7149,7 +7149,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217309Z",
+    "calculated_on": "2026-11-20T03:00:05.028886Z",
     "ci_lower": -528.5238381794172,
     "ci_upper": 432.5254833654003,
     "contribution_count": 59,
@@ -7162,7 +7162,7 @@
     "rank": 218,
     "rank_ci_lower": 49,
     "rank_ci_upper": 300,
-    "score": -17.700154562808077,
+    "score": -17.700154562808134,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7175,7 +7175,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217330Z",
+    "calculated_on": "2026-11-20T03:00:05.028926Z",
     "ci_lower": -135.6864206652565,
     "ci_upper": 59.66439935287792,
     "contribution_count": 6,
@@ -7188,7 +7188,7 @@
     "rank": 219,
     "rank_ci_lower": 169,
     "rank_ci_upper": 254,
-    "score": -19.05775557433201,
+    "score": -19.057755574332006,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7201,7 +7201,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217351Z",
+    "calculated_on": "2026-11-20T03:00:05.028968Z",
     "ci_lower": -299.7897574761074,
     "ci_upper": 264.5884306130884,
     "contribution_count": 59,
@@ -7214,7 +7214,7 @@
     "rank": 220,
     "rank_ci_lower": 91,
     "rank_ci_upper": 280,
-    "score": -19.311777456172457,
+    "score": -19.311777456172464,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7227,7 +7227,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217372Z",
+    "calculated_on": "2026-11-20T03:00:05.029009Z",
     "ci_lower": -165.0466963922192,
     "ci_upper": 116.63951198727861,
     "contribution_count": 16,
@@ -7253,7 +7253,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217393Z",
+    "calculated_on": "2026-11-20T03:00:05.029051Z",
     "ci_lower": -366.39210196477626,
     "ci_upper": 283.82721639750315,
     "contribution_count": 59,
@@ -7266,7 +7266,7 @@
     "rank": 222,
     "rank_ci_lower": 87,
     "rank_ci_upper": 289,
-    "score": -24.493090277593545,
+    "score": -24.493090277593524,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7279,7 +7279,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217414Z",
+    "calculated_on": "2026-11-20T03:00:05.029094Z",
     "ci_lower": -161.16166853559116,
     "ci_upper": 82.52773262561077,
     "contribution_count": 15,
@@ -7292,7 +7292,7 @@
     "rank": 222,
     "rank_ci_lower": 160,
     "rank_ci_upper": 261,
-    "score": -24.904023040832808,
+    "score": -24.9040230408328,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7305,7 +7305,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217435Z",
+    "calculated_on": "2026-11-20T03:00:05.029135Z",
     "ci_lower": -161.37353826222645,
     "ci_upper": 119.08275168591578,
     "contribution_count": 22,
@@ -7331,7 +7331,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217456Z",
+    "calculated_on": "2026-11-20T03:00:05.029176Z",
     "ci_lower": -229.84080066539786,
     "ci_upper": 153.47016472301667,
     "contribution_count": 52,
@@ -7357,7 +7357,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217478Z",
+    "calculated_on": "2026-11-20T03:00:05.029217Z",
     "ci_lower": -365.0841737077295,
     "ci_upper": 283.1558728372344,
     "contribution_count": 59,
@@ -7370,7 +7370,7 @@
     "rank": 225,
     "rank_ci_lower": 84,
     "rank_ci_upper": 287,
-    "score": -30.4845897119171,
+    "score": -30.48458971191711,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7383,7 +7383,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217499Z",
+    "calculated_on": "2026-11-20T03:00:05.029258Z",
     "ci_lower": -203.41316765233097,
     "ci_upper": 136.21994693544434,
     "contribution_count": 14,
@@ -7396,7 +7396,7 @@
     "rank": 226,
     "rank_ci_lower": 136,
     "rank_ci_upper": 268,
-    "score": -32.22192415591293,
+    "score": -32.221924155912944,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7409,7 +7409,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217520Z",
+    "calculated_on": "2026-11-20T03:00:05.029299Z",
     "ci_lower": -315.8343039475979,
     "ci_upper": 242.57006509410667,
     "contribution_count": 59,
@@ -7422,7 +7422,7 @@
     "rank": 227,
     "rank_ci_lower": 101,
     "rank_ci_upper": 285,
-    "score": -33.048383208249916,
+    "score": -33.048383208249945,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7435,7 +7435,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217541Z",
+    "calculated_on": "2026-11-20T03:00:05.029354Z",
     "ci_lower": -450.5651520880242,
     "ci_upper": 360.9885426316576,
     "contribution_count": 53,
@@ -7448,7 +7448,7 @@
     "rank": 228,
     "rank_ci_lower": 62,
     "rank_ci_upper": 295,
-    "score": -33.358252465018296,
+    "score": -33.35825246501828,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7461,7 +7461,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217573Z",
+    "calculated_on": "2026-11-20T03:00:05.029396Z",
     "ci_lower": -335.3653173531206,
     "ci_upper": 281.18421195295207,
     "contribution_count": 36,
@@ -7474,7 +7474,7 @@
     "rank": 229,
     "rank_ci_lower": 86,
     "rank_ci_upper": 284,
-    "score": -33.39846624852015,
+    "score": -33.398466248520165,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7487,7 +7487,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217595Z",
+    "calculated_on": "2026-11-20T03:00:05.029438Z",
     "ci_lower": -116.87520106984351,
     "ci_upper": 9.847512284425472,
     "contribution_count": 2,
@@ -7513,7 +7513,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217616Z",
+    "calculated_on": "2026-11-20T03:00:05.029479Z",
     "ci_lower": -252.60367982410966,
     "ci_upper": 192.94715542483576,
     "contribution_count": 59,
@@ -7526,7 +7526,7 @@
     "rank": 231,
     "rank_ci_lower": 112,
     "rank_ci_upper": 272,
-    "score": -34.97109415792382,
+    "score": -34.971094157923844,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7539,7 +7539,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217637Z",
+    "calculated_on": "2026-11-20T03:00:05.029521Z",
     "ci_lower": -192.66238059664397,
     "ci_upper": 92.08540029119588,
     "contribution_count": 11,
@@ -7552,7 +7552,7 @@
     "rank": 232,
     "rank_ci_lower": 155,
     "rank_ci_upper": 263,
-    "score": -38.54362678751555,
+    "score": -38.54362678751556,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7565,7 +7565,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217659Z",
+    "calculated_on": "2026-11-20T03:00:05.029561Z",
     "ci_lower": -752.2696491253423,
     "ci_upper": 470.90661361785254,
     "contribution_count": 30,
@@ -7578,7 +7578,7 @@
     "rank": 233,
     "rank_ci_lower": 53,
     "rank_ci_upper": 316,
-    "score": -38.90403306524403,
+    "score": -38.90403306524406,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7591,7 +7591,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217680Z",
+    "calculated_on": "2026-11-20T03:00:05.029597Z",
     "ci_lower": -84.71301915341184,
     "ci_upper": -8.756052586174524,
     "contribution_count": 9,
@@ -7617,7 +7617,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217701Z",
+    "calculated_on": "2026-11-20T03:00:05.029629Z",
     "ci_lower": -342.86643462585573,
     "ci_upper": 260.5647436881396,
     "contribution_count": 59,
@@ -7630,7 +7630,7 @@
     "rank": 235,
     "rank_ci_lower": 89,
     "rank_ci_upper": 285,
-    "score": -46.03665648921446,
+    "score": -46.036656489214415,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7643,7 +7643,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217723Z",
+    "calculated_on": "2026-11-20T03:00:05.029671Z",
     "ci_lower": -138.70285039366271,
     "ci_upper": 0,
     "contribution_count": 1,
@@ -7669,7 +7669,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217744Z",
+    "calculated_on": "2026-11-20T03:00:05.029713Z",
     "ci_lower": -219.9227554563211,
     "ci_upper": 85.10067289097724,
     "contribution_count": 15,
@@ -7682,7 +7682,7 @@
     "rank": 237,
     "rank_ci_lower": 160,
     "rank_ci_upper": 274,
-    "score": -47.72770527404957,
+    "score": -47.7277052740496,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7695,7 +7695,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217765Z",
+    "calculated_on": "2026-11-20T03:00:05.029754Z",
     "ci_lower": -302.7370233382155,
     "ci_upper": 177.94564979535815,
     "contribution_count": 24,
@@ -7721,7 +7721,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217786Z",
+    "calculated_on": "2026-11-20T03:00:05.029794Z",
     "ci_lower": -423.70177551712493,
     "ci_upper": 272.1174933438485,
     "contribution_count": 59,
@@ -7760,7 +7760,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217809Z",
+    "calculated_on": "2026-11-20T03:00:05.029836Z",
     "ci_lower": -413.3290263799501,
     "ci_upper": 323.0443623355363,
     "contribution_count": 59,
@@ -7773,7 +7773,7 @@
     "rank": 238,
     "rank_ci_lower": 75,
     "rank_ci_upper": 291,
-    "score": -51.5501712951777,
+    "score": -51.550171295177705,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7786,7 +7786,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217830Z",
+    "calculated_on": "2026-11-20T03:00:05.029877Z",
     "ci_lower": -313.2843283224186,
     "ci_upper": 240.79820664890397,
     "contribution_count": 7,
@@ -7812,7 +7812,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217851Z",
+    "calculated_on": "2026-11-20T03:00:05.029918Z",
     "ci_lower": -213.86780198050909,
     "ci_upper": 107.19552649303769,
     "contribution_count": 19,
@@ -7825,7 +7825,7 @@
     "rank": 240,
     "rank_ci_lower": 147,
     "rank_ci_upper": 271,
-    "score": -58.47319545604971,
+    "score": -58.4731954560497,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7838,7 +7838,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217872Z",
+    "calculated_on": "2026-11-20T03:00:05.029958Z",
     "ci_lower": -363.8852248765376,
     "ci_upper": 227.9498145039262,
     "contribution_count": 58,
@@ -7864,7 +7864,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217892Z",
+    "calculated_on": "2026-11-20T03:00:05.030009Z",
     "ci_lower": -299.3829842780283,
     "ci_upper": 176.65275164170902,
     "contribution_count": 59,
@@ -7890,7 +7890,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217914Z",
+    "calculated_on": "2026-11-20T03:00:05.030050Z",
     "ci_lower": -251.26981100612954,
     "ci_upper": 120.01194574982934,
     "contribution_count": 59,
@@ -7916,7 +7916,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217936Z",
+    "calculated_on": "2026-11-20T03:00:05.030091Z",
     "ci_lower": -247.3287769027383,
     "ci_upper": 83.37893567164492,
     "contribution_count": 21,
@@ -7942,7 +7942,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.217985Z",
+    "calculated_on": "2026-11-20T03:00:05.030130Z",
     "ci_lower": -347.53781050425147,
     "ci_upper": 188.14805722901042,
     "contribution_count": 58,
@@ -7955,7 +7955,7 @@
     "rank": 245,
     "rank_ci_lower": 125,
     "rank_ci_upper": 290,
-    "score": -79.90246542728414,
+    "score": -79.90246542728411,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -7968,7 +7968,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218007Z",
+    "calculated_on": "2026-11-20T03:00:05.030171Z",
     "ci_lower": -392.97687733512674,
     "ci_upper": 228.0760325361906,
     "contribution_count": 59,
@@ -7994,7 +7994,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218029Z",
+    "calculated_on": "2026-11-20T03:00:05.030213Z",
     "ci_lower": -402.13254407961534,
     "ci_upper": 227.2992109926651,
     "contribution_count": 59,
@@ -8020,7 +8020,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218050Z",
+    "calculated_on": "2026-11-20T03:00:05.030253Z",
     "ci_lower": -328.0179533539668,
     "ci_upper": 144.41458893321615,
     "contribution_count": 59,
@@ -8059,7 +8059,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218072Z",
+    "calculated_on": "2026-11-20T03:00:05.030295Z",
     "ci_lower": -321.7226715195339,
     "ci_upper": 117.55230571627216,
     "contribution_count": 27,
@@ -8085,7 +8085,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218093Z",
+    "calculated_on": "2026-11-20T03:00:05.030349Z",
     "ci_lower": -345.7935802731425,
     "ci_upper": 151.48200599992026,
     "contribution_count": 59,
@@ -8111,7 +8111,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218115Z",
+    "calculated_on": "2026-11-20T03:00:05.030391Z",
     "ci_lower": -477.1542295329505,
     "ci_upper": 239.18682487117363,
     "contribution_count": 49,
@@ -8124,7 +8124,7 @@
     "rank": 250,
     "rank_ci_lower": 101,
     "rank_ci_upper": 299,
-    "score": -99.9714220202034,
+    "score": -99.97142202020342,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8137,7 +8137,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218136Z",
+    "calculated_on": "2026-11-20T03:00:05.030432Z",
     "ci_lower": -351.8342907877945,
     "ci_upper": 143.6041820320774,
     "contribution_count": 59,
@@ -8150,7 +8150,7 @@
     "rank": 251,
     "rank_ci_lower": 136,
     "rank_ci_upper": 289,
-    "score": -104.26516981988118,
+    "score": -104.26516981988121,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8176,7 +8176,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218157Z",
+    "calculated_on": "2026-11-20T03:00:05.030472Z",
     "ci_lower": -575.5435175519056,
     "ci_upper": 200.44120772917933,
     "contribution_count": 10,
@@ -8202,7 +8202,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218179Z",
+    "calculated_on": "2026-11-20T03:00:05.030514Z",
     "ci_lower": -687.2005605710453,
     "ci_upper": 333.2374825739181,
     "contribution_count": 59,
@@ -8215,7 +8215,7 @@
     "rank": 252,
     "rank_ci_lower": 75,
     "rank_ci_upper": 311,
-    "score": -111.0475059264809,
+    "score": -111.04750592648087,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8228,7 +8228,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218200Z",
+    "calculated_on": "2026-11-20T03:00:05.030555Z",
     "ci_lower": -512.8311410012983,
     "ci_upper": 256.0338421074946,
     "contribution_count": 59,
@@ -8254,7 +8254,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218221Z",
+    "calculated_on": "2026-11-20T03:00:05.030597Z",
     "ci_lower": -265.02938976243286,
     "ci_upper": 0.31893186434105963,
     "contribution_count": 11,
@@ -8280,7 +8280,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218242Z",
+    "calculated_on": "2026-11-20T03:00:05.030638Z",
     "ci_lower": -366.00334424690124,
     "ci_upper": 112.92568617854225,
     "contribution_count": 38,
@@ -8293,7 +8293,7 @@
     "rank": 254,
     "rank_ci_lower": 148,
     "rank_ci_upper": 291,
-    "score": -118.29456801349089,
+    "score": -118.29456801349092,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8306,7 +8306,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218264Z",
+    "calculated_on": "2026-11-20T03:00:05.030679Z",
     "ci_lower": -413.5666347649627,
     "ci_upper": 145.85426454989178,
     "contribution_count": 56,
@@ -8332,7 +8332,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218285Z",
+    "calculated_on": "2026-11-20T03:00:05.030721Z",
     "ci_lower": -512.885690239576,
     "ci_upper": 205.88579279326814,
     "contribution_count": 37,
@@ -8345,7 +8345,7 @@
     "rank": 256,
     "rank_ci_lower": 115,
     "rank_ci_upper": 302,
-    "score": -129.17607826865475,
+    "score": -129.17607826865478,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8358,7 +8358,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218308Z",
+    "calculated_on": "2026-11-20T03:00:05.030764Z",
     "ci_lower": -396.1663971991692,
     "ci_upper": 109.0828857500429,
     "contribution_count": 59,
@@ -8371,7 +8371,7 @@
     "rank": 257,
     "rank_ci_lower": 152,
     "rank_ci_upper": 293,
-    "score": -137.34816467388228,
+    "score": -137.34816467388225,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8384,7 +8384,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218329Z",
+    "calculated_on": "2026-11-20T03:00:05.030806Z",
     "ci_lower": -434.2878191527657,
     "ci_upper": 127.56181925204021,
     "contribution_count": 39,
@@ -8410,7 +8410,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218350Z",
+    "calculated_on": "2026-11-20T03:00:05.030846Z",
     "ci_lower": -534.2904123368526,
     "ci_upper": 198.3131025245562,
     "contribution_count": 59,
@@ -8436,7 +8436,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218371Z",
+    "calculated_on": "2026-11-20T03:00:05.030888Z",
     "ci_lower": -653.1178962935015,
     "ci_upper": 300.51614303718384,
     "contribution_count": 59,
@@ -8449,7 +8449,7 @@
     "rank": 260,
     "rank_ci_lower": 85,
     "rank_ci_upper": 308,
-    "score": -148.16262765146183,
+    "score": -148.1626276514619,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8462,7 +8462,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218392Z",
+    "calculated_on": "2026-11-20T03:00:05.030929Z",
     "ci_lower": -391.1682048317326,
     "ci_upper": 96.25960834557861,
     "contribution_count": 59,
@@ -8501,7 +8501,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218413Z",
+    "calculated_on": "2026-11-20T03:00:05.030970Z",
     "ci_lower": -438.6140606522976,
     "ci_upper": 101.3950625122404,
     "contribution_count": 59,
@@ -8514,7 +8514,7 @@
     "rank": 261,
     "rank_ci_lower": 149,
     "rank_ci_upper": 297,
-    "score": -153.70639448518543,
+    "score": -153.7063944851854,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8540,7 +8540,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218434Z",
+    "calculated_on": "2026-11-20T03:00:05.031010Z",
     "ci_lower": -417.5914984414699,
     "ci_upper": 109.41492073854124,
     "contribution_count": 59,
@@ -8553,7 +8553,7 @@
     "rank": 261,
     "rank_ci_lower": 145,
     "rank_ci_upper": 292,
-    "score": -153.85498707601982,
+    "score": -153.85498707601985,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8566,7 +8566,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218456Z",
+    "calculated_on": "2026-11-20T03:00:05.031051Z",
     "ci_lower": -417.4594376577643,
     "ci_upper": 96.08365517432547,
     "contribution_count": 20,
@@ -8592,7 +8592,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218477Z",
+    "calculated_on": "2026-11-20T03:00:05.031093Z",
     "ci_lower": -451.6869778592319,
     "ci_upper": 145.95278181131795,
     "contribution_count": 59,
@@ -8618,7 +8618,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218498Z",
+    "calculated_on": "2026-11-20T03:00:05.031135Z",
     "ci_lower": -458.7760541241252,
     "ci_upper": 133.1312413827833,
     "contribution_count": 33,
@@ -8631,7 +8631,7 @@
     "rank": 264,
     "rank_ci_lower": 138,
     "rank_ci_upper": 297,
-    "score": -161.64786449765757,
+    "score": -161.6478644976576,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8644,7 +8644,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218520Z",
+    "calculated_on": "2026-11-20T03:00:05.031176Z",
     "ci_lower": -324.5598496427884,
     "ci_upper": -42.96294108777414,
     "contribution_count": 5,
@@ -8670,7 +8670,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218542Z",
+    "calculated_on": "2026-11-20T03:00:05.031217Z",
     "ci_lower": -368.0886980326329,
     "ci_upper": 18.641585613577174,
     "contribution_count": 21,
@@ -8696,7 +8696,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218578Z",
+    "calculated_on": "2026-11-20T03:00:05.031260Z",
     "ci_lower": -475.9936391833164,
     "ci_upper": 125.31153538129135,
     "contribution_count": 59,
@@ -8722,7 +8722,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218599Z",
+    "calculated_on": "2026-11-20T03:00:05.031301Z",
     "ci_lower": -703.7490018653892,
     "ci_upper": 297.40504216283864,
     "contribution_count": 59,
@@ -8735,7 +8735,7 @@
     "rank": 268,
     "rank_ci_lower": 79,
     "rank_ci_upper": 310,
-    "score": -168.93865685660955,
+    "score": -168.93865685660953,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8748,7 +8748,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218621Z",
+    "calculated_on": "2026-11-20T03:00:05.031357Z",
     "ci_lower": -458.371930235058,
     "ci_upper": 134.45042072718743,
     "contribution_count": 59,
@@ -8761,7 +8761,7 @@
     "rank": 269,
     "rank_ci_lower": 136,
     "rank_ci_upper": 297,
-    "score": -169.01930071582098,
+    "score": -169.019300715821,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8787,7 +8787,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218643Z",
+    "calculated_on": "2026-11-20T03:00:05.031399Z",
     "ci_lower": -339.89897517297,
     "ci_upper": -44.48046979757096,
     "contribution_count": 7,
@@ -8813,7 +8813,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218665Z",
+    "calculated_on": "2026-11-20T03:00:05.031441Z",
     "ci_lower": -389.49314009901775,
     "ci_upper": 26.718965850685617,
     "contribution_count": 29,
@@ -8839,7 +8839,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218686Z",
+    "calculated_on": "2026-11-20T03:00:05.031482Z",
     "ci_lower": -573.894416749793,
     "ci_upper": 182.17580207532043,
     "contribution_count": 26,
@@ -8852,7 +8852,7 @@
     "rank": 271,
     "rank_ci_lower": 121,
     "rank_ci_upper": 307,
-    "score": -169.8288870251759,
+    "score": -169.82888702517593,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8865,7 +8865,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218708Z",
+    "calculated_on": "2026-11-20T03:00:05.031523Z",
     "ci_lower": -666.5539606641349,
     "ci_upper": 274.9512940249572,
     "contribution_count": 59,
@@ -8878,7 +8878,7 @@
     "rank": 272,
     "rank_ci_lower": 103,
     "rank_ci_upper": 313,
-    "score": -170.75497510737677,
+    "score": -170.7549751073767,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8891,7 +8891,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218729Z",
+    "calculated_on": "2026-11-20T03:00:05.036746Z",
     "ci_lower": -517.183721012485,
     "ci_upper": 118.65291065555805,
     "contribution_count": 59,
@@ -8930,7 +8930,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218750Z",
+    "calculated_on": "2026-11-20T03:00:05.036797Z",
     "ci_lower": -528.4768054189282,
     "ci_upper": 179.17958989221506,
     "contribution_count": 56,
@@ -8956,7 +8956,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218771Z",
+    "calculated_on": "2026-11-20T03:00:05.036840Z",
     "ci_lower": -400.86885186082196,
     "ci_upper": 60.59282888381575,
     "contribution_count": 59,
@@ -8969,7 +8969,7 @@
     "rank": 274,
     "rank_ci_lower": 167,
     "rank_ci_upper": 292,
-    "score": -177.36491319475905,
+    "score": -177.36491319475903,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -8982,7 +8982,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218793Z",
+    "calculated_on": "2026-11-20T03:00:05.036882Z",
     "ci_lower": -433.9758391976629,
     "ci_upper": 39.42217553910165,
     "contribution_count": 14,
@@ -9008,7 +9008,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218814Z",
+    "calculated_on": "2026-11-20T03:00:05.036923Z",
     "ci_lower": -453.78735714796704,
     "ci_upper": 54.1223424745696,
     "contribution_count": 40,
@@ -9034,7 +9034,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218836Z",
+    "calculated_on": "2026-11-20T03:00:05.036965Z",
     "ci_lower": -420.937800716504,
     "ci_upper": 57.75460624539489,
     "contribution_count": 59,
@@ -9047,7 +9047,7 @@
     "rank": 277,
     "rank_ci_lower": 170,
     "rank_ci_upper": 294,
-    "score": -187.43197212772392,
+    "score": -187.43197212772384,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9073,7 +9073,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218857Z",
+    "calculated_on": "2026-11-20T03:00:05.037006Z",
     "ci_lower": -547.432965663331,
     "ci_upper": 128.89466214919298,
     "contribution_count": 59,
@@ -9112,7 +9112,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218878Z",
+    "calculated_on": "2026-11-20T03:00:05.037048Z",
     "ci_lower": -624.0024095857937,
     "ci_upper": 206.33276997408677,
     "contribution_count": 58,
@@ -9138,7 +9138,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218900Z",
+    "calculated_on": "2026-11-20T03:00:05.037090Z",
     "ci_lower": -382.0620986001232,
     "ci_upper": -38.02506205285152,
     "contribution_count": 11,
@@ -9164,7 +9164,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218921Z",
+    "calculated_on": "2026-11-20T03:00:05.037131Z",
     "ci_lower": -593.8425135697921,
     "ci_upper": 137.97303079858082,
     "contribution_count": 30,
@@ -9190,7 +9190,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218942Z",
+    "calculated_on": "2026-11-20T03:00:05.037173Z",
     "ci_lower": -639.7979031527213,
     "ci_upper": 234.54760949957435,
     "contribution_count": 59,
@@ -9203,7 +9203,7 @@
     "rank": 280,
     "rank_ci_lower": 97,
     "rank_ci_upper": 309,
-    "score": -206.54946581410462,
+    "score": -206.54946581410456,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9229,7 +9229,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218963Z",
+    "calculated_on": "2026-11-20T03:00:05.037215Z",
     "ci_lower": -500.8985846654154,
     "ci_upper": 83.36302956771463,
     "contribution_count": 44,
@@ -9242,7 +9242,7 @@
     "rank": 280,
     "rank_ci_lower": 157,
     "rank_ci_upper": 298,
-    "score": -209.15185452758053,
+    "score": -209.15185452758055,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9268,7 +9268,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.218984Z",
+    "calculated_on": "2026-11-20T03:00:05.037256Z",
     "ci_lower": -870.7807746055611,
     "ci_upper": 164.8696498172341,
     "contribution_count": 15,
@@ -9281,7 +9281,7 @@
     "rank": 280,
     "rank_ci_lower": 129,
     "rank_ci_upper": 319,
-    "score": -214.57265884808328,
+    "score": -214.57265884808322,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9294,7 +9294,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219006Z",
+    "calculated_on": "2026-11-20T03:00:05.037296Z",
     "ci_lower": -474.76092223459017,
     "ci_upper": -4.0492442155825135,
     "contribution_count": 33,
@@ -9320,7 +9320,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219027Z",
+    "calculated_on": "2026-11-20T03:00:05.037353Z",
     "ci_lower": -600.7985861363665,
     "ci_upper": 123.23182529458927,
     "contribution_count": 59,
@@ -9359,7 +9359,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219048Z",
+    "calculated_on": "2026-11-20T03:00:05.037396Z",
     "ci_lower": -456.56350863551177,
     "ci_upper": 14.956267767103837,
     "contribution_count": 59,
@@ -9398,7 +9398,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219070Z",
+    "calculated_on": "2026-11-20T03:00:05.037438Z",
     "ci_lower": -506.72544920693883,
     "ci_upper": -5.98835080749973,
     "contribution_count": 4,
@@ -9424,7 +9424,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219092Z",
+    "calculated_on": "2026-11-20T03:00:05.037480Z",
     "ci_lower": -474.5283719789475,
     "ci_upper": 1.2107037935358753,
     "contribution_count": 31,
@@ -9450,7 +9450,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219114Z",
+    "calculated_on": "2026-11-20T03:00:05.037524Z",
     "ci_lower": -518.0889437807165,
     "ci_upper": 55.414080240684065,
     "contribution_count": 59,
@@ -9463,7 +9463,7 @@
     "rank": 284,
     "rank_ci_lower": 168,
     "rank_ci_upper": 298,
-    "score": -228.05152178125644,
+    "score": -228.05152178125638,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9489,7 +9489,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219136Z",
+    "calculated_on": "2026-11-20T03:00:05.037566Z",
     "ci_lower": -525.7946370418484,
     "ci_upper": 47.43834562103985,
     "contribution_count": 59,
@@ -9515,7 +9515,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219157Z",
+    "calculated_on": "2026-11-20T03:00:05.037608Z",
     "ci_lower": -720.0660594274375,
     "ci_upper": 189.57901434220733,
     "contribution_count": 59,
@@ -9554,7 +9554,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219179Z",
+    "calculated_on": "2026-11-20T03:00:05.037651Z",
     "ci_lower": -641.9969800524075,
     "ci_upper": 92.20073356418871,
     "contribution_count": 24,
@@ -9567,7 +9567,7 @@
     "rank": 284,
     "rank_ci_lower": 157,
     "rank_ci_upper": 313,
-    "score": -249.65133997621734,
+    "score": -249.6513399762174,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9580,7 +9580,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219200Z",
+    "calculated_on": "2026-11-20T03:00:05.037694Z",
     "ci_lower": -588.848687616736,
     "ci_upper": 98.64325830814921,
     "contribution_count": 59,
@@ -9593,7 +9593,7 @@
     "rank": 285,
     "rank_ci_lower": 149,
     "rank_ci_upper": 304,
-    "score": -251.0446075466487,
+    "score": -251.04460754664865,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9619,7 +9619,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219221Z",
+    "calculated_on": "2026-11-20T03:00:05.037736Z",
     "ci_lower": -899.0093872980632,
     "ci_upper": 301.4233970832908,
     "contribution_count": 59,
@@ -9632,7 +9632,7 @@
     "rank": 285,
     "rank_ci_lower": 77,
     "rank_ci_upper": 316,
-    "score": -252.34683194146757,
+    "score": -252.3468319414675,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9645,7 +9645,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219242Z",
+    "calculated_on": "2026-11-20T03:00:05.037778Z",
     "ci_lower": -660.3141184804841,
     "ci_upper": 89.03344456733099,
     "contribution_count": 56,
@@ -9658,7 +9658,7 @@
     "rank": 286,
     "rank_ci_lower": 158,
     "rank_ci_upper": 306,
-    "score": -276.46806364187813,
+    "score": -276.4680636418782,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9671,7 +9671,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219264Z",
+    "calculated_on": "2026-11-20T03:00:05.037824Z",
     "ci_lower": -591.3861222099446,
     "ci_upper": 21.009570482869496,
     "contribution_count": 59,
@@ -9710,7 +9710,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219285Z",
+    "calculated_on": "2026-11-20T03:00:05.037866Z",
     "ci_lower": -834.0193311653194,
     "ci_upper": 209.94305314853239,
     "contribution_count": 31,
@@ -9736,7 +9736,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219306Z",
+    "calculated_on": "2026-11-20T03:00:05.037909Z",
     "ci_lower": -614.1105319580528,
     "ci_upper": 6.984524563846337,
     "contribution_count": 59,
@@ -9749,7 +9749,7 @@
     "rank": 288,
     "rank_ci_lower": 196,
     "rank_ci_upper": 306,
-    "score": -299.1392734380588,
+    "score": -299.13927343805886,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9775,7 +9775,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219327Z",
+    "calculated_on": "2026-11-20T03:00:05.037952Z",
     "ci_lower": -583.8133109589277,
     "ci_upper": -40.99037503509462,
     "contribution_count": 59,
@@ -9814,7 +9814,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219348Z",
+    "calculated_on": "2026-11-20T03:00:05.038004Z",
     "ci_lower": -651.2191177712996,
     "ci_upper": -44.50906166632725,
     "contribution_count": 32,
@@ -9827,7 +9827,7 @@
     "rank": 288,
     "rank_ci_lower": 228,
     "rank_ci_upper": 310,
-    "score": -331.13711393722957,
+    "score": -331.1371139372295,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9840,7 +9840,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219370Z",
+    "calculated_on": "2026-11-20T03:00:05.038046Z",
     "ci_lower": -745.7163321242815,
     "ci_upper": 31.366596767290275,
     "contribution_count": 59,
@@ -9866,7 +9866,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219391Z",
+    "calculated_on": "2026-11-20T03:00:05.038087Z",
     "ci_lower": -653.7637275501908,
     "ci_upper": -46.963852244124666,
     "contribution_count": 58,
@@ -9892,7 +9892,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219412Z",
+    "calculated_on": "2026-11-20T03:00:05.038130Z",
     "ci_lower": -785.9697546291693,
     "ci_upper": 22.099097462174676,
     "contribution_count": 59,
@@ -9931,7 +9931,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219434Z",
+    "calculated_on": "2026-11-20T03:00:05.038171Z",
     "ci_lower": -781.7466438829849,
     "ci_upper": 35.45455480833356,
     "contribution_count": 59,
@@ -9944,7 +9944,7 @@
     "rank": 290,
     "rank_ci_lower": 178,
     "rank_ci_upper": 311,
-    "score": -366.5489241628349,
+    "score": -366.5489241628348,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -9969,7 +9969,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219455Z",
+    "calculated_on": "2026-11-20T03:00:05.038214Z",
     "ci_lower": -769.7454315109901,
     "ci_upper": 17.680935805879454,
     "contribution_count": 59,
@@ -9995,7 +9995,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219481Z",
+    "calculated_on": "2026-11-20T03:00:05.038255Z",
     "ci_lower": -780.9724143565342,
     "ci_upper": 5.05218039775105,
     "contribution_count": 59,
@@ -10008,7 +10008,7 @@
     "rank": 291,
     "rank_ci_lower": 201,
     "rank_ci_upper": 313,
-    "score": -374.22423014362204,
+    "score": -374.2242301436221,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10021,7 +10021,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219514Z",
+    "calculated_on": "2026-11-20T03:00:05.038296Z",
     "ci_lower": -749.9125931114648,
     "ci_upper": -17.590436838095215,
     "contribution_count": 59,
@@ -10034,7 +10034,7 @@
     "rank": 292,
     "rank_ci_lower": 213,
     "rank_ci_upper": 314,
-    "score": -374.39220768743866,
+    "score": -374.3922076874387,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10059,7 +10059,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219547Z",
+    "calculated_on": "2026-11-20T03:00:05.038354Z",
     "ci_lower": -689.9027793094996,
     "ci_upper": -93.70005469682238,
     "contribution_count": 59,
@@ -10072,7 +10072,7 @@
     "rank": 292,
     "rank_ci_lower": 242,
     "rank_ci_upper": 309,
-    "score": -383.1374860736875,
+    "score": -383.13748607368746,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10098,7 +10098,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219592Z",
+    "calculated_on": "2026-11-20T03:00:05.038396Z",
     "ci_lower": -714.3195203066659,
     "ci_upper": -43.98023760147729,
     "contribution_count": 59,
@@ -10137,7 +10137,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219614Z",
+    "calculated_on": "2026-11-20T03:00:05.038437Z",
     "ci_lower": -632.1597151376621,
     "ci_upper": -144.04746375984956,
     "contribution_count": 59,
@@ -10176,7 +10176,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219635Z",
+    "calculated_on": "2026-11-20T03:00:05.038479Z",
     "ci_lower": -762.7390235707006,
     "ci_upper": -51.68487501216414,
     "contribution_count": 59,
@@ -10202,7 +10202,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219657Z",
+    "calculated_on": "2026-11-20T03:00:05.038520Z",
     "ci_lower": -784.2316017672127,
     "ci_upper": -59.29258995225042,
     "contribution_count": 59,
@@ -10241,7 +10241,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219679Z",
+    "calculated_on": "2026-11-20T03:00:05.038560Z",
     "ci_lower": -713.6178277465009,
     "ci_upper": -112.27549634498816,
     "contribution_count": 59,
@@ -10280,7 +10280,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219701Z",
+    "calculated_on": "2026-11-20T03:00:05.038601Z",
     "ci_lower": -1141.7377936270202,
     "ci_upper": 248.28148674678613,
     "contribution_count": 59,
@@ -10293,7 +10293,7 @@
     "rank": 293,
     "rank_ci_lower": 99,
     "rank_ci_upper": 323,
-    "score": -426.3468057010349,
+    "score": -426.34680570103495,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10306,7 +10306,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219723Z",
+    "calculated_on": "2026-11-20T03:00:05.038643Z",
     "ci_lower": -907.9216991149449,
     "ci_upper": -5.538231555435191,
     "contribution_count": 59,
@@ -10319,7 +10319,7 @@
     "rank": 294,
     "rank_ci_lower": 205,
     "rank_ci_upper": 320,
-    "score": -434.9972326136963,
+    "score": -434.99723261369644,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10345,7 +10345,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219745Z",
+    "calculated_on": "2026-11-20T03:00:05.038684Z",
     "ci_lower": -930.9834477916922,
     "ci_upper": -4.6439541467084995,
     "contribution_count": 59,
@@ -10371,7 +10371,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219766Z",
+    "calculated_on": "2026-11-20T03:00:05.038725Z",
     "ci_lower": -856.3020094629821,
     "ci_upper": -42.87679630053274,
     "contribution_count": 59,
@@ -10410,7 +10410,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219787Z",
+    "calculated_on": "2026-11-20T03:00:05.038767Z",
     "ci_lower": -1114.4864161995592,
     "ci_upper": 18.813610046780333,
     "contribution_count": 17,
@@ -10423,7 +10423,7 @@
     "rank": 295,
     "rank_ci_lower": 192,
     "rank_ci_upper": 323,
-    "score": -468.37534727823726,
+    "score": -468.3753472782372,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10436,7 +10436,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219809Z",
+    "calculated_on": "2026-11-20T03:00:05.038809Z",
     "ci_lower": -909.3141240734506,
     "ci_upper": -59.67723701492566,
     "contribution_count": 24,
@@ -10462,7 +10462,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219830Z",
+    "calculated_on": "2026-11-20T03:00:05.038851Z",
     "ci_lower": -1138.563290100016,
     "ci_upper": 42.91652067906441,
     "contribution_count": 59,
@@ -10501,7 +10501,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219851Z",
+    "calculated_on": "2026-11-20T03:00:05.038892Z",
     "ci_lower": -921.4904038656603,
     "ci_upper": -88.35642980857729,
     "contribution_count": 59,
@@ -10527,7 +10527,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219872Z",
+    "calculated_on": "2026-11-20T03:00:05.038934Z",
     "ci_lower": -997.1979509274013,
     "ci_upper": -34.86362294321991,
     "contribution_count": 59,
@@ -10553,7 +10553,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219893Z",
+    "calculated_on": "2026-11-20T03:00:05.038976Z",
     "ci_lower": -913.9409628581449,
     "ci_upper": -106.81083506530214,
     "contribution_count": 59,
@@ -10566,7 +10566,7 @@
     "rank": 299,
     "rank_ci_lower": 247,
     "rank_ci_upper": 318,
-    "score": -497.26650417053787,
+    "score": -497.26650417053776,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10579,7 +10579,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219914Z",
+    "calculated_on": "2026-11-20T03:00:05.039018Z",
     "ci_lower": -987.9567048131858,
     "ci_upper": -63.63073350581356,
     "contribution_count": 59,
@@ -10592,7 +10592,7 @@
     "rank": 300,
     "rank_ci_lower": 233,
     "rank_ci_upper": 322,
-    "score": -497.89920287606844,
+    "score": -497.89920287606833,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10617,7 +10617,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219936Z",
+    "calculated_on": "2026-11-20T03:00:05.039060Z",
     "ci_lower": -943.8512771992831,
     "ci_upper": -72.89800019981726,
     "contribution_count": 37,
@@ -10643,7 +10643,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219958Z",
+    "calculated_on": "2026-11-20T03:00:05.039104Z",
     "ci_lower": -856.7065359389704,
     "ci_upper": -164.87721860514608,
     "contribution_count": 59,
@@ -10669,7 +10669,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219979Z",
+    "calculated_on": "2026-11-20T03:00:05.039146Z",
     "ci_lower": -918.4823280871107,
     "ci_upper": -140.35476435810733,
     "contribution_count": 59,
@@ -10682,7 +10682,7 @@
     "rank": 302,
     "rank_ci_lower": 256,
     "rank_ci_upper": 318,
-    "score": -505.7269421471177,
+    "score": -505.7269421471178,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10695,7 +10695,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.219999Z",
+    "calculated_on": "2026-11-20T03:00:05.039188Z",
     "ci_lower": -958.9181957969314,
     "ci_upper": -153.51133280291302,
     "contribution_count": 8,
@@ -10721,7 +10721,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220020Z",
+    "calculated_on": "2026-11-20T03:00:05.039227Z",
     "ci_lower": -988.2479531717023,
     "ci_upper": -115.28974220232303,
     "contribution_count": 59,
@@ -10747,7 +10747,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220048Z",
+    "calculated_on": "2026-11-20T03:00:05.039270Z",
     "ci_lower": -917.2510449423098,
     "ci_upper": -171.5457826561607,
     "contribution_count": 59,
@@ -10760,7 +10760,7 @@
     "rank": 305,
     "rank_ci_lower": 260,
     "rank_ci_upper": 319,
-    "score": -545.9482648170778,
+    "score": -545.9482648170779,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10773,7 +10773,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220072Z",
+    "calculated_on": "2026-11-20T03:00:05.039314Z",
     "ci_lower": -932.847911517405,
     "ci_upper": -161.2896210089551,
     "contribution_count": 59,
@@ -10799,7 +10799,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220094Z",
+    "calculated_on": "2026-11-20T03:00:05.039371Z",
     "ci_lower": -929.751800051061,
     "ci_upper": -185.34329696210287,
     "contribution_count": 59,
@@ -10812,7 +10812,7 @@
     "rank": 307,
     "rank_ci_lower": 268,
     "rank_ci_upper": 319,
-    "score": -555.7438821610408,
+    "score": -555.7438821610409,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10838,7 +10838,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220115Z",
+    "calculated_on": "2026-11-20T03:00:05.039413Z",
     "ci_lower": -1147.8575149625556,
     "ci_upper": -26.714864955821295,
     "contribution_count": 59,
@@ -10864,7 +10864,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220137Z",
+    "calculated_on": "2026-11-20T03:00:05.039456Z",
     "ci_lower": -983.6420736889204,
     "ci_upper": -159.05232103044347,
     "contribution_count": 59,
@@ -10877,7 +10877,7 @@
     "rank": 308,
     "rank_ci_lower": 261,
     "rank_ci_upper": 321,
-    "score": -562.8421694871988,
+    "score": -562.8421694871989,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10903,7 +10903,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220159Z",
+    "calculated_on": "2026-11-20T03:00:05.039498Z",
     "ci_lower": -978.8588371567823,
     "ci_upper": -160.3222104277532,
     "contribution_count": 59,
@@ -10916,7 +10916,7 @@
     "rank": 308,
     "rank_ci_lower": 259,
     "rank_ci_upper": 320,
-    "score": -564.1776383375993,
+    "score": -564.1776383375992,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -10941,7 +10941,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220180Z",
+    "calculated_on": "2026-11-20T03:00:05.039539Z",
     "ci_lower": -1204.3400402554591,
     "ci_upper": -52.01721203158047,
     "contribution_count": 59,
@@ -10980,7 +10980,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220202Z",
+    "calculated_on": "2026-11-20T03:00:05.039581Z",
     "ci_lower": -1060.7184985667318,
     "ci_upper": -124.08584988159441,
     "contribution_count": 59,
@@ -11019,7 +11019,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220223Z",
+    "calculated_on": "2026-11-20T03:00:05.039623Z",
     "ci_lower": -990.4707409973305,
     "ci_upper": -199.3656424699907,
     "contribution_count": 59,
@@ -11032,7 +11032,7 @@
     "rank": 308,
     "rank_ci_lower": 267,
     "rank_ci_upper": 321,
-    "score": -584.9282758349143,
+    "score": -584.9282758349144,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11045,7 +11045,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220244Z",
+    "calculated_on": "2026-11-20T03:00:05.039665Z",
     "ci_lower": -1099.3917559132008,
     "ci_upper": -116.08959900654257,
     "contribution_count": 59,
@@ -11083,7 +11083,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220266Z",
+    "calculated_on": "2026-11-20T03:00:05.039706Z",
     "ci_lower": -1069.8128424801582,
     "ci_upper": -135.44519960156478,
     "contribution_count": 59,
@@ -11122,7 +11122,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220288Z",
+    "calculated_on": "2026-11-20T03:00:05.039747Z",
     "ci_lower": -1031.5622551523695,
     "ci_upper": -129.40685674323217,
     "contribution_count": 48,
@@ -11148,7 +11148,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220308Z",
+    "calculated_on": "2026-11-20T03:00:05.039787Z",
     "ci_lower": -1141.8453826965747,
     "ci_upper": -129.24510922668472,
     "contribution_count": 59,
@@ -11187,7 +11187,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220330Z",
+    "calculated_on": "2026-11-20T03:00:05.039829Z",
     "ci_lower": -1115.5772547923661,
     "ci_upper": -92.87800478857233,
     "contribution_count": 59,
@@ -11200,7 +11200,7 @@
     "rank": 310,
     "rank_ci_lower": 244,
     "rank_ci_upper": 323,
-    "score": -624.2045860060416,
+    "score": -624.2045860060417,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11226,7 +11226,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220358Z",
+    "calculated_on": "2026-11-20T03:00:05.039884Z",
     "ci_lower": -1036.1214181743026,
     "ci_upper": -242.12595011425915,
     "contribution_count": 59,
@@ -11252,7 +11252,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220380Z",
+    "calculated_on": "2026-11-20T03:00:05.039927Z",
     "ci_lower": -1073.5302752272696,
     "ci_upper": -211.7382634130994,
     "contribution_count": 59,
@@ -11265,7 +11265,7 @@
     "rank": 311,
     "rank_ci_lower": 270,
     "rank_ci_upper": 324,
-    "score": -635.2761834649431,
+    "score": -635.2761834649432,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11291,7 +11291,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220402Z",
+    "calculated_on": "2026-11-20T03:00:05.039968Z",
     "ci_lower": -1276.3734659897625,
     "ci_upper": -103.97587142284942,
     "contribution_count": 58,
@@ -11304,7 +11304,7 @@
     "rank": 311,
     "rank_ci_lower": 243,
     "rank_ci_upper": 324,
-    "score": -666.970644774808,
+    "score": -666.9706447748079,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11317,7 +11317,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220423Z",
+    "calculated_on": "2026-11-20T03:00:05.040012Z",
     "ci_lower": -1047.9763606448485,
     "ci_upper": -303.30641596578823,
     "contribution_count": 59,
@@ -11330,7 +11330,7 @@
     "rank": 312,
     "rank_ci_lower": 284,
     "rank_ci_upper": 322,
-    "score": -668.1103336259761,
+    "score": -668.110333625976,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11343,7 +11343,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220444Z",
+    "calculated_on": "2026-11-20T03:00:05.040054Z",
     "ci_lower": -1110.6266394719887,
     "ci_upper": -250.01082118731608,
     "contribution_count": 59,
@@ -11382,7 +11382,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220466Z",
+    "calculated_on": "2026-11-20T03:00:05.040095Z",
     "ci_lower": -1519.4713998606296,
     "ci_upper": 20.591039998811528,
     "contribution_count": 31,
@@ -11395,7 +11395,7 @@
     "rank": 313,
     "rank_ci_lower": 193,
     "rank_ci_upper": 327,
-    "score": -696.0967348680883,
+    "score": -696.0967348680884,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11408,7 +11408,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220488Z",
+    "calculated_on": "2026-11-20T03:00:05.040137Z",
     "ci_lower": -1225.3482007237167,
     "ci_upper": -242.70200077439327,
     "contribution_count": 59,
@@ -11447,7 +11447,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220510Z",
+    "calculated_on": "2026-11-20T03:00:05.040178Z",
     "ci_lower": -1136.634882261383,
     "ci_upper": -283.19851105535696,
     "contribution_count": 59,
@@ -11460,7 +11460,7 @@
     "rank": 314,
     "rank_ci_lower": 285,
     "rank_ci_upper": 322,
-    "score": -703.305061771086,
+    "score": -703.3050617710861,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11473,7 +11473,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220531Z",
+    "calculated_on": "2026-11-20T03:00:05.040220Z",
     "ci_lower": -1243.577909647385,
     "ci_upper": -193.83805631925136,
     "contribution_count": 59,
@@ -11512,7 +11512,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220553Z",
+    "calculated_on": "2026-11-20T03:00:05.040261Z",
     "ci_lower": -1147.320982790914,
     "ci_upper": -343.64598667336986,
     "contribution_count": 59,
@@ -11525,7 +11525,7 @@
     "rank": 315,
     "rank_ci_lower": 288,
     "rank_ci_upper": 326,
-    "score": -737.4675737423972,
+    "score": -737.4675737423973,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11551,7 +11551,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220590Z",
+    "calculated_on": "2026-11-20T03:00:05.040303Z",
     "ci_lower": -1327.4325625205638,
     "ci_upper": -204.41985640764673,
     "contribution_count": 59,
@@ -11564,7 +11564,7 @@
     "rank": 315,
     "rank_ci_lower": 270,
     "rank_ci_upper": 327,
-    "score": -751.8557465355753,
+    "score": -751.8557465355751,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11590,7 +11590,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220612Z",
+    "calculated_on": "2026-11-20T03:00:05.040371Z",
     "ci_lower": -1277.1790726325587,
     "ci_upper": -260.76972226091755,
     "contribution_count": 59,
@@ -11603,7 +11603,7 @@
     "rank": 315,
     "rank_ci_lower": 283,
     "rank_ci_upper": 326,
-    "score": -760.0580537619581,
+    "score": -760.0580537619583,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11629,7 +11629,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220633Z",
+    "calculated_on": "2026-11-20T03:00:05.040415Z",
     "ci_lower": -1351.6568792042121,
     "ci_upper": -233.77777094554568,
     "contribution_count": 59,
@@ -11655,7 +11655,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220655Z",
+    "calculated_on": "2026-11-20T03:00:05.040457Z",
     "ci_lower": -1402.655128855567,
     "ci_upper": -175.7429445260124,
     "contribution_count": 59,
@@ -11668,7 +11668,7 @@
     "rank": 316,
     "rank_ci_lower": 264,
     "rank_ci_upper": 326,
-    "score": -781.654584034799,
+    "score": -781.6545840347989,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11681,7 +11681,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220676Z",
+    "calculated_on": "2026-11-20T03:00:05.040499Z",
     "ci_lower": -1229.8367652075422,
     "ci_upper": -359.0097560028209,
     "contribution_count": 59,
@@ -11694,7 +11694,7 @@
     "rank": 317,
     "rank_ci_lower": 291,
     "rank_ci_upper": 325,
-    "score": -797.2850316523903,
+    "score": -797.2850316523906,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11707,7 +11707,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220698Z",
+    "calculated_on": "2026-11-20T03:00:05.040542Z",
     "ci_lower": -1709.120034580943,
     "ci_upper": -82.97217292710513,
     "contribution_count": 57,
@@ -11720,7 +11720,7 @@
     "rank": 318,
     "rank_ci_lower": 242,
     "rank_ci_upper": 329,
-    "score": -811.1709555410866,
+    "score": -811.1709555410868,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11733,7 +11733,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220719Z",
+    "calculated_on": "2026-11-20T03:00:05.040585Z",
     "ci_lower": -1220.185618319359,
     "ci_upper": -420.50146500601966,
     "contribution_count": 59,
@@ -11746,7 +11746,7 @@
     "rank": 319,
     "rank_ci_lower": 298,
     "rank_ci_upper": 325,
-    "score": -813.8103960404546,
+    "score": -813.8103960404547,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -11772,7 +11772,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220740Z",
+    "calculated_on": "2026-11-20T03:00:05.040626Z",
     "ci_lower": -1475.7155578677698,
     "ci_upper": -375.5228406974275,
     "contribution_count": 59,
@@ -11811,7 +11811,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220762Z",
+    "calculated_on": "2026-11-20T03:00:05.040668Z",
     "ci_lower": -1529.7135639013254,
     "ci_upper": -384.4737360075654,
     "contribution_count": 33,
@@ -11837,7 +11837,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220783Z",
+    "calculated_on": "2026-11-20T03:00:05.040711Z",
     "ci_lower": -1913.266330874712,
     "ci_upper": -160.00598697165722,
     "contribution_count": 59,
@@ -11863,7 +11863,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220805Z",
+    "calculated_on": "2026-11-20T03:00:05.040753Z",
     "ci_lower": -1479.448574283778,
     "ci_upper": -412.8189896453438,
     "contribution_count": 57,
@@ -11889,7 +11889,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220826Z",
+    "calculated_on": "2026-11-20T03:00:05.040796Z",
     "ci_lower": -1467.6309814785548,
     "ci_upper": -516.2762466013912,
     "contribution_count": 59,
@@ -11928,7 +11928,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220848Z",
+    "calculated_on": "2026-11-20T03:00:05.040836Z",
     "ci_lower": -1423.4219402834171,
     "ci_upper": -547.2391937675254,
     "contribution_count": 59,
@@ -11966,7 +11966,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220869Z",
+    "calculated_on": "2026-11-20T03:00:05.040878Z",
     "ci_lower": -1425.2970219567699,
     "ci_upper": -581.9727447759436,
     "contribution_count": 56,
@@ -11992,7 +11992,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220890Z",
+    "calculated_on": "2026-11-20T03:00:05.040920Z",
     "ci_lower": -2002.2390191363702,
     "ci_upper": -158.31335101893993,
     "contribution_count": 47,
@@ -12018,7 +12018,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220911Z",
+    "calculated_on": "2026-11-20T03:00:05.040962Z",
     "ci_lower": -1615.5102156307537,
     "ci_upper": -614.4374849349282,
     "contribution_count": 59,
@@ -12044,7 +12044,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220933Z",
+    "calculated_on": "2026-11-20T03:00:05.041005Z",
     "ci_lower": -1849.9669270858797,
     "ci_upper": -549.4366587301706,
     "contribution_count": 59,
@@ -12070,7 +12070,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220954Z",
+    "calculated_on": "2026-11-20T03:00:05.041047Z",
     "ci_lower": -2053.127355447347,
     "ci_upper": -601.9298670606986,
     "contribution_count": 59,
@@ -12096,7 +12096,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220975Z",
+    "calculated_on": "2026-11-20T03:00:05.041089Z",
     "ci_lower": -2154.500073482018,
     "ci_upper": -520.3155283997886,
     "contribution_count": 59,
@@ -12109,7 +12109,7 @@
     "rank": 327,
     "rank_ci_lower": 303,
     "rank_ci_upper": 331,
-    "score": -1342.737485707179,
+    "score": -1342.7374857071793,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -12122,7 +12122,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.220996Z",
+    "calculated_on": "2026-11-20T03:00:05.041131Z",
     "ci_lower": -2221.8756922555976,
     "ci_upper": -929.7171438397477,
     "contribution_count": 59,
@@ -12148,7 +12148,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.221017Z",
+    "calculated_on": "2026-11-20T03:00:05.041173Z",
     "ci_lower": -2147.3417959859266,
     "ci_upper": -995.5631166849627,
     "contribution_count": 59,
@@ -12186,7 +12186,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.221038Z",
+    "calculated_on": "2026-11-20T03:00:05.041214Z",
     "ci_lower": -3005.860904566196,
     "ci_upper": -659.1443168537726,
     "contribution_count": 59,
@@ -12199,7 +12199,7 @@
     "rank": 329,
     "rank_ci_lower": 309,
     "rank_ci_upper": 331,
-    "score": -1766.3219206322156,
+    "score": -1766.3219206322158,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -12212,7 +12212,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.221060Z",
+    "calculated_on": "2026-11-20T03:00:05.041257Z",
     "ci_lower": -2381.1685526847114,
     "ci_upper": -1202.438176537444,
     "contribution_count": 59,
@@ -12225,7 +12225,7 @@
     "rank": 330,
     "rank_ci_lower": 325,
     "rank_ci_upper": 331,
-    "score": -1792.6756157552336,
+    "score": -1792.6756157552334,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -12238,7 +12238,7 @@
    },
    {
     "aggregation_method": null,
-    "calculated_on": "2026-11-14T11:49:23.221082Z",
+    "calculated_on": "2026-11-20T03:00:05.041298Z",
     "ci_lower": -3130.2173237746365,
     "ci_upper": -916.6101078573769,
     "contribution_count": 44,
@@ -12251,7 +12251,7 @@
     "rank": 331,
     "rank_ci_lower": 322,
     "rank_ci_upper": 331,
-    "score": -1931.0838461552291,
+    "score": -1931.083846155229,
     "show_when_excluded": false,
     "take": 0,
     "user": {
@@ -12264,7 +12264,7 @@
    }
   ],
   "finalize_time": null,
-  "finalized": false,
+  "finalized": true,
   "human_exclusion_status": 0,
   "id": 1010,
   "is_primary_leaderboard": true,

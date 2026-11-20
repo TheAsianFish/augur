@@ -25,8 +25,11 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from augur import replay, scorecard, standings
+from augur import q2, replay, scorecard, standings
+from augur.clock import to_iso
+from augur.config import Settings
 from augur.forecastbench import load_set
+from augur.llm.catalog import Catalog
 from augur.score import Estimate, detectable_effect
 
 # The spread of one bot's per-question spot peer score, derived in PLAN.md from
@@ -296,6 +299,124 @@ def render_standings(root: Path) -> str:
     return "\n\n".join(parts) + "\n" if parts else "No standings snapshot committed.\n"
 
 
+TEMPLATES_SNAPSHOT = STANDINGS / "minibench-2026-11-02.json"
+
+
+def _usd(value: float | None) -> str:
+    return "n/a" if value is None else f"${value:.2f}"
+
+
+def render_templates(root: Path) -> str:
+    """Template bots by model, agent against template, and the proposed template-based floor."""
+    from augur.llm import catalog as llm_catalog
+
+    round_ = standings.load_snapshot(root / TEMPLATES_SNAPSHOT)
+    models = llm_catalog.load_snapshot(root / "augur" / "llm" / "openrouter_models.json")
+    return templates_markdown(round_, models)
+
+
+def templates_markdown(round_: standings.RoundStandings, models: Catalog) -> str:
+    """The three template tables for one saved round (also printed by ``augur standings``)."""
+    from augur.llm.registry import FRONTIER_TIER_NAME
+
+    board = round_.board()
+    rows = standings.template_table(round_)
+    plain = [r for r in rows if not r.variant]
+    nonneg = [r for r in plain if (r.average or 0.0) >= 0]
+    out = [
+        f"Source: {round_.source_url}, fetched {to_iso(round_.fetched_at)}; round "
+        f"`{round_.round.slug}`, score type {board.score_type}. The snapshot's finalized flag is "
+        f"{'yes' if board.finalized else 'no'}. Averages are Metaculus's summed spot peer score "
+        "divided by questions covered; intervals are Metaculus's, rescaled the same way.",
+        "",
+        f"**1. Template bots (`metac-<model>+asknews`).** {len(rows)} entries "
+        f"({len(plain)} plain, {len(rows) - len(plain)} experiment variants); "
+        f"{len(nonneg)} plain templates average >= 0.",
+        "",
+        "| Model | Bot | Rank | Avg spot peer score / question [interval] | Questions |",
+        "|---|---|---|---|---|",
+    ]
+    for r in rows:
+        out.append(
+            f"| {r.label}{' ' + r.variant if r.variant else ''} | `{r.name}` | "
+            f"{r.rank if r.rank is not None else '-'} | {standings._fmt_avg(r.entry)} | "
+            f"{standings._fmt_questions(r.entry.coverage)} |"
+        )
+    pairs, lone_agents, lone_templates = standings.agent_vs_template(round_)
+    out += [
+        "",
+        "**2. Agent harness against template, same model.** `metac-agent-X` is matched to the "
+        "plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`). Each difference is a "
+        "difference of two averages, with no paired interval: the two bots' per-question scores "
+        "are not in the snapshot.",
+        "",
+        "| Model | Agent avg | Template avg | Agent minus template |",
+        "|---|---|---|---|",
+    ]
+    for p in pairs:
+        out.append(
+            f"| {p.model} | {p.agent.average:.2f} | {p.template.average:.2f} | "
+            f"{p.difference:+.2f} |"
+        )
+    out += [
+        "",
+        f"Unmatched agents: {', '.join(lone_agents) or 'none'}. "
+        f"Templates with no agent: {', '.join(lone_templates) or 'none'}.",
+    ]
+    admitted, rejected, frontier = standings.admitted_by_template(round_, models)
+    draws = int(Settings.model_fields["forecasters"].default)
+    t_in, t_out = standings.question_tokens(draws)
+    out += [
+        "",
+        f"**3. Proposed floor: admit a model iff its template's average spot peer score is >= 0.** "
+        f"{len(admitted)} admitted, {len(rejected)} not, of {len(admitted) + len(rejected)} "
+        "models (a model with templates at two effort settings counts once, by its unsuffixed "
+        "bot). Worst case per question, from the constants in the agents: one planner "
+        f"call, one brief and {draws} draws, {t_in:,} input and {t_out:,} output tokens in all, "
+        f"priced at the OpenRouter list ({models.fetched_at:%Y-%m-%d}); a round is "
+        f"{standings.ROUND_QUESTIONS} questions. Where several listings share the name, the "
+        "dearest prices it.",
+        "",
+        "| Model | Template avg | OpenRouter id (match by name) | $/M in | $/M out | "
+        f"Per question | Per {standings.ROUND_QUESTIONS}-question round |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for a in admitted:
+        listing = (
+            f"`{a.priced_id}`"
+            + (f" (+{len(a.listed_ids) - 1} more)" if len(a.listed_ids) > 1 else "")
+            if a.priced_id
+            else "not listed"
+        )
+        pin = f"{a.usd_per_million_input:g}" if a.usd_per_million_input is not None else "n/a"
+        pout = f"{a.usd_per_million_output:g}" if a.usd_per_million_output is not None else "n/a"
+        out.append(
+            f"| {a.template.key} | {a.template.average:.2f} | {listing} | {pin} | {pout} | "
+            f"{_usd(a.per_question)} | {_usd(a.per_round)} |"
+        )
+    out += [
+        "",
+        "Not admitted (average < 0): "
+        + (", ".join(f"{r.key} ({r.average:.1f})" for r in rejected) or "none")
+        + ".",
+        "",
+        f"Current frontier tier (`{FRONTIER_TIER_NAME}`) without template evidence in this "
+        "round: "
+        + (", ".join(f"`{n}`" for n, r in frontier if r is None) or "none")
+        + ". With evidence: "
+        + (
+            ", ".join(
+                f"`{n}` ({r.average:+.1f})"
+                for n, r in frontier
+                if r is not None and r.average is not None
+            )
+            or "none"
+        )
+        + ".",
+    ]
+    return "\n".join(out) + "\n"
+
+
 # -- the replay evaluation (M5) ---------------------------------------------------
 
 
@@ -524,6 +645,219 @@ def _count(path: Path, sql: str) -> int:
         return int(conn.execute(sql).fetchone()[0])
 
 
+# -- Q2: what leakage is worth, and the research loop (M6) -------------------------
+
+Q2_SET = "data/forecastbench/2026-06-21"
+Q2_TOURNAMENT = "forecastbench:2026-06-21-llm.json"
+Q2_SAMPLE = 64
+Q2_LOOP_SAMPLE = 40
+Q2_LABELS = Path("data/judge/m6-reference-labels.json")
+Q2_ARMS = {
+    "N": (LEDGERS / "m5-replay-c2.sqlite", Q2_TOURNAMENT),
+    "O": (LEDGERS / "m6-c2-open.sqlite", Q2_TOURNAMENT + "+onepass-asof-open"),
+    "T": (LEDGERS / "m6-c2-now.sqlite", Q2_TOURNAMENT + "+onepass-asof-now"),
+    "L": (LEDGERS / "m6-c2-loop.sqlite", Q2_TOURNAMENT + "+loop3-asof-open"),
+}
+# El Lahib et al. (ACL 2026), gpt-oss-120b, 93 questions with a score-4 document.
+PUBLISHED = {"no retrieval": 0.244, "leak-free (score 0)": 0.242, "leaky (scores 3-4)": 0.108}
+
+
+def _q2(root: Path) -> q2.Q2 | None:
+    arms = {
+        a: q2.ArmSource(root / path, tournament)
+        for a, (path, tournament) in Q2_ARMS.items()
+        if (root / path).exists()
+    }
+    if not {"N", "O", "T"} <= arms.keys():
+        return None
+    report = load_set(
+        root / f"{Q2_SET}-llm.subset.json",
+        root / f"{Q2_SET}_resolution_set.subset.json",
+        released=date.min,
+    )
+    return q2.score_q2(
+        questions=report.kept,
+        sample=Q2_SAMPLE,
+        loop_sample=Q2_LOOP_SAMPLE,
+        arms=arms,
+        prices=q2.ArmSource(root / LEDGERS / "m5-replay-c2-prices.sqlite", Q2_TOURNAMENT),
+        labels=root / Q2_LABELS,
+    )
+
+
+def _pct(k: int, n: int) -> str:
+    return f"{k}/{n} ({100 * k / n:.0f}%)" if n else "0/0"
+
+
+def render_leakage(root: Path) -> str:
+    s = _q2(root)
+    if s is None:
+        return "The M6 arms' ledgers are not committed yet.\n"
+    arm = {r.arm: r for r in s.arms}
+    out = [
+        f"C2's fixed sample: the first {Q2_SAMPLE} eligible questions by question id; "
+        f"{s.sample} were forecast by every arm. Model `nvidia/nemotron-3-ultra-550b-a55b:free` "
+        "(listed 2026-06-04, before the 2026-06-11 freeze) in every role, 3 draws, median. "
+        "Lower Brier is better; a negative difference favours the first arm.",
+        "",
+        "| Arm | Brier [95% interval] | Log score | n |",
+        "|---|---|---|---|",
+    ]
+    out += [
+        f"| {r.arm}: {q2.ARM_NAMES[r.arm]} | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |"
+        for r in s.arms
+    ]
+    out += ["", "| Paired difference | Brier [95% interval] (MDE) |", "|---|---|"]
+    out += [f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in s.diffs]
+    out += [
+        "",
+        f"**Edge over the price** (the as-of price from M5, on the {s.priced} priced questions "
+        "of the sample; a negative difference would be an edge):",
+        "",
+        "| Arm minus the price | Brier [95% interval] (MDE) |",
+        "|---|---|",
+    ]
+    out += [f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in s.edge]
+    if s.unpriced:
+        n = s.unpriced[0].n
+        out += [
+            "",
+            f"Unpriced questions of the sample (Metaculus and INFER, n = {n}; no price to set "
+            "beside): " + "; ".join(f"{r.arm} {_est(r.brier, 4)}" for r in s.unpriced) + ".",
+        ]
+    if s.loop_arms:
+        out += [
+            "",
+            f"**The research loop** (the first {Q2_LOOP_SAMPLE} of the sample; {s.loop_n} "
+            "forecast by the loop and the one pass):",
+            "",
+            "| Arm | Brier [95% interval] | Log score | n |",
+            "|---|---|---|---|",
+        ]
+        out += [
+            f"| {r.arm}: {q2.ARM_NAMES[r.arm]} | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |"
+            for r in s.loop_arms
+        ]
+        out += [
+            f"| {d.label} | {_signed(d.brier, 4)} (MDE {d.brier.mde:.4f}) | | |"
+            for d in s.loop_diffs
+        ]
+    if s.costs:
+        out += [
+            "",
+            "Cost per question forecast ($0: free model): successful model calls (of which "
+            "research), output tokens, wall seconds.",
+            "",
+            "| Arm | Questions | Calls (research) | Output tokens | Seconds |",
+            "|---|---|---|---|---|",
+        ]
+        out += [
+            f"| {c.arm} | {c.questions} | {c.calls:.1f} ({c.research_calls:.1f}) | "
+            f"{c.output_tokens:,.0f} | {c.seconds:.0f} |"
+            for c in s.costs
+        ]
+    if s.judges:
+        out += [
+            "",
+            "**The judge** (the same free model, El Lahib et al.'s 0 to 4 rubric, against each "
+            "question's open instant, shown the resolution). Major leakage is a score of 3 or 4.",
+            "",
+            "| Arm | Questions judged | Sources | Scores 0/1/2/3/4 | Sources at 3+ | "
+            "Questions with a source at 3+ |",
+            "|---|---|---|---|---|---|",
+        ]
+        out += [
+            f"| {j.arm} | {j.questions} | {j.sources} | {'/'.join(map(str, j.by_score))} | "
+            f"{_pct(j.major_sources, j.sources)} | {_pct(j.major_questions, j.questions)} |"
+            for j in s.judges
+        ]
+    if s.agree is not None:
+        a = s.agree
+        out += [
+            "",
+            (
+                f"**Judge against the hand labels** ({a.n} sources): exact agreement with "
+                if s.agree_by_hand
+                else f"**Judge against the provisional reference labels** ({a.n} sources; a "
+                "second model's rating, not hand labels: see To measure): exact agreement with "
+            )
+            + f"0 and 1 merged {a.exact_merged:.1%}, quadratic weighted kappa {a.qwk:.2f}; "
+            f"on major leakage (3+ against 0 to 2) {a.major_agree:.1%} agreement, "
+            f"kappa {a.major_kappa:.2f} (labels {a.human_major}, judge {a.judge_major} at 3+). "
+            "The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.",
+        ]
+    if s.flagged:
+        out += [
+            "",
+            f"Questions where the judge found a source at 3+ in T (n = {s.flagged_n}), the "
+            "nearest to the paper's selection: "
+            + "; ".join(f"{r.arm} {_est(r.brier, 4)}" for r in s.flagged)
+            + ".",
+        ]
+    out += [
+        "",
+        "Beside the published experiment (not the same protocol): "
+        + "; ".join(f"{k} {v:.3f}" for k, v in PUBLISHED.items())
+        + f" (gap {PUBLISHED['no retrieval'] - PUBLISHED['leaky (scores 3-4)']:.3f}). "
+        f"Here: N {arm['N'].brier.mean:.4f}, O {arm['O'].brier.mean:.4f}, "
+        f"T {arm['T'].brier.mean:.4f} (gap N − T {arm['N'].brier.mean - arm['T'].brier.mean:.4f}).",
+        "",
+        *_q2_verdicts(s),
+    ]
+    return "\n".join(out) + "\n"
+
+
+def _q2_verdicts(s: q2.Q2) -> list[str]:
+    d = {x.label.split(" ")[0]: x.brier for x in s.diffs}
+    lines = ["Predictions stated in PLAN.md before the run:", ""]
+    tn, on = d["T"], d["O"]
+    lines.append(
+        f"- P7 (Q2): retrieval as of today improves Brier by at least 0.05 with the interval "
+        f"below 0: {_held(-tn.mean >= 0.05 and tn.high < 0)}; as of open no better than none by "
+        f"more than 0.02: {_held(-on.mean <= 0.02)}."
+    )
+    j = {x.arm: x for x in s.judges}
+    if "O" in j and "T" in j:
+        t_rate = j["T"].major_questions / j["T"].questions
+        o_rate = j["O"].major_questions / j["O"].questions
+        lines.append(
+            f"- P8 (the judge flags at least 30% of T's questions and under 10% of O's): "
+            f"T {t_rate:.0%} {_held(t_rate >= 0.30)}, O {o_rate:.0%} {_held(o_rate < 0.10)}."
+        )
+    if s.agree is not None:
+        if s.agree_by_hand:
+            lines.append(
+                "- P9 (judge against the hand labels: kappa at least 0.6, "
+                f"major-leak agreement at least 85%): {_held(s.agree.qwk >= 0.6)}, "
+                f"{_held(s.agree.major_agree >= 0.85)}."
+            )
+        else:
+            lines.append(
+                "- P9 (judge against the hand labels: kappa at least 0.6, major-leak agreement "
+                "at least 85%): **not yet tested**; the labels are not hand labels. Against "
+                f"the provisional reference labels: kappa {s.agree.qwk:.2f}, "
+                f"{s.agree.major_agree:.1%}."
+            )
+    if s.loop_diffs:
+        lo = s.loop_diffs[0].brier
+        costs = {c.arm: c for c in s.costs}
+        more = "L" in costs and "O" in costs and costs["L"].calls > costs["O"].calls
+        lines.append(
+            f"- P10 (loop within ±0.02 of the one pass, interval including 0; more calls): "
+            f"{_held(abs(lo.mean) <= 0.02 and lo.low <= 0 <= lo.high)}, {_held(more)}."
+        )
+    edge = {x.label.split(" ")[0]: x.brier for x in s.edge}
+    worse = [a for a in ("N", "O", "L") if a in edge]
+    lines.append(
+        "- P11 (N, O and L all worse than the price, interval above 0; T's point estimate "
+        "above 0): "
+        + ", ".join(f"{a} {_held(edge[a].low > 0)}" for a in worse)
+        + (f", T {_held(edge['T'].mean > 0)}" if "T" in edge else "")
+        + "."
+    )
+    return lines
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -531,7 +865,9 @@ BLOCKS: dict[str, Block] = {
         Block("live-scores", render_live),
         Block("ledgers", render_ledgers),
         Block("standings", render_standings),
+        Block("templates", render_templates),
         Block("replay", render_replay),
+        Block("leakage", render_leakage),
     )
 }
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from augur.clock import Clock
@@ -112,12 +113,28 @@ class CallResult:
     route: Route
 
 
+ModelGate = Callable[[Route, int], str | None]
+"""Why ``route`` may not answer question ``question_id``, or ``None`` if it may."""
+
+# Roles a model gate does not apply to: the leakage judge reads the outcome
+# by design and never forecasts.
+UNGATED_ROLES = frozenset({"judge"})
+
+
 class CallRecorder:
-    def __init__(self, router: Router, ledger: Ledger, clock: Clock, budget: Budget) -> None:
+    def __init__(
+        self,
+        router: Router,
+        ledger: Ledger,
+        clock: Clock,
+        budget: Budget,
+        model_gate: ModelGate | None = None,
+    ) -> None:
         self.router = router
         self._ledger = ledger
         self._clock = clock
         self.budget = budget
+        self._model_gate = model_gate
 
     async def complete(
         self, ctx: CallContext, request: LlmRequest, source_ids: list[str]
@@ -140,6 +157,15 @@ class CallRecorder:
                 skipped.append(f"{route.key}: {why_not}")
                 last_skipped = (route, self.router.unavailable_kind(route) or "unavailable")
                 continue
+            if self._model_gate is not None and ctx.role not in UNGATED_ROLES:
+                too_new = self._model_gate(route, ctx.question_id)
+                if too_new is not None:
+                    # A backtest never lets a fallback model newer than the
+                    # question answer it: the route is passed over for this
+                    # question only.
+                    skipped.append(f"{route.key}: {too_new}")
+                    last_skipped = (route, "too_new")
+                    continue
             if floor is not None and not floor[1](route):
                 if moved_from is not None:
                     previous: str | None = moved_from[0].key

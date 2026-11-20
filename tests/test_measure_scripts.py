@@ -257,3 +257,40 @@ def test_throttled_simulation_with_tiny_gaps_catches_everything() -> None:
     )
     assert res.caught == 1.0
     assert res.worst_left >= 90 - 8 - 1
+
+
+# --- hand labels for the leakage judge --------------------------------------
+
+ahl = _load("apply_hand_labels")
+
+
+def _labels(scores: list[Any]) -> dict[str, Any]:
+    return {
+        "rubric": "r",
+        "sample": "s",
+        "by_hand": False,
+        "labels": [
+            {"arm": "O", "question_id": i, "source_id": f"src_{i}", "score": v, "note": ""}
+            for i, v in enumerate(scores)
+        ],
+    }
+
+
+def test_hand_labels_are_installed_with_the_flag_and_rater() -> None:
+    out = ahl.merge(_labels([0, 4, 3]), _labels([1, 1, 1]), "a person")
+    assert out["by_hand"] is True
+    assert "a person" in out["rater"]
+    assert [x["score"] for x in out["labels"]] == [0, 4, 3]
+
+
+@pytest.mark.parametrize("scores", [[0, None, 3], [0, 5, 3], [0, True, 3], [0, 2.0, 3]])
+def test_hand_labels_refuse_a_missing_or_invalid_score(scores: list[Any]) -> None:
+    with pytest.raises(ahl.LabelError, match="integer 0 to 4"):
+        ahl.merge(_labels(scores), _labels([1, 1, 1]), "a person")
+
+
+def test_hand_labels_refuse_a_different_sample_or_no_rater() -> None:
+    with pytest.raises(ahl.LabelError, match="same order"):
+        ahl.merge(_labels([0, 1]), _labels([1, 1, 1]), "a person")
+    with pytest.raises(ahl.LabelError, match="rater"):
+        ahl.merge(_labels([0, 1, 2]), _labels([1, 1, 1]), " ")

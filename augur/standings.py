@@ -21,6 +21,7 @@ import os
 import re
 import sqlite3
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ from pydantic import BaseModel, ConfigDict
 from augur.clock import Clock, SystemClock, parse_iso, to_iso
 from augur.config import Settings
 from augur.errors import ConfigError, MetaculusError
+from augur.llm.catalog import Catalog, CatalogEntry
 from augur.log import get_logger
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
@@ -524,6 +526,192 @@ def _render_missed(
 # -- command ---------------------------------------------------------------------------
 
 
+# -- template bots by model, the agent harness, the proposed floor -----------------------
+
+EFFORT_SUFFIX = re.compile(r"-(?:minimal|low|medium|high|xhigh)$")
+PLANNER_INPUT_TOKENS = 1_500
+BRIEF_INPUT_TOKENS = 6_000
+DRAW_INPUT_TOKENS = 3_000
+ROUND_QUESTIONS = 60
+_TEMPLATE_PARTS = re.compile(r"^metac-(?!agent-)(?P<model>.+?)\+asknews(?P<variant>.*)$")
+
+
+@dataclass(frozen=True)
+class TemplateRow:
+    name: str
+    label: str  # the model as the bot's name spells it, e.g. ``claude-opus-5-5-high``
+    key: str  # the label without a reasoning-effort suffix: ``claude-opus-5-5``
+    variant: str  # text after ``+asknews`` (an experiment), empty for the plain template
+    rank: int | None
+    entry: Entry
+
+    @property
+    def average(self) -> float | None:
+        return self.entry.average
+
+
+def template_parts(name: str) -> tuple[str, str] | None:
+    """``metac-X+asknews<variant>`` -> ``(X, variant)``; None for anything else.
+
+    ``metac-agent-*`` are the agent harness, not templates; other ``metac-*``
+    bots (autocast, claude-code, codex, fusion, deepnews) have no ``+asknews``.
+    """
+    match = _TEMPLATE_PARTS.match(name)
+    return (match["model"], match["variant"]) if match else None
+
+
+def agent_model(name: str) -> str | None:
+    return name[len("metac-agent-") :] if name.startswith("metac-agent-") else None
+
+
+def _template_rows(round_: RoundStandings) -> list[TemplateRow]:
+    rows: list[TemplateRow] = []
+    for e in round_.board().entries:
+        if e.user is None or e.average is None:
+            continue
+        parts = template_parts(e.user.username)
+        if parts is None:
+            continue
+        label, variant = parts
+        rows.append(
+            TemplateRow(e.user.username, label, EFFORT_SUFFIX.sub("", label), variant, e.rank, e)
+        )
+    return rows
+
+
+def template_table(round_: RoundStandings) -> list[TemplateRow]:
+    """Every Metaculus template bot, highest average spot peer score first."""
+    return sorted(_template_rows(round_), key=lambda r: (-(r.average or 0.0), r.name))
+
+
+def _plain_by_key(rows: Iterable[TemplateRow]) -> dict[str, TemplateRow]:
+    """The plain (no experiment suffix) template per model; the unsuffixed label wins a tie."""
+    chosen: dict[str, TemplateRow] = {}
+    for r in rows:
+        if r.variant:
+            continue
+        have = chosen.get(r.key)
+        if have is None or (r.label == r.key and have.label != have.key):
+            chosen[r.key] = r
+    return chosen
+
+
+@dataclass(frozen=True)
+class AgentPair:
+    model: str
+    agent: Entry
+    template: TemplateRow
+
+    @property
+    def difference(self) -> float:
+        assert self.agent.average is not None
+        assert self.template.average is not None
+        return self.agent.average - self.template.average
+
+
+def agent_vs_template(round_: RoundStandings) -> tuple[list[AgentPair], list[str], list[str]]:
+    """``(pairs, agents without a template, templates without an agent)``.
+
+    ``metac-agent-X`` matches the plain template whose model, less any effort
+    suffix, is ``X``. Pairs are sorted by the difference, largest first.
+    """
+    plain = _plain_by_key(_template_rows(round_))
+    pairs: list[AgentPair] = []
+    lone_agents: list[str] = []
+    used: set[str] = set()
+    for e in round_.board().entries:
+        if e.user is None:
+            continue
+        model = agent_model(e.user.username)
+        if model is None or e.average is None:
+            continue
+        template = plain.get(EFFORT_SUFFIX.sub("", model))
+        if template is None:
+            lone_agents.append(e.user.username)
+        else:
+            pairs.append(AgentPair(model, e, template))
+            used.add(template.key)
+    lone_templates = sorted(r.name for k, r in plain.items() if k not in used)
+    pairs.sort(key=lambda p: -p.difference)
+    return pairs, sorted(lone_agents), lone_templates
+
+
+@dataclass(frozen=True)
+class AdmittedRoute:
+    template: TemplateRow
+    listed_ids: tuple[str, ...]  # OpenRouter ids matched by name; empty: not listed
+    priced_id: str | None
+    usd_per_million_input: float | None
+    usd_per_million_output: float | None
+    per_question: float | None
+
+    @property
+    def per_round(self) -> float | None:
+        return None if self.per_question is None else self.per_question * ROUND_QUESTIONS
+
+
+def question_tokens(draws: int) -> tuple[int, int]:
+    """Worst-case ``(input, output)`` tokens for one question: planner, brief, ``draws`` draws."""
+    from augur.agents.forecaster import FORECAST_MAX_TOKENS
+    from augur.agents.researcher import BRIEF_MAX_TOKENS, PLAN_MAX_TOKENS
+
+    return (
+        PLANNER_INPUT_TOKENS + BRIEF_INPUT_TOKENS + draws * DRAW_INPUT_TOKENS,
+        PLAN_MAX_TOKENS + BRIEF_MAX_TOKENS + draws * FORECAST_MAX_TOKENS,
+    )
+
+
+def worst_case_cost(
+    entries: Sequence[CatalogEntry], draws: int
+) -> tuple[CatalogEntry, float] | None:
+    """The dearest priced listing among ``entries`` and one question's worst-case cost on it."""
+    tokens_in, tokens_out = question_tokens(draws)
+    best: tuple[CatalogEntry, float] | None = None
+    for e in entries:
+        if e.usd_per_million_input is None or e.usd_per_million_output is None:
+            continue
+        cost = (tokens_in * e.usd_per_million_input + tokens_out * e.usd_per_million_output) / 1e6
+        if best is None or cost > best[1]:
+            best = (e, cost)
+    return best
+
+
+def admitted_by_template(
+    round_: RoundStandings, catalog: Catalog, draws: int | None = None
+) -> tuple[list[AdmittedRoute], list[TemplateRow], list[tuple[str, TemplateRow | None]]]:
+    """The proposed floor: admit a model iff its plain template's average is >= 0.
+
+    Returns ``(admitted, rejected, frontier)``. ``frontier`` lists every
+    ``FRONTIER_TIER`` entry with its plain template (None: no template evidence).
+    """
+    from augur.llm.registry import FRONTIER_TIER, bare_model_name
+
+    if draws is None:
+        draws = int(Settings.model_fields["forecasters"].default)
+    plain = _plain_by_key(_template_rows(round_))
+    admitted: list[AdmittedRoute] = []
+    rejected: list[TemplateRow] = []
+    for row in sorted(plain.values(), key=lambda r: (-(r.average or 0.0), r.name)):
+        if (row.average or 0.0) < 0:
+            rejected.append(row)
+            continue
+        listed = catalog.same_model(row.key)
+        priced = worst_case_cost(listed, draws)
+        admitted.append(
+            AdmittedRoute(
+                template=row,
+                listed_ids=tuple(sorted(e.id for e in listed)),
+                priced_id=priced[0].id if priced else None,
+                usd_per_million_input=priced[0].usd_per_million_input if priced else None,
+                usd_per_million_output=priced[0].usd_per_million_output if priced else None,
+                per_question=priced[1] if priced else None,
+            )
+        )
+    keyed = {bare_model_name(k): r for k, r in plain.items()}
+    frontier = [(name, keyed.get(name)) for name in sorted(FRONTIER_TIER)]
+    return admitted, rejected, frontier
+
+
 def add_parser(subparsers: Any) -> argparse.ArgumentParser:
     sp: argparse.ArgumentParser = subparsers.add_parser(
         "standings",
@@ -566,4 +754,11 @@ async def main(args: argparse.Namespace, settings: Settings) -> int:
         args.out.write_text(snapshot_text(round_), encoding="utf-8")
     outcomes = read_outcomes(ledgers) if ledgers else None
     print(render(round_, outcomes), end="")
+    if round_.board().finalized:
+        # Every template by model and the agent-minus-template gap for each model pair.
+        from augur.llm.catalog import load_snapshot as load_catalog
+        from augur.report import templates_markdown
+
+        print(f"\n### Template bots and the agent harness ({round_.round.slug})\n")
+        print(templates_markdown(round_, load_catalog()), end="")
     return 0

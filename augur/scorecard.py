@@ -182,6 +182,8 @@ class _Candidate:
 def load(paths: Sequence[Path], *, modes: Sequence[str] | None = None) -> Loaded:
     """Every question with an Augur aggregate in the ledgers at ``paths``.
 
+    Without ``modes`` every mode but ``unrestricted`` (Q2's leaky arm) is read.
+
     Each question is counted once however many ledgers hold it. Its forecast
     is the posted one if any ledger posted it, otherwise the latest; the
     order of ``paths`` never decides. Ledgers from before schema 5 (no
@@ -232,7 +234,9 @@ def _has_table(conn: sqlite3.Connection, name: str) -> bool:
 
 
 def _candidates(conn: sqlite3.Connection, modes: Sequence[str] | None) -> list[_Candidate]:
-    mode_sql = ""
+    # An unrestricted run read sources as of the day it ran: it is scored
+    # only when asked for by name, never mixed into a default scorecard.
+    mode_sql = " AND r.mode != 'unrestricted'"
     params: list[Any] = []
     if modes:
         mode_sql = f" AND r.mode IN ({', '.join('?' for _ in modes)})"

@@ -1,0 +1,138 @@
+2026-06-21-llm.json: 138 questions
+  kept     138
+  sample    64 (first 64 by question id)
+64 planned question(s) in data/backtest/m6-c2-queries.json; 0 unplanned
+[1/62] polymarket:0xef720745be0a15b63c392854dacae4227a9deafe11fdf6afe79bdf45754dd10a p=0.97 outcome=1 (76 s)
+[2/62] polymarket:0x66bbf6d55e0296278858b3147689f3df9259374f158f9f028b608baa322a639c p=0.42 outcome=1 (53 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:40:27.268991Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:40:37.278315Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:40:47.290258Z"}
+{"error": "Wayback request for 'https://www.gao.gov/blog/what-impoundment-control-act-and-what-gaos-role' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:40:47.290409Z", "url": "https://www.gao.gov/blog/what-impoundment-control-act-and-what-gaos-role"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:40:57.303159Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:41:07.314954Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:41:17.318384Z"}
+{"error": "Wayback request for 'https://www.cbpp.org/research/federal-budget/faqs-on-impoundment-presidential-actions-are-constrained-by-long-standing' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:41:17.318505Z", "url": "https://www.cbpp.org/research/federal-budget/faqs-on-impoundment-presidential-actions-are-constrained-by-long-standing"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:41:27.330540Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:41:37.342505Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:41:47.355238Z"}
+{"error": "Wayback request for 'https://www.gao.gov/products/b-331564' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:41:47.355374Z", "url": "https://www.gao.gov/products/b-331564"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:41:57.390671Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:42:07.402637Z"}
+[3/62] metaculus:38166 p=0.10 outcome=0 (202 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:43:49.279504Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:43:59.291009Z"}
+[4/62] metaculus:43343 p=0.35 outcome=0 (148 s)
+[5/62] polymarket:0x3f0bc2757babb8bb9971c9f782fe81f9db734c12d84822f1120a90681c991ff8 p=0.35 outcome=0 (69 s)
+[6/62] polymarket:0xd73237bb27cdc455578e9a0788c358bd79609d394f43a270bde10cde4788105f p=0.60 outcome=0 (75 s)
+[7/62] metaculus:38940 p=0.02 outcome=0 (105 s)
+[8/62] manifold:dSaVvMLpLbwaLLUGfGfK p=0.03 outcome=0 (98 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:52:02.864224Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:52:12.875191Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:52:22.886221Z"}
+{"error": "Wayback request for 'https://www.reuters.com/markets/commodities/uae-says-it-quits-opec-opec-statement-2026-04-28/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:52:22.886362Z", "url": "https://www.reuters.com/markets/commodities/uae-says-it-quits-opec-opec-statement-2026-04-28/"}
+[9/62] metaculus:43333 p=0.05 outcome=0 (92 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:34.718489Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:44.729031Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:53:54.741150Z"}
+{"error": "Wayback request for 'https://democrats.org/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:53:54.741295Z", "url": "https://democrats.org/"}
+[10/62] polymarket:0x399b69600812f9997ee0dcac06c74c9351f230baa53765eacbc443a77bc520b9 p=0.92 outcome=0 (80 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:54:55.191841Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:55:05.198304Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:55:15.206086Z"}
+{"error": "Wayback request for 'https://rivian.com/newsroom' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:55:15.206227Z", "url": "https://rivian.com/newsroom"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:55:25.217300Z"}
+[11/62] manifold:YEdvVluF5xAGBq6lrvfD p=0.18 outcome=1 (142 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:57:17.665514Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:57:27.676972Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T04:57:40.854187Z"}
+{"error": "Wayback request for 'https://www.landtag.sachsen-anhalt.de/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T04:57:40.854333Z", "url": "https://www.landtag.sachsen-anhalt.de/"}
+[12/62] polymarket:0x5187c6fefe08cf4513e08dd31a514b698aaebc18c259b9a98c8170cca2b7d6e8 p=0.01 outcome=0 (103 s)
+[13/62] metaculus:42151 p=0.02 outcome=0 (63 s)
+[14/62] manifold:RdhCc6L2dl p=0.98 outcome=1 (104 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:01:47.348322Z"}
+[15/62] polymarket:0x280f534844278583edf4371c96e28dfe4c03bd93ba3cbfce9175ee3821dfa12f p=0.08 outcome=1 (55 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:02:41.929866Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:02:51.942057Z"}
+[16/62] metaculus:39142 p=0.02 outcome=0 (85 s)
+[17/62] metaculus:43283 p=0.08 outcome=1 (112 s)
+[18/62] manifold:ZQvUHx5d2tphDz1tJSMM p=0.03 outcome=0 (112 s)
+[19/62] manifold:0PE59gu09y p=0.25 outcome=1 (123 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:09:54.050522Z"}
+[20/62] polymarket:0xa4d72632ac0ddadcac5247ffc586a193f1bc3bc839cf9ce993c2471e0d599cca p=0.24 outcome=1 (76 s)
+[21/62] manifold:hdNqANszg0 p=0.02 outcome=0 (68 s)
+[22/62] metaculus:40938 p=0.55 outcome=0 (78 s)
+[23/62] manifold:2lZdlsyUPh p=0.15 outcome=1 (93 s)
+[24/62] polymarket:0x672d648903d96946882cd200c78253414f3bebf5143dab64add5fc0d23077f96 p=0.03 outcome=0 (52 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:16:01.030461Z"}
+[25/62] polymarket:0xde6e8331eaaf0b212f688a04f6c4ff5f895ab633a467cb3e9f3da48fce7c6801 p=0.22 outcome=0 (84 s)
+[26/62] manifold:NqZNZgILEL p=0.01 outcome=0 (55 s)
+[27/62] manifold:n8ZROwk6GKcLyurigsf1 p=0.78 outcome=1 (64 s)
+[28/62] polymarket:0x0efcc493f7e7578cd5808b29e08c2535dee61c2a1fe841696e76e7892b29cca8 p=0.18 outcome=1 (71 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:20:35.731501Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:20:45.740481Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:20:55.750308Z"}
+{"error": "Wayback request for 'https://en.wikipedia.org/wiki/Pope_Paul_VI' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:20:55.750438Z", "url": "https://en.wikipedia.org/wiki/Pope_Paul_VI"}
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:21:05.761842Z"}
+[29/62] metaculus:43435 p=0.97 outcome=1 (100 s)
+[30/62] polymarket:0x174018cba2df7afe76f434e8ca93e55c76f2eb13015a5caf941ce6d270ba6264 p=0.78 outcome=1 (55 s)
+[31/62] polymarket:0x91b6939a95e9626fe3598483d37f2ad80fccac3d8a7a2ac8c9a4d9a4007661df p=0.03 outcome=0 (54 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:24:04.417507Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:24:14.430290Z"}
+[32/62] polymarket:0x9777a1c22720f62ad2f4c6d9f8434d97ca898c53234f13b7b04072e5c29f1335 p=0.02 outcome=0 (104 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:25:48.020488Z"}
+[33/62] metaculus:43525 p=0.18 outcome=0 (68 s)
+[34/62] manifold:ZhSyLhtQ0Q p=0.99 outcome=1 (51 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:27:47.945348Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:27:57.956952Z"}
+[35/62] metaculus:41090 p=0.28 outcome=0 (121 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:29:49.059201Z"}
+[36/62] polymarket:0xba8526e4bf87c26c043d7048d364508d066117c173a91f2c56a82128fdc9102c p=0.97 outcome=0 (64 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:30:53.410517Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:31:03.421970Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:31:13.434063Z"}
+{"error": "Wayback request for 'https://www.fifa.com/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:31:13.434209Z", "url": "https://www.fifa.com/"}
+[37/62] polymarket:0x802b8daacb36b5ea95011670cd004bffe3df70bc9a774da929fbd99074411e91 p=0.12 outcome=0 (81 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:32:14.048037Z"}
+[38/62] manifold:RcNs5ch6qU p=0.03 outcome=0 (73 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:33:26.692826Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:33:36.704519Z"}
+[39/62] metaculus:42827 p=0.35 outcome=1 (81 s)
+[40/62] polymarket:0x80b3af88cb991980e8da1ce86b9794a0957f96ec98c29319dd7ba65e9744d82b p=0.20 outcome=1 (52 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:35:39.689432Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:35:49.694304Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:35:59.706007Z"}
+{"error": "Wayback request for 'https://www.wimbledon.com/index.html' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:35:59.706131Z", "url": "https://www.wimbledon.com/index.html"}
+[41/62] polymarket:0x00de24efbe083e61da20587be324b35e842b51f330c4f5c55942bf8681cd0857 p=0.20 outcome=0 (100 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:37:20.043418Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:37:30.054779Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:37:40.066164Z"}
+{"error": "Wayback request for 'https://www.noaa.gov/news-release/noaa-predicts-below-normal-2026-atlantic-hurricane-season' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:37:40.066310Z", "url": "https://www.noaa.gov/news-release/noaa-predicts-below-normal-2026-atlantic-hurricane-season"}
+[42/62] metaculus:43703 p=0.28 outcome=0 (81 s)
+[43/62] polymarket:0x4427ce55f5fc0cc00f2708f914c585442bce7eede689d5daec4671449dc25f8d p=0.20 outcome=0 (49 s)
+[44/62] manifold:Jc4rRAQpvCXE9tCEfa4n p=0.01 outcome=0 (63 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:40:32.860946Z"}
+[45/62] polymarket:0x538ad2df74cdacae4dd049e16c529921f3d09f10e89400b9f17d970ea4200099 p=0.12 outcome=1 (72 s)
+[46/62] polymarket:0xd4a3de1964b1f3fa1edeca40dbc3ef6663a56fda84e804066c23096b615904f9 p=0.38 outcome=1 (51 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:42:36.477913Z"}
+[47/62] polymarket:0x4168c55800f52740c0ca9c326569455ecd66075071e2825f4f4938bed2fafff4 p=0.01 outcome=0 (84 s)
+{"attempt": 0, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:44:00.774422Z"}
+{"attempt": 1, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:44:10.786560Z"}
+{"attempt": 2, "error": "ConnectTimeout: ", "event": "wayback_transport_error", "level": "warning", "timestamp": "2026-11-20T05:44:20.798161Z"}
+{"error": "Wayback request for 'https://www.fifa.com/' failed after 3 attempts (ConnectTimeout: ); retry later or run without the wayback searcher", "event": "wayback_capture_failed", "level": "warning", "timestamp": "2026-11-20T05:44:20.798300Z", "url": "https://www.fifa.com/"}
+[48/62] polymarket:0x5bf2c54fb4ca9d63427816cd88ab8f7b5ede5b2b9166c366a940f1a0d6d0a290 p=0.12 outcome=0 (101 s)
+[49/62] manifold:HvTJLPAMNrSMoSORu3tm p=0.08 outcome=1 (52 s)
+[50/62] manifold:ECdCgusP8y p=0.95 outcome=1 (66 s)
+[51/62] infer:1653 p=0.02 outcome=0 (43 s)
+[52/62] manifold:5C022SpgR6 p=0.30 outcome=0 (62 s)
+[53/62] polymarket:0x98b595f40feccf49ded360d1eb15b9bb81041cc6006da00441a743dcef74f0e7 p=0.02 outcome=0 (76 s)
+[54/62] manifold:yTCCaTUbAtJWWFo1dGzD p=0.08 outcome=0 (88 s)
+[55/62] infer:1654 p=0.01 outcome=0 (57 s)
+[56/62] polymarket:0xe7d699841d03f695da20c8935f4cdf809057f3b27fa4f382e327ff731b8d75a7 p=0.01 outcome=0 (81 s)
+[57/62] metaculus:43707 p=0.07 outcome=0 (82 s)
+[58/62] manifold:dP58EZ5ntQ p=0.01 outcome=0 (49 s)
+[59/62] metaculus:43496 p=0.12 outcome=0 (59 s)
+[60/62] polymarket:0xa34f2fb5664f2cc079ba616597ab300bbbe6dd91e3d597f5bc45693c6ea20082 p=0.35 outcome=1 (58 s)
+[61/62] manifold:UsyCqAyEpP p=0.15 outcome=0 (74 s)
+[62/62] polymarket:0x619165fe3568255c0a048d9350b5011c19f17bcec0474e867a1a983e6411ceff p=0.78 outcome=1 (103 s)
+ledger: /tmp/m6/m6-c2-open.sqlite (run run_8a39a522042c4f6ba4b5): 62 forecast, 2 done earlier, 0 skipped, 0 failed
+EXIT 0

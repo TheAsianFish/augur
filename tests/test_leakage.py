@@ -191,6 +191,10 @@ def _plant(path: Path, mode: RunMode, kind: str) -> None:
         ("undated_source", RunMode.BACKTEST),
         ("unadmitted_use", RunMode.LIVE),
         ("model_too_new", RunMode.BACKTEST),
+        ("late_source", RunMode.UNRESTRICTED),
+        ("undated_source", RunMode.UNRESTRICTED),
+        ("unadmitted_use", RunMode.UNRESTRICTED),
+        ("model_too_new", RunMode.UNRESTRICTED),
     ],
 )
 def test_a_ledger_holding_a_violation_fails_the_scan(
@@ -202,6 +206,100 @@ def test_a_ledger_holding_a_violation_fails_the_scan(
     # _plant drops the triggers, as a foreign writer might; that is reported too.
     assert [v.kind for v in violations if v.kind != "missing_guard"] == [kind]
     assert {v.kind for v in violations} >= {"missing_guard"}
+
+
+def _record_call(ledger: Ledger, run_id: str, qid: int, role: str, release: date) -> None:
+    ledger.record_call(
+        run_id=run_id,
+        question_id=qid,
+        role=role,
+        member=0,
+        provider="replay",
+        model="acme/new",
+        model_release_date=release,
+        request_hash="h",
+        request={},
+        response_text="",
+        input_tokens=0,
+        output_tokens=0,
+        cost_usd=0,
+        latency_ms=0,
+        error=None,
+        started_at=T0,
+        source_ids=[],
+    )
+
+
+@pytest.mark.parametrize("mode", [RunMode.BACKTEST, RunMode.UNRESTRICTED])
+def test_a_judge_call_by_a_too_new_model_is_not_a_violation(tmp_path: Path, mode: RunMode) -> None:
+    ledger, run_id, qid = _ledger_with_question(tmp_path, mode)
+    _record_call(ledger, run_id, qid, "judge", date(2099, 1, 1))
+    ledger.close()
+    assert scan_ledger(tmp_path / f"{mode.value}.sqlite") == []
+
+
+@pytest.mark.parametrize("role", ["forecaster", "planner", "researcher", "loop"])
+def test_every_other_role_by_a_too_new_model_is_a_violation(tmp_path: Path, role: str) -> None:
+    ledger, run_id, qid = _ledger_with_question(tmp_path, RunMode.UNRESTRICTED)
+    _record_call(ledger, run_id, qid, role, date(2099, 1, 1))
+    ledger.close()
+    assert [v.kind for v in scan_ledger(tmp_path / "unrestricted.sqlite")] == ["model_too_new"]
+
+
+def test_an_unrestricted_source_between_the_open_and_the_cutoff_is_admitted(
+    tmp_path: Path,
+) -> None:
+    """The leaky arm reads as of now: a page dated after the question opened is fine."""
+    ledger, run_id, qid = _ledger_with_question(tmp_path, RunMode.UNRESTRICTED)
+    opened = T0 - timedelta(days=30)
+    between = source(T0 - timedelta(days=1), retrieved_at=T0)
+    assert between.published_at is not None
+    assert between.published_at > opened
+    ledger.record_source(between)
+    decision = admit_source(between, CUTOFF, RunMode.UNRESTRICTED)
+    assert decision.admitted
+    ledger.record_admission(run_id, qid, decision)
+    ledger.close()
+    assert scan_ledger(tmp_path / "unrestricted.sqlite") == []
+
+
+def test_the_same_source_in_a_backtest_is_late(tmp_path: Path) -> None:
+    ledger, run_id, qid = _ledger_with_question(tmp_path, RunMode.BACKTEST)  # cutoff = open = T0
+    late = source(T0 + timedelta(days=1), retrieved_at=T0)
+    ledger.record_source(late)
+    assert not admit_source(late, CUTOFF, RunMode.BACKTEST).admitted
+    with pytest.raises(LeakageError):
+        ledger.record_admission(run_id, qid, Admission(late.source_id, True, "forged"))
+    ledger.close()
+
+
+def test_the_ledger_refuses_late_and_undated_sources_in_an_unrestricted_run(
+    tmp_path: Path,
+) -> None:
+    ledger, run_id, qid = _ledger_with_question(tmp_path, RunMode.UNRESTRICTED)
+    late = source(AFTER, retrieved_at=AFTER)
+    undated = source(None, retrieved_at=T0, url="https://example.org/undated")
+    unproven = source(
+        BEFORE, retrieved_at=T0, evidence=DateEvidence.NONE, url="https://example.org/unproven"
+    )
+    for s in (late, undated, unproven):
+        ledger.record_source(s)
+        with pytest.raises(LeakageError):
+            ledger.record_admission(run_id, qid, Admission(s.source_id, True, "forged"))
+        # The honest refusal is stored.
+        ledger.record_admission(run_id, qid, admit_source(s, CUTOFF, RunMode.UNRESTRICTED))
+    ledger.close()
+    assert scan_ledger(tmp_path / "unrestricted.sqlite") == []
+
+
+def test_unrestricted_is_a_run_mode_and_needs_proof() -> None:
+    assert RunMode.UNRESTRICTED.needs_proof
+    assert RunMode.BACKTEST.needs_proof
+    assert not RunMode.LIVE.needs_proof
+    assert not RunMode.DRY_RUN.needs_proof
+    assert not admit_model(None, T0, RunMode.UNRESTRICTED).admitted
+    assert not admit_model(T0.date(), T0, RunMode.UNRESTRICTED).admitted
+    assert admit_model(date(2024, 9, 19), T0, RunMode.UNRESTRICTED).admitted
 
 
 def test_a_ledger_without_its_guards_fails_the_scan(tmp_path: Path) -> None:

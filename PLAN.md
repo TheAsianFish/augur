@@ -188,6 +188,105 @@ searcher and the exact-price blend became the live default (`--no-markets`,
 `--no-blend`). C3 still has no resolved question, so research depth is not
 yet measured on live research.
 
+**M6's predictions and decision rules, committed 2026-11-20 before any
+M6 run.** Q2's prediction above stands unedited; this fixes how it is
+tested, and adds the judge, the research loop and the edge over the price.
+
+The design:
+
+- **Corpus:** C2 again (ForecastBench 2026-06-21, market questions resolved
+  to 0 or 1, frozen 2026-06-11 00:00 UTC, 138 eligible), so the
+  no-retrieval arm already exists. The sample is fixed now: the first 64
+  eligible questions in question-id order (`--sample 64`; the id is a hash
+  of source and id, so the order is unrelated to topic or outcome). The
+  loop runs on the first 40 of those 64.
+- **Model:** `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04,
+  before the freeze) for every role, 3 draws, median, as in C2. The
+  release gate now checks every route and role at call time, not only the
+  first answering model.
+- **Searchers:** Wikipedia (the revision current at the cutoff) and
+  Wayback (the newest capture at or before the cutoff of each non-market
+  URL the question names; market pages are left out, since the price is
+  M5's arm). AskNews is not available here.
+- **Queries:** planned once per question, as of its open instant, and
+  shared by every arm (`--plan-out`, then `--queries`), so the arms differ
+  only in the instant the searches read (or in the loop).
+- **Arms:** N, no retrieval (M5's C2 arm (b)); O, one pass as of open;
+  T, one pass as of the moment the run reaches the question (an
+  `unrestricted` run, never scored as a backtest); L, the research loop as
+  of open, at most 3 searches, each followed by a written belief, what is
+  still unknown and the next query.
+- **Judge:** the same free model with El Lahib et al.'s 0 to 4 rubric,
+  given the question, the cutoff, the resolution and every source the
+  forecasters were shown; "major leakage" is a score of 3 or 4, as in
+  the paper.
+- **Hand labels:** 40 sources, 20 from O and 20 from T, drawn by a hash of
+  the source id before any judge score is read, labelled from the source
+  text against the question and its outcome.
+
+Predictions:
+
+| # | Prediction |
+|---|------------|
+| P7 | Q2 as written, tested on the 64: Brier(N) − Brier(T) is at least 0.05 with the interval of Brier(T) − Brier(N) below 0 (held if both); Brier(N) − Brier(O) is at most 0.02 (held if the point estimate is). |
+| P8 | The judge flags major leakage (a source at 3 or 4) for at least 30% of T's questions and fewer than 10% of O's (the residual leak rate). |
+| P9 | The judge agrees with the hand labels at a quadratic weighted kappa of at least 0.6 and on "3 or 4" against "0 to 2" for at least 85% of the 40. |
+| P10 | The loop is within ±0.02 Brier of the one pass on the 40 (interval of Brier(L) − Brier(O) includes 0), and costs more model calls a question. |
+| P11 | Edge over the price, on priced questions: N, O and L are all worse than the price as of the freeze (interval of arm − price above 0); T's point estimate is above 0 too. |
+
+**Decision rules.** The loop becomes the live default only under M7's
+replacement rule (interval of Brier(L) − Brier(O) below 0). Every priced
+table headlines the edge over the price, with priced and unpriced
+questions reported apart. What these numbers cannot say: they are one
+free model on one question set; El Lahib et al.'s leaky arm keeps only
+documents their judge rated 3 or 4, while T is naive retrieval as of
+today, so T's gap is expected to be smaller than their 0.244 to 0.108.
+
+**M6's results (2026-11-20; RESULTS.md, the predictions above unedited).**
+P7 held both ways: researched as of today the bot scores 0.063 against
+0.205 with no retrieval (0.142 better [0.074, 0.217], about El Lahib et
+al.'s 0.136), and as of open 0.189, no better than none by more than 0.02
+(−0.016 [−0.050, +0.017]). P8 held: the judge found a source at 3 or 4
+for 40 of 64 questions in T and 1 of 64 in O (a June Wikipedia revision
+rendered with a November "as of" count). P9 is not yet tested: it is
+stated against hand labels, and the 40 labels are a provisional rating by
+a second model (against it, kappa 0.90 and 39 of 40 on "3 or 4"); the
+hand labels are under To measure. P10 failed: the loop was 0.026
+worse than the one pass [−0.005, +0.060] for 6 calls a question instead
+of 4, so the one pass stays the default. P11 held for N, O and L (each
+worse than the as-of price) and failed for T, whose point estimate is
+below the price (−0.046 [−0.117, +0.022]): the leak alone makes the bot
+look level with the market. Past Metaculus tournaments could not be a
+corpus (a bot token sees no resolutions; 0 of 269 resolved posts kept).
+
+**Proposed submit floor, re-based on the latest round (2026-11-20; for
+the maintainer to approve, not applied in code).** The tier
+`frontier-2026-11b` is argued from the Spring 2026 survey, and the
+November leaderboard has overtaken it: in the finalized MiniBench
+2026-11-02 round only 4 of 54 plain template bots averaged at or above 0,
+and the templates on last year's flagships sit well below it
+(`augur standings`, RESULTS.md "Template bots by model"). The proposal:
+
+- **Rule:** a model is admitted only if its Metaculus template bot's
+  average spot peer score in the latest finalized MiniBench round is at
+  or above 0. The tier is renamed at each review and the ledger records
+  the name, as now.
+- **Admitted on 2026-11-02's evidence:** `claude-opus-5-5` (+3.66),
+  `gemini-3-8-flash` (+2.76), `claude-sonnet-5-5` (+2.39),
+  `claude-haiku-5-5` (+0.87). Every interval includes 0, so this is the
+  weakest rule the evidence supports, not proof any of them adds value.
+- **Dropped for want of current evidence:** `gpt-5`, `gpt-5-1`,
+  `gemini-2-5-pro`, `claude-opus-4-1`, `claude-sonnet-4-5` (no template
+  in the round), and the "GPT-5.4, r = +0.42" justification for
+  `gpt-5-4`, which also has no template there.
+- **Cost:** the worst case of one 60-question round on each admitted
+  route is printed beside the table (from the agents' token ceilings and
+  OpenRouter's list prices): about $37 on Opus 5.5, $18 on Sonnet 5.5,
+  $7.6 on Gemini 3.8 Flash and $0.9 on Haiku 5.5, against a key that
+  reports a $1 limit. Nothing is spent until the maintainer approves a
+  route and the key covers it; the scored round with `augur baseline`
+  beside it stays under To measure until then.
+
 **Status after M4 (2026-11-19).** Q1: *not yet resolvable*; no live
 question with both an Augur and a shadow-template forecast has resolved,
 and the floor has kept Augur out of scored rounds until a frontier model
@@ -397,12 +496,16 @@ and the ForecastBench leaderboard figures could not be read at the source.
 | Best template bot, same tournament | `metac-gpt-5-1-high+asknews`: 11.32 [7.18, 15.45], 18th of 173 | Same | Same |
 | Best open-source bot, same tournament | nostreambot, 10th or 11th (the post gives both), MIT licence, model ensemble with median | Same | Same |
 | Professional forecasters | Top-10 bot team minus pro team: −1.25 head-to-head points per question, 95% CI [−4.87, 2.37], 99 shared questions (not significant) | Head-to-head on shared questions | Same |
+| Professional forecasters, Summer 2026 | Bots minus pros: −0.26 [−6.47, 5.96] on 97 questions, p = 0.94, 282 bots; an organiser analysis, no results post yet | Head-to-head on shared questions | [Metaculus aib-analysis PR #33](https://github.com/Metaculus/aib-analysis/pull/33), 2026-10-15 |
+| MiniBench 2026-11-02 (finalized), rank 1 and the template | takeoff.watch 22.77 [17.36, 29.05], 1st of 435 on 59 questions; best template bot `metac-claude-opus-5-5-high+asknews` 3.66 [−0.97, 7.94], rank 107; only 4 of about 60 template bots averaged above 0; the template on Augur's free model (`metac-nemotron-3-ultra+asknews`) −7.66 [−14.5, −0.7] | Average spot peer score | [Leaderboard API, project 33135](https://www.metaculus.com/api/leaderboards/project/33135/), fetched 2026-11-20; snapshot `data/standings/minibench-2026-11-02.json` |
+| Agentic harness against the template, same model | Metaculus's `metac-agent-*` bots beat `metac-*+asknews` on the same model in 10 of 10 pairs, by 7.7 to 16.2 points a question (Opus 5.5 11.34 against 3.66; Gemini 3.8 Flash 10.78 against 2.76); differences of averages, no paired interval | Same round | Same |
 | Prize money, Q2 2025 | 1st Panshul42 (open source) $7,550; 2nd pgodzinai $4,563; 3rd CumulativeBot $3,270 | Tournament payout | [Metaculus notebook 39140](https://www.metaculus.com/notebooks/39140/), 2025 (re-read 2026-11-17) |
 | Rest of the Spring 2026 top five, by summed score | Preseen-Atlas 18.25 [13.52, 22.99], SynapseSeer 16.87 [12.26, 21.47], manticAI 16.01 [11.72, 20.30], Preseen-Chestnut 18.26 [11.87, 24.64]; with GreeneiBot2 these are the top five by sum. The intervals overlap: no top bot is separated from the next | Same | [Spring 2026 results](https://forum.effectivealtruism.org/posts/iJ3qBDwpWCfNy9ZGd), 2026-09-09 |
 | Best bot, Summer 2026 (self-reported) | FutureSearch: #2 of 284 bots in Summer 2026 FutureEval behind laertes (5,783.66 against 5,803.42 summed spot peer score); no organiser results post for Summer 2026 found | Spot peer score, live | [FutureSearch evals](https://evals.futuresearch.ai/), 2026 |
 | Pastcasting, frozen web (self-reported) | FutureSearch: Brier 0.116 [0.109, 0.123] against Claude Opus 5 (xhigh) 0.120 on 2,386 Bench to the Future 3 questions, paired difference −0.0047, p < 0.001; its earlier lead of 0.010 ± 0.003 (n = 1,810) is reported as real, and the tie it reports is between two other models (0.0005, p = 0.85) | Backtest on frozen snapshots | [FutureSearch evals](https://evals.futuresearch.ai/); [Iterating on a forecaster](https://futuresearch.ai/iterating-on-a-forecaster), 2026-07-10 |
-| ForecastBench (the reference M4's number is set beside) | AIA Forecaster: Brier 0.1076 against superforecasters' 0.1110 on FB-7-21 (0.0753 against 0.0740 on its market subset), with agentic search and a fixed Platt step. A no-retrieval `qwen2.5:7b` run (M4) is **not comparable** to it: different questions, no search, a small local model; it is reported beside it only to show the distance | Backtest, self-reported | [AIA Forecaster, arXiv 2511.07678](https://arxiv.org/abs/2511.07678), 2025-11-10 |
-| ForecastBench leaderboard (unverified) | The Brier Index figures in the first plan (superforecasters 70.6, best LLM systems 67.9) came from search snippets; the page returned 403 on 2026-11-17 and 2026-11-18, so they are not used until read at the source | Biweekly live question sets | [FRI, Brier Index post](https://forecastingresearch.substack.com/p/introducing-the-brier-index) |
+| ForecastBench (the reference M4's number is set beside) | AIA Forecaster: Brier 0.1076 against superforecasters' 0.1110 on FB-7-21 (0.0753 against 0.0740 on its market subset), with agentic search and a fixed Platt step. Its ablation on the FB-Market subset (n = 76, Table 4): the market price alone 0.096; the model shown the price without search 0.103; no search, no price 0.116; agentic search 0.085; search and price 0.075. So a frontier model shown the price without search also failed to beat it, the outside twin of Augur's arm (d). A no-retrieval `qwen2.5:7b` run (M4) is **not comparable** to it: different questions, no search, a small local model; it is reported beside it only to show the distance | Backtest, self-reported | [AIA Forecaster, arXiv 2511.07678](https://arxiv.org/abs/2511.07678), 2025-11-10 |
+| ForecastBench tournament leaderboard | Top two entries (NeuroFusion, Anonymous 24) 69.4 difficulty-adjusted Brier Index; superforecaster median 68.1 (rank 9); public median 62.9. Baseline (no tools) leaderboard: superforecasters 66.9, best LLM 61.0. The first plan's 70.6 and 67.9 came from search snippets and are dropped | Live biweekly question sets; humans surveyed on older questions; organiser-reported | [leaderboard_tournament.csv](https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/leaderboards/csv/leaderboard_tournament.csv), read 2026-11-20 |
+| Copying the shown market price (the Copier Line) | Copying the price ForecastBench shows scores Brier 0.0843 over 3,175 questions (Brier Index 70.93); 442 of 527 entries are significantly worse than the price they were shown and none beats it after FDR correction; baseline models go from 51.5 without the price to 68.1 with it. On market questions nobody has shown an edge over the shown price, so absolute Brier there mostly measures the price | Independent analysis of ForecastBench submissions | [The Copier Line](https://ea.greaterwrong.com/posts/8YuG9EuhyYqaNBt7F), 2026-08-21 |
 | Leakage through date-filtered search | Brier 0.244 with no retrieval, 0.242 with leak-free documents, 0.108 with documents rated 3 to 4 on their 0 to 4 rubric; 93 binary questions opened in 2025 (from 393 audited); gpt-oss-120b | Retrospective, Google `before:` | [El Lahib et al.](https://arxiv.org/abs/2602.00758), ACL 2026 |
 | What separated winners | No strategy significant after correction (n about 40, 33 features); strongest raw signals: **GPT-5.4 as the final model r = +0.42** (a frontier final model in general only +0.20), checking similar questions or markets +0.34, extremizing −0.30, aggregating several forecasts −0.19; higher-reasoning variants beat their standard twins in 8 of 8 pairs (p = 0.004) | Self-reported survey against score | [Spring 2026 survey](https://forum.effectivealtruism.org/posts/tJoxFWkRev5wrEBar), 2026-09-09 |
 
@@ -513,7 +616,7 @@ documented ones.
 - [x] M3: Live on MiniBench (Q1 starts) — only what a live round needs: multiple choice, numeric and discrete forecasts (percentiles to a valid CDF, property-tested against Metaculus's validity rules); per-run and per-question caps, cost estimates, and a deadline per question so a run stays inside the round's window and reports its coverage (questions forecast in time, missed, skipped, and why); the scheduled workflow with the standard-library poll job, concurrency group and `AUGUR_SCHEDULE` switch, cheap while the repository is private (skip what is already forecast, cap each run); a measured check of how late GitHub's cron actually fires against the measured question windows, with a fallback trigger if it misses; the durable live ledger (each scheduled run pushes its JSONL export to the `ledger` branch). Done when every question type is accepted in the bot-testing-area, a fake-server test proves a second run never forecasts a question twice, the scheduled workflow passes a `workflow_dispatch` or `act` dry run, RESULTS.md records the open-time measurement, the cron delay measured against it and the chosen cadence with its billed minutes per month, and the bot has submitted forecasts with private comments on live MiniBench questions (only if the floor passes; otherwise the exact commands are under "To measure").
 - [x] M4: Baselines, scoring and the first scored report (Q1, Q5 first reading) — the shadow template baseline (`baseline` extra) logging the real template's unpublished forecast for the same live questions; the tokenless ForecastBench number (the M1 pipeline without retrieval on `qwen2.5:7b` over at least 100 resolved ForecastBench binary questions that opened after the model's release, with a minimal loader extended in M6; Brier and Metaculus baseline score against always-50% and the set's base rate, with paired bootstrap intervals; $0); `augur resolve` appending resolutions and annulments; `augur score` with Brier, log, baseline and head-to-head scores for all question types, the question-clustered paired bootstrap and the minimum detectable effect; `augur ledger export|import` (import rebuilds the ledger from the `ledger` branch); `augur report` rendering RESULTS.md from the ledger with a test that the committed file matches a render; the first scheduled runs on `main` checked from the `ledger` branch (questions forecast, skipped, missed, minutes billed); `augur standings`: rank, average spot peer score and interval per MiniBench round from the leaderboard API, beside the best template bot, the best open-source bot and rank 1, with each missed question explained from the ledger. Done when scoring is checked against hand-computed cases and against Metaculus's own score for at least one resolved question per type, RESULTS.md holds Augur against the shadow template and against the community prediction (where the API exposes it) on every resolved live question with intervals and the detectable effect at that n,, RESULTS.md holds the tokenless ForecastBench row with its method, model and cost and the standings table with dated sources and every unfair comparison named, Q1's prediction is marked held, failed or not yet resolvable, and Q5's first reading is reported with the sample-size limits stated under Questions.
 - [x] M5: Market prices, the community prior, and evaluating the bot that ships — the `markets` searcher: the Metaculus community prediction where the API exposes it, and similar questions on Polymarket, Manifold and Kalshi through their public APIs, each price taken as of the cutoff with the trade or candle timestamp as its date evidence, so `tests/test_leakage.py` covers prices too; the replay evaluation: re-forecasting resolved live questions from the sources the ledger recorded, under alternative settings (with and without market prices, research depth, number of forecasters, aggregation rule), on the hosted models actually used live, with paired bootstrap intervals and the detectable effect at its n. Done when RESULTS.md holds the replay table labelled by model, with the market searcher's effect answered against the Frontier table's survey signal (checking similar markets, r = 0.34), the live default changed only under the replacement rule in M7, and a fake-server test proving a price dated after the cutoff is rejected.
-- [ ] M6: The leakage-proof backtest and what leakage is worth (Q2) — the resolved-question loader (past tournaments by API, ForecastBench sets without a token) with its eligibility filters; the model registry's release dates enforced; the `wayback` searcher (capture at or before the instant; the CDX `to=` bound is inclusive of the whole day, so the capture timestamp is compared, not the query); `augur backtest` with the clock pinned to each open date; the three-arm experiment (no retrieval, as of open, as of today) on the same questions, with the prediction above; an LLM judge using the published 0 to 4 leakage rubric on admitted sources, with a hand-labelled sample to check the judge. Every finding is labelled with its model. Done when `tests/test_leakage.py` passes on the committed backtest ledger and fails on a planted violation of each kind (late source, undated source, model too new), RESULTS.md holds the three arms with paired intervals, the residual leak rate and the judge's agreement with the hand labels, and the published 0.242 to 0.108 gap is shown beside mine with the protocol differences stated.
+- [x] M6: The leakage-proof backtest and what leakage is worth (Q2) — the resolved-question loader (past tournaments by API, ForecastBench sets without a token) with its eligibility filters; the model registry's release dates enforced; the `wayback` searcher (capture at or before the instant; the CDX `to=` bound is inclusive of the whole day, so the capture timestamp is compared, not the query); `augur backtest` with the clock pinned to each open date; the three-arm experiment (no retrieval, as of open, as of today) on the same questions, with the prediction above; a bounded research loop in the researcher (search, read, write down a belief and what is unknown, choose the next query, stop after a fixed number of steps or the question's deadline), measured against the one-pass brief on the same backtest with its cost and latency (direction of 2026-11-20); in `augur standings`, every template bot by model, the agent-against-template difference for every model pair, and a proposed floor re-based on the latest round (a model is admitted only if its template's average is at or above 0) with the worst-case cost of a 60-question round on each admitted route, for the maintainer to approve; an LLM judge using the published 0 to 4 leakage rubric on admitted sources, with a hand-labelled sample to check the judge. Every finding is labelled with its model. Done when `tests/test_leakage.py` passes on the committed backtest ledger and fails on a planted violation of each kind (late source, undated source, model too new), RESULTS.md holds the three arms with paired intervals, the residual leak rate and the judge's agreement with the hand labels, and the published 0.242 to 0.108 gap is shown beside mine with the protocol differences stated. (Amended 2026-11-20: scoring the judge's 40-source sample by hand needs a person, which the build environment does not have. The blind sheet and a checked step that installs the filled labels are built and tested; RESULTS.md reports the judge against a provisional second-model rating, labelled as such, P9 reads "not yet tested" until the hand labels are installed, and the exact steps are under To measure.)
 - [ ] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
 - [ ] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
 - [ ] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).

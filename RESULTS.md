@@ -4,10 +4,185 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M5 sets the bot against the
-market price on resolved ForecastBench questions (the price alone wins); M4
-has the first scored number and the scoring it rests on; the first live
-score waits on a scored round (see Q1 and Q5 below).
+committed file differs from a fresh render. M6 measures what leakage is
+worth on a retrieval backtest (Q2) and tries an iterative research loop; M5
+sets the bot against the market price on resolved ForecastBench questions
+(the price alone wins); M4 has the first scored number and the scoring it
+rests on; the first live score waits on a scored round (see Q1 and Q5
+below).
+
+## M6: what leakage is worth, and the research loop (2026-11-20)
+
+**Question.** If a backtest's retrieval is not cut at the question's open
+date, how much better does the bot look than it is (Q2)? And does an
+iterative research loop beat the one-pass brief on sources it is allowed to
+read? The design, the predictions P7 to P11 and the decision rules were
+committed to PLAN.md (`e391152`) before any run.
+
+**Method.** C2's fixed sample: the first 64 of its 138 eligible questions
+in question-id order (a hash, so unrelated to topic or outcome); 47 have an
+as-of price from M5, 17 (Metaculus and INFER) do not. One model in every
+role, `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04, a week
+before the 2026-06-11 freeze; the release gate now checks every route at
+call time), 3 draws, median. The planner wrote three queries per question
+once, as of its open instant (`data/backtest/m6-c2-queries.json`, ledger
+`m6-c2-plan.sqlite`), and every arm read that plan, so O and T differ only
+in when the searchers read: Wikipedia (the revision current at the cutoff)
+and Wayback (the newest capture at or before the cutoff of each non-market
+URL the question names). N is M5's no-retrieval run of the same model on
+the same questions. T is recorded as an `unrestricted` run (cutoff = the
+moment it ran, 2026-11-20), never as a backtest. The judge is the same free
+model with El Lahib et al.'s rubric, shown the question, its open date and
+its resolution; the reference labels are a provisional second-model
+rating (not hand labels) of a hash-drawn sample of 40 shown sources (20
+from O, 20 from T) against the same rubric, made blind to the judge's
+scores. Cost $0 (free model); the
+arms ran 04:36 to 06:01 UTC with three processes sharing one key.
+Commands: `make backtest-q2` (each step is one line of it); ledgers
+`data/ledgers/m6-c2-{plan,open,now,loop}.sqlite`; labels
+`data/judge/m6-reference-labels.json`.
+
+<!-- augur:begin leakage -->
+C2's fixed sample: the first 64 eligible questions by question id; 64 were forecast by every arm. Model `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04, before the 2026-06-11 freeze) in every role, 3 draws, median. Lower Brier is better; a negative difference favours the first arm.
+
+| Arm | Brier [95% interval] | Log score | n |
+|---|---|---|---|
+| N: no retrieval | 0.2045 [0.1284, 0.2859] | -0.697 | 64 |
+| O: one pass, sources as of open | 0.1887 [0.1173, 0.2642] | -0.563 | 64 |
+| T: one pass, sources as of today (leaky on purpose) | 0.0628 [0.0239, 0.1096] | -0.192 | 64 |
+
+| Paired difference | Brier [95% interval] (MDE) |
+|---|---|
+| T − N (what retrieval as of today is worth) | -0.1418 [-0.2170, -0.0741] (0.1023) |
+| O − N (what leak-free retrieval is worth) | -0.0158 [-0.0503, +0.0170] (0.0483) |
+| T − O (the leak, same queries) | -0.1259 [-0.1930, -0.0652] (0.0919) |
+
+**Edge over the price** (the as-of price from M5, on the 47 priced questions of the sample; a negative difference would be an edge):
+
+| Arm minus the price | Brier [95% interval] (MDE) |
+|---|---|
+| N − price | +0.1156 [+0.0256, +0.2077] (0.1300) |
+| O − price | +0.0934 [+0.0125, +0.1761] (0.1164) |
+| T − price | -0.0456 [-0.1168, +0.0222] (0.0992) |
+| L − price (loop sample, n = 29) | +0.1577 [+0.0442, +0.2815] (0.1697) |
+
+Unpriced questions of the sample (Metaculus and INFER, n = 17; no price to set beside): N 0.1112 [0.0311, 0.2168]; O 0.1128 [0.0271, 0.2316]; T 0.0230 [0.0007, 0.0529].
+
+**The research loop** (the first 40 of the sample; 40 forecast by the loop and the one pass):
+
+| Arm | Brier [95% interval] | Log score | n |
+|---|---|---|---|
+| N: no retrieval | 0.2304 [0.1336, 0.3377] | -0.800 | 40 |
+| O: one pass, sources as of open | 0.2056 [0.1148, 0.3040] | -0.615 | 40 |
+| L: research loop, sources as of open | 0.2317 [0.1317, 0.3386] | -0.793 | 40 |
+| L − O (loop against one pass) | +0.0261 [-0.0050, +0.0596] (MDE 0.0460) | | |
+
+Cost per question forecast ($0: free model): successful model calls (of which research), output tokens, wall seconds.
+
+| Arm | Questions | Calls (research) | Output tokens | Seconds |
+|---|---|---|---|---|
+| O | 64 | 4.0 (1.0) | 4,174 | 79 |
+| T | 64 | 4.0 (1.0) | 3,720 | 66 |
+| L | 40 | 6.0 (3.0) | 4,955 | 91 |
+
+**The judge** (the same free model, El Lahib et al.'s 0 to 4 rubric, against each question's open instant, shown the resolution). Major leakage is a score of 3 or 4.
+
+| Arm | Questions judged | Sources | Scores 0/1/2/3/4 | Sources at 3+ | Questions with a source at 3+ |
+|---|---|---|---|---|---|
+| O | 64 | 324 | 323/0/0/0/1 | 1/324 (0%) | 1/64 (2%) |
+| T | 64 | 336 | 204/50/13/22/47 | 69/336 (21%) | 40/64 (62%) |
+
+**Judge against the provisional reference labels** (40 sources; a second model's rating, not hand labels: see To measure): exact agreement with 0 and 1 merged 90.0%, quadratic weighted kappa 0.90; on major leakage (3+ against 0 to 2) 97.5% agreement, kappa 0.91 (labels 7, judge 6 at 3+). The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.
+
+Questions where the judge found a source at 3+ in T (n = 40), the nearest to the paper's selection: N 0.2580 [0.1580, 0.3665]; O 0.2300 [0.1381, 0.3302]; T 0.0439 [0.0048, 0.0942].
+
+Beside the published experiment (not the same protocol): no retrieval 0.244; leak-free (score 0) 0.242; leaky (scores 3-4) 0.108 (gap 0.136). Here: N 0.2045, O 0.1887, T 0.0628 (gap N − T 0.1418).
+
+Predictions stated in PLAN.md before the run:
+
+- P7 (Q2): retrieval as of today improves Brier by at least 0.05 with the interval below 0: **held**; as of open no better than none by more than 0.02: **held**.
+- P8 (the judge flags at least 30% of T's questions and under 10% of O's): T 62% **held**, O 2% **held**.
+- P9 (judge against the hand labels: kappa at least 0.6, major-leak agreement at least 85%): **not yet tested**; the labels are not hand labels. Against the provisional reference labels: kappa 0.90, 97.5%.
+- P10 (loop within ±0.02 of the one pass, interval including 0; more calls): **failed**, **held**.
+- P11 (N, O and L all worse than the price, interval above 0; T's point estimate above 0): N **held**, O **held**, L **held**, T **failed**.
+<!-- augur:end leakage -->
+
+**What it shows.**
+
+- **Leakage is worth about as much here as in the published audit.**
+  Researched as of today, the same free model on the same questions with
+  the same queries scores 0.063 against 0.205 without retrieval, 0.142
+  better [0.074, 0.217]; El Lahib et al.'s leaky arm moved 0.244 to 0.108
+  (0.136). My prediction was that naive retrieval as of today would leak
+  less than their arm, which keeps only documents their judge rated 3 or 4;
+  it did not. The mechanism is visible in the sources: today's Wikipedia
+  leads with the outcome ("She won a third term in the 2026 election";
+  "the governor-elect of Florida"). The judge found a source at 3 or 4 for
+  40 of the 64 questions, and on those 40 the gap is wider still (0.258 to
+  0.044).
+- **Leak-free retrieval is worth almost nothing to this model.** As of the
+  open instant the same searches score 0.189, 0.016 better than none with
+  an interval that includes 0 [−0.050, +0.017], as El Lahib et al. found
+  (0.244 to 0.242). So almost all of what a leaky backtest credits to
+  retrieval is the leak.
+- **A leaky backtest would erase a real gap to the market.** On the 47
+  priced questions the bot trails the as-of price by 0.093 [0.013, 0.176]
+  with leak-free sources and draws level with it with today's (−0.046
+  [−0.117, +0.022]). That is the Copier Line's warning made concrete: an
+  apparent edge over the market on a backtest is the first number to
+  suspect.
+- **The gate leaves a residual leak, and the judge finds it.** Of 324
+  sources the forecasters saw in arm O, the judge rated one at 4: the
+  revision of "2026 United States House of Representatives elections"
+  saved on 2026-06-10, one day before the cutoff, which reads "As of
+  November 2026, 58 representatives ... (24 Democrats and 36 Republicans)
+  have announced their retirement". MediaWiki renders an old revision with
+  today's templates, and an "as of" sentence built from a template carried
+  November's count into a June page. It decided one question (Republican
+  retirements between 24 and 27: N 0.35, O 0.01, resolved No), worth
+  −0.002 of O's mean. So the residual leak rate is 1 of 64 questions here,
+  and the date gate alone cannot catch it: it is the judge's job.
+- **The judge is not yet checked against hand labels (P9 untested).** The
+  40 reference labels are a provisional rating by a second, stronger
+  model, blind to the judge but made outside the pipeline, so no call is
+  recorded and the rating cannot be re-run from this repository. Against
+  them the judge agrees on 90% (0 and 1 merged) with a quadratic weighted
+  kappa of 0.90, and on "3 or 4" for 39 of 40 (kappa 0.91); the paper's
+  judge scored 76.1% and 0.85 against two human annotators. Two models
+  agreeing is weaker evidence than that, and 20 of the 40 come from arm O,
+  where both raters gave 0 to all 20, so the agreement rests mostly on the
+  20 from T (on those 20 alone: kappa 0.84, 19 of 20 on "3 or 4"). P9
+  holds or fails only once the same 40 are scored by hand.
+- **The research loop did not help, and cost more.** On the first 40
+  questions the loop (3 searches, a written belief after each) scored
+  0.232 against the one pass's 0.206: 0.026 worse [−0.005, +0.060], with
+  six model calls a question instead of four and 91 seconds instead of 79.
+  P10 failed: the point estimate is outside ±0.02, on the wrong side. One
+  likely reason is in the design: the forecasters read the loop's last
+  belief (at most 120 words) instead of a 250-word brief written from every
+  excerpt. Another is the model: Metaculus's agentic bots beat the template
+  by 7.7 to 16.2 points a question on frontier models with live search,
+  and none of that transfers to a free model reading Wikipedia revisions.
+  Under the replacement rule the one pass stays the default.
+
+**Unfair or missing comparisons, named.** One free model, one ForecastBench
+set, 64 questions (40 for the loop): the MDE of the paired differences is
+0.05 to 0.10 Brier, so only the leak itself is resolved. El Lahib et al.
+used Metaculus questions, Google results and gpt-oss-120b; the arms here
+read Wikipedia revisions and Wayback captures, and the archive refused or
+timed out on many connections (12 of O's and 11 of T's Wayback URLs failed
+after retries), so most sources are Wikipedia: 249 Wikipedia and 40 Wayback
+sources were shown in O, 264 and 39 in T. Past Metaculus tournaments could
+not be used (a bot token sees no resolutions; `augur/resolved.py` kept 0 of
+269 resolved posts). The planner's query plan is shared, so the arms test
+the instant of reading, not what a leaky planner would search for.
+The bootstrap resamples questions as independent, but several share a
+subject and their sources (the Thanedar and MI-13 primaries, the
+impoundment questions), so every interval here is probably somewhat too
+narrow. Not every question got all 3 draws (N has 3 questions with 2, T
+and L one each). The as-of price is the market's last trade before the
+freeze, and on Manifold that can be old: 7 of the 47 priced questions had
+no bet in the 7 days before the freeze, and one had none for 198 days.
 
 ## M5: market prices, and the bot that ships against them (2026-11-19)
 
@@ -152,8 +327,12 @@ its cutoff, and the price arms here use Augur's own as-of reads instead
 
 **Beside the frontier, not against it.** AIA Forecaster's ablation on
 ForecastBench (arXiv 2511.07678, self-reported) runs the same experiment
-on a frontier model with agentic search: no search 0.116, market price
-only 0.103, search 0.085, both 0.075; on liquid markets the market beats
+on a frontier model with agentic search (FB-Market, n = 76, Table 4): the
+market price alone 0.096, the model shown the price without search 0.103,
+no search 0.116, search 0.085, both 0.075. Its shown-the-price row is the
+outside twin of arm (d): a frontier model shown the price without search
+also failed to beat the price (0.103 against 0.096), as Augur's arm (d)
+does here (0.143 against 0.106). On liquid markets the market beats
 it (0.1258 against 0.1106) and a fixed ⅓ : ⅔ blend scores 0.106. C2's
 direction matches that last row (the price beats the bot), but the gap is
 far larger here (0.240 against 0.106) because arm (b) has no search and a
@@ -325,7 +504,7 @@ needs about 300 resolved questions to be detected four times in five; Fall
 <!-- augur:begin standings -->
 #### MiniBench - 2026-11-02 (`minibench-2026-11-02`)
 
-Finalized: no. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:05.413788Z from https://www.metaculus.com/api/leaderboards/project/33135/.
+Finalized: yes. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-20T04:36:14.128494Z from https://www.metaculus.com/api/leaderboards/project/33135/.
 
 | Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
 |---|---|---|---|---|---|---|
@@ -352,6 +531,106 @@ The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 20
 
 Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 59 no run saw it; 1 forecast in a dry run, not submitted (from the committed ledgers; `augur standings --from data/standings/minibench.json --ledger ...` lists each one).
 <!-- augur:end standings -->
+
+### Template bots by model, the agent harness, and the proposed floor (MiniBench 2026-11-02, finalized)
+
+<!-- augur:begin templates -->
+Source: https://www.metaculus.com/api/leaderboards/project/33135/, fetched 2026-11-20T04:36:14.128494Z; round `minibench-2026-11-02`, score type spot_peer_tournament. The snapshot's finalized flag is yes. Averages are Metaculus's summed spot peer score divided by questions covered; intervals are Metaculus's, rescaled the same way.
+
+**1. Template bots (`metac-<model>+asknews`).** 57 entries (54 plain, 3 experiment variants); 4 plain templates average >= 0.
+
+| Model | Bot | Rank | Avg spot peer score / question [interval] | Questions |
+|---|---|---|---|---|
+| claude-opus-5-5-high | `metac-claude-opus-5-5-high+asknews` | 107 | 3.66 [-0.97, 7.94] | 59 |
+| gemini-3-8-flash | `metac-gemini-3-8-flash+asknews` | 130 | 2.76 [-0.37, 6.13] | 59 |
+| claude-sonnet-5-5-high | `metac-claude-sonnet-5-5-high+asknews` | 136 | 2.39 [-2.31, 6.57] | 59 |
+| claude-haiku-5-5-high | `metac-claude-haiku-5-5-high+asknews` | 177 | 0.87 [-5.90, 7.37] | 59 |
+| claude-fable-5-1-high | `metac-claude-fable-5-1-high+asknews` | 211 | -0.08 [-5.63, 4.61] | 59 |
+| glm-5-3-flash | `metac-glm-5-3-flash+asknews` | 213 | -0.12 [-4.30, 4.22] | 59 |
+| gemini-4-argon-high | `metac-gemini-4-argon-high+asknews` | 238 | -0.84 [-7.18, 4.61] | 59 |
+| muse-wonder-high | `metac-muse-wonder-high+asknews` | 248 | -1.51 [-5.56, 2.45] | 59 |
+| gpt-6-astra-high | `metac-gpt-6-astra-high+asknews` | 251 | -1.77 [-5.96, 2.43] | 59 |
+| gpt-6-1-sol-high | `metac-gpt-6-1-sol-high+asknews` | 261 | -2.55 [-6.63, 1.63] | 59 |
+| glm-5-3 | `metac-glm-5-3+asknews` | 261 | -2.61 [-7.43, 1.72] | 59 |
+| qwen-3-8-flash | `metac-qwen-3-8-flash+asknews` | 269 | -2.86 [-7.77, 2.28] | 59 |
+| gpt-6-sol-high | `metac-gpt-6-sol-high+asknews` | 273 | -2.97 [-8.77, 2.01] | 59 |
+| gpt-6-luna-high | `metac-gpt-6-luna-high+asknews` | 277 | -3.18 [-7.13, 0.98] | 59 |
+| kimi-k3 | `metac-kimi-k3+asknews` | 277 | -3.21 [-9.28, 2.18] | 59 |
+| inkling-small | `metac-inkling-small+asknews` | 280 | -3.50 [-10.84, 3.98] | 59 |
+| muse-spark-1-3 | `metac-muse-spark-1-3+asknews` | 282 | -3.64 [-10.18, 2.09] | 59 |
+| claude-sonnet-5 | `metac-claude-sonnet-5+asknews` | 282 | -3.68 [-7.74, 0.25] | 59 |
+| glm-5-1 | `metac-glm-5-1+asknews` | 284 | -3.87 [-8.78, 0.94] | 59 |
+| qwen-3-7-plus | `metac-qwen-3-7-plus+asknews` | 284 | -4.23 [-12.20, 3.21] | 59 |
+| mistral-large-4-high | `metac-mistral-large-4-high+asknews` | 285 | -4.25 [-9.98, 1.67] | 59 |
+| nemotron-3-5-super-vl-high | `metac-nemotron-3-5-super-vl-high+asknews` | 280 | -4.75 [-11.38, 1.89] | 44 |
+| deepseek-v4-pro-high | `metac-deepseek-v4-pro-high+asknews` | 287 | -4.89 [-10.02, 0.36] | 59 |
+| glm-5-2 | `metac-glm-5-2+asknews` | 288 | -5.07 [-10.41, 0.12] | 59 |
+| kimi-k2-6 | `metac-kimi-k2-6+asknews` | 288 | -5.27 [-9.90, -0.69] | 59 |
+| qwen-3-6-plus | `metac-qwen-3-6-plus+asknews` | 290 | -6.20 [-13.32, 0.37] | 59 |
+| deepseek-v3-1 (variance-test-2) | `metac-deepseek-v3-1+asknews(variance-test-2)` | 290 | -6.21 [-13.25, 0.60] | 59 |
+| gpt-5-4-mini | `metac-gpt-5-4-mini+asknews` | 292 | -6.35 [-12.71, -0.30] | 59 |
+| grok-4-6 | `metac-grok-4-6+asknews` | 292 | -6.49 [-11.69, -1.59] | 59 |
+| minimax-m3 | `metac-minimax-m3+asknews` | 292 | -6.61 [-12.11, -0.75] | 59 |
+| qwen-3-8-max | `metac-qwen-3-8-max+asknews` | 292 | -6.63 [-10.71, -2.44] | 59 |
+| claude-haiku-4-5 | `metac-claude-haiku-4-5+asknews` | 293 | -6.97 [-13.29, -1.00] | 59 |
+| grok-4-7-high | `metac-grok-4-7-high+asknews` | 293 | -7.02 [-12.10, -1.90] | 59 |
+| gpt-4-1 | `metac-gpt-4-1+asknews` | 294 | -7.37 [-15.39, -0.09] | 59 |
+| nemotron-3-ultra | `metac-nemotron-3-ultra+asknews` | 295 | -7.66 [-14.51, -0.73] | 59 |
+| gemini-3-1-pro-high | `metac-gemini-3-1-pro-high+asknews` | 297 | -8.31 [-19.30, 0.73] | 59 |
+| gpt-4-1 [optimized-prompt] | `metac-gpt-4-1+asknews[optimized-prompt]` | 300 | -8.44 [-16.75, -1.08] | 59 |
+| deepseek-3-2-reasoning | `metac-deepseek-3-2-reasoning+asknews` | 307 | -9.42 [-15.76, -3.14] | 59 |
+| deepseek-v3-1-reasoning | `metac-deepseek-v3-1-reasoning+asknews` | 308 | -9.54 [-16.67, -2.70] | 59 |
+| gpt-5-4-nano | `metac-gpt-5-4-nano+asknews` | 308 | -9.56 [-16.59, -2.72] | 59 |
+| gemini-3-1-pro | `metac-gemini-3-1-pro+asknews` | 308 | -9.71 [-20.41, -0.88] | 59 |
+| gpt-oss-120b | `metac-gpt-oss-120b+asknews` | 308 | -9.82 [-17.98, -2.10] | 59 |
+| deepseek-v3-1 (variance-test-1) | `metac-deepseek-v3-1+asknews(variance-test-1)` | 309 | -9.97 [-18.63, -1.97] | 59 |
+| muse-glimmer-30b | `metac-muse-glimmer-30b+asknews` | 309 | -10.01 [-18.13, -2.30] | 59 |
+| deepseek-v3-1 | `metac-deepseek-v3-1+asknews` | 310 | -10.51 [-19.35, -2.19] | 59 |
+| llama-4-maverick-17b | `metac-llama-4-maverick-17b+asknews` | 310 | -10.58 [-18.91, -1.57] | 59 |
+| gpt-4o | `metac-gpt-4o+asknews` | 311 | -10.77 [-18.20, -3.59] | 59 |
+| gemma-4-26b | `metac-gemma-4-26b+asknews` | 313 | -11.48 [-18.82, -4.24] | 59 |
+| zai-glm-4-5 | `metac-zai-glm-4-5+asknews` | 314 | -11.85 [-20.77, -4.11] | 59 |
+| nemotron-3-5-lightning | `metac-nemotron-3-5-lightning+asknews` | 315 | -12.14 [-21.08, -3.29] | 59 |
+| deepseek-v4-flash | `metac-deepseek-v4-flash+asknews` | 315 | -12.50 [-19.45, -5.82] | 59 |
+| inkling | `metac-inkling+asknews` | 315 | -12.74 [-22.50, -3.46] | 59 |
+| deepseek-v3 | `metac-deepseek-v3+asknews` | 315 | -12.88 [-21.65, -4.42] | 59 |
+| gpt-4-1-mini | `metac-gpt-4-1-mini+asknews` | 319 | -13.79 [-20.68, -7.13] | 59 |
+| gemini-3-1-flash-lite | `metac-gemini-3-1-flash-lite+asknews` | 319 | -15.23 [-25.01, -6.36] | 59 |
+| gpt-4o-mini | `metac-gpt-4o-mini+asknews` | 322 | -16.55 [-24.88, -8.75] | 59 |
+| minimax-m2-7 | `metac-minimax-m2-7+asknews` | 322 | -16.65 [-24.13, -9.28] | 59 |
+
+**2. Agent harness against template, same model.** `metac-agent-X` is matched to the plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`). Each difference is a difference of two averages, with no paired interval: the two bots' per-question scores are not in the snapshot.
+
+| Model | Agent avg | Template avg | Agent minus template |
+|---|---|---|---|
+| gemini-4-argon | 15.39 | -0.84 | +16.24 |
+| muse-spark-1-3 | 11.80 | -3.64 | +15.44 |
+| qwen-3-8-max | 6.79 | -6.63 | +13.42 |
+| claude-fable-5-1 | 11.81 | -0.08 | +11.89 |
+| grok-4-7 | 4.67 | -7.02 | +11.69 |
+| kimi-k3 | 5.05 | -3.21 | +8.26 |
+| glm-5-3 | 5.58 | -2.61 | +8.19 |
+| gpt-6-1-sol | 5.51 | -2.55 | +8.07 |
+| gemini-3-8-flash | 10.78 | 2.76 | +8.02 |
+| gpt-6-astra | 6.19 | -1.77 | +7.96 |
+| claude-opus-5-5 | 11.34 | 3.66 | +7.68 |
+| muse-wonder | 0.01 | -1.51 | +1.51 |
+
+Unmatched agents: none. Templates with no agent: metac-claude-haiku-4-5+asknews, metac-claude-haiku-5-5-high+asknews, metac-claude-sonnet-5+asknews, metac-claude-sonnet-5-5-high+asknews, metac-deepseek-3-2-reasoning+asknews, metac-deepseek-v3+asknews, metac-deepseek-v3-1+asknews, metac-deepseek-v3-1-reasoning+asknews, metac-deepseek-v4-flash+asknews, metac-deepseek-v4-pro-high+asknews, metac-gemini-3-1-flash-lite+asknews, metac-gemini-3-1-pro+asknews, metac-gemma-4-26b+asknews, metac-glm-5-1+asknews, metac-glm-5-2+asknews, metac-glm-5-3-flash+asknews, metac-gpt-4-1+asknews, metac-gpt-4-1-mini+asknews, metac-gpt-4o+asknews, metac-gpt-4o-mini+asknews, metac-gpt-5-4-mini+asknews, metac-gpt-5-4-nano+asknews, metac-gpt-6-luna-high+asknews, metac-gpt-6-sol-high+asknews, metac-gpt-oss-120b+asknews, metac-grok-4-6+asknews, metac-inkling+asknews, metac-inkling-small+asknews, metac-kimi-k2-6+asknews, metac-llama-4-maverick-17b+asknews, metac-minimax-m2-7+asknews, metac-minimax-m3+asknews, metac-mistral-large-4-high+asknews, metac-muse-glimmer-30b+asknews, metac-nemotron-3-5-lightning+asknews, metac-nemotron-3-5-super-vl-high+asknews, metac-nemotron-3-ultra+asknews, metac-qwen-3-6-plus+asknews, metac-qwen-3-7-plus+asknews, metac-qwen-3-8-flash+asknews, metac-zai-glm-4-5+asknews.
+
+**3. Proposed floor: admit a model iff its template's average spot peer score is >= 0.** 4 admitted, 49 not, of 53 models (a model with templates at two effort settings counts once, by its unsuffixed bot). Worst case per question, from the constants in the agents: one planner call, one brief and 5 draws, 22,500 input and 26,000 output tokens in all, priced at the OpenRouter list (2026-11-18); a round is 60 questions. Where several listings share the name, the dearest prices it.
+
+| Model | Template avg | OpenRouter id (match by name) | $/M in | $/M out | Per question | Per 60-question round |
+|---|---|---|---|---|---|---|
+| claude-opus-5-5 | 3.66 | `anthropic/claude-opus-5.5` (+1 more) | 4 | 20 | $0.61 | $36.60 |
+| gemini-3-8-flash | 2.76 | `google/gemini-3.8-flash` (+1 more) | 0.825 | 4.125 | $0.13 | $7.55 |
+| claude-sonnet-5-5 | 2.39 | `anthropic/claude-sonnet-5.5` (+1 more) | 2 | 10 | $0.30 | $18.30 |
+| claude-haiku-5-5 | 0.87 | `anthropic/claude-haiku-5.5` (+1 more) | 0.1 | 0.5 | $0.02 | $0.92 |
+
+Not admitted (average < 0): claude-fable-5-1 (-0.1), glm-5-3-flash (-0.1), gemini-4-argon (-0.8), muse-wonder (-1.5), gpt-6-astra (-1.8), gpt-6-1-sol (-2.6), glm-5-3 (-2.6), qwen-3-8-flash (-2.9), gpt-6-sol (-3.0), gpt-6-luna (-3.2), kimi-k3 (-3.2), inkling-small (-3.5), muse-spark-1-3 (-3.6), claude-sonnet-5 (-3.7), glm-5-1 (-3.9), qwen-3-7-plus (-4.2), mistral-large-4 (-4.3), nemotron-3-5-super-vl (-4.8), deepseek-v4-pro (-4.9), glm-5-2 (-5.1), kimi-k2-6 (-5.3), qwen-3-6-plus (-6.2), gpt-5-4-mini (-6.3), grok-4-6 (-6.5), minimax-m3 (-6.6), qwen-3-8-max (-6.6), claude-haiku-4-5 (-7.0), grok-4-7 (-7.0), gpt-4-1 (-7.4), nemotron-3-ultra (-7.7), deepseek-3-2-reasoning (-9.4), deepseek-v3-1-reasoning (-9.5), gpt-5-4-nano (-9.6), gemini-3-1-pro (-9.7), gpt-oss-120b (-9.8), muse-glimmer-30b (-10.0), deepseek-v3-1 (-10.5), llama-4-maverick-17b (-10.6), gpt-4o (-10.8), gemma-4-26b (-11.5), zai-glm-4-5 (-11.8), nemotron-3-5-lightning (-12.1), deepseek-v4-flash (-12.5), inkling (-12.7), deepseek-v3 (-12.9), gpt-4-1-mini (-13.8), gemini-3-1-flash-lite (-15.2), gpt-4o-mini (-16.5), minimax-m2-7 (-16.6).
+
+Current frontier tier (`frontier-2026-11b`) without template evidence in this round: `claude-opus-4-1`, `claude-opus-4-5`, `claude-opus-5`, `claude-sonnet-4-5`, `gemini-2-5-pro`, `gemini-3-pro-preview`, `gpt-5`, `gpt-5-1`, `gpt-5-4`, `grok-4`, `o3`. With evidence: `claude-opus-5-5` (+3.7), `claude-sonnet-5-5` (+2.4).
+<!-- augur:end templates -->
 
 **Unfair comparisons, named.** (1) Augur has no entry: there is nothing of
 its own to compare yet. (2) The averages divide Metaculus's summed score
@@ -400,6 +679,10 @@ missed, and why).
 | `m5-replay-c1-prices.sqlite` | 1 (backtest 1) | 139 | 0 | 0 | 0 | 0 | 0 |
 | `m5-replay-c2-prices.sqlite` | 2 (backtest 2) | 138 | 303 | 101 | 0 | 0 | 0 |
 | `m5-replay-c2.sqlite` | 4 (backtest 4) | 138 | 419 | 138 | 0 | 138 | 138 |
+| `m6-c2-loop.sqlite` | 2 (backtest 2) | 40 | 239 | 40 | 0 | 0 | 0 |
+| `m6-c2-now.sqlite` | 4 (unrestricted 4) | 64 | 328 | 64 | 0 | 0 | 0 |
+| `m6-c2-open.sqlite` | 3 (backtest 3) | 64 | 320 | 64 | 0 | 0 | 0 |
+| `m6-c2-plan.sqlite` | 1 (backtest 1) | 64 | 64 | 0 | 0 | 0 | 0 |
 <!-- augur:end ledgers -->
 
 ## M3: every question type live, deadlines, and the schedule (2026-11-18)
@@ -754,6 +1037,10 @@ works against the real API; they say nothing yet about accuracy.
 | The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
 | The replay evaluation (arms b and d on C2) on the frontier model the floor requires live | Nothing paid without the maintainer's say-so; C2 ran on the free model that answered live in M3 | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high AUGUR_FORECASTERS=3 augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --ledger data/ledgers/m5-replay-c2-gpt54.sqlite`, then the same with `--prices data/ledgers/m5-replay-c2-prices.sqlite` (into a copy of that ledger). C2's free run used 430,222 input and 727,642 output tokens over 717 draws: about $12 at GPT-5.4's listed $2.50/$15 per million, more at high effort. The listing date (2026-03) is before the 2026-06-11 freeze, so the gate admits it |
 | Research depth, and the similar-market (search) half of the markets searcher, on replayed live research (C3) | No live question with an Augur forecast has resolved (C3 = 0); C1 and C2 have no retrieval, and their price is exact by construction | Once live questions resolve: `augur resolve --ledger L` (or `--manual`), then the replay arms on the ledger's recorded sources (M7's harness) |
+| The judge against labels made by hand (P9 as planned) | The 40 labels in `data/judge/m6-reference-labels.json` are a second, blind model rating; no one has yet scored them by hand | `uv run python scripts/judge_sample.py --per-arm 20 --sheet sheet.md --out /tmp/labels.json` (the same 40 sources, in the same order), score each by hand on the rubric in `augur/judge.py` by filling `score` in `/tmp/labels.json` (the sheet shows neither the judge's scores nor the provisional rating), then `uv run python scripts/apply_hand_labels.py /tmp/labels.json --rater NAME` (refuses a different sample or a missing or out-of-range score; sets `by_hand`, which is what lets P9 read held or failed) and `make results`; free; about half an hour. A model cannot stand in: its scores are another model's rating, which P9 does not test |
+| Q2 on past Metaculus tournaments (the corpus El Lahib et al. used) | `augur/resolved.py` loads them, but this bot token sees no resolution on any scored tournament: 0 kept of 59 (MiniBench 2026-11-02), 60 (2026-10-19) and 150 (Summer 2026 FutureEval, first three pages) resolved posts, every binary one with its resolution hidden | With a personal (non-bot) token in `METACULUS_TOKEN`: `load_tournament(client, "minibench-2026-11-02", released=...)` then `write_snapshot`, and the same three arms on that snapshot (a `--metaculus SNAPSHOT` loader option for `augur backtest`) |
+| Q2 and the loop on the frontier model the floor requires live | Nothing paid without the maintainer's say-so | `make backtest-q2` with `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-sonnet-5.5` and `AUGUR_RESEARCH_MODELS` the same, into fresh ledgers. The free run's tokens per question (RESULTS, M6 cost table) put the four arms at roughly $10 to $20 at Sonnet 5.5's listed $2/$10 per million |
+| A scored MiniBench round under the proposed floor, with the shadow template beside it (Q1, Q5) | The maintainer approves the re-based tier and a route first; the key reports a $1 limit | Approve a route from RESULTS.md's floor table, then `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-haiku-5.5 augur forecast --tournament minibench --submit` (worst case $0.92 a 60-question round at Haiku 5.5's listed prices) and `augur baseline --ledger L` on the same model; after resolution `augur score L --mode live --cluster week` and `augur standings --round minibench-2026-11-16 --ledger L` |
 | Groq, Gemini and GitHub Models free tiers | No `GROQ_API_KEY`, `GEMINI_API_KEY` or `GITHUB_TOKEN` here; the presets are configured, not exercised | `AUGUR_FORECAST_MODELS=groq:<model> augur models probe --burst 30` (and `gemini:`, `github:`) |
 | Tokens-per-minute limits | OpenRouter sends no token-limit header and the bursts are tiny | the same burst on Groq, which sends `x-ratelimit-limit-tokens` |
 | AskNews sources | No `ASKNEWS_CLIENT_ID`/`ASKNEWS_CLIENT_SECRET` in the build environment; the searcher is tested only against recorded payloads | `make test-integration` with both set, then `augur forecast --tournament minibench` |

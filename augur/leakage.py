@@ -24,6 +24,17 @@ class RunMode(StrEnum):
     LIVE = "live"
     DRY_RUN = "dry_run"
     BACKTEST = "backtest"
+    UNRESTRICTED = "unrestricted"
+    """Q2's leaky arm: resolved questions researched as of the moment the run ran.
+
+    Its cutoff is that moment, so the gate holds it to "now", sources need
+    proof of date as in a backtest, and the model must still predate each
+    question. Nothing in such a run is ever scored as a backtest."""
+
+    @property
+    def needs_proof(self) -> bool:
+        """Whether a source must prove its date (backtests and the leaky arm)."""
+        return self in (RunMode.BACKTEST, RunMode.UNRESTRICTED)
 
 
 @dataclass(frozen=True)
@@ -38,22 +49,25 @@ def admit_source(source: Source, cutoff: datetime, mode: RunMode) -> Admission:
     cutoff = ensure_utc(cutoff)
     sid = source.source_id
     if source.published_at is None:
-        if mode is RunMode.BACKTEST:
+        if mode.needs_proof:
             return Admission(sid, False, "undated source in a backtest")
         return Admission(sid, True, "undated; admitted because the run is live")
     if source.published_at > cutoff:
         return Admission(sid, False, f"dated {source.published_at.isoformat()} after the cutoff")
     if source.date_evidence is DateEvidence.NONE:
-        if mode is RunMode.BACKTEST:
+        if mode.needs_proof:
             return Admission(sid, False, "date not proven (no evidence) in a backtest")
         return Admission(sid, True, "date unproven; admitted because the run is live")
     return Admission(sid, True, f"dated at or before the cutoff by {source.date_evidence.value}")
 
 
 def admit_model(release: date | None, question_open: datetime, mode: RunMode) -> Admission:
-    """In a backtest a model must have been released strictly before the question opened."""
+    """In a backtest a model must have been released strictly before the question opened.
+
+    The unrestricted arm is held to the same rule: only its retrieval leaks.
+    """
     key = "model"
-    if mode is not RunMode.BACKTEST:
+    if not mode.needs_proof:
         return Admission(key, True, "live run: any model may forecast")
     if release is None:
         return Admission(key, False, "model release date unknown in a backtest")
@@ -74,22 +88,25 @@ def scan_ledger(path: Path) -> list[Violation]:
     """Every leakage violation stored in the ledger at ``path``.
 
     Kinds: ``late_source`` (an admitted source dated after its cutoff),
-    ``undated_source`` (an admitted undated or unproven source in a backtest),
-    ``unadmitted_use`` (a model call cited a source the gate did not admit for
-    that question), ``model_too_new`` (a backtest call by a model not
-    released before the question opened), ``bad_cutoff`` (a cutoff later than
-    the moment the question was recorded, or in a backtest later than the
-    question's open time: every other check trusts the cutoff, so it is
-    checked too), ``bad_timestamp`` (a cutoff, open, recorded or source time
-    not in ``clock.to_iso``'s fixed-width form: the triggers and the checks
-    here compare times as text, which is only time order in that form), and
-    ``missing_guard`` (the ledger's leakage triggers are gone, so rows were not
-    checked when written), and ``below_floor`` (a forecast submitted to a scored
-    tournament after a member was answered by a model outside the frontier tier
-    or on a host not trusted to serve it: the submit floor, checked on what the
-    ledger says actually answered), and ``late_price`` (a market price dated
-    after the instant it was asked for, or a market source whose date is not
-    its price's: the source's date is what the other checks compare).
+    ``undated_source`` (an admitted undated or unproven source in a backtest
+    or the unrestricted arm), ``unadmitted_use`` (a model call cited a source
+    the gate did not admit for that question), ``model_too_new`` (a backtest
+    or unrestricted-arm call by a model not released before the question
+    opened; the leakage judge is exempt, since it reads the outcome by design
+    and never forecasts), ``bad_cutoff`` (a cutoff later than the moment the
+    question was recorded, or in a backtest later than the question's open
+    time: every other check trusts the cutoff, so it is checked too),
+    ``bad_timestamp`` (a cutoff, open, recorded or source time not in
+    ``clock.to_iso``'s fixed-width form: the triggers and the checks here
+    compare times as text, which is only time order in that form), and
+    ``missing_guard`` (the ledger's leakage triggers are gone, so rows were
+    not checked when written), and ``below_floor`` (a forecast submitted to a
+    scored tournament after a member was answered by a model outside the
+    frontier tier or on a host not trusted to serve it: the submit floor,
+    checked on what the ledger says actually answered), and ``late_price`` (a
+    market price dated after the instant it was asked for, or a market source
+    whose date is not its price's: the source's date is what the other checks
+    compare).
     """
     uri = f"file:{path}?mode=ro"
     with closing(sqlite3.connect(uri, uri=True)) as conn:
@@ -181,7 +198,7 @@ def _scan(conn: sqlite3.Connection) -> list[Violation]:
         FROM source_uses u
         JOIN sources s ON s.source_id = u.source_id
         JOIN runs r ON r.run_id = u.run_id
-        WHERE u.admitted = 1 AND r.mode = 'backtest'
+        WHERE u.admitted = 1 AND r.mode IN ('backtest', 'unrestricted')
           AND (s.published_at IS NULL OR s.date_evidence = 'none')
         """
     )
@@ -209,7 +226,7 @@ def _scan(conn: sqlite3.Connection) -> list[Violation]:
         FROM llm_calls c
         JOIN runs r ON r.run_id = c.run_id
         JOIN questions q ON q.run_id = c.run_id AND q.question_id = c.question_id
-        WHERE r.mode = 'backtest'
+        WHERE r.mode IN ('backtest', 'unrestricted') AND c.role != 'judge'
           AND (c.model_release_date IS NULL OR c.model_release_date >= substr(q.open_time, 1, 10))
         """
     )
