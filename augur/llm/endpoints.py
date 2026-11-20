@@ -42,6 +42,8 @@ ROLES: tuple[Role, ...] = ("research", "forecast")
 CALL_ROLE_CHAIN: dict[str, Role] = {
     "planner": "research",
     "researcher": "research",
+    "loop": "research",
+    "judge": "research",
     "forecaster": "forecast",
 }
 

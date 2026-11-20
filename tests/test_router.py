@@ -204,7 +204,7 @@ async def test_each_call_role_uses_its_own_chain(tmp_path: Path) -> None:
     member = await calls.complete(CallContext(run_id, qid, "forecaster", 0), forecast_request(), [])
     assert (planner.route, brief.route, member.route) == (GEMMA, GEMMA, GPT)
     with pytest.raises(AugurError, match="no model chain"):
-        await calls.complete(CallContext(run_id, qid, "judge"), forecast_request(), [])
+        await calls.complete(CallContext(run_id, qid, "oracle"), forecast_request(), [])
     led.close()
 
 
