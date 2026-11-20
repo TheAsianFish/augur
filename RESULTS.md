@@ -152,8 +152,12 @@ its cutoff, and the price arms here use Augur's own as-of reads instead
 
 **Beside the frontier, not against it.** AIA Forecaster's ablation on
 ForecastBench (arXiv 2511.07678, self-reported) runs the same experiment
-on a frontier model with agentic search: no search 0.116, market price
-only 0.103, search 0.085, both 0.075; on liquid markets the market beats
+on a frontier model with agentic search (FB-Market, n = 76, Table 4): the
+market price alone 0.096, the model shown the price without search 0.103,
+no search 0.116, search 0.085, both 0.075. Its shown-the-price row is the
+outside twin of arm (d): a frontier model shown the price without search
+also failed to beat the price (0.103 against 0.096), as Augur's arm (d)
+does here (0.143 against 0.106). On liquid markets the market beats
 it (0.1258 against 0.1106) and a fixed ⅓ : ⅔ blend scores 0.106. C2's
 direction matches that last row (the price beats the bot), but the gap is
 far larger here (0.240 against 0.106) because arm (b) has no search and a
