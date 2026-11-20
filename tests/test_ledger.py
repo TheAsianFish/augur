@@ -13,7 +13,7 @@ from augur.leakage import RunMode, admit_source
 from augur.ledger import APPEND_ONLY_TABLES, Ledger
 
 from .conftest import T0
-from .helpers import binary_question, source
+from .helpers import binary_question, market_source, source
 
 
 def _run(ledger: Ledger) -> str:
@@ -30,9 +30,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 5
+        assert first.schema_version() == 6
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 5
+        assert again.schema_version() == 6
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -43,6 +43,7 @@ def test_every_table_refuses_update_and_delete(ledger: Ledger, table: str) -> No
     s = source(T0 - timedelta(days=1), retrieved_at=T0)
     ledger.record_source(s)
     ledger.record_admission(run_id, q.question_id, admit_source(s, T0, RunMode.DRY_RUN))
+    ledger.record_source(market_source(T0 - timedelta(hours=2), as_of=T0))
     call_id = ledger.record_call(
         run_id=run_id,
         question_id=q.question_id,
@@ -253,7 +254,7 @@ def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedCloc
     copy = tmp_path / "m1.sqlite"
     shutil.copy(original, copy)
     with Ledger.open(copy, clock) as led:
-        assert led.schema_version() == 5
+        assert led.schema_version() == 6
         assert led.count("llm_calls") == 7
         assert led.count("model_switches") == 0
     assert scan_ledger(copy) == []
@@ -273,7 +274,7 @@ def test_migration_4_keeps_every_forecast_of_an_older_ledger(tmp_path: Path) -> 
         ).fetchall()
     assert before
     with Ledger.open(copy, FixedClock(T0)) as led:
-        assert led.schema_version() == 5
+        assert led.schema_version() == 6
         conn = led.connection
         after = conn.execute(
             "SELECT forecast_id, probability, reasoning FROM forecasts ORDER BY forecast_id"
@@ -303,3 +304,82 @@ def test_a_resolution_needs_a_value_exactly_when_resolved(ledger: Ledger) -> Non
     # A correction is a new row, and the latest one counts.
     assert ledger.latest_resolution(1) == ("annulled", None)
     assert ledger.latest_resolution(2) is None
+
+
+def test_a_market_source_stores_its_price_beside_it(ledger: Ledger) -> None:
+    s = market_source(T0 - timedelta(hours=2), as_of=T0, probability=0.27)
+    ledger.record_source(s)
+    ledger.record_source(s)  # the same source twice is still one row
+    rows = ledger.connection.execute(
+        "SELECT source_id, platform, probability, price_time, match FROM market_quotes"
+    ).fetchall()
+    assert rows == [(s.source_id, "manifold", 0.27, "2026-11-17T16:00:00.000000Z", "exact")]
+
+
+def test_a_price_dated_after_its_instant_cannot_be_built() -> None:
+    with pytest.raises(ValueError, match="after the instant it was asked for"):
+        market_source(T0 + timedelta(seconds=1), as_of=T0)
+
+
+def test_a_market_source_dated_unlike_its_price_is_refused(ledger: Ledger) -> None:
+    s = market_source(T0 - timedelta(hours=2), as_of=T0)
+    assert s.quote is not None
+    wrong = s.model_copy(update={"published_at": T0 - timedelta(hours=1)})
+    with pytest.raises(LedgerError, match="must be its price's"):
+        ledger.record_source(wrong)
+    # Refused whole: no market-dated source is left behind without its price.
+    assert ledger.count("sources") == 0
+    assert ledger.count("market_quotes") == 0
+
+
+def test_a_failed_price_write_leaves_no_source_behind(ledger: Ledger) -> None:
+    s = market_source(T0 - timedelta(hours=2), as_of=T0)
+    ledger.connection.execute(
+        "CREATE TRIGGER fail_quote BEFORE INSERT ON market_quotes "
+        "BEGIN SELECT RAISE(ABORT, 'injected'); END"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="injected"):
+        ledger.record_source(s)
+    assert ledger.count("sources") == 0
+
+
+def test_the_rebuilt_sources_table_still_refuses_a_late_price(ledger: Ledger) -> None:
+    run_id = _run(ledger)
+    q, post = binary_question(T0 - timedelta(hours=1))
+    cutoff = T0 - timedelta(hours=3)
+    ledger.record_question(run_id, q, cutoff, post)
+    late = market_source(T0 - timedelta(hours=2), as_of=T0)  # after the cutoff
+    ledger.record_source(late)
+    with pytest.raises(sqlite3.IntegrityError):
+        ledger.connection.execute(
+            "INSERT INTO source_uses (run_id, question_id, source_id, admitted, reason, "
+            "recorded_at) VALUES (?, ?, ?, 1, 'forced', ?)",
+            (run_id, q.question_id, late.source_id, "2026-11-17T12:00:00.000000Z"),
+        )
+
+
+def test_the_scan_flags_a_price_whose_date_was_edited(tmp_path: Path) -> None:
+    from augur.leakage import scan_ledger
+
+    path = tmp_path / "l.sqlite"
+    with Ledger.open(path, FixedClock(T0)) as led:
+        led.record_source(market_source(T0 - timedelta(hours=2), as_of=T0))
+    assert scan_ledger(path) == []
+    with closing(sqlite3.connect(path)) as raw:
+        raw.execute("DROP TRIGGER sources_no_update")
+        raw.execute("UPDATE sources SET published_at = '2026-11-17T11:00:00.000000Z'")
+        raw.commit()
+    kinds = {v.kind for v in scan_ledger(path)}
+    assert "late_price" in kinds
+
+
+def test_the_scan_flags_a_market_source_without_its_price(tmp_path: Path) -> None:
+    from augur.leakage import scan_ledger
+
+    path = tmp_path / "l.sqlite"
+    with Ledger.open(path, FixedClock(T0)) as led:
+        bare = market_source(T0 - timedelta(hours=2), as_of=T0).model_copy(update={"quote": None})
+        led.record_source(bare)
+    violations = scan_ledger(path)
+    assert [v.kind for v in violations] == ["late_price"]
+    assert "has no price row" in violations[0].detail

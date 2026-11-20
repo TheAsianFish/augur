@@ -4,9 +4,167 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M4 has the first scored number
-(ForecastBench, no retrieval, a local model) and the scoring it rests on;
-the first live score waits on a scored round (see Q1 and Q5 below).
+committed file differs from a fresh render. M5 sets the bot against the
+market price on resolved ForecastBench questions (the price alone wins); M4
+has the first scored number and the scoring it rests on; the first live
+score waits on a scored round (see Q1 and Q5 below).
+
+## M5: market prices, and the bot that ships against them (2026-11-19)
+
+**Question.** How much of a forecast's score could a copier get by reading
+the market, and does Augur add anything to it? The question a quant asks
+first: "how does yours compare to just reading Polymarket?" The arms,
+corpora, predictions P1 to P6 and the decision rules were committed to
+PLAN.md (`5c2e32e`) before any run.
+
+**Method.** `augur backtest prices` reads each ForecastBench market
+question's price from its market's public API as of the freeze instant
+(Manifold's last bet, Polymarket's last hourly price-history point) and
+records it as a dated market source; the leakage scan covers it like any
+other source. Arm (b) is the bot's own forecaster with no sources
+(`augur backtest forecastbench`), arm (d) the same forecaster with the price
+as the brief's only source (`--prices`), arm (a) the price itself, arm (c)
+the fixed blend. C1 reuses M4's `qwen2.5:7b` run (one draw) and adds prices;
+C2 is new: 138 resolved market questions frozen 2026-06-11, three draws on
+`nvidia/nemotron-3-ultra-550b-a55b:free`, the free model that answered most
+live forecasts in M3, listed on OpenRouter 2026-06-04 (before the freeze, so
+the release gate admits it). Arm (b): 419 calls (4 failed; three draws
+parsed on 135 questions, two on 3), 420,556 output tokens, 2.2 h of model
+time; arm (d): 303 calls (1 failed; three draws on 100 questions, two on 1),
+307,086 output tokens, 1.6 h; $0,
+2026-11-19 (`data/runs/m5-replay-c2-b.txt`, `-d.txt`; one question was
+re-run after its first attempt lost two draws to the token cap). The table
+is rendered from the ledgers by `make results` and re-scored by `make eval`.
+
+<!-- augur:begin replay -->
+| Corpus | Model (arm b) | Draws | Questions | Exact price as of the freeze | Within 0.01 of ForecastBench's freeze value |
+|---|---|---|---|---|---|
+| C1 | `qwen2.5:7b` | 1 | 139 | 105 (infer 0/6, manifold 44/44, metaculus 0/28, polymarket 61/61) | 84/105 (80%) |
+| C2 | `nvidia/nemotron-3-ultra-550b-a55b:free` | 3 | 138 | 101 (infer 0/5, manifold 45/45, metaculus 0/32, polymarket 56/56) | 91/101 (90%) |
+
+| Arm | C1 | C2 |
+|---|---|---|
+| (a) price only | 0.1362 [0.1034, 0.1705], log -0.418 (n=105) | 0.1062 [0.0742, 0.1417], log -0.354 (n=101) |
+| (b) Augur, no price | 0.2760 [0.2170, 0.3360], log -0.860 (n=105) | 0.2401 [0.1746, 0.3094], log -0.860 (n=101) |
+| (c) blend, ⅓ Augur in log-odds | 0.1462 [0.1137, 0.1807], log -0.453 (n=105) | 0.1291 [0.0904, 0.1721], log -0.420 (n=101) |
+| (d) Augur, price shown | not run | 0.1432 [0.0978, 0.1940], log -0.463 (n=101) |
+| (b) on every question, priced or not | 0.2395 [0.1922, 0.2893] (n=139) | 0.2176 [0.1663, 0.2708] (n=138) |
+
+| Paired Brier difference [95% CI] (MDE) | C1 | C2 |
+|---|---|---|
+| (b) − (a): Augur minus the price | +0.1398 [+0.0736, +0.2052] (0.0937) | +0.1338 [+0.0726, +0.1980] (0.0900) |
+| (c) − (b): blend minus Augur | -0.1298 [-0.1786, -0.0822] (0.0689) | -0.1110 [-0.1567, -0.0685] (0.0634) |
+| (c) − (a): blend minus the price | +0.0101 [-0.0130, +0.0318] (0.0316) | +0.0229 [-0.0013, +0.0471] (0.0350) |
+| (d) − (b): showing the price |  | -0.0969 [-0.1437, -0.0536] (0.0645) |
+| (d) − (a): Augur shown the price, minus the price |  | +0.0370 [+0.0030, +0.0729] (0.0498) |
+
+Settings arms on C2, re-aggregated from (b)'s own draws (135 questions with three parsed draws; no new calls):
+
+| Paired Brier difference against the median of 3 [95% CI] (MDE) | C2 |
+|---|---|
+| one draw - median of 3 | +0.0223 [+0.0040, +0.0440] (0.0283) |
+| mean - median | -0.0017 [-0.0072, +0.0039] (0.0080) |
+| mean log-odds - median | -0.0002 [-0.0052, +0.0050] (0.0073) |
+| extremized x1.5 - median | +0.0076 [-0.0021, +0.0182] (0.0145) |
+
+C3, live and dry-run questions in the committed ledgers with a resolution: 0. Research depth and the replay of live research wait on these.
+
+Predictions stated in PLAN.md before the run:
+
+- P1 (price alone beats Augur, interval above 0): C1 **held**, C2 **held**.
+- P2 (blend beats Augur, interval below 0): C1 **held**, C2 **held**.
+- P3 (blend worse than the price on C1; within ±0.01 on C2, interval including 0): C1 **held**, C2 **failed**.
+- P4 (showing the price improves Brier by at least 0.03, interval below 0; the model still under-uses it): first part **held**, second part **held**.
+- P5, first two parts (freeze value matched on ≥90% of priced C2 questions; an exact price for ≥90% of Polymarket and Manifold, 0% of Metaculus and INFER): 91/101 matched **held**; 101/101 priced **held**; 0 of 37 Metaculus and INFER priced **held**. The third part (MiniBench) is below.
+  As first measured, with the seven-day staleness cut the price run applied before Manifold was exempted (a change made after seeing the data): 75/85 matched **failed**; 85/101 priced **failed**. So P5's first two parts failed as first measured and hold only after that change.
+- P6 (one draw within 0.01 of three, interval including 0; mean of log-odds within 0.005 of the median; extremizing worse, interval including 0): **failed**, **held**, **held**.
+
+Method: arms (a)–(d) are paired on the questions with an exact price (C1 has no arm (d)); every probability is clipped to [0.01, 0.99] before scoring; log is the mean natural log of the probability given to the outcome (higher is better). Intervals: paired bootstrap over questions, 10,000 resamples, seed 20261119; MDE is the true difference this n would detect with 80% power at the 5% level.
+<!-- augur:end replay -->
+
+**What it says.**
+
+- **The price alone beats the bot, by a lot.** On C2's 101 priced
+  questions the price scores 0.106 and Augur without it 0.240, 0.134 worse
+  [0.073, 0.198]; C1 says the same with a 7B local model. Both are
+  ForecastBench market questions, the best case for prices; most MiniBench
+  questions have no market at all (below).
+- **Showing the price helps, and the bot still under-uses it.** With the
+  price as its only source Augur scores 0.143: 0.097 better than without
+  [0.054, 0.144] (P4 held), yet still 0.037 worse than the price it was shown
+  [0.003, 0.073]. The survey's r = +0.34 for "checking similar questions or
+  markets" is a correlation across bots; this is the same direction measured
+  as a paired difference on one bot.
+- **The fixed blend recovers most of the gap without a second call.** One
+  third Augur in log-odds: 0.129, 0.111 better than Augur alone (P2 held),
+  0.023 worse than the price alone (P3's C2 half failed: the interval
+  [−0.001, +0.047] includes 0 but the point estimate is outside ±0.01).
+  On C1 the blend is 0.010 worse than the price (P3's C1 half held).
+- **Settings.** One draw is 0.022 worse than the median of three [0.004,
+  0.044] (P6's first part failed: three draws matter more than predicted).
+  "One draw" is each question's first draw, a choice the plan did not
+  state; the second or third draw alone is within 0.004 of the median, so
+  this part of P6 rests on which draw is taken;
+  mean, mean of log-odds and median are within 0.002 of each other;
+  extremizing at 1.5 is 0.008 worse, interval including 0 (held).
+- **Decision rules.** Both pre-stated conditions are met on C2: the
+  interval of (d) − (b) and of (c) − (b) lie below 0. So `augur forecast`
+  now runs the markets searcher by default, and blends a binary forecast
+  with the question's own community prediction when the API shows it to
+  the bot (`--no-markets`, `--no-blend` turn them off). In practice the
+  blend will rarely fire on scored tournaments: a bot token sees no
+  community prediction there (M4, and 0 of 59 in the coverage run below).
+
+### How often a live question has a market (P5)
+
+`scripts/market_coverage.py` ran the markets searcher on the 59 questions
+of the 2026-11-16 MiniBench round as of each question's open time, then I
+judged each top hit by hand (`data/runs/m5-market-coverage-labels.json`).
+The first run (`m5-market-coverage-1.json`) found a priced hit for 5
+questions, three of them matched only on a shared date ("November 26,
+2026"); after dates stopped counting as shared words the second run
+(`m5-market-coverage.json`) found 4. In both, the top hit was about the same
+event for **2 of 59** (3%): the Alaska Senate race and La Jolla's peak water
+level. P5's third part (under 25%) held. No question showed its community
+prediction to the bot's token.
+
+P5's first two parts also held on C2 (above), with one disclosed change:
+the first price run cut prices older than seven days and found 85 of 101.
+A Manifold market maker's price stands until the next bet, so the last bet
+is the price however old; I checked one (`1y80gk7t9k`: last bet 12 days
+before the freeze, equal to ForecastBench's value to 16 digits), removed the
+cut for Manifold, and re-ran: 101 of 101. The
+change was made after seeing the data, so the block above reports P5 both
+ways: as first measured its first two parts failed (85 of 101 priced, 75 of
+85 matched), and they hold only after the change. The seven-day window still bounds
+the Polymarket and Kalshi history reads.
+
+**ForecastBench's freeze value is not always an as-of price.** Where
+Augur's as-of Polymarket price and ForecastBench's value differ by more
+than 0.01 (9 questions on C2, 19 on C1), `scripts/freeze_value_timing.py`
+looks for their value in the hourly history three days either side. On C2
+the nearest exact match is after the freeze for 5 of 9 (1 to 6 hours); on
+C1 it is most often a day or more before. Polymarket resamples history
+per query, so this is evidence, not proof, but it means M4's "market"
+reference row (built from ForecastBench's values) may read a few hours past
+its cutoff, and the price arms here use Augur's own as-of reads instead
+(`data/runs/m5-freeze-value-timing.txt`, `-c1.txt`).
+
+**Beside the frontier, not against it.** AIA Forecaster's ablation on
+ForecastBench (arXiv 2511.07678, self-reported) runs the same experiment
+on a frontier model with agentic search: no search 0.116, market price
+only 0.103, search 0.085, both 0.075; on liquid markets the market beats
+it (0.1258 against 0.1106) and a fixed ⅓ : ⅔ blend scores 0.106. C2's
+direction matches that last row (the price beats the bot), but the gap is
+far larger here (0.240 against 0.106) because arm (b) has no search and a
+free model; the question sets differ, so none of these numbers is
+comparable to C2's, and nothing here places Augur against AIA.
+
+**Unfair or missing comparisons, named.** C2 is one free model, not the
+frontier model the floor requires live; the replay of live research (C3,
+and research depth with it) waits on resolved live questions; ForecastBench
+market questions are a best case for price-only, since each question is a
+market.
 
 ## M4: scoring, baselines and the first scored number (2026-11-19)
 
@@ -239,6 +397,9 @@ missed, and why).
 | `m3-live-bot-testing-area.sqlite` | 1 (live 1) | 5 | 43 | 5 | 5 | 0 | 0 |
 | `m4-forecastbench-qwen.sqlite` | 1 (backtest 1) | 139 | 139 | 139 | 0 | 139 | 139 |
 | `m4-shadow-template.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 3 |
+| `m5-replay-c1-prices.sqlite` | 1 (backtest 1) | 139 | 0 | 0 | 0 | 0 | 0 |
+| `m5-replay-c2-prices.sqlite` | 2 (backtest 2) | 138 | 303 | 101 | 0 | 0 | 0 |
+| `m5-replay-c2.sqlite` | 4 (backtest 4) | 138 | 419 | 138 | 0 | 138 | 138 |
 <!-- augur:end ledgers -->
 
 ## M3: every question type live, deadlines, and the schedule (2026-11-18)
@@ -591,6 +752,8 @@ works against the real API; they say nothing yet about accuracy.
 | Augur's score beside Metaculus's own for one resolved question of each type | The API hides resolutions and scores from this bot account (0 of 80) | `augur resolve` records `my_forecasts.score_data` whenever the API returns it, and `augur score` prints each `check` line; with a personal (non-bot) token, `python3 scripts/resolution_visibility.py` first shows whether that account sees them |
 | The ForecastBench number with five draws, as the pipeline runs live | About 15 hours of CPU on 4 cores (five times the measured 3.1 h) | `AUGUR_FORECASTERS=5 make backtest FB_LEDGER=data/ledgers/m4-forecastbench-qwen-5.sqlite`, then `make results` after adding the ledger to the report |
 | The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
+| The replay evaluation (arms b and d on C2) on the frontier model the floor requires live | Nothing paid without the maintainer's say-so; C2 ran on the free model that answered live in M3 | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high AUGUR_FORECASTERS=3 augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --ledger data/ledgers/m5-replay-c2-gpt54.sqlite`, then the same with `--prices data/ledgers/m5-replay-c2-prices.sqlite` (into a copy of that ledger). C2's free run used 430,222 input and 727,642 output tokens over 717 draws: about $12 at GPT-5.4's listed $2.50/$15 per million, more at high effort. The listing date (2026-03) is before the 2026-06-11 freeze, so the gate admits it |
+| Research depth, and the similar-market (search) half of the markets searcher, on replayed live research (C3) | No live question with an Augur forecast has resolved (C3 = 0); C1 and C2 have no retrieval, and their price is exact by construction | Once live questions resolve: `augur resolve --ledger L` (or `--manual`), then the replay arms on the ledger's recorded sources (M7's harness) |
 | Groq, Gemini and GitHub Models free tiers | No `GROQ_API_KEY`, `GEMINI_API_KEY` or `GITHUB_TOKEN` here; the presets are configured, not exercised | `AUGUR_FORECAST_MODELS=groq:<model> augur models probe --burst 30` (and `gemini:`, `github:`) |
 | Tokens-per-minute limits | OpenRouter sends no token-limit header and the bursts are tiny | the same burst on Groq, which sends `x-ratelimit-limit-tokens` |
 | AskNews sources | No `ASKNEWS_CLIENT_ID`/`ASKNEWS_CLIENT_SECRET` in the build environment; the searcher is tested only against recorded payloads | `make test-integration` with both set, then `augur forecast --tournament minibench` |

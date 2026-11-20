@@ -21,14 +21,14 @@ from augur.ledger import Ledger
 from augur.llm.base import LlmRequest, Message
 from augur.log import get_logger
 from augur.questions import Question
-from augur.research.source import Searcher, Source
+from augur.research.source import QuestionSearcher, Searcher, Source
 
 log = get_logger(__name__)
 
 # Reasoning models spend part of these before answering: a free one emptied a
 # 200-token plan on thinking (M2).
-PLAN_MAX_TOKENS = 600
-BRIEF_MAX_TOKENS = 1000
+PLAN_MAX_TOKENS = 2000
+BRIEF_MAX_TOKENS = 4000
 
 PLAN_SYSTEM = (
     "You plan web research for a forecaster. Reply with a JSON array of at most "
@@ -135,7 +135,8 @@ class Researcher:
     async def research(self, run_id: str, q: Question, cutoff: datetime) -> ResearchResult:
         result = ResearchResult(queries=[], sources=[])
         result.queries = await self._plan(run_id, q, cutoff, result)
-        found = await self._search_all(result.queries, cutoff, result)
+        found = await self._search_question(q, cutoff, result)
+        found += await self._search_all(result.queries, cutoff, result)
         for source in found:
             # Stored before any model can see it; then the gate decides.
             self._ledger.record_source(source)
@@ -179,6 +180,21 @@ class Researcher:
             queries = [fallback_query(q)]
         return queries
 
+    async def _search_question(
+        self, q: Question, cutoff: datetime, result: ResearchResult
+    ) -> list[Source]:
+        """Searchers that look up the question itself (its market price) go first, once."""
+        found: list[Source] = []
+        for searcher in self._searchers:
+            if not isinstance(searcher, QuestionSearcher):
+                continue
+            try:
+                found += await searcher.search_question(q, cutoff, self._per_query)
+            except AugurError as exc:
+                result.errors.append(f"{searcher.name} failed for the question: {exc}")
+                log.warning("searcher failed", searcher=searcher.name, error=str(exc))
+        return found
+
     async def _search_all(
         self, queries: list[str], cutoff: datetime, result: ResearchResult
     ) -> list[Source]:
@@ -191,8 +207,9 @@ class Researcher:
                 return []
 
         # Bounded: at most len(searchers) x max_queries tasks, each behind its searcher's limiter.
+        by_query = [s for s in self._searchers if not isinstance(s, QuestionSearcher)]
         batches = await asyncio.gather(
-            *(one(searcher, query) for query in queries for searcher in self._searchers)
+            *(one(searcher, query) for query in queries for searcher in by_query)
         )
         seen: set[str] = set()
         ordered: list[Source] = []

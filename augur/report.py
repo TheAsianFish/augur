@@ -22,9 +22,11 @@ import sqlite3
 from collections.abc import Callable, Sequence
 from contextlib import closing
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
-from augur import scorecard, standings
+from augur import replay, scorecard, standings
+from augur.forecastbench import load_set
 from augur.score import Estimate, detectable_effect
 
 # The spread of one bot's per-question spot peer score, derived in PLAN.md from
@@ -294,6 +296,220 @@ def render_standings(root: Path) -> str:
     return "\n\n".join(parts) + "\n" if parts else "No standings snapshot committed.\n"
 
 
+# -- the replay evaluation (M5) ---------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ReplayCorpus:
+    label: str
+    stem: str
+    """``data/forecastbench/<date>``: the committed question and resolution subsets."""
+    forecasts: Path
+    prices: Path
+    with_prices: Path | None
+
+
+REPLAY_CORPORA = (
+    ReplayCorpus(
+        "C1",
+        "data/forecastbench/2026-05-24",
+        FORECASTBENCH_LEDGER,
+        LEDGERS / "m5-replay-c1-prices.sqlite",
+        None,
+    ),
+    ReplayCorpus(
+        "C2",
+        "data/forecastbench/2026-06-21",
+        LEDGERS / "m5-replay-c2.sqlite",
+        LEDGERS / "m5-replay-c2-prices.sqlite",
+        LEDGERS / "m5-replay-c2-prices.sqlite",
+    ),
+)
+ARM_NAMES = {
+    "a": "(a) price only",
+    "b": "(b) Augur, no price",
+    "c": "(c) blend, ⅓ Augur in log-odds",
+    "d": "(d) Augur, price shown",
+}
+
+
+def _held(ok: bool) -> str:
+    return "**held**" if ok else "**failed**"
+
+
+def _model_of(path: Path, tournament: str) -> tuple[str, int]:
+    with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
+        rows = conn.execute(
+            "SELECT model, settings_json FROM runs WHERE mode = 'backtest' AND tournament = ?",
+            (tournament,),
+        ).fetchall()
+    models = sorted({str(r[0]) for r in rows})
+    draws = max(int(json.loads(r[1]).get("forecasters") or 1) for r in rows)
+    return ", ".join(models), draws
+
+
+def render_replay(root: Path) -> str:
+    """M5's arms on ForecastBench market questions, with P1–P6 marked."""
+    scores: dict[str, replay.CorpusScore] = {}
+    models: dict[str, tuple[str, int]] = {}
+    for c in REPLAY_CORPORA:
+        if not (root / c.forecasts).exists() or not (root / c.prices).exists():
+            return f"`{c.forecasts}` or `{c.prices}` is missing: run the replay evaluation.\n"
+        qs = root / f"{c.stem}-llm.subset.json"
+        rs = root / f"{c.stem}_resolution_set.subset.json"
+        loaded = load_set(qs, rs, released=date.min)
+        tournament = f"forecastbench:{loaded.question_set}"
+        scores[c.label] = replay.score_corpus(
+            label=c.label,
+            questions=loaded.kept,
+            tournament=tournament,
+            forecasts=root / c.forecasts,
+            prices=root / c.prices,
+            with_prices=None if c.with_prices is None else root / c.with_prices,
+        )
+        models[c.label] = _model_of(root / c.forecasts, tournament)
+    out = [
+        "| Corpus | Model (arm b) | Draws | Questions | Exact price as of the freeze "
+        "| Within 0.01 of ForecastBench's freeze value |",
+        "|---|---|---|---|---|---|",
+    ]
+    for label, sc in scores.items():
+        model, draws = models[label]
+        platforms = ", ".join(
+            f"{p} {got}/{n}" for p, (got, n) in sorted(sc.priced_by_platform.items())
+        )
+        match, priced = sc.freeze_match
+        out.append(
+            f"| {label} | `{model}` | {draws} | {sc.questions} | {sc.priced} ({platforms}) "
+            f"| {match}/{priced} ({match / priced:.0%}) |"
+        )
+    out += ["", "| Arm | " + " | ".join(scores) + " |", "|---|" + "---|" * len(scores)]
+    for arm, name in ARM_NAMES.items():
+        cells = []
+        for sc in scores.values():
+            found = [a for a in sc.arms if a.name == arm]
+            cells.append(
+                f"{_est(found[0].brier, 4)}, log {found[0].log:.3f} (n={found[0].brier.n})"
+                if found
+                else "not run"
+            )
+        out.append(f"| {name} | " + " | ".join(cells) + " |")
+    cells = [
+        "" if sc.all_b is None else f"{_est(sc.all_b.brier, 4)} (n={sc.all_b.brier.n})"
+        for sc in scores.values()
+    ]
+    out.append("| (b) on every question, priced or not | " + " | ".join(cells) + " |")
+    out += [
+        "",
+        "| Paired Brier difference [95% CI] (MDE) | " + " | ".join(scores) + " |",
+        "|---|" + "---|" * len(scores),
+    ]
+    names = {
+        "b-a": "(b) − (a): Augur minus the price",
+        "c-b": "(c) − (b): blend minus Augur",
+        "c-a": "(c) − (a): blend minus the price",
+        "d-b": "(d) − (b): showing the price",
+        "d-a": "(d) − (a): Augur shown the price, minus the price",
+    }
+    for key, name in names.items():
+        cells = []
+        for sc in scores.values():
+            hits = [d for d in sc.diffs if d.name == key]
+            cells.append(f"{_signed(hits[0].brier, 4)} ({hits[0].brier.mde:.4f})" if hits else "")
+        out.append(f"| {name} | " + " | ".join(cells) + " |")
+    c2 = scores["C2"]
+    out += [
+        "",
+        f"Settings arms on C2, re-aggregated from (b)'s own draws ({c2.settings_n} questions "
+        "with three parsed draws; no new calls):",
+        "",
+        "| Paired Brier difference against the median of 3 [95% CI] (MDE) | C2 |",
+        "|---|---|",
+    ]
+    out += [f"| {d.name} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in c2.settings]
+    live = scorecard.load(_ledgers(root), modes=["live", "dry_run"])
+    out += [
+        "",
+        f"C3, live and dry-run questions in the committed ledgers with a resolution: "
+        f"{len(live.scored)}. Research depth and the replay of live research wait on these.",
+    ]
+    out += ["", *_replay_verdicts(scores), ""]
+    out.append(
+        "Method: arms (a)–(d) are paired on the questions with an exact price (C1 has no "
+        "arm (d)); every probability is clipped to [0.01, 0.99] before scoring; log is the "
+        "mean natural log of the probability given to the outcome (higher is better). "
+        f"Intervals: paired bootstrap over questions, {c2.diffs[0].brier.resamples:,} "
+        f"resamples, seed {c2.diffs[0].brier.seed}; MDE is the true difference this n would "
+        "detect with 80% power at the 5% level."
+    )
+    return "\n".join(out) + "\n"
+
+
+def _diff(sc: replay.CorpusScore, name: str) -> Estimate:
+    return next(d.brier for d in [*sc.diffs, *sc.settings] if d.name == name)
+
+
+def _replay_verdicts(scores: dict[str, replay.CorpusScore]) -> list[str]:
+    c1, c2 = scores["C1"], scores["C2"]
+    lines = ["Predictions stated in PLAN.md before the run:", ""]
+    p1 = [_diff(s, "b-a").low > 0 for s in (c1, c2)]
+    lines.append(
+        f"- P1 (price alone beats Augur, interval above 0): C1 {_held(p1[0])}, C2 {_held(p1[1])}."
+    )
+    p2 = [_diff(s, "c-b").high < 0 for s in (c1, c2)]
+    lines.append(
+        f"- P2 (blend beats Augur, interval below 0): C1 {_held(p2[0])}, C2 {_held(p2[1])}."
+    )
+    ca1, ca2 = _diff(c1, "c-a"), _diff(c2, "c-a")
+    lines.append(
+        f"- P3 (blend worse than the price on C1; within ±0.01 on C2, interval including 0): "
+        f"C1 {_held(ca1.mean > 0)}, "
+        f"C2 {_held(abs(ca2.mean) <= 0.01 and ca2.low <= 0 <= ca2.high)}."
+    )
+    if any(d.name == "d-b" for d in c2.diffs):
+        db, da = _diff(c2, "d-b"), _diff(c2, "d-a")
+        lines.append(
+            f"- P4 (showing the price improves Brier by at least 0.03, interval below 0; "
+            "the model still under-uses it): first part "
+            f"{_held(db.mean <= -0.03 and db.high < 0)}, second part {_held(da.mean > 0)}."
+        )
+    match, priced = c2.freeze_match
+    exact = [c2.priced_by_platform.get(p, (0, 0)) for p in ("polymarket", "manifold")]
+    none = [c2.priced_by_platform.get(p, (0, 0)) for p in ("metaculus", "infer")]
+    got, total = sum(g for g, _ in exact), sum(n for _, n in exact)
+    lines.append(
+        f"- P5, first two parts (freeze value matched on ≥90% of priced C2 questions; an exact "
+        f"price for ≥90% of Polymarket and Manifold, 0% of Metaculus and INFER): "
+        f"{match}/{priced} matched {_held(match >= 0.9 * priced)}; "
+        f"{got}/{total} priced {_held(got >= 0.9 * total)}; "
+        f"{sum(g for g, _ in none)} of {sum(n for _, n in none)} Metaculus and INFER priced "
+        f"{_held(sum(g for g, _ in none) == 0)}. The third part (MiniBench) is below."
+    )
+    first_match, first_priced = c2.first_measure
+    if first_priced != priced:
+        lines.append(
+            "  As first measured, with the seven-day staleness cut the price run applied "
+            f"before Manifold was exempted (a change made after seeing the data): "
+            f"{first_match}/{first_priced} matched "
+            f"{_held(first_match >= 0.9 * first_priced)}; "
+            f"{first_priced}/{total} priced {_held(first_priced >= 0.9 * total)}. "
+            "So P5's first two parts failed as first measured and hold only after that change."
+        )
+    one, logodds, ext = (
+        _diff(c2, "one draw - median of 3"),
+        _diff(c2, "mean log-odds - median"),
+        _diff(c2, f"extremized x{replay.EXTREMIZE} - median"),
+    )
+    lines.append(
+        f"- P6 (one draw within 0.01 of three, interval including 0; mean of log-odds within "
+        f"0.005 of the median; extremizing worse, interval including 0): "
+        f"{_held(abs(one.mean) < 0.01 and one.low <= 0 <= one.high)}, "
+        f"{_held(abs(logodds.mean) < 0.005)}, "
+        f"{_held(ext.mean > 0 and ext.low <= 0 <= ext.high)}."
+    )
+    return lines
+
+
 def _has(conn: sqlite3.Connection, table: str) -> bool:
     return (
         conn.execute(
@@ -315,6 +531,7 @@ BLOCKS: dict[str, Block] = {
         Block("live-scores", render_live),
         Block("ledgers", render_ledgers),
         Block("standings", render_standings),
+        Block("replay", render_replay),
     )
 }
 

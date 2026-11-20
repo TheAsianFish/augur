@@ -21,9 +21,9 @@ from augur.agents.forecaster import draw_forecasts
 from augur.agents.researcher import ResearchResult
 from augur.clock import ensure_utc
 from augur.config import Settings
-from augur.errors import AugurError
+from augur.errors import AugurError, LeakageError
 from augur.forecastbench import FBQuestion
-from augur.leakage import RunMode, admit_model
+from augur.leakage import RunMode, admit_model, admit_source
 from augur.ledger import Ledger
 from augur.llm.router import Router
 from augur.log import get_logger
@@ -79,8 +79,16 @@ async def run_forecastbench(
     clock: PinnedClock,
     code_version: str,
     out: Callable[[str], None] = print,
+    research_for: Callable[[FBQuestion], ResearchResult | None] | None = None,
+    extra_settings: dict[str, object] | None = None,
 ) -> BacktestResult:
-    """Forecast each question once, as of its freeze date, with no retrieval."""
+    """Forecast each question once, as of its freeze date.
+
+    With no ``research_for`` there is no retrieval. With it (the replay
+    evaluation's arm (d)), each question's sources come from it, every one
+    passes the leakage gate before a model sees it, and a question it has no
+    research for is skipped.
+    """
     done = done_questions(ledger, tournament)
     todo = [q for q in questions if q.question_id not in done]
     if not todo:
@@ -92,7 +100,8 @@ async def run_forecastbench(
         provider=router.provider(answering).name,
         model=answering.model,
         settings=settings.public_dict()
-        | {"retrieval": "none", "questions": len(questions), "resumed": len(done)},
+        | {"retrieval": "none", "questions": len(questions), "resumed": len(done)}
+        | (extra_settings or {}),
         code_version=code_version,
     )
     # The run row records when the run really started; only then is the clock pinned.
@@ -115,7 +124,24 @@ async def run_forecastbench(
             skipped += 1
             _outcome(ledger, run_id, fb, "skipped", gate.reason, started)
             continue
-        research = ResearchResult(queries=[], sources=[], brief=NO_RESEARCH_BRIEF)
+        if research_for is None:
+            research = ResearchResult(queries=[], sources=[], brief=NO_RESEARCH_BRIEF)
+        else:
+            found = research_for(fb)
+            if found is None:
+                skipped += 1
+                _outcome(ledger, run_id, fb, "skipped", "no research for this question", started)
+                continue
+            research = found
+            for source in research.sources:
+                ledger.record_source(source)  # before any model sees it; a no-op if present
+                admission = admit_source(source, cutoff, RunMode.BACKTEST)
+                ledger.record_admission(run_id, q.question_id, admission)
+                if not admission.admitted:
+                    raise LeakageError(
+                        f"{fb.fb_id}: source {source.source_id} refused ({admission.reason}); "
+                        "the research for a backtest must be dated at or before its cutoff"
+                    )
         try:
             members, errors = await draw_forecasts(
                 calls=calls,
@@ -160,7 +186,8 @@ async def run_forecastbench(
             out(f"[{i}/{len(todo)}] {fb.source}:{fb.fb_id} failed: {exc}")
             continue
         forecast += 1
-        _outcome(ledger, run_id, fb, "forecast", "forecast with no retrieval", started)
+        how = "no retrieval" if research_for is None else f"{len(research.sources)} source(s)"
+        _outcome(ledger, run_id, fb, "forecast", f"forecast with {how}", started)
         out(
             f"[{i}/{len(todo)}] {fb.source}:{fb.fb_id} p={prediction.probability:.2f} "
             f"outcome={fb.outcome} ({time.monotonic() - started:.0f} s)"

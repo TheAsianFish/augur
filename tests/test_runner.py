@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import io
 import json
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -23,7 +24,11 @@ from augur.llm.endpoints import PRESETS, Endpoint, Route
 from augur.llm.router import Router
 from augur.log import configure_logging
 from augur.metaculus import MetaculusClient
+from augur.questions import Question
 from augur.ratelimit import RateLimiter
+from augur.replay import blend
+from augur.research.quotes import MarketQuote, Match
+from augur.research.source import DateEvidence, Searcher, Source
 from augur.runner import SAMPLES_DIR, ForecastRun, RunReport
 
 from .conftest import T0
@@ -93,6 +98,8 @@ async def _run(
     searcher: FixedSearcher | None = None,
     tournament: str | None = None,
     reforecast: bool = False,
+    extra_searchers: Sequence[Searcher] = (),
+    blend_exact_price: bool = False,
     **settings: object,
 ) -> tuple[RunReport, Ledger]:
     clock = FixedClock(T0)
@@ -107,10 +114,11 @@ async def _run(
         clock=clock,
         ledger=ledger,
         router=router,
-        searchers=[searcher or FixedSearcher()],
+        searchers=[searcher or FixedSearcher(), *extra_searchers],
         client=client,
         out=out or io.StringIO(),
         probe_providers=probe_providers,
+        blend_exact_price=blend_exact_price,
     )
     slug = tournament or ("bot-testing-area" if submit else "minibench")
     report = await run.run(
@@ -616,3 +624,81 @@ async def test_draws_still_running_at_the_deadline_are_stopped_and_charged(
     assert [m for m, _ in stopped] == [1, 3]
     assert budget.reserved_run == pytest.approx(0.0)
     ledger.close()
+
+
+class OwnPrice:
+    """The markets searcher's question-level half: this question's community prediction."""
+
+    name = "markets"
+
+    def __init__(self, match: Match = "exact") -> None:
+        self.match = match
+
+    async def search(self, query: str, as_of: datetime, limit: int) -> list[Source]:
+        return []
+
+    async def search_question(self, q: Question, as_of: datetime, limit: int) -> list[Source]:
+        quote = MarketQuote(
+            platform="metaculus" if self.match == "exact" else "polymarket",
+            market_id=str(q.question_id),
+            title=q.title,
+            url=q.url,
+            outcome="Yes",
+            probability=0.8,
+            price_time=as_of - timedelta(hours=2),
+            as_of=as_of,
+            match=self.match,
+        )
+        return [
+            Source.build(
+                searcher=self.name,
+                query=q.title,
+                url=q.url,
+                title=q.title,
+                excerpt="Community prediction 80%",
+                published_at=quote.price_time,
+                retrieved_at=as_of,
+                as_of=as_of,
+                date_evidence=DateEvidence.AGGREGATE_HISTORY,
+                evidence_detail="test",
+                quote=quote,
+            )
+        ]
+
+
+async def test_the_blend_uses_only_the_question_s_own_community_prediction(
+    tmp_path: Path,
+) -> None:
+    # Draws 30-50%: median 40%. Blended one third to two thirds with 80%.
+    report, ledger = await _run(
+        tmp_path / "a", client=None, extra_searchers=[OwnPrice()], blend_exact_price=True
+    )
+    first = report.reports[0]
+    assert first.probability == pytest.approx(blend(0.40, 0.8))
+    assert "blended in log-odds with the community prediction of 80.0%" in first.comment
+    (method,) = ledger.connection.execute(
+        "SELECT method FROM forecasts WHERE kind = 'aggregate' ORDER BY rowid LIMIT 1"
+    ).fetchone()
+    assert method.startswith("blend of the median")
+    ledger.close()
+
+    # A similar market found by search is shown to the model, never blended.
+    report2, ledger2 = await _run(
+        tmp_path / "b",
+        client=None,
+        extra_searchers=[OwnPrice(match="search")],
+        blend_exact_price=True,
+    )
+    assert report2.reports[0].probability == pytest.approx(0.40)
+    ledger2.close()
+
+    # And nothing is blended with the switch off.
+    report3, ledger3 = await _run(tmp_path / "c", client=None, extra_searchers=[OwnPrice()])
+    assert report3.reports[0].probability == pytest.approx(0.40)
+    ledger3.close()
+
+
+def test_every_date_evidence_has_a_comment_label() -> None:
+    from augur.comment import _EVIDENCE
+
+    assert set(_EVIDENCE) == set(DateEvidence)

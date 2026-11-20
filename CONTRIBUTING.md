@@ -25,7 +25,7 @@ installs Metaculus's template bot and does not support 3.14.
 | `make eval` | Scans every committed ledger for leakage, re-scores the ForecastBench backtest and checks RESULTS.md against a fresh render. Offline, free. |
 | `make backtest ARGS=...` | The ForecastBench backtest (no retrieval, the configured model, local by default), then its resolution. Resumable; hours on a CPU. Manual; never in per-PR CI. |
 | `make results` | Re-renders RESULTS.md's generated blocks (between `<!-- augur:begin NAME -->` markers) from the committed ledgers and snapshots. A test fails if the committed file differs. |
-| `augur forecast --tournament minibench` | Dry run: the live listing with `METACULUS_TOKEN`, the committed samples in `data/samples/` without it. Add `--submit` to post. Probes the model chains first (`--no-probe` to skip). `--reforecast` re-forecasts questions already forecast, in the bot-testing-area only. |
+| `augur forecast --tournament minibench` | Dry run: the live listing with `METACULUS_TOKEN`, the committed samples in `data/samples/` without it. Add `--submit` to post. Probes the model chains first (`--no-probe` to skip). `--reforecast` re-forecasts questions already forecast, in the bot-testing-area only. The markets searcher and the exact-price blend are on by default since M5 (`--no-markets`, `--no-blend`). |
 | `augur models list` | Each configured route with its listed price, listing date and whether it is in the frontier tier. No model calls. |
 | `augur models probe [--route E:M ...] [--burst N]` | One short call per route, recorded in the ledger; `--burst N` then measures each free route's real rate limit (stops at the first refusal; free routes only). Prints the OpenRouter key's credit and daily free allowance. |
 | `augur models snapshot` | Refreshes the committed copy of OpenRouter's model list (`augur/llm/openrouter_models.json`), used when the live list cannot be fetched. |
@@ -36,6 +36,8 @@ installs Metaculus's template bot and does not support 3.14.
 | `augur standings --round SLUG [--out F] [--ledger L ...]` | A MiniBench round's leaderboard: rank 1, Augur, the best template bot, the best house bot, the community aggregates, a listed open-source bot; each question Augur did not forecast explained from the ledgers. `--from F` renders a saved snapshot offline. |
 | `augur report [--check]` | What `make results` runs. |
 | `augur backtest forecastbench --questions Q --resolutions R` | What `make backtest` runs. |
+| `augur backtest prices --questions Q --resolutions R --ledger L` | Records each ForecastBench market question's exact price as of its freeze instant (Manifold's last bet, Polymarket's last history point, the Metaculus aggregate where the token sees it) as a dated market source. No model call; free. |
+| `augur backtest forecastbench ... --prices L` | The replay evaluation's arm (d): the recorded price is the brief's only source; questions without one are skipped. |
 | `augur ledger import PATH... --out DB` | Rebuilds one SQLite ledger from JSONL exports (files or a directory, such as a checkout of the `ledger` branch); the leakage triggers re-check every row. |
 | `augur ledger export DB OUT` | Writes a ledger as JSONL, one row per line, byte-stable; the scheduled workflow pushes one per run to the `ledger` branch. |
 | `augur forecast ... --coverage PATH` | Also writes the run's coverage report as JSON: each question forecast in time, missed, skipped or failed, and why (also in the ledger's `question_outcomes`). |

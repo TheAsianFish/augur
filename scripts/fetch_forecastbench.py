@@ -1,11 +1,15 @@
 """Download one ForecastBench question set and its resolution set, keep the eligible questions.
 
-    python scripts/fetch_forecastbench.py 2026-05-24 data/forecastbench
+    python scripts/fetch_forecastbench.py 2026-05-24 data/forecastbench [ENDPOINT:MODEL]
 
 Writes ``<date>-llm.subset.json`` and ``<date>_resolution_set.subset.json``
 (only the questions :func:`augur.forecastbench.load_set` keeps, every field
 as published) and ``<date>.source.json`` with the URLs, the SHA-256 of each
 full file and the filter counts. The data is ForecastBench's, CC BY-SA 4.0.
+
+The release gate uses the model the set will be forecast with (default
+``ollama:qwen2.5:7b``): its release date, or for a hosted model its OpenRouter
+listing date, and ``model_release`` records which.
 """
 
 from __future__ import annotations
@@ -19,10 +23,11 @@ from datetime import date
 from pathlib import Path
 
 from augur.forecastbench import LICENCE, load_set, subset_files
-from augur.llm.registry import local_release_date
+from augur.llm.catalog import load_snapshot, release_bound
+from augur.llm.endpoints import endpoints_from_env, parse_route
 
 BASE = "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets"
-MODEL = "qwen2.5:7b"
+MODEL = "ollama:qwen2.5:7b"
 
 
 def _get(url: str) -> bytes:
@@ -35,14 +40,15 @@ def _get(url: str) -> bytes:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
+    if len(argv) not in (2, 3):
         print(__doc__, file=sys.stderr)
         return 2
     due, out = argv[0], Path(argv[1])
     date.fromisoformat(due)
-    released = local_release_date(MODEL)
+    route = parse_route(argv[2] if len(argv) == 3 else MODEL, endpoints_from_env({}))
+    released, basis = release_bound(route, load_snapshot())
     if released is None:
-        raise SystemExit(f"no release date for {MODEL}")
+        raise SystemExit(f"no release date for {route.key}")
     urls = {
         "questions": f"{BASE}/question_sets/{due}-llm.json",
         "resolutions": f"{BASE}/resolution_sets/{due}_resolution_set.json",
@@ -68,7 +74,8 @@ def main(argv: list[str]) -> int:
         "licence": LICENCE,
         "urls": urls,
         "sha256": digests,
-        "model_release": f"{MODEL} {released}",
+        "model_release": f"{route.model} {released}"
+        + ("" if basis == "release announcement" else f" ({basis})"),
         "total": report.total,
         "removed": report.removed,
         "kept": len(report.kept),

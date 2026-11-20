@@ -87,7 +87,9 @@ def scan_ledger(path: Path) -> list[Violation]:
     checked when written), and ``below_floor`` (a forecast submitted to a scored
     tournament after a member was answered by a model outside the frontier tier
     or on a host not trusted to serve it: the submit floor, checked on what the
-    ledger says actually answered).
+    ledger says actually answered), and ``late_price`` (a market price dated
+    after the instant it was asked for, or a market source whose date is not
+    its price's: the source's date is what the other checks compare).
     """
     uri = f"file:{path}?mode=ro"
     with closing(sqlite3.connect(uri, uri=True)) as conn:
@@ -215,7 +217,50 @@ def _scan(conn: sqlite3.Connection) -> list[Violation]:
         found.append(
             Violation("model_too_new", run_id, qid, f"{model} released {release}, opened {opened}")
         )
+    found.extend(_scan_prices(conn))
     found.extend(_scan_floor(conn))
+    return found
+
+
+def _scan_prices(conn: sqlite3.Connection) -> list[Violation]:
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'market_quotes'"
+    ).fetchone()
+    if exists is None:
+        return []
+    found = []
+    rows = conn.execute(
+        """
+        SELECT m.source_id, m.platform, m.price_time, m.as_of, s.published_at
+        FROM market_quotes m LEFT JOIN sources s ON s.source_id = m.source_id
+        WHERE m.price_time NOT GLOB ? OR m.as_of NOT GLOB ?
+           OR m.price_time > m.as_of
+           OR s.published_at IS NULL OR s.published_at != m.price_time
+        """,
+        (ISO_GLOB, ISO_GLOB),
+    )
+    for sid, platform, price_time, as_of, published in rows:
+        found.append(
+            Violation(
+                "late_price",
+                "",
+                0,
+                f"{platform} price {sid} dated {price_time}, asked for as of {as_of}, "
+                f"source dated {published}",
+            )
+        )
+    # A source that claims a market's date evidence but has no price row
+    # carries a date nothing backs.
+    orphans = conn.execute(
+        """
+        SELECT s.source_id, s.date_evidence FROM sources s
+        LEFT JOIN market_quotes m ON m.source_id = s.source_id
+        WHERE s.date_evidence IN ('market_trade', 'price_history', 'aggregate_history')
+          AND m.source_id IS NULL
+        """
+    )
+    for sid, evidence in orphans:
+        found.append(Violation("late_price", "", 0, f"{evidence} source {sid} has no price row"))
     return found
 
 

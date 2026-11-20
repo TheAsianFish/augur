@@ -8,6 +8,7 @@ from typing import Any
 from augur.llm.catalog import Catalog
 from augur.llm.endpoints import Route
 from augur.questions import Question, question_from_post
+from augur.research.quotes import MarketQuote, Match
 from augur.research.source import DateEvidence, Source
 
 
@@ -61,6 +62,40 @@ def source(
         as_of=retrieved_at,
         date_evidence=evidence,
         evidence_detail="test fixture",
+    )
+
+
+def market_source(
+    price_time: datetime,
+    *,
+    as_of: datetime,
+    probability: float = 0.3,
+    match: Match = "exact",
+) -> Source:
+    """A Manifold price as of ``as_of``, set by a bet at ``price_time``."""
+    quote = MarketQuote(
+        platform="manifold",
+        market_id="abc123",
+        title="Will the test market resolve Yes?",
+        url="https://manifold.markets/test/will-the-test-market-resolve-yes",
+        outcome="Yes",
+        probability=probability,
+        price_time=price_time,
+        as_of=as_of,
+        match=match,
+    )
+    return Source.build(
+        searcher="markets",
+        query="test market",
+        url=quote.url,
+        title=quote.title,
+        excerpt=f"Manifold price {probability:.0%}",
+        published_at=price_time,
+        retrieved_at=as_of,
+        as_of=as_of,
+        date_evidence=DateEvidence.MARKET_TRADE,
+        evidence_detail="last bet at or before as_of (test fixture)",
+        quote=quote,
     )
 
 

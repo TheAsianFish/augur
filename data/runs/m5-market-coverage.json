@@ -1,0 +1,551 @@
+{
+ "command": "uv run python scripts/market_coverage.py data/runs/m3-question-windows.json minibench OUT",
+ "fetched_at": "2026-11-19T21:02:34.601578Z",
+ "questions": 59,
+ "round": "minibench",
+ "rows": [
+  {
+   "as_of": "2026-11-16T00:04:51.000000Z",
+   "hits": [],
+   "post_id": 46561,
+   "question_id": 46821,
+   "title": "Will Volodymyr Zelenskyy attend the Special European Council in Brussels in person on 26–27 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T01:01:10.000000Z",
+   "hits": [],
+   "post_id": 46562,
+   "question_id": 46822,
+   "title": "How many posts will Donald Trump publish on Truth Social on November 26, 2026 (ET)?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T01:02:45.000000Z",
+   "hits": [],
+   "post_id": 46563,
+   "question_id": 46823,
+   "title": "What will Magazine Luiza (MGLU3) close at on Friday, November 27, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T01:16:26.000000Z",
+   "hits": [],
+   "post_id": 46564,
+   "question_id": 46824,
+   "title": "What will be Grupo Casas Bahia's (BHIA3) closing share price on 27 November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T02:16:39.000000Z",
+   "hits": [],
+   "post_id": 46565,
+   "question_id": 46825,
+   "title": "Will a televised debate featuring at least three of Sánchez, Feijóo, Abascal and Colau air on 26 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T02:22:39.000000Z",
+   "hits": [],
+   "post_id": 46566,
+   "question_id": 46826,
+   "title": "Will Alibaba make a non-preview Qwen4 model available on a pay-as-you-go API basis before November 28, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T02:29:17.000000Z",
+   "hits": [
+    {
+     "match": "search",
+     "platform": "manifold",
+     "price_time": "2026-10-05T14:55:07.720000Z",
+     "probability": 0.9862796809887878,
+     "title": "Brazil's Ibovespa reaches 200,000 points by Dec 31, 2026?",
+     "url": "https://manifold.markets/Brierbr/brazils-ibovespa-reaches-200000-poi"
+    },
+    {
+     "match": "search",
+     "platform": "manifold",
+     "price_time": "2023-12-30T13:17:46.517000Z",
+     "probability": 0.9649162449941726,
+     "title": "Will the IBOVESPA (^BVSP) index have a positive annual return for the year 2023?",
+     "url": "https://manifold.markets/PatrickLD/will-the-ibovespa-bvsp-index-have-a"
+    }
+   ],
+   "post_id": 46567,
+   "question_id": 46827,
+   "title": "What will the Ibovespa close at on 26 November 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T02:36:33.000000Z",
+   "hits": [],
+   "post_id": 46568,
+   "question_id": 46828,
+   "title": "Will the Detroit Lions beat the Chicago Bears in their Thanksgiving Day game on November 26, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T03:36:30.000000Z",
+   "hits": [],
+   "post_id": 46569,
+   "question_id": 46829,
+   "title": "Will the InfoGripe bulletin for epidemiological week 46 of 2026 report a national growth trend in COVID-19 SRAG hospitalisations?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T03:49:32.000000Z",
+   "hits": [],
+   "post_id": 46570,
+   "question_id": 46830,
+   "title": "Eagles at Cowboys on Thanksgiving 2026: will Dallas win by 7+ points, win by 1-6 points, or fail to win?",
+   "type": "multiple_choice"
+  },
+  {
+   "as_of": "2026-11-16T04:31:30.000000Z",
+   "hits": [],
+   "post_id": 46571,
+   "question_id": 46831,
+   "title": "Which of Nvidia, AMD, Broadcom, or Micron will post the highest percentage change in closing share price from the November 13, 2026 close to the November 27, 2026 close?",
+   "type": "multiple_choice"
+  },
+  {
+   "as_of": "2026-11-16T05:14:20.000000Z",
+   "hits": [],
+   "post_id": 46572,
+   "question_id": 46832,
+   "title": "What will the Tokyo (Ku-area) core CPI year-on-year inflation rate be for November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T06:19:53.000000Z",
+   "hits": [],
+   "post_id": 46573,
+   "question_id": 46833,
+   "title": "Will Argentina's Senate give media sanción to a bill suspending or eliminating the PASO primaries in its 26 November 2026 session?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T06:42:44.000000Z",
+   "hits": [],
+   "post_id": 46574,
+   "question_id": 46834,
+   "title": "Will Lebanon's cabinet refer the Dahr al-Baidar explosives case to the Judicial Council before November 28, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T06:46:30.000000Z",
+   "hits": [],
+   "post_id": 46575,
+   "question_id": 46835,
+   "title": "Will Mexican federal authorities have confirmed recovery of all nine radioactive packages stolen in the November 7, 2026 Tlaxcala truck crash by November 27, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T07:02:53.000000Z",
+   "hits": [
+    {
+     "match": "search",
+     "platform": "manifold",
+     "price_time": "2026-11-09T17:11:02.603000Z",
+     "probability": 0.8984342852482452,
+     "title": "Will the Nasdaq Composite close higher on Monday, November 9, 2026 than on Friday, November 6, 2026?",
+     "url": "https://manifold.markets/CheerForgeAdmin/will-the-nasdaq-composite-close-hig-gctOzIthg9"
+    },
+    {
+     "match": "search",
+     "platform": "manifold",
+     "price_time": "2023-07-07T20:38:10.064000Z",
+     "probability": 5.6240148326608164e-06,
+     "title": "Will two of the Nasdaq Composite (IXIC), Dow Jones (DJIA), and Russell 2000 (RUT) close higher on 7/7 than on 7/6?",
+     "url": "https://manifold.markets/XComhghall/will-two-of-the-nasdaq-composite-ix"
+    }
+   ],
+   "post_id": 46576,
+   "question_id": 46836,
+   "title": "What will the Nasdaq Composite (^IXIC) close at on Friday, November 27, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T07:22:17.000000Z",
+   "hits": [],
+   "post_id": 46577,
+   "question_id": 46837,
+   "title": "How many cumulative confirmed measles cases will Mexico's daily measles bulletin report on November 26, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T07:38:19.000000Z",
+   "hits": [],
+   "post_id": 46578,
+   "question_id": 46838,
+   "title": "What stage will the BCP have reached in disposing of Ueno Bank's assets and liabilities before November 28, 2026?",
+   "type": "multiple_choice"
+  },
+  {
+   "as_of": "2026-11-16T08:29:24.000000Z",
+   "hits": [],
+   "post_id": 46579,
+   "question_id": 46839,
+   "title": "How many AIS-visible commercial ship crossings of the Strait of Hormuz will hormuz.now record for 26 November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T08:48:36.000000Z",
+   "hits": [],
+   "post_id": 46580,
+   "question_id": 46840,
+   "title": "What will Brazil's IPCA-15 monthly inflation rate be for November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T09:36:56.000000Z",
+   "hits": [],
+   "post_id": 46581,
+   "question_id": 46841,
+   "title": "As of 26 November 2026, will Russia be listed among the teams in the IIHF's official field for the 2027 IIHF U18 Women's World Championship?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T09:38:14.000000Z",
+   "hits": [],
+   "post_id": 46582,
+   "question_id": 46842,
+   "title": "How many total 2026 measles-associated deaths will CDC's measles data page report as of November 26, 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T10:30:23.000000Z",
+   "hits": [],
+   "post_id": 46583,
+   "question_id": 46843,
+   "title": "How many viewers (millions, combined average across channels) will Spain's 26 November 2026 televised leaders' debate draw?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T10:51:17.000000Z",
+   "hits": [],
+   "post_id": 46584,
+   "question_id": 46844,
+   "title": "Will EU leaders at the 26–27 November 2026 Special European Council agree on additional EU financing for Ukraine's 2027 needs beyond the €90 billion Ukraine Support Loan?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T12:23:08.000000Z",
+   "hits": [],
+   "post_id": 46585,
+   "question_id": 46845,
+   "title": "Will a division (bloc vote) be held on Malaysia's Supply Bill 2027 in the Dewan Rakyat on 26 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T12:43:42.000000Z",
+   "hits": [],
+   "post_id": 46586,
+   "question_id": 46846,
+   "title": "By 27 November 2026, will Maersk publicly state that personal data was accessed or disclosed in the IT security incident it announced on 11 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T13:31:36.000000Z",
+   "hits": [],
+   "post_id": 46587,
+   "question_id": 46847,
+   "title": "How much precipitation will San Francisco International Airport record on Thanksgiving Day (November 26, 2026)?",
+   "type": "multiple_choice"
+  },
+  {
+   "as_of": "2026-11-16T13:45:28.000000Z",
+   "hits": [],
+   "post_id": 46588,
+   "question_id": 46848,
+   "title": "By 27 November 2026, how many of the two Bundibugyo-specific vaccine candidates (ChAdOx1 BDBV, mRNA-1469) will have been publicly reported as administered to Tumaini trial participants?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T15:13:28.000000Z",
+   "hits": [],
+   "post_id": 46589,
+   "question_id": 46849,
+   "title": "Will the U.S. Trustee's official committee of unsecured creditors in The Children's Place Chapter 11 case have seven or more members as of November 27, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T15:32:20.000000Z",
+   "hits": [],
+   "post_id": 46590,
+   "question_id": 46850,
+   "title": "What will President Lee Jae-myung's job approval rating be in Gallup Korea's weekly poll released on November 27, 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T15:35:00.000000Z",
+   "hits": [],
+   "post_id": 46591,
+   "question_id": 46851,
+   "title": "How many postal ballots will Correos report as admitted for Spain's 29 November 2026 general election in the most recent figure it publishes on or before 26 November 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T15:35:38.000000Z",
+   "hits": [],
+   "post_id": 46592,
+   "question_id": 46852,
+   "title": "Will Strategy (MSTR) close below $100 on Friday, November 27, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T15:50:08.000000Z",
+   "hits": [],
+   "post_id": 46593,
+   "question_id": 46853,
+   "title": "What rating will MasterChef Celebrity (Telefe) record for its Thursday, November 26, 2026 broadcast?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T16:38:29.000000Z",
+   "hits": [],
+   "post_id": 46594,
+   "question_id": 46854,
+   "title": "What will the Northern Sierra 8-Station Precipitation Index be for November 26, 2026 (water-year-to-date, inches)?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T17:42:04.000000Z",
+   "hits": [],
+   "post_id": 46595,
+   "question_id": 46855,
+   "title": "What will SpaceX's (SPCX) closing share price be on Friday, November 27, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-16T18:31:13.000000Z",
+   "hits": [],
+   "post_id": 46596,
+   "question_id": 46856,
+   "title": "Will the FDA approve BridgeBio's BBP-418 (ribitol) for limb-girdle muscular dystrophy type 2I/R9 by November 27, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T18:42:35.000000Z",
+   "hits": [],
+   "post_id": 46597,
+   "question_id": 46857,
+   "title": "What will be the highest significant wave height at NDBC buoy 46026 (18 NM west of San Francisco) on November 26, 2026 (UTC)?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T20:07:30.000000Z",
+   "hits": [],
+   "post_id": 46598,
+   "question_id": 46858,
+   "title": "What will France's provisional year-on-year CPI inflation be for November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-16T21:14:27.000000Z",
+   "hits": [],
+   "post_id": 46599,
+   "question_id": 46859,
+   "title": "Will Plus Ultra operate a scheduled Madrid–Lima passenger flight on 26 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-16T21:47:03.000000Z",
+   "hits": [],
+   "post_id": 46600,
+   "question_id": 46860,
+   "title": "How many subscribers will Russell Brand's YouTube channel show on 27 November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-17T00:14:21.000000Z",
+   "hits": [],
+   "post_id": 46601,
+   "question_id": 46861,
+   "title": "Will front-month ICE Brent crude futures (January 2027 contract) settle above $100.00 per barrel on 27 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-17T00:45:59.000000Z",
+   "hits": [],
+   "post_id": 46602,
+   "question_id": 46862,
+   "title": "What will Nvidia's (NVDA) closing share price be on Friday, November 27, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-17T01:11:14.000000Z",
+   "hits": [],
+   "post_id": 46603,
+   "question_id": 46863,
+   "title": "Will the European Council's 26–27 November 2026 conclusions explicitly reference the EU's 22nd sanctions package against Russia?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-17T01:43:34.000000Z",
+   "hits": [],
+   "post_id": 46604,
+   "question_id": 46864,
+   "title": "How many drones will Russia launch at Ukraine overnight on 26–27 November 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-17T02:42:01.000000Z",
+   "hits": [],
+   "post_id": 46605,
+   "question_id": 46865,
+   "title": "What will Dabom's November 27, 2026 consumer price for a 30-egg pack of special-grade (특란) eggs in South Korea be?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-17T05:12:21.000000Z",
+   "hits": [],
+   "post_id": 46606,
+   "question_id": 46866,
+   "title": "What value will the Crypto Fear & Greed Index record for November 27, 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-17T06:45:16.000000Z",
+   "hits": [],
+   "post_id": 46607,
+   "question_id": 46867,
+   "title": "What will Anthropic (ANT) close at on Friday, November 27, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-17T06:59:47.000000Z",
+   "hits": [],
+   "post_id": 46608,
+   "question_id": 46868,
+   "title": "Will at least one of the two Ir-192 sources stolen from the Rivers State radiography facility be publicly confirmed recovered by 28 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-17T07:43:45.000000Z",
+   "hits": [],
+   "post_id": 46609,
+   "question_id": 46869,
+   "title": "How many confirmed U.S. measles cases for 2026 will CDC report in its November 27, 2026 update?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-17T09:21:42.000000Z",
+   "hits": [],
+   "post_id": 46610,
+   "question_id": 46870,
+   "title": "Will the CBRT's November 2026 Financial Stability Report devote a dedicated box to the 2026 fund liquidations?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-17T09:56:53.000000Z",
+   "hits": [],
+   "post_id": 46611,
+   "question_id": 46871,
+   "title": "Will Ituri province report at least 10 more new confirmed Ebola cases than Nord-Kivu province for 26 November 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-17T13:50:34.000000Z",
+   "hits": [
+    {
+     "match": "search",
+     "platform": "polymarket",
+     "price_time": "2026-11-17T13:00:16.000000Z",
+     "probability": 0.0005,
+     "title": "Will Dan Sullivan win the Alaska Senate race in 2026?",
+     "url": "https://polymarket.com/market/will-dan-sullivan-win-the-alaska-senate-race-in-2026"
+    }
+   ],
+   "post_id": 46612,
+   "question_id": 46872,
+   "title": "Will Dan S. Sullivan publicly concede Alaska's 2026 U.S. Senate race by November 27, 2026?",
+   "type": "binary"
+  },
+  {
+   "as_of": "2026-11-17T16:51:44.000000Z",
+   "hits": [],
+   "post_id": 46613,
+   "question_id": 46873,
+   "title": "Which party's member will GPS name as its candidate for Sarawak's Bawang Assan seat before nomination day on 28 November 2026?",
+   "type": "multiple_choice"
+  },
+  {
+   "as_of": "2026-11-17T17:06:55.000000Z",
+   "hits": [],
+   "post_id": 46614,
+   "question_id": 46874,
+   "title": "What will be the last date for filing claims and objections in Delhi's SIR, as of November 27, 2026?",
+   "type": "multiple_choice"
+  },
+  {
+   "as_of": "2026-11-17T17:07:38.000000Z",
+   "hits": [],
+   "post_id": 46615,
+   "question_id": 46875,
+   "title": "On Black Friday (November 27, 2026), what will be the deepest percentage-off discount advertised on the childrensplace.com homepage?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-17T18:32:14.000000Z",
+   "hits": [],
+   "post_id": 46616,
+   "question_id": 46876,
+   "title": "How many confirmed measles cases will Wisconsin DHS report for 2026 as of November 27, 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-18T01:25:35.000000Z",
+   "hits": [],
+   "post_id": 46617,
+   "question_id": 46877,
+   "title": "What 2026 cumulative dengue case count will Colombia's INS report in the latest weekly epidemiological bulletin published on or before 27 November 2026?",
+   "type": "numeric"
+  },
+  {
+   "as_of": "2026-11-18T11:19:14.000000Z",
+   "hits": [],
+   "post_id": 46618,
+   "question_id": 46878,
+   "title": "How many storms will the UK–Ireland–Netherlands storm-naming group have named by the end of 28 November 2026?",
+   "type": "discrete"
+  },
+  {
+   "as_of": "2026-11-18T12:34:49.000000Z",
+   "hits": [
+    {
+     "match": "search",
+     "platform": "polymarket",
+     "price_time": "2026-11-18T12:00:33.000000Z",
+     "probability": 0.9725,
+     "title": "Will the peak water level at La Jolla be 7.70 ft MLLW or more?",
+     "url": "https://polymarket.com/market/peak-water-level-at-la-jolla-at-least-7-70-ft-mllw"
+    },
+    {
+     "match": "search",
+     "platform": "polymarket",
+     "price_time": "2026-11-18T12:00:29.000000Z",
+     "probability": 0.979,
+     "title": "Will the peak water level at La Jolla be 7.90 ft MLLW or more?",
+     "url": "https://polymarket.com/market/peak-water-level-at-la-jolla-at-least-7-90-ft-mllw"
+    },
+    {
+     "match": "search",
+     "platform": "polymarket",
+     "price_time": "2026-11-18T12:00:25.000000Z",
+     "probability": 0.695,
+     "title": "Will the peak water level at La Jolla be 8.10 ft MLLW or more?",
+     "url": "https://polymarket.com/market/peak-water-level-at-la-jolla-at-least-8-10-ft-mllw"
+    }
+   ],
+   "post_id": 46619,
+   "question_id": 46879,
+   "title": "What will be the highest observed water level (ft above MLLW) at NOAA's La Jolla, CA tide gauge (station 9410230) on November 26-27, 2026?",
+   "type": "numeric"
+  }
+ ],
+ "search_hits": 8,
+ "with_a_search_hit": 4,
+ "with_community_prior": 0
+}

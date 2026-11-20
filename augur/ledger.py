@@ -22,6 +22,7 @@ from augur.clock import Clock, to_iso
 from augur.errors import LedgerError
 from augur.leakage import Admission, RunMode
 from augur.questions import Question
+from augur.research.quotes import MarketQuote
 from augur.research.source import Source
 
 APPEND_ONLY_TABLES = (
@@ -40,6 +41,7 @@ APPEND_ONLY_TABLES = (
     "resolutions",
     "reference_forecasts",
     "metaculus_scores",
+    "market_quotes",
     "schema_migrations",
 )
 
@@ -100,13 +102,32 @@ class Ledger:
             "(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)"
         )
         current = self.schema_version()
-        for version, sql in _migrations():
-            if version <= current:
-                continue
+        pending = [(v, sql) for v, sql in _migrations() if v > current]
+        if not pending:
+            self._install_append_only_guards()
+            return
+        # A migration may rebuild a table (SQLite cannot change a CHECK in
+        # place): foreign keys are off while it runs and checked after, and
+        # a rename keeps the triggers that name the table pointing at it.
+        # Both pragmas are no-ops inside a transaction, so they are set here.
+        self._conn.execute("PRAGMA foreign_keys = OFF")
+        self._conn.execute("PRAGMA legacy_alter_table = ON")
+        try:
+            self._apply(pending)
+        finally:
+            self._conn.execute("PRAGMA legacy_alter_table = OFF")
+            self._conn.execute("PRAGMA foreign_keys = ON")
+        self._install_append_only_guards()
+
+    def _apply(self, pending: list[tuple[int, str]]) -> None:
+        for version, sql in pending:
             try:
                 self._conn.execute("BEGIN")
                 for statement in _split_sql(sql):
                     self._conn.execute(statement)
+                broken = self._conn.execute("PRAGMA foreign_key_check").fetchall()
+                if broken:
+                    raise sqlite3.IntegrityError(f"{len(broken)} rows lost their foreign key")
                 self._conn.execute(
                     "INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)",
                     (version, self._now()),
@@ -117,7 +138,6 @@ class Ledger:
                 raise LedgerError(
                     f"migration {version:04d} failed ({exc}); the ledger was left unchanged"
                 ) from exc
-        self._install_append_only_guards()
 
     def _install_append_only_guards(self) -> None:
         for table in APPEND_ONLY_TABLES:
@@ -189,7 +209,18 @@ class Ledger:
         )
 
     def record_source(self, source: Source) -> None:
-        """Store a source before any model sees it. Re-recording the same source is a no-op."""
+        """Store a source before any model sees it. Re-recording the same source is a no-op.
+
+        A market source and its price are written together or not at all: a
+        source whose date is not its price's is refused before anything is
+        stored, so no market-dated source can exist without its price.
+        """
+        quote = source.quote
+        if quote is not None and source.published_at != quote.price_time:
+            raise LedgerError(
+                f"market source {source.source_id} is dated {source.published_at} but its price "
+                f"at {quote.price_time}; a market source's date must be its price's"
+            )
         row = {
             "source_id": source.source_id,
             "searcher": source.searcher,
@@ -207,8 +238,44 @@ class Ledger:
         }
         cols = ", ".join(row)
         marks = ", ".join("?" for _ in row)
+        if quote is None:
+            self._conn.execute(
+                f"INSERT OR IGNORE INTO sources ({cols}) VALUES ({marks})",  # noqa: S608
+                tuple(row.values()),
+            )
+            return
+        self._conn.execute("BEGIN")
+        try:
+            self._conn.execute(
+                f"INSERT OR IGNORE INTO sources ({cols}) VALUES ({marks})",  # noqa: S608
+                tuple(row.values()),
+            )
+            self._record_quote(source.source_id, quote)
+            self._conn.execute("COMMIT")
+        except BaseException:
+            self._conn.execute("ROLLBACK")
+            raise
+
+    def _record_quote(self, source_id: str, quote: MarketQuote) -> None:
+        row = {
+            "source_id": source_id,
+            "platform": quote.platform,
+            "market_id": quote.market_id,
+            "title": quote.title,
+            "url": quote.url,
+            "outcome": quote.outcome,
+            "probability": quote.probability,
+            "price_time": to_iso(quote.price_time),
+            "as_of": to_iso(quote.as_of),
+            "match": quote.match,
+            "volume": quote.volume,
+            "closes_at": to_iso(quote.closes_at) if quote.closes_at else None,
+            "recorded_at": self._now(),
+        }
+        cols = ", ".join(row)
+        marks = ", ".join("?" for _ in row)
         self._conn.execute(
-            f"INSERT OR IGNORE INTO sources ({cols}) VALUES ({marks})",  # noqa: S608
+            f"INSERT OR IGNORE INTO market_quotes ({cols}) VALUES ({marks})",  # noqa: S608
             tuple(row.values()),
         )
 

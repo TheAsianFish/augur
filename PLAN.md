@@ -101,6 +101,93 @@ template, with its paired bootstrap interval clustered by opening week.
 The same rule and report apply against the community prediction where the
 API shows it (it does not to a bot token on scored tournaments; M4).
 
+**M5's predictions and decision rules, committed 2026-11-19 before any
+replay run.** The replay evaluation compares arms on the same resolved
+binary questions. The arms:
+
+- **(a) price-only:** the market's price as of the cutoff, no model;
+- **(b) Augur without prices:** the forecaster draws on the recorded
+  research (none for ForecastBench), median;
+- **(c) blend:** a fixed log-odds blend, one third Augur (b) and two
+  thirds the price (a), both clipped to [0.01, 0.99]. The weight is
+  AIA Forecaster's, fixed now and never fitted;
+- **(d) Augur with prices:** the same forecaster, with the market source
+  shown to it as the first source of the brief, median.
+
+The settings arms come from (b)'s own draws, with no new calls: 1 draw
+against 3, and the median against the mean, the mean of log-odds and
+extremized log-odds (factor 1.5, fixed now).
+
+The corpora:
+
+- **C1:** ForecastBench 2026-05-24, 139 market questions. Arm (b) is
+  M4's `qwen2.5:7b` run (1 draw, no retrieval); arms (a) and (c) only.
+- **C2:** ForecastBench 2026-06-21, market questions resolved to 0 or 1
+  (frozen 2026-06-11). Arms (a) to (d), 3 draws, on
+  `nvidia/nemotron-3-ultra-550b-a55b:free`. That model answered most of
+  the bot's live forecasts in M3, and it was listed on 2026-06-04, before
+  the freeze, so the release gate admits it.
+- **C3:** live questions in the committed ledgers that have resolved. On
+  2026-11-19 that is none, so C3 is the harness plus a count of 0.
+
+The price comes from the market's own API as of the freeze instant (a
+Manifold bet, a Polymarket price-history point). The Metaculus community
+prediction is hidden from the bot's token, and INFER has no public price
+API, so those questions have no usable price.
+
+Predictions:
+
+| # | Prediction | Corpus |
+|---|------------|--------|
+| P1 | The price alone beats Augur without prices: the interval of Brier(b) − Brier(a) is above 0. | C1, C2 |
+| P2 | The blend beats Augur without prices: the interval of Brier(c) − Brier(b) is below 0. | C1, C2 |
+| P3 | Against the price alone, the blend is worse on C1 (point estimate; a near-constant model only pulls the price toward 50%), and within ±0.01 Brier on C2 (the interval includes 0). | C1, C2 |
+| P4 | Showing the price to the model (the market searcher's effect, which the survey scores at r = +0.34) improves Brier by at least 0.03, with an interval of Brier(d) − Brier(b) below 0. The model still under-uses the price: the point estimate of Brier(d) − Brier(a) is above 0. | C2 |
+| P5 | The as-of price matches ForecastBench's recorded freeze value within 0.01 on at least 90% of priced questions. A usable exact price is found for at least 90% of Polymarket and Manifold questions, 0% of Metaculus and INFER questions. On live MiniBench questions (search, not an exact match), a similar market about the same event is the top hit for under 25% of a round's questions, judged by hand. | C2, MiniBench 2026-11-16 |
+| P6 | Three draws against one: \|ΔBrier\| < 0.01, interval includes 0. Mean of log-odds against the median: \|ΔBrier\| < 0.005. Extremizing at 1.5 is worse than the median (point estimate), with an interval that includes 0. | C2 |
+
+Research depth cannot be varied on C1 or C2, which have no retrieval. It
+runs on C3 once live questions resolve.
+
+**Decision rules** (M7's replacement rule: a variant replaces the default
+only if its paired interval against the default excludes 0 in its favour,
+or it is no worse and cheaper; neither variant here is cheaper):
+
+- **Markets searcher:** it becomes the live default only if the interval of
+  Brier(d) − Brier(b) on C2 lies below 0. Until then it is behind
+  `--markets`.
+- **Blend:** it enters the live default only if (c) is not worse than (b) on
+  C2, with the interval of Brier(c) − Brier(b) lying below 0. Live, it
+  applies only to an *exact* price of the same question. On Metaculus that
+  is the question's own community prediction, where the API shows it to the
+  bot. A similar market found by search is shown to the model and never
+  blended.
+
+**What these corpora can and cannot say.** On C1 and C2 every question is
+itself a market, so the exact price exists by construction. That is the
+best case for prices; most MiniBench questions are not markets (P5), so
+C2's price-only score is an upper bound on what prices bring live. A
+finding on C2 is a finding about one free model on one question set.
+
+**M5's results (2026-11-19; RESULTS.md, the predictions above unedited).**
+P1 held on C1 and C2: the price alone (C2 0.106) beats Augur without it
+(0.240). P2 held on both: the blend is 0.111 better than Augur on C2. P3
+held on C1 and failed on C2 (the blend is 0.023 worse than the price, the
+interval [−0.001, +0.047] includes 0 but the point is outside ±0.01). P4
+held: shown the price, Augur improves by 0.097 [0.054, 0.144] and still
+trails the price by 0.037 [0.003, 0.073]. P5's first two parts failed as first
+measured (a seven-day staleness cut priced 85 of 101 Polymarket and
+Manifold questions, 75 of those 85 within 0.01 of ForecastBench's value)
+and held only after a change made once the data were seen (Manifold
+exempted from the cut: 101 of 101 priced, 91 of 101 within 0.01); 0 of 37
+Metaculus and INFER priced, and its third part held (a same-event market
+for 2 of 59 MiniBench questions). P6: one
+draw against three failed (the first draw, 0.022 worse [0.004, 0.044]); the log-odds mean
+and extremizing parts held. Under the decision rules both the markets
+searcher and the exact-price blend became the live default (`--no-markets`,
+`--no-blend`). C3 still has no resolved question, so research depth is not
+yet measured on live research.
+
 **Status after M4 (2026-11-19).** Q1: *not yet resolvable*; no live
 question with both an Augur and a shadow-template forecast has resolved,
 and the floor has kept Augur out of scored rounds until a frontier model
@@ -425,7 +512,7 @@ documented ones.
 - [x] M2: Model access and the submit floor on the answering model — replace `metaculus_proxy` with one generic OpenAI-compatible provider (base URL, the name of the environment variable holding its key, model; Bearer auth), so OpenRouter (the sponsored key and `:free` models), Groq, Gemini's OpenAI endpoint, GitHub Models and Ollama are configuration, not code; an ordered model list per role (a cheap model for query planning and the brief, the best answering model for the forecasts); `augur models probe`, run at the start of every run, which calls each listed model once, records which answer and measures each free tier's real limits (requests and tokens per minute, the error a limit returns) rather than assuming them; fallback to the next model on rate-limit and out-of-credit errors, with every switch in the ledger; prices and listing dates read from OpenRouter's model list instead of the hand-written registry (an unknown model must not be priced at frontier rates and trip the caps; the listing date is the conservative stand-in for the release-date gate); the submit floor (built in M1) applied to the model that actually answers each question, so a fallback below the frontier tier skips the question rather than posting. Release notes for the merge: the repository audit for going public (no secrets in the history, licence, README first screen) and the steps to make it public and list it on Metaculus as an open-source bot, done by the maintainer when M2 merges. Done when `make check` is green, a fake-server test proves a fallback below the tier never submits, the probe lists answering models with their measured limits, and a bot-testing-area run completes on a free hosted model (with `OPENROUTER_API_KEY`; otherwise the exact commands are under "To measure").
 - [x] M3: Live on MiniBench (Q1 starts) — only what a live round needs: multiple choice, numeric and discrete forecasts (percentiles to a valid CDF, property-tested against Metaculus's validity rules); per-run and per-question caps, cost estimates, and a deadline per question so a run stays inside the round's window and reports its coverage (questions forecast in time, missed, skipped, and why); the scheduled workflow with the standard-library poll job, concurrency group and `AUGUR_SCHEDULE` switch, cheap while the repository is private (skip what is already forecast, cap each run); a measured check of how late GitHub's cron actually fires against the measured question windows, with a fallback trigger if it misses; the durable live ledger (each scheduled run pushes its JSONL export to the `ledger` branch). Done when every question type is accepted in the bot-testing-area, a fake-server test proves a second run never forecasts a question twice, the scheduled workflow passes a `workflow_dispatch` or `act` dry run, RESULTS.md records the open-time measurement, the cron delay measured against it and the chosen cadence with its billed minutes per month, and the bot has submitted forecasts with private comments on live MiniBench questions (only if the floor passes; otherwise the exact commands are under "To measure").
 - [x] M4: Baselines, scoring and the first scored report (Q1, Q5 first reading) — the shadow template baseline (`baseline` extra) logging the real template's unpublished forecast for the same live questions; the tokenless ForecastBench number (the M1 pipeline without retrieval on `qwen2.5:7b` over at least 100 resolved ForecastBench binary questions that opened after the model's release, with a minimal loader extended in M6; Brier and Metaculus baseline score against always-50% and the set's base rate, with paired bootstrap intervals; $0); `augur resolve` appending resolutions and annulments; `augur score` with Brier, log, baseline and head-to-head scores for all question types, the question-clustered paired bootstrap and the minimum detectable effect; `augur ledger export|import` (import rebuilds the ledger from the `ledger` branch); `augur report` rendering RESULTS.md from the ledger with a test that the committed file matches a render; the first scheduled runs on `main` checked from the `ledger` branch (questions forecast, skipped, missed, minutes billed); `augur standings`: rank, average spot peer score and interval per MiniBench round from the leaderboard API, beside the best template bot, the best open-source bot and rank 1, with each missed question explained from the ledger. Done when scoring is checked against hand-computed cases and against Metaculus's own score for at least one resolved question per type, RESULTS.md holds Augur against the shadow template and against the community prediction (where the API exposes it) on every resolved live question with intervals and the detectable effect at that n,, RESULTS.md holds the tokenless ForecastBench row with its method, model and cost and the standings table with dated sources and every unfair comparison named, Q1's prediction is marked held, failed or not yet resolvable, and Q5's first reading is reported with the sample-size limits stated under Questions.
-- [ ] M5: Market prices, the community prior, and evaluating the bot that ships — the `markets` searcher: the Metaculus community prediction where the API exposes it, and similar questions on Polymarket, Manifold and Kalshi through their public APIs, each price taken as of the cutoff with the trade or candle timestamp as its date evidence, so `tests/test_leakage.py` covers prices too; the replay evaluation: re-forecasting resolved live questions from the sources the ledger recorded, under alternative settings (with and without market prices, research depth, number of forecasters, aggregation rule), on the hosted models actually used live, with paired bootstrap intervals and the detectable effect at its n. Done when RESULTS.md holds the replay table labelled by model, with the market searcher's effect answered against the Frontier table's survey signal (checking similar markets, r = 0.34), the live default changed only under the replacement rule in M7, and a fake-server test proving a price dated after the cutoff is rejected.
+- [x] M5: Market prices, the community prior, and evaluating the bot that ships — the `markets` searcher: the Metaculus community prediction where the API exposes it, and similar questions on Polymarket, Manifold and Kalshi through their public APIs, each price taken as of the cutoff with the trade or candle timestamp as its date evidence, so `tests/test_leakage.py` covers prices too; the replay evaluation: re-forecasting resolved live questions from the sources the ledger recorded, under alternative settings (with and without market prices, research depth, number of forecasters, aggregation rule), on the hosted models actually used live, with paired bootstrap intervals and the detectable effect at its n. Done when RESULTS.md holds the replay table labelled by model, with the market searcher's effect answered against the Frontier table's survey signal (checking similar markets, r = 0.34), the live default changed only under the replacement rule in M7, and a fake-server test proving a price dated after the cutoff is rejected.
 - [ ] M6: The leakage-proof backtest and what leakage is worth (Q2) — the resolved-question loader (past tournaments by API, ForecastBench sets without a token) with its eligibility filters; the model registry's release dates enforced; the `wayback` searcher (capture at or before the instant; the CDX `to=` bound is inclusive of the whole day, so the capture timestamp is compared, not the query); `augur backtest` with the clock pinned to each open date; the three-arm experiment (no retrieval, as of open, as of today) on the same questions, with the prediction above; an LLM judge using the published 0 to 4 leakage rubric on admitted sources, with a hand-labelled sample to check the judge. Every finding is labelled with its model. Done when `tests/test_leakage.py` passes on the committed backtest ledger and fails on a planted violation of each kind (late source, undated source, model too new), RESULTS.md holds the three arms with paired intervals, the residual leak rate and the judge's agreement with the hand labels, and the published 0.242 to 0.108 gap is shown beside mine with the protocol differences stated.
 - [ ] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
 - [ ] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
