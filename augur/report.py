@@ -775,8 +775,13 @@ def render_leakage(root: Path) -> str:
         a = s.agree
         out += [
             "",
-            f"**Judge against the reference labels** ({a.n} sources): exact agreement with "
-            f"0 and 1 merged {a.exact_merged:.1%}, quadratic weighted kappa {a.qwk:.2f}; "
+            (
+                f"**Judge against the hand labels** ({a.n} sources): exact agreement with "
+                if s.agree_by_hand
+                else f"**Judge against the provisional reference labels** ({a.n} sources; a "
+                "second model's rating, not hand labels: see To measure): exact agreement with "
+            )
+            + f"0 and 1 merged {a.exact_merged:.1%}, quadratic weighted kappa {a.qwk:.2f}; "
             f"on major leakage (3+ against 0 to 2) {a.major_agree:.1%} agreement, "
             f"kappa {a.major_kappa:.2f} (labels {a.human_major}, judge {a.judge_major} at 3+). "
             "The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.",
@@ -820,11 +825,19 @@ def _q2_verdicts(s: q2.Q2) -> list[str]:
             f"T {t_rate:.0%} {_held(t_rate >= 0.30)}, O {o_rate:.0%} {_held(o_rate < 0.10)}."
         )
     if s.agree is not None:
-        lines.append(
-            "- P9 (judge against the labels, here the reference labels: kappa at least 0.6, "
-            f"major-leak agreement at least 85%): {_held(s.agree.qwk >= 0.6)}, "
-            f"{_held(s.agree.major_agree >= 0.85)}."
-        )
+        if s.agree_by_hand:
+            lines.append(
+                "- P9 (judge against the hand labels: kappa at least 0.6, "
+                f"major-leak agreement at least 85%): {_held(s.agree.qwk >= 0.6)}, "
+                f"{_held(s.agree.major_agree >= 0.85)}."
+            )
+        else:
+            lines.append(
+                "- P9 (judge against the hand labels: kappa at least 0.6, major-leak agreement "
+                "at least 85%): **not yet tested**; the labels are not hand labels. Against "
+                f"the provisional reference labels: kappa {s.agree.qwk:.2f}, "
+                f"{s.agree.major_agree:.1%}."
+            )
     if s.loop_diffs:
         lo = s.loop_diffs[0].brier
         costs = {c.arm: c for c in s.costs}

@@ -33,9 +33,10 @@ URL the question names). N is M5's no-retrieval run of the same model on
 the same questions. T is recorded as an `unrestricted` run (cutoff = the
 moment it ran, 2026-11-20), never as a backtest. The judge is the same free
 model with El Lahib et al.'s rubric, shown the question, its open date and
-its resolution; the reference labels are a second, independent rating of a
-hash-drawn sample of 40 shown sources (20 from O, 20 from T) against the
-same rubric, made blind to the judge's scores. Cost $0 (free model); the
+its resolution; the reference labels are a provisional second-model
+rating (not hand labels) of a hash-drawn sample of 40 shown sources (20
+from O, 20 from T) against the same rubric, made blind to the judge's
+scores. Cost $0 (free model); the
 arms ran 04:36 to 06:01 UTC with three processes sharing one key.
 Commands: `make backtest-q2` (each step is one line of it); ledgers
 `data/ledgers/m6-c2-{plan,open,now,loop}.sqlite`; labels
@@ -91,7 +92,7 @@ Cost per question forecast ($0: free model): successful model calls (of which re
 | O | 64 | 324 | 323/0/0/0/1 | 1/324 (0%) | 1/64 (2%) |
 | T | 64 | 336 | 204/50/13/22/47 | 69/336 (21%) | 40/64 (62%) |
 
-**Judge against the reference labels** (40 sources): exact agreement with 0 and 1 merged 90.0%, quadratic weighted kappa 0.90; on major leakage (3+ against 0 to 2) 97.5% agreement, kappa 0.91 (labels 7, judge 6 at 3+). The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.
+**Judge against the provisional reference labels** (40 sources; a second model's rating, not hand labels: see To measure): exact agreement with 0 and 1 merged 90.0%, quadratic weighted kappa 0.90; on major leakage (3+ against 0 to 2) 97.5% agreement, kappa 0.91 (labels 7, judge 6 at 3+). The paper's judge against two annotators: 76.1% and 0.85 on 134 documents.
 
 Questions where the judge found a source at 3+ in T (n = 40), the nearest to the paper's selection: N 0.2580 [0.1580, 0.3665]; O 0.2300 [0.1381, 0.3302]; T 0.0439 [0.0048, 0.0942].
 
@@ -101,7 +102,7 @@ Predictions stated in PLAN.md before the run:
 
 - P7 (Q2): retrieval as of today improves Brier by at least 0.05 with the interval below 0: **held**; as of open no better than none by more than 0.02: **held**.
 - P8 (the judge flags at least 30% of T's questions and under 10% of O's): T 62% **held**, O 2% **held**.
-- P9 (judge against the labels, here the reference labels: kappa at least 0.6, major-leak agreement at least 85%): **held**, **held**.
+- P9 (judge against the hand labels: kappa at least 0.6, major-leak agreement at least 85%): **not yet tested**; the labels are not hand labels. Against the provisional reference labels: kappa 0.90, 97.5%.
 - P10 (loop within ±0.02 of the one pass, interval including 0; more calls): **failed**, **held**.
 - P11 (N, O and L all worse than the price, interval above 0; T's point estimate above 0): N **held**, O **held**, L **held**, T **failed**.
 <!-- augur:end leakage -->
@@ -141,13 +142,17 @@ Predictions stated in PLAN.md before the run:
   retirements between 24 and 27: N 0.35, O 0.01, resolved No), worth
   −0.002 of O's mean. So the residual leak rate is 1 of 64 questions here,
   and the date gate alone cannot catch it: it is the judge's job.
-- **The judge is usable on this rubric.** Against the reference labels it
-  agrees on 90% (0 and 1 merged) with a quadratic weighted kappa of 0.90,
-  and on "3 or 4" for 39 of 40 (kappa 0.91), against 76.1% and 0.85 for
-  the paper's judge against two annotators. The labels are a second rating
-  by a stronger model (Claude Opus 5.5), blind to the judge, not yet
-  checked by hand; 20 of them come from arm O, where both raters gave 0 to
-  all 20, so the agreement rests mostly on the 20 from T.
+- **The judge is not yet checked against hand labels (P9 untested).** The
+  40 reference labels are a provisional rating by a second, stronger
+  model, blind to the judge but made outside the pipeline, so no call is
+  recorded and the rating cannot be re-run from this repository. Against
+  them the judge agrees on 90% (0 and 1 merged) with a quadratic weighted
+  kappa of 0.90, and on "3 or 4" for 39 of 40 (kappa 0.91); the paper's
+  judge scored 76.1% and 0.85 against two human annotators. Two models
+  agreeing is weaker evidence than that, and 20 of the 40 come from arm O,
+  where both raters gave 0 to all 20, so the agreement rests mostly on the
+  20 from T (on those 20 alone: kappa 0.84, 19 of 20 on "3 or 4"). P9
+  holds or fails only once the same 40 are scored by hand.
 - **The research loop did not help, and cost more.** On the first 40
   questions the loop (3 searches, a written belief after each) scored
   0.232 against the one pass's 0.206: 0.026 worse [−0.005, +0.060], with
@@ -1025,7 +1030,7 @@ works against the real API; they say nothing yet about accuracy.
 | The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
 | The replay evaluation (arms b and d on C2) on the frontier model the floor requires live | Nothing paid without the maintainer's say-so; C2 ran on the free model that answered live in M3 | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high AUGUR_FORECASTERS=3 augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --ledger data/ledgers/m5-replay-c2-gpt54.sqlite`, then the same with `--prices data/ledgers/m5-replay-c2-prices.sqlite` (into a copy of that ledger). C2's free run used 430,222 input and 727,642 output tokens over 717 draws: about $12 at GPT-5.4's listed $2.50/$15 per million, more at high effort. The listing date (2026-03) is before the 2026-06-11 freeze, so the gate admits it |
 | Research depth, and the similar-market (search) half of the markets searcher, on replayed live research (C3) | No live question with an Augur forecast has resolved (C3 = 0); C1 and C2 have no retrieval, and their price is exact by construction | Once live questions resolve: `augur resolve --ledger L` (or `--manual`), then the replay arms on the ledger's recorded sources (M7's harness) |
-| The judge against labels made by hand (P9 as planned) | The 40 labels in `data/judge/m6-reference-labels.json` are a second, blind model rating; no one has yet scored them by hand | `uv run python scripts/judge_sample.py --per-arm 20 --sheet sheet.md --out /tmp/labels.json` (the same 40 sources, in the same order), score each by hand on the rubric in `augur/judge.py`, copy the scores into `data/judge/m6-reference-labels.json` (setting its `rater`), then `make results`; free |
+| The judge against labels made by hand (P9 as planned) | The 40 labels in `data/judge/m6-reference-labels.json` are a second, blind model rating; no one has yet scored them by hand | `uv run python scripts/judge_sample.py --per-arm 20 --sheet sheet.md --out /tmp/labels.json` (the same 40 sources, in the same order), score each by hand on the rubric in `augur/judge.py`, copy the scores into `data/judge/m6-reference-labels.json` (setting its `rater`, and `by_hand` to `true`, which is what lets P9 read held or failed), then `make results`; free; about half an hour |
 | Q2 on past Metaculus tournaments (the corpus El Lahib et al. used) | `augur/resolved.py` loads them, but this bot token sees no resolution on any scored tournament: 0 kept of 59 (MiniBench 2026-11-02), 60 (2026-10-19) and 150 (Summer 2026 FutureEval, first three pages) resolved posts, every binary one with its resolution hidden | With a personal (non-bot) token in `METACULUS_TOKEN`: `load_tournament(client, "minibench-2026-11-02", released=...)` then `write_snapshot`, and the same three arms on that snapshot (a `--metaculus SNAPSHOT` loader option for `augur backtest`) |
 | Q2 and the loop on the frontier model the floor requires live | Nothing paid without the maintainer's say-so | `make backtest-q2` with `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-sonnet-5.5` and `AUGUR_RESEARCH_MODELS` the same, into fresh ledgers. The free run's tokens per question (RESULTS, M6 cost table) put the four arms at roughly $10 to $20 at Sonnet 5.5's listed $2/$10 per million |
 | A scored MiniBench round under the proposed floor, with the shadow template beside it (Q1, Q5) | The maintainer approves the re-based tier and a route first; the key reports a $1 limit | Approve a route from RESULTS.md's floor table, then `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-haiku-5.5 augur forecast --tournament minibench --submit` (worst case $0.92 a 60-question round at Haiku 5.5's listed prices) and `augur baseline --ledger L` on the same model; after resolution `augur score L --mode live --cluster week` and `augur standings --round minibench-2026-11-16 --ledger L` |

@@ -18,11 +18,13 @@ from augur.q2 import (
     ArmSource,
     forecasts,
     judge_row,
+    labels_by_hand,
     major_questions,
     reference_agreement,
     score_q2,
 )
 from augur.replay import PRICES_SUFFIX
+from augur.report import _q2_verdicts
 
 from .helpers import market_source, source
 
@@ -448,6 +450,27 @@ def test_reference_agreement_is_none_without_a_file_or_a_matching_judgment(tmp_p
     arms = {"O": (o, TOURNAMENT + "+o")}
     assert reference_agreement(tmp_path / "missing.json", arms) is None
     assert reference_agreement(_labels(tmp_path / "l.json", [("O", Q0, "nope", 2)]), arms) is None
+
+
+def test_only_a_file_flagged_by_hand_can_hold_or_fail_p9(
+    tmp_path: Path, arms: dict[str, ArmSource]
+) -> None:
+    o = _judge(arms["O"].path, [(Q0, "a", 0)], arms["O"].tournament)
+    labels = _labels(tmp_path / "labels.json", [("O", Q0, o["a"], 0)])
+    assert not labels_by_hand(labels)
+    assert not labels_by_hand(tmp_path / "missing.json")
+    s = _score(tmp_path, arms, labels=labels)
+    [p9] = [line for line in _q2_verdicts(s) if line.startswith("- P9")]
+    assert "**not yet tested**" in p9
+    assert "**held**" not in p9
+
+    data = json.loads(labels.read_text(encoding="utf-8"))
+    data["by_hand"] = True
+    labels.write_text(json.dumps(data), encoding="utf-8")
+    assert labels_by_hand(labels)
+    s = _score(tmp_path, arms, labels=labels)
+    [p9] = [line for line in _q2_verdicts(s) if line.startswith("- P9")]
+    assert p9.endswith("**held**, **held**.")
 
 
 def test_score_q2_reports_the_judge_the_flagged_questions_and_the_agreement(

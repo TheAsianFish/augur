@@ -1,6 +1,8 @@
 {
  "rubric": "El Lahib et al. 0-4 (augur/judge.py)",
  "sample": "first 20 shown sources per arm (O, T) by SHA-256 of the source id, drawn before any judge score was read",
+ "rater": "A provisional reference rating, not hand labels: a second, stronger model reading each source as the forecasters saw it, against the question's open date and its resolution, blind to the judge's scores. It was not made through the pipeline, so no model call is recorded. Replace with hand labels and set by_hand to true (RESULTS.md, To measure).",
+ "by_hand": false,
  "labels": [
   {
    "arm": "O",
@@ -282,6 +284,5 @@
    "score": 2,
    "note": "Trilateral pact signed August 2026 with excluded states; suggests none by June 30."
   }
- ],
- "rater": "A second, independent rating, blind to the judge's scores: Claude Opus 5.5 reading each source as the forecasters saw it, against the question's open date and its resolution. Not yet checked by hand (RESULTS.md, To measure)."
+ ]
 }

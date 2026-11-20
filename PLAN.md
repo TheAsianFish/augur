@@ -248,9 +248,10 @@ P7 held both ways: researched as of today the bot scores 0.063 against
 al.'s 0.136), and as of open 0.189, no better than none by more than 0.02
 (−0.016 [−0.050, +0.017]). P8 held: the judge found a source at 3 or 4
 for 40 of 64 questions in T and 1 of 64 in O (a June Wikipedia revision
-rendered with a November "as of" count). P9 held against the reference
-labels (kappa 0.90; 39 of 40 on "3 or 4"), which are a second, blind
-model rating, not yet checked by hand. P10 failed: the loop was 0.026
+rendered with a November "as of" count). P9 is not yet tested: it is
+stated against hand labels, and the 40 labels are a provisional rating by
+a second model (against it, kappa 0.90 and 39 of 40 on "3 or 4"); the
+hand labels are under To measure. P10 failed: the loop was 0.026
 worse than the one pass [−0.005, +0.060] for 6 calls a question instead
 of 4, so the one pass stays the default. P11 held for N, O and L (each
 worse than the as-of price) and failed for T, whose point estimate is

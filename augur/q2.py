@@ -129,6 +129,17 @@ def major_questions(path: Path, tournament: str) -> set[int]:
     return {q for (q, _), v in latest.items() if v >= MAJOR}
 
 
+def labels_by_hand(labels_path: Path) -> bool:
+    """Whether the file's ``by_hand`` flag says a person scored its labels.
+
+    P9 is stated against hand labels, so only such a file can hold or fail
+    it; any other rating is reported as provisional.
+    """
+    if not labels_path.exists():
+        return False
+    return json.loads(labels_path.read_text(encoding="utf-8")).get("by_hand") is True
+
+
 def reference_agreement(labels_path: Path, arms: dict[str, tuple[Path, str]]) -> Agreement | None:
     """The judge against the reference labels in ``labels_path`` (one list of objects).
 
@@ -223,6 +234,7 @@ class Q2:
     flagged_n: int
     flagged: list[ArmRow]
     agree: Agreement | None
+    agree_by_hand: bool
     costs: list[CostRow]
 
 
@@ -346,5 +358,6 @@ def score_q2(
         flagged_n=len(flagged_q),
         flagged=flagged_rows,
         agree=agree,
+        agree_by_hand=labels_by_hand(labels),
         costs=costs,
     )
