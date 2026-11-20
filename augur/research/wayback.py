@@ -71,6 +71,10 @@ _STAMP_IN_URL = re.compile(r"/web/(\d{14})(?:[a-z]{2}_)?/")
 log = get_logger("augur.research.wayback")
 
 
+# The shared client allows long reads for model calls; an archive fetch that
+# has not answered in this long is retried, then the URL is skipped.
+REQUEST_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
+
 _MAIN = re.compile(r"<(main|article)\b[^>]*>(.*?)</\1>", re.S | re.I)
 
 
@@ -300,6 +304,7 @@ class WaybackSearcher:
                         params=params,
                         headers={"User-Agent": USER_AGENT},
                         follow_redirects=False,
+                        timeout=REQUEST_TIMEOUT,
                     )
                 except httpx.HTTPError as exc:
                     last_problem = f"{type(exc).__name__}: {exc}"

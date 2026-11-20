@@ -48,6 +48,9 @@ USER_AGENT = f"augur-forecast/{__version__} (+https://github.com/TheAsianFish/au
 DEFAULT_API_URL = "https://en.wikipedia.org/w/api.php"
 DEFAULT_RETRY_AFTER = 5.0
 MAX_RETRY_AFTER = 120.0
+# The shared client allows long reads for model calls; a wiki request that
+# has not answered in this long is retried.
+REQUEST_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 _RETRY_STATUSES = frozenset({429, 500, 502, 503, 504})
 
 log = get_logger("augur.research.wikipedia")
@@ -231,7 +234,10 @@ class WikipediaSearcher:
             async with self._limiter.acquire():
                 try:
                     response = await self._http.get(
-                        self._api_url, params=full, headers={"User-Agent": USER_AGENT}
+                        self._api_url,
+                        params=full,
+                        headers={"User-Agent": USER_AGENT},
+                        timeout=REQUEST_TIMEOUT,
                     )
                 except httpx.HTTPError as exc:
                     last_problem = f"{type(exc).__name__}: {exc}"
