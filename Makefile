@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2
 
 UV ?= uv
 
@@ -43,3 +43,23 @@ backtest: ## ForecastBench, no retrieval, local model; hours on a CPU (ARGS adds
 		--resolutions $(FB_SET)_resolution_set.subset.json --ledger $(FB_LEDGER) $(ARGS)
 	$(UV) run augur resolve --ledger $(FB_LEDGER) \
 		--forecastbench $(FB_SET)_resolution_set.subset.json
+
+Q2_SET ?= data/forecastbench/2026-06-21
+Q2_ARGS = --questions $(Q2_SET)-llm.subset.json --resolutions $(Q2_SET)_resolution_set.subset.json
+Q2_TOURNAMENT = forecastbench:2026-06-21-llm.json
+Q2_QUERIES = data/backtest/m6-c2-queries.json
+
+backtest-q2: ## Q2 and the research loop on C2's fixed sample (free hosted model; about an hour each arm)
+	$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 64 --plan-out $(Q2_QUERIES) \
+		--ledger data/ledgers/m6-c2-plan.sqlite
+	$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 64 --retrieval open \
+		--queries $(Q2_QUERIES) --ledger data/ledgers/m6-c2-open.sqlite
+	$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 64 --retrieval now \
+		--queries $(Q2_QUERIES) --ledger data/ledgers/m6-c2-now.sqlite
+	$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 40 --retrieval open --loop 3 \
+		--queries $(Q2_QUERIES) --ledger data/ledgers/m6-c2-loop.sqlite
+	$(UV) run augur judge $(Q2_ARGS) --ledger data/ledgers/m6-c2-open.sqlite \
+		--tournament "$(Q2_TOURNAMENT)+onepass-asof-open"
+	$(UV) run augur judge $(Q2_ARGS) --ledger data/ledgers/m6-c2-now.sqlite \
+		--tournament "$(Q2_TOURNAMENT)+onepass-asof-now"
+	$(UV) run augur report
