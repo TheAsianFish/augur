@@ -30,9 +30,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 6
+        assert first.schema_version() == 7
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 6
+        assert again.schema_version() == 7
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -72,6 +72,15 @@ def test_every_table_refuses_update_and_delete(ledger: Ledger, table: str) -> No
         probability=0.4,
         reasoning="r",
         call_id=call_id,
+    )
+    ledger.record_judgment(
+        run_id=run_id,
+        question_id=q.question_id,
+        source_id=s.source_id,
+        call_id=call_id,
+        judge_model="qwen2.5:7b",
+        score=0,
+        rationale="no post-cutoff information",
     )
     ledger.record_submission(
         run_id=run_id,
@@ -254,7 +263,7 @@ def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedCloc
     copy = tmp_path / "m1.sqlite"
     shutil.copy(original, copy)
     with Ledger.open(copy, clock) as led:
-        assert led.schema_version() == 6
+        assert led.schema_version() == 7
         assert led.count("llm_calls") == 7
         assert led.count("model_switches") == 0
     assert scan_ledger(copy) == []
@@ -274,7 +283,7 @@ def test_migration_4_keeps_every_forecast_of_an_older_ledger(tmp_path: Path) -> 
         ).fetchall()
     assert before
     with Ledger.open(copy, FixedClock(T0)) as led:
-        assert led.schema_version() == 6
+        assert led.schema_version() == 7
         conn = led.connection
         after = conn.execute(
             "SELECT forecast_id, probability, reasoning FROM forecasts ORDER BY forecast_id"

@@ -42,6 +42,7 @@ APPEND_ONLY_TABLES = (
     "reference_forecasts",
     "metaculus_scores",
     "market_quotes",
+    "leak_judgments",
     "schema_migrations",
 )
 
@@ -482,6 +483,35 @@ class Ledger:
             },
         )
         return outcome_id
+
+    def record_judgment(
+        self,
+        *,
+        run_id: str,
+        question_id: int,
+        source_id: str,
+        call_id: str,
+        judge_model: str,
+        score: int,
+        rationale: str,
+    ) -> str:
+        """The leakage judge's 0 to 4 rating of one admitted source."""
+        judgment_id = new_id("jdg")
+        self._insert(
+            "leak_judgments",
+            {
+                "judgment_id": judgment_id,
+                "run_id": run_id,
+                "question_id": question_id,
+                "source_id": source_id,
+                "call_id": call_id,
+                "judge_model": judge_model,
+                "score": score,
+                "rationale": rationale[:1000],
+                "recorded_at": self._now(),
+            },
+        )
+        return judgment_id
 
     def record_switch(
         self,
