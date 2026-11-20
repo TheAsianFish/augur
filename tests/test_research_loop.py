@@ -398,3 +398,18 @@ async def test_an_empty_list_of_queries_is_planned_like_none(make_rig: MakeRig) 
     rig = make_rig([])
     result = await rig.researcher.research(rig.run_id, rig.q, T0, queries=[])
     assert result.queries == ["planned one", "planned two"]
+
+
+async def test_a_source_found_again_in_a_later_step_is_shown_once(make_rig: MakeRig) -> None:
+    shared = page("shared page", T0 - timedelta(days=5), T0)
+    rig = make_rig(
+        [step("first", "second query"), step("second", None)],
+        ScriptSearcher(extra=[shared]),
+    )
+    result = await rig.researcher.research_loop(rig.run_id, rig.q, T0, steps=2)
+    assert [s.title for s in result.sources].count("shared page") == 1
+    assert result.steps[1].new_sources == 1  # only the second query's own page
+    uses = rig.ledger.connection.execute(
+        "SELECT count(*) FROM source_uses WHERE source_id = ?", (shared.source_id,)
+    ).fetchone()[0]
+    assert uses == 1
