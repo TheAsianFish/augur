@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -44,6 +45,51 @@ BRIEF_SYSTEM = (
 )
 
 
+LOOP_MAX_TOKENS = 3000
+LOOP_SYSTEM = (
+    "You research a forecasting question one search at a time. You get the question, "
+    "your notes so far and the new numbered sources from the last search. Reply with "
+    "one JSON object and nothing else: "
+    '{{"belief": "at most 120 words: what all the evidence so far says about how the '
+    'question will resolve, citing sources as [S1], [S2]", '
+    '"unknown": "the one thing still unknown that would most change the forecast", '
+    '"next_query": "a 2 to 6 word search query that would find it, or null to stop"}}. '
+    "Use only the sources and the question; do not give a probability. "
+    "You have {left} search(es) left."
+)
+
+
+@dataclass(frozen=True)
+class LoopStep:
+    """One step of the research loop: what was searched, and what the model wrote."""
+
+    query: str
+    new_sources: int
+    belief: str
+    unknown: str
+    next_query: str | None
+    call_id: str | None
+
+
+def parse_step(text: str) -> tuple[str, str, str | None]:
+    """``(belief, unknown, next_query)`` from a loop reply; tolerate prose around the JSON."""
+    match = re.search(r"\{.*\}", text, re.S)
+    if match:
+        try:
+            raw = json.loads(match.group(0))
+        except json.JSONDecodeError:
+            raw = None
+        if isinstance(raw, dict):
+            belief = str(raw.get("belief") or "").strip()
+            unknown = str(raw.get("unknown") or "").strip()
+            nxt = raw.get("next_query")
+            query = str(nxt).strip() if isinstance(nxt, str | int | float) else ""
+            if query.lower() in ("", "null", "none"):
+                return belief, unknown, None
+            return belief, unknown, query[:120]
+    return text.strip()[:1200], "", None
+
+
 @dataclass
 class ResearchResult:
     queries: list[str]
@@ -53,6 +99,8 @@ class ResearchResult:
     brief: str = ""
     brief_call_id: str | None = None
     errors: list[str] = field(default_factory=list)
+    steps: list[LoopStep] = field(default_factory=list)
+    """The research loop's steps, in order (empty for the one-pass researcher)."""
 
     def label(self, source_id: str) -> str:
         for i, s in enumerate(self.sources, start=1):
@@ -106,6 +154,12 @@ def parse_queries(text: str, limit: int) -> list[str]:
     return seen[:limit]
 
 
+def _source_block(i: int, s: Source) -> str:
+    if s.published_at:
+        return f"[S{i}] {s.title} ({s.searcher}, dated {to_iso(s.published_at)[:10]})\n{s.excerpt}"
+    return f"[S{i}] {s.title} ({s.searcher}, undated)\n{s.excerpt}"
+
+
 def fallback_query(q: Question) -> str:
     words = re.sub(r"[^\w\s'-]", " ", q.title).split()
     stop = {"will", "the", "a", "an", "of", "by", "on", "in", "be", "to", "at", "before", "than"}
@@ -132,19 +186,45 @@ class Researcher:
         self._per_query = per_query
         self._max_sources = max_sources
 
-    async def research(self, run_id: str, q: Question, cutoff: datetime) -> ResearchResult:
+    async def research(
+        self, run_id: str, q: Question, cutoff: datetime, queries: list[str] | None = None
+    ) -> ResearchResult:
+        """One pass: plan (unless ``queries`` are given), search, gate, write the brief."""
         result = ResearchResult(queries=[], sources=[])
-        result.queries = await self._plan(run_id, q, cutoff, result)
+        result.queries = (
+            list(queries[: self._max_queries])
+            if queries
+            else await self._plan(run_id, q, cutoff, result)
+        )
         found = await self._search_question(q, cutoff, result)
         found += await self._search_all(result.queries, cutoff, result)
+        self._gate(run_id, q, cutoff, found, result, self._max_sources)
+        await self._brief(run_id, q, cutoff, result)
+        return result
+
+    def _gate(
+        self,
+        run_id: str,
+        q: Question,
+        cutoff: datetime,
+        found: list[Source],
+        result: ResearchResult,
+        cap: int,
+    ) -> list[Source]:
+        """Store each source, let the gate decide, keep up to ``cap`` new admitted ones."""
+        shown = {s.source_id for s in result.sources}
+        kept: list[Source] = []
         for source in found:
+            if source.source_id in shown:
+                continue
             # Stored before any model can see it; then the gate decides.
             self._ledger.record_source(source)
             decision = admit_source(source, cutoff, self._mode)
             self._ledger.record_admission(run_id, q.question_id, decision)
             if decision.admitted:
-                if len(result.sources) < self._max_sources:
-                    result.sources.append(source)
+                if len(kept) < cap:
+                    kept.append(source)
+                    shown.add(source.source_id)
             else:
                 result.rejected.append((source, decision))
                 log.warning(
@@ -153,7 +233,97 @@ class Researcher:
                     url=source.url,
                     reason=decision.reason,
                 )
-        await self._brief(run_id, q, cutoff, result)
+        result.sources.extend(kept)
+        return kept
+
+    async def research_loop(
+        self,
+        run_id: str,
+        q: Question,
+        cutoff: datetime,
+        *,
+        steps: int,
+        queries: list[str] | None = None,
+        per_step: int = 4,
+        deadline: float | None = None,
+    ) -> ResearchResult:
+        """Search, read, write down a belief and what is unknown, pick the next query.
+
+        Bounded: at most ``steps`` searches, and none started after
+        ``deadline`` (a ``time.monotonic()`` instant). The first query is the
+        planner's (or the first of ``queries``); the question searchers run
+        once, before it. Every source passes the gate before the model sees
+        it. The brief the forecasters read is the last belief and the open
+        question, citing the sources by number.
+        """
+        if steps < 1:
+            raise ValueError("the research loop needs at least one step")
+        result = ResearchResult(queries=[], sources=[])
+        planned = list(queries) if queries else await self._plan(run_id, q, cutoff, result)
+        query: str | None = planned[0] if planned else fallback_query(q)
+        pending = await self._search_question(q, cutoff, result)
+        belief = unknown = ""
+        for step in range(steps):
+            if query is None or (deadline is not None and time.monotonic() >= deadline):
+                break
+            result.queries.append(query)
+            pending += await self._search_all([query], cutoff, result)
+            first = len(result.sources)
+            new = self._gate(run_id, q, cutoff, pending, result, per_step)
+            pending = []
+            blocks = [_source_block(first + i, s) for i, s in enumerate(new, start=1)] or [
+                "(this search found no new source dated before the cutoff)"
+            ]
+            notes = (
+                f"Your notes so far:\n{belief}\nStill unknown: {unknown}"
+                if belief
+                else "Your notes so far: none yet."
+            )
+            request = LlmRequest(
+                model="",  # the router sets each route's model
+                messages=(
+                    Message(role="system", content=LOOP_SYSTEM.format(left=steps - step - 1)),
+                    Message(
+                        role="user",
+                        content=question_text(q, cutoff)
+                        + f"\n\n{notes}\n\nSearch {step + 1}: {query!r}. New sources:\n\n"
+                        + "\n\n".join(blocks),
+                    ),
+                ),
+                temperature=0.0,
+                seed=0,
+                max_tokens=LOOP_MAX_TOKENS,
+            )
+            ctx = CallContext(run_id=run_id, question_id=q.question_id, role="loop")
+            try:
+                done = await self._calls.complete(
+                    ctx, request, source_ids=[s.source_id for s in result.sources]
+                )
+            except ProviderError as exc:
+                result.errors.append(f"loop step {step + 1} failed: {exc}")
+                break
+            new_belief, new_unknown, nxt = parse_step(done.response.text)
+            belief = new_belief or belief
+            unknown = new_unknown or unknown
+            result.steps.append(
+                LoopStep(query, len(new), new_belief, new_unknown, nxt, done.call_id)
+            )
+            # A repeated query would find the same pages: stop instead.
+            seen = {x.lower() for x in result.queries}
+            query = nxt if nxt and nxt.lower() not in seen else None
+        if not result.sources:
+            result.brief = "No sources dated before the cutoff were found."
+        elif belief:
+            result.brief = (
+                f"{belief}\n\nStill unknown: {unknown or 'not stated'}\n\nSources:\n"
+                + "\n".join(
+                    f"[S{i}] {s.title} ({s.searcher}, "
+                    f"dated {to_iso(s.published_at)[:10] if s.published_at else 'undated'})"
+                    for i, s in enumerate(result.sources, start=1)
+                )
+            )
+        else:
+            await self._brief(run_id, q, cutoff, result)
         return result
 
     async def _plan(
@@ -227,12 +397,7 @@ class Researcher:
         if not result.sources:
             result.brief = "No sources dated before the cutoff were found."
             return
-        blocks = [
-            f"[S{i}] {s.title} ({s.searcher}, dated {to_iso(s.published_at)[:10]})\n{s.excerpt}"
-            if s.published_at
-            else f"[S{i}] {s.title} ({s.searcher}, undated)\n{s.excerpt}"
-            for i, s in enumerate(result.sources, start=1)
-        ]
+        blocks = [_source_block(i, s) for i, s in enumerate(result.sources, start=1)]
         request = LlmRequest(
             model="",  # the router sets each route's model
             messages=(
