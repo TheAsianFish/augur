@@ -57,6 +57,7 @@ from augur.llm.registry import FRONTIER_TIER_NAME, in_frontier_tier
 from augur.log import configure_logging, get_logger
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
+from augur.redraw import recorded_research, research_from
 from augur.replay import (
     LIVE_BLEND,
     LIVE_MARKETS,
@@ -214,6 +215,35 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         help="arm (d): show each question's price recorded by `augur backtest prices` in this "
         "ledger as the brief's only source, and skip questions without one",
+    )
+    fb.add_argument(
+        "--passes",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="with --retrieval: 2 adds a second research pass on sub-questions",
+    )
+    fb.add_argument(
+        "--research-from",
+        type=Path,
+        metavar="LEDGER",
+        help="forecast from the briefs an arm recorded in this ledger (head count, model mix)",
+    )
+    fb.add_argument(
+        "--research-arm",
+        default="onepass-asof-open",
+        help="with --research-from: the arm's label (default onepass-asof-open)",
+    )
+    fb.add_argument(
+        "--first-member",
+        type=int,
+        default=0,
+        help="number the draws from here (seed = member), to add to a recorded ensemble",
+    )
+    fb.add_argument(
+        "--label",
+        default="",
+        help="with --research-from: a suffix naming this run's arm in the ledger",
     )
     bp = bt_sub.add_parser(
         "prices",
@@ -538,7 +568,16 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
         if args.prices is not None:
             raise ConfigError("--prices is its own arm; do not combine it with --retrieval")
         return await _backtest_research(args, settings, questions, tournament, ledger_path)
-    if args.prices is not None:
+    if args.research_from is not None:
+        if args.prices is not None:
+            raise ConfigError("--research-from and --prices are separate arms")
+        arm = f"{tournament}+{args.research_arm}"
+        recorded = recorded_research(args.research_from, arm)
+        print(f"{len(recorded)} recorded brief(s) of {arm} in {args.research_from}")
+        research = research_from(recorded)
+        extra = {"retrieval": f"recorded: {arm}", "research_ledger": str(args.research_from)}
+        tournament = arm + (f"+{args.label}" if args.label else "+redraw")
+    elif args.prices is not None:
         prices = recorded_prices(args.prices, tournament)
         print(f"{len(prices)} recorded prices in {args.prices}")
         research = price_research(prices)
@@ -560,6 +599,7 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
                     code_version=code_version(),
                     research_for=research,
                     extra_settings=extra,
+                    first_member=args.first_member,
                 )
             finally:
                 await router.aclose()
@@ -623,6 +663,7 @@ async def _backtest_research(
                     as_of="now" if args.retrieval == "now" else "open",
                     queries=queries,
                     loop_steps=args.loop,
+                    passes=args.passes,
                 )
                 result = await run_forecastbench(
                     questions=questions,
