@@ -323,7 +323,10 @@ failed. P15 held (mixed fleet +0.006 [−0.015, +0.026] against six draws;
 the second model 0.014 worse than the first). P16: 80% power on 0.01
 Brier needs about 450 questions on a research change's spread, not over
 1,000 (failed); 10 points about 70 (held); 2 points about 1,650, not over
-2,000 (failed). P17 failed on extremizing alone, a loss. No variant passed
+2,000 (failed). P16 did not name the spread it is judged on, and the
+research spread was chosen after the runs began; on the noisier retrieval
+spread all three parts hold, so its verdict is reported with every reading
+beside it. P17 failed on extremizing alone, a loss. No variant passed
 the replacement rule, so the live default is unchanged: one pass, five
 forecasters, the median, one model.
 

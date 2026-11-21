@@ -40,7 +40,7 @@ of it); ledgers `data/ledgers/m7-c2-{draws,nano,twopass}.sqlite`; raw
 output `data/runs/m7-c2-*.txt`; power `data/power/m7-power.json`.
 
 <!-- augur:begin fleet -->
-The first 40 questions of C2's fixed sample; 40 were forecast by every arm. A negative Brier difference, or a positive head-to-head score, favours the first arm. Cost is $0 for every row (free models); calls, tokens and seconds are per question from the ledgers. Head-count costs add the one-pass research to k draws. On 3 question(s) one of the nine draws returned no text (the model spent its 4,000-token cap reasoning), so, as a live run does, it is dropped and k forecasters are the first k that answered.
+The first 40 questions of C2's fixed sample; 40 were forecast by every arm. A negative Brier difference, or a positive head-to-head score, favours the first arm. Cost is $0 for every row (free models); calls, tokens and seconds are per question from the ledgers. Head-count costs add the one-pass research to k draws. On 3 question(s) one of the nine draws returned no text (the model spent its 4,000-token cap reasoning). It is dropped and k forecasters are the first k that answered, so on those questions the next member stands in (a live run would combine one draw fewer). This substitution was chosen after the draws were seen; PLAN.md planned members 0 to k − 1 with the empty draw left out.
 
 **Research depth** (3 draws, median):
 
@@ -166,6 +166,8 @@ Beside FutureSearch's reported lead of 0.010 ± 0.003 Brier at n = 1,810: if ± 
 Prediction stated in PLAN.md before the run:
 
 - P16 (80% power on 0.01 Brier needs over 1,000 questions: **failed**; on 10 points under 300: **held**; on 2 points over 2,000: **failed**).
+
+P16 as written does not name the comparison whose spread it is judged on. The verdict above uses the research comparison, chosen after the runs had started; on the other spreads its three parts read: retrieval (D1 against D0): held, held, held; model mix (mixed against 6 draws): failed, held, failed; head count (9 against 5): failed, held, failed. The reading depends on the spread, which is the finding: a backtest's power is a property of the change being tested, not of the backtest.
 <!-- augur:end power -->
 
 **What it says.** On these 40 questions nothing the fleet adds beats the
@@ -180,9 +182,11 @@ overconfident when it is wrong, and the Spring 2026 survey's "extremizing
 −0.30" agrees in sign. Q3's prediction (nothing resolvable) failed only
 on that row. Head count barely matters because the nine draws of one model
 on one brief agree closely (the per-question SD of 9 against 5 is 0.028
-Brier): sampling the same model again is not a second opinion, which is
-also how AIA reported one run against the median (0.1182 against 0.1138)
-and the survey's "aggregates multiple forecasts" (−0.19). Every arm still
+Brier): sampling the same model again is not a second opinion here. AIA
+saw a small gain from the median of several runs (0.1138 against one run's
+0.1182), larger than anything this backtest could detect; the survey's
+"aggregates multiple forecasts" (−0.19, a raw correlation, not
+significant) points the same way as this result. Every arm still
 trails the market price on the 29 priced questions by about 0.12 Brier,
 so none of these settings is where the edge would come from. The live
 default is unchanged under the replacement rule: one pass, five
@@ -211,8 +215,8 @@ questions and on 2 head-to-head points at about 1,650; on retrieval
 against none, whose per-question spread is larger (0.133), 0.01 needs
 about 1,340. FutureSearch's 0.010 lead at n = 1,810 is consistent with
 either reading of its ±0.003 (needing 333 or 1,279 questions). So a
-change worth 0.01 Brier, the size that separates the top pastcasting
-systems, is out of reach of any backtest this key can pay for in a day
+change worth 0.01 Brier, the size of the FutureSearch lead quoted above,
+is out of reach of any backtest this key can pay for in a day
 (1,000 free calls is about 160 questions of one arm), and Q1's +5-point
 target needs about 270 paired questions on a spread like these. Every
 finding here is one free model on one ForecastBench set; none says what a

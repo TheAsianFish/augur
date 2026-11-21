@@ -957,8 +957,10 @@ def render_fleet(root: Path) -> str:
         "first arm. Cost is $0 for every row (free models); calls, tokens and seconds are per "
         "question from the ledgers. Head-count costs add the one-pass research to k draws. "
         f"On {s.short} question(s) one of the nine draws returned no text (the model spent its "
-        "4,000-token cap reasoning), so, as a live run does, it is dropped and k forecasters "
-        "are the first k that answered.",
+        "4,000-token cap reasoning). It is dropped and k forecasters are the first k that "
+        "answered, so on those questions the next member stands in (a live run would combine "
+        "one draw fewer). This substitution was chosen after the draws were seen; PLAN.md "
+        "planned members 0 to k − 1 with the empty draw left out.",
         "",
         "**Research depth** (3 draws, median):",
         "",
@@ -1125,20 +1127,37 @@ def power_snapshot(root: Path) -> dict[str, object] | None:
     }
 
 
-def _p16(comp: dict[str, Any]) -> list[str]:
-    """P16, judged on the primary comparison (fixed in PLAN.md before the run)."""
+def _p16(comparisons: dict[str, Any]) -> list[str]:
+    """P16 on the research comparison, and on every other one beside it.
 
-    def need(key: str, delta: str) -> float:
-        n = comp[key][delta]["needed"]
-        return math.inf if n is None else float(n)
+    PLAN.md's P16 does not say whose spread it is judged on; the research
+    comparison was chosen after the runs started, so every reading is shown.
+    """
 
-    brier, ten, two = need("brier", "0.01"), need("h2h", "10"), need("h2h", "2")
+    def verdicts(comp: dict[str, Any]) -> tuple[bool, bool, bool]:
+        def need(key: str, delta: str) -> float:
+            n = comp[key][delta]["needed"]
+            return math.inf if n is None else float(n)
+
+        return need("brier", "0.01") > 1000, need("h2h", "10") < 300, need("h2h", "2") > 2000
+
+    brier, ten, two = verdicts(comparisons[POWER_PRIMARY])
+    others = "; ".join(
+        f"{name}: " + ", ".join("held" if v else "failed" for v in verdicts(comp))
+        for name, comp in comparisons.items()
+        if name != POWER_PRIMARY
+    )
     return [
         "Prediction stated in PLAN.md before the run:",
         "",
-        f"- P16 (80% power on 0.01 Brier needs over 1,000 questions: {_held(brier > 1000)}; "
-        f"on 10 points under 300: {_held(ten < 300)}; on 2 points over 2,000: "
-        f"{_held(two > 2000)}).",
+        f"- P16 (80% power on 0.01 Brier needs over 1,000 questions: {_held(brier)}; "
+        f"on 10 points under 300: {_held(ten)}; on 2 points over 2,000: {_held(two)}).",
+        "",
+        "P16 as written does not name the comparison whose spread it is judged on. The "
+        "verdict above uses the research comparison, chosen after the runs had started; "
+        f"on the other spreads its three parts read: {others}. The reading depends on "
+        "the spread, which is the finding: a backtest's power is a property of the change "
+        "being tested, not of the backtest.",
     ]
 
 
@@ -1205,7 +1224,7 @@ def render_power(root: Path) -> str:
         f"{power.analytic_n(float(snap['comparisons'][POWER_PRIMARY]['sd_brier']), 0.01):,} "
         "(the simulation's figure is in the table).",
         "",
-        *_p16(snap["comparisons"][POWER_PRIMARY]),
+        *_p16(snap["comparisons"]),
     ]
     return "\n".join(out) + "\n"
 
