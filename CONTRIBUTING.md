@@ -67,6 +67,10 @@ file, a log line, the ledger or a commit.
 | `AUGUR_PROBE` | `0` skips the opening probe. |
 | `AUGUR_RECORD_PATH`, `AUGUR_REPLAY_PATH` | Record every model call to a JSONL file; replay one (with `AUGUR_PROVIDER=replay`). |
 | `AUGUR_FORECASTERS` | Forecaster draws per question (default 5), combined by the median (binary), the per-option median normalised (multiple choice) or the mean of their CDFs (numeric, discrete). |
+| `AUGUR_RESEARCH_PASSES` | `1` (default) or `2`: a second research agent reads the first brief, searches the sub-questions that would most change the forecast, and the brief is rewritten (M7). |
+| `AUGUR_FORECASTER_VARIANTS` | Comma list of prompt stances, cycled over the members: `base` (default), `outside`, `inside`, `sceptic`. |
+| `AUGUR_MEMBER_MODELS` | Optional per-member model chains, `;`-separated, each in the chain syntax above; member m takes chain m mod k (a mixed-model fleet). Every route still passes the floor and the release gate. |
+| `AUGUR_QUESTION_CONCURRENCY` | Questions forecast at once (default 1, at most 8); every call still goes through its endpoint's token bucket and the per-question and per-run caps. |
 | `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
 | `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. The run prints its worst-case cost estimate before the first question. |
 | `AUGUR_CLOSE_MARGIN_MINUTES`, `AUGUR_MIN_FORECAST_MINUTES`, `AUGUR_RUN_DEADLINE_MINUTES` | Deadlines (defaults 5, 4, 30): work on a question stops this long before it closes; a question with less time than the minimum before that is missed, not started; the run starts no question after its own deadline. |
