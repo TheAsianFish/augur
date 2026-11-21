@@ -50,8 +50,9 @@ def build_providers(
     record: bool = True,
     timeout: float | None = None,
 ) -> dict[str, Provider]:
-    """One provider per endpoint the chains use, keyed by endpoint name."""
-    names = {r.endpoint.name: r.endpoint for c in settings.chains().values() for r in c}
+    """One provider per endpoint the chains (and the members' own chains) use, by endpoint name."""
+    chains = (*settings.chains().values(), *settings.member_chains())
+    names = {r.endpoint.name: r.endpoint for c in chains for r in c}
     if settings.is_replay:
         if settings.replay_path is None:
             raise ConfigError(
