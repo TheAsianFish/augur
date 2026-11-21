@@ -740,3 +740,34 @@ def test_bad_fleet_settings_fail_with_a_clear_error(env: dict[str, str], match: 
 def test_unknown_variant_is_refused_without_the_environment_too() -> None:
     with pytest.raises(ValueError, match="forecaster variant"):
         Settings.model_validate({"forecaster_variants": ("base", "optimist")})
+
+
+async def test_a_run_cap_refusal_wins_over_a_question_cap_refusal() -> None:
+    from augur.agents.calls import BudgetExceededError, CallRecorder, QuestionBudgetExceededError
+    from augur.agents.forecaster import draw_forecasts
+    from augur.agents.researcher import ResearchResult
+
+    from .helpers import binary_question
+
+    class Refusing:
+        """Member 0 meets the question cap first; member 1 then meets the run cap."""
+
+        async def complete(self, ctx: Any, request: Any, **_: Any) -> Any:
+            if ctx.member == 0:
+                raise QuestionBudgetExceededError("question cap")
+            await asyncio.sleep(0)
+            raise BudgetExceededError("run cap")
+
+    q, _ = binary_question(T0)
+    calls: CallRecorder = Refusing()  # type: ignore[assignment]
+    with pytest.raises(BudgetExceededError) as caught:
+        await draw_forecasts(
+            calls=calls,
+            run_id="r",
+            q=q,
+            cutoff=T0,
+            research=ResearchResult(queries=[], sources=[], brief="b"),
+            n=2,
+            concurrency=2,
+        )
+    assert not isinstance(caught.value, QuestionBudgetExceededError)

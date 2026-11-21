@@ -16,7 +16,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from augur.agents.calls import BudgetExceededError, CallContext, CallRecorder
+from augur.agents.calls import (
+    BudgetExceededError,
+    CallContext,
+    CallRecorder,
+    QuestionBudgetExceededError,
+)
 from augur.agents.researcher import ResearchResult, question_text
 from augur.distributions import cdf_from_percentiles, normalise_probabilities
 from augur.errors import AugurError, BelowFloorError, ForecastParseError
@@ -395,8 +400,11 @@ async def draw_forecasts(
         if not t.cancelled() and (bug := t.exception()) is not None:
             raise bug  # an exception one() does not handle is a bug, not a failed draw
     if refused:
-        # Never submit an ensemble the budget cut short; the run stops here.
-        raise refused[0]
+        # Never submit an ensemble the budget cut short. A run-level refusal wins over a
+        # question-level one, so the run stops rather than failing each later question.
+        raise next(
+            (e for e in refused if not isinstance(e, QuestionBudgetExceededError)), refused[0]
+        )
     members = [r for t in tasks if not t.cancelled() and (r := t.result()) is not None]
     if floored and len(members) < math.ceil(n / 2):
         # Too few draws from the tier: the question is skipped, not failed.
