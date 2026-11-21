@@ -35,9 +35,12 @@ class PassProvider:
 
     name = "openrouter"
 
-    def __init__(self, subq: str = SUBQ, fail_subq: bool = False) -> None:
+    def __init__(
+        self, subq: str = SUBQ, fail_subq: bool = False, fail_rewrite: bool = False
+    ) -> None:
         self.subq = subq
         self.fail_subq = fail_subq
+        self.fail_rewrite = fail_rewrite
         self.requests: list[LlmRequest] = []
 
     def briefs(self) -> list[LlmRequest]:
@@ -51,6 +54,8 @@ class PassProvider:
                 raise ProviderError("scripted failure")
             text = self.subq
         elif system == BRIEF_SYSTEM:
+            if self.fail_rewrite and self.briefs()[:-1]:
+                raise ProviderError("scripted failure")
             text = f"Brief number {len(self.briefs())} [S1]."
         else:
             text = '["planned one", "planned two"]'
@@ -144,6 +149,18 @@ async def test_a_failed_second_pass_keeps_the_first_brief(tmp_path: Path) -> Non
     ledger.close()
     assert result.brief == "Brief number 1 [S1]."
     assert any("second pass failed" in e for e in result.errors)
+
+
+async def test_a_failed_rewrite_keeps_the_first_brief(tmp_path: Path) -> None:
+    provider = PassProvider(fail_rewrite=True)
+    researcher, ledger, run_id = rig(tmp_path, provider, ScriptSearcher())
+    q, _ = binary_question(T0)
+    result = await researcher.research(run_id, q, T0, passes=2)
+    ledger.close()
+    assert len(provider.briefs()) == 2  # the rewrite was attempted
+    assert result.brief == "Brief number 1 [S1]."
+    assert result.brief_call_id
+    assert any("first brief stands" in e for e in result.errors)
 
 
 async def test_repeated_queries_are_dropped_and_nothing_new_keeps_the_brief(

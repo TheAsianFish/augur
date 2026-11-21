@@ -294,8 +294,14 @@ class Researcher:
         if not new:
             # Nothing new to read: the first brief already covers every source.
             return
-        result.first_brief = result.brief
+        first, first_call = result.brief, result.brief_call_id
+        result.first_brief = first
+        failed = len(result.errors)
         await self._brief(run_id, q, cutoff, result, sub_questions=[p[0] for p in pairs if p[0]])
+        if len(result.errors) > failed:
+            # The rewrite failed: the first brief is still a good brief.
+            result.brief, result.brief_call_id = first, first_call
+            result.errors.append("the rewritten brief failed; the first brief stands")
 
     def _gate(
         self,
