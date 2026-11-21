@@ -199,6 +199,8 @@ def combined(ps: Sequence[float], rule: str = "median") -> float:
 @dataclass(frozen=True)
 class Q3:
     n: int
+    short: int
+    """Questions where a draw returned nothing, so 'nine draws' is eight."""
     model: str
     second_model: str
     depth: list[Row]
@@ -244,8 +246,11 @@ def score_q3(
     nine: dict[int, list[float]] = {}
     for q in outcome:
         ms = {**first.get(q, {}), **more.get(q, {})}
-        if all(m in ms for m in range(9)):
-            nine[q] = [ms[m] for m in range(9)]
+        # A draw that returned nothing is dropped, as a live run drops it: k
+        # forecasters are the first k members that answered, in member order.
+        answered = [ms[m] for m in range(9) if m in ms]
+        if len(answered) >= 8 and all(m in ms for m in range(3)):
+            nine[q] = answered
     common = [
         q
         for q in outcome
@@ -361,6 +366,7 @@ def score_q3(
     paired_sd = {k: (statistics.stdev(b), statistics.stdev(h)) for k, (b, h) in differences.items()}
     return Q3(
         n=len(common),
+        short=sum(1 for q in common if len(nine[q]) < 9),
         model=model,
         second_model=second_model,
         depth=depth,
