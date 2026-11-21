@@ -1,7 +1,7 @@
 # Augur
 
-**Status: in progress.** M6 of 10 (a retrieval backtest that cannot read
-the future, and a measurement of what it is worth when it can); see
+**Status: in progress.** M7 of 10 (a configurable fleet, an ablation of
+what carries the score, and how many questions it takes to tell); see
 [PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
@@ -102,9 +102,9 @@ flowchart LR
   RES --> S[searchers as_of cutoff<br/>Wikipedia revisions, Wayback captures,<br/>AskNews, market prices]
   S --> LED[(ledger<br/>SQLite, append-only)]
   LED --> GATE{leakage gate<br/>proven date <= cutoff}
-  GATE -->|admitted only| BRIEF[one-pass brief, or the loop:<br/>belief, unknown, next query]
-  BRIEF --> FC[5 forecaster draws<br/>probability, option lines<br/>or six percentiles]
-  FC --> MED[combine by type<br/>median, per-option median,<br/>mean of CDFs]
+  GATE -->|admitted only| BRIEF[one-pass brief, a second pass<br/>on sub-questions, or the loop]
+  BRIEF --> FC[forecaster fleet<br/>5 draws by default; stances<br/>and models per member]
+  FC --> MED[combine by type<br/>median by default; trimmed,<br/>log-odds, extremized]
   MED --> VALID{Metaculus's<br/>validity rules}
   VALID --> CHECK{who answered<br/>in the tier?}
   CHECK -->|yes, or practice area| OUT[forecast + private comment<br/>posted or printed]
@@ -131,7 +131,9 @@ flowchart LR
 | `augur/research/` | `Source` record with `date_evidence`; `wikipedia` (the revision current at `as_of`), `wayback` (the newest capture at or before `as_of` of each URL the question names, its own timestamp compared, never the query's day bound), `asknews` (bounded by `end_timestamp`), `markets` (prices as of the cutoff). |
 | `augur/leakage.py` | The gate, and `scan_ledger`, which re-checks every stored row. |
 | `augur/ledger.py` | Numbered migrations; every table refuses `UPDATE` and `DELETE`. |
-| `augur/agents/` | Researcher (one pass, or a bounded loop that writes a belief and what is still unknown and picks the next query), forecaster draws, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
+| `augur/agents/` | Researcher (one pass; a second pass that searches the sub-questions that would most change the answer; or a bounded loop that writes a belief and what is still unknown and picks the next query), forecaster draws with per-member stances and model chains, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
+| `augur/fleet.py`, `augur/aggregate.py` | The fleet plan from settings (research passes, member stances and models) and `bounded_map`, which runs questions in parallel with a fixed bound; aggregation rules for every question type (median, trimmed mean, mean of log-odds, extremized log-odds). |
+| `augur/redraw.py`, `augur/q3.py`, `augur/power.py` | Q3's ablation: new draws or another model on an arm's recorded briefs (each rebuilt request checked against the recorded hash), the depth, head-count, aggregation and model-mix tables, and the planted-effect power simulation. |
 | `augur/comment.py` | The private comment, built only from the members' reasoning and the cited sources. |
 | `augur/score.py`, `augur/scorecard.py` | Metaculus's baseline, head-to-head and peer scores for every type (matched to its own `score_math.py`), Brier and log score; scoring every resolved forecast against the template, the community, a market price, 50% and the base rate with a paired, clustered bootstrap and the minimum detectable effect. |
 | `augur/resolve.py`, `augur/baseline.py`, `augur/standings.py` | Resolutions (hidden ones counted, not guessed), the shadow template run unpublished on Augur's model, and each round's leaderboard beside Augur. |
@@ -194,7 +196,7 @@ and what finished is posted.
 | Ollama | Its native API | Its OpenAI-compatible `/v1` | `/v1` cannot set the context window per request and silently drops the start of long prompts (M1). |
 | Source dates | Evidence only (revision, capture, bounded publish date) | Page metadata | Audits show self-reported dates leak. |
 | Ledger | SQLite, append-only by trigger | DuckDB, PostgreSQL | Tens of thousands of rows, one writer, ships with Python. |
-| Aggregation | Binary: median of 5 draws. Multiple choice: per-option median, renormalised. Numeric and discrete: the mean of the members' CDFs | Mean; median of each percentile | The median is robust to one wild draw. A mixture of valid CDFs is valid by construction and keeps the members' disagreement as spread instead of inventing a confident consensus. M7 tests alternatives. |
+| Aggregation | Binary: median of 5 draws. Multiple choice: per-option median, renormalised. Numeric and discrete: the mean of the members' CDFs | Mean; median of each percentile | The median is robust to one wild draw. A mixture of valid CDFs is valid by construction and keeps the members' disagreement as spread instead of inventing a confident consensus. M7 measured the alternatives on nine draws: trimmed mean and mean of log-odds tie with the median, extremizing loses 0.027 Brier, so the median stays. |
 | Percentiles to a CDF | Linear between six stated percentiles in Metaculus's unscaled space, exponential tails, isotonic repair of a non-monotone answer, then the least uniform mixing that clears the server's minimum step | Asking the model for 201 numbers; a parametric fit | The server's rules are hard constraints (minimum and maximum step, exact or open ends); building to them, and checking against an independent transliteration in the fake server, means no live forecast is rejected. |
 | Deadlines | Each question stops at its close less 5 minutes (never past the run's own deadline); draws still running are cancelled and charged the worst case; the finished ones are posted | One timeout for the whole run | A MiniBench question is open for 3 hours; a forecast posted after close scores nothing, and a cancelled request may still be billed. |
 | Schedule | Cron every 90 min on two offset lines, plus a self-dispatch chain (`AUGUR_CHAIN_MINUTES`) once public | Cron every 20 to 30 min, as many bots use | Measured: GitHub dropped about 95% of short-interval ticks on public bot repositories, and every 30 min would bill more than the shared allowance while private. A `workflow_dispatch` from the job's own token is not subject to the scheduler. |
@@ -206,6 +208,7 @@ and what finished is posted.
 | Template baseline | Metaculus's real `TemplateBot` (optional `baseline` extra), unpublished, every role on Augur's model | Reimplementing its prompt | "Beats the template" must not mean "beats my copy of it", and the model must be the same so the difference is the pipeline. |
 | Comparisons | Paired per question, bootstrap over clusters (question, opening week), 10,000 resamples, seeded; the detectable effect printed beside every interval | Unpaired means, or a t-test | Pairing removes question difficulty; questions that move together are not independent; the detectable effect keeps "no difference" apart from "could not tell". |
 | Checking the scores | Against Metaculus's own `score_math.py` run on fixed cases (outputs committed) | Against the API's per-question scores | The API hides resolutions and scores from a bot token (0 of 80 resolved posts). The code check found an open-tail bug that hand-computed cases had not. |
+| Changing a default | Only if the paired interval against the default lies below 0, or a cheaper variant's upper bound is under +0.01 Brier (fixed before M7's run) | Adopting whatever scores best on the backtest | At 40 questions most differences are noise; a rule written first keeps a lucky draw out of the live bot. |
 | RESULTS.md | Prose plus blocks rendered from the committed ledgers; a test fails if the file differs from a fresh render | Hand-copied tables | A number in the report cannot drift from the data it came from. |
 
 ## Results
@@ -214,6 +217,8 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M7, what carries the score (Q3): the first 40 of the same sample, `nemotron-3-ultra:free`, one factor at a time against the default, paired on the same questions ($0) | A second research pass on sub-questions: −0.0003 Brier [−0.025, +0.022] for 1.8 more calls a question. One, three, five or nine forecasters: within 0.002 of each other. Trimmed mean and mean of log-odds: within 0.0014 of the median. A smaller second model mixed in: +0.006 [−0.015, +0.026]. Extremizing by 1.5: 0.027 worse [0.009, 0.048], the only resolved effect. The live default is unchanged |
+| M7, how many questions a difference needs: a planted improvement in resampled per-question differences, 1,000 studies per n | 80% power on 0.01 Brier at about 450 questions (research-change spread) to 1,340 (retrieval against none); 5 head-to-head points at about 270; FutureSearch's 0.010 lead at n = 1,810 is consistent with either. At 40 questions this backtest resolves only differences of about 0.03 Brier or more |
 | M6, what leakage is worth (Q2): ForecastBench 2026-06-21, a fixed sample of 64 resolved questions, the same free model in every role, three draws, one shared query plan, Wikipedia revisions and Wayback captures ($0) | Brier: no retrieval 0.205; sources as of each question's open date 0.189, no better than none (−0.016 [−0.050, +0.017]); the same searches as of today 0.063, 0.142 better [0.074, 0.217], about the gap El Lahib et al. published (0.244 to 0.108). On the 47 priced questions, read as of open the bot trails the market price by 0.093 [0.013, 0.176]; read as of today it draws level with it (−0.046 [−0.117, +0.022]). A leaky backtest would have erased a real gap to the market |
 | M6, a bounded research loop (3 searches, a written belief and open question after each) against the one-pass brief, the first 40 of the sample | 0.026 Brier worse [−0.005, +0.060], with 6 model calls a question instead of 4; not adopted (the replacement rule needs an interval below 0) |
 | M5, the price alone against the bot: ForecastBench 2026-06-21, 101 resolved Polymarket and Manifold questions, the free model that answers live (`nemotron-3-ultra:free`), three draws, each price read as of the freeze ($0) | Brier: the market price alone 0.106; Augur without it 0.240; Augur shown the price 0.143, better than without by 0.097 [0.054, 0.144] but still 0.037 [0.003, 0.073] worse than the price it was shown; a fixed blend (⅓ Augur in log-odds) 0.129. On these questions the price alone beats every version of the bot, so its score is what the price gives it |
@@ -277,7 +282,7 @@ repository public at its merge; M3 (done) every question type, a deadline
 per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
 first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
-backtest, what leakage is worth, and a first research loop; M7 ablations; M8 calibration; M9
+backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 calibration; M9
 "does it know when it does not know"; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 
