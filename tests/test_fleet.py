@@ -482,6 +482,33 @@ async def test_members_carry_their_variant_and_their_own_model(tmp_path: Path) -
     s.ledger.close()
 
 
+class SlowSecondPass(FakeHost):
+    """The sub-question agent never answers in time; everything else is instant."""
+
+    async def handle(self, request: httpx.Request) -> httpx.Response:
+        if json.loads(request.content)["messages"][0]["content"] == SUBQ_SYSTEM.format(n=3):
+            await asyncio.sleep(10)
+        return await super().handle(request)
+
+
+async def test_a_deadline_in_the_second_pass_keeps_the_first_brief(tmp_path: Path) -> None:
+    host = SlowSecondPass()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(host.handle)) as http:
+        s = _setup(tmp_path, host, http=http, research_passes=2, min_forecast_minutes=0.001)
+
+        def short_budget(q: object, *, live: bool) -> float:
+            return 0.4  # seconds: research gets 0.2, the second pass cannot finish
+
+        s.run._time_budget_s = short_budget  # type: ignore[method-assign]
+        report = await asyncio.wait_for(_dry_run(s, _samples(tmp_path / "samples", 1)), 5)
+    [only] = report.reports
+    assert only.status == "forecast"
+    hits = host.forecaster_hits()
+    assert hits
+    assert all("The status quo holds [S1]." in h.user for h in hits)
+    s.ledger.close()
+
+
 async def test_a_member_chain_below_the_tier_is_refused_by_the_floor(tmp_path: Path) -> None:
     gpt = Route(endpoint=PRESETS["openrouter"], model="openai/gpt-5.1")
     small = "meta-llama/llama-3.1-8b-instruct"

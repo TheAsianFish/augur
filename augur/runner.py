@@ -513,12 +513,21 @@ class ForecastRun:
             mode=mode,
         )
         research_s = None if budget_s is None else budget_s * RESEARCH_SHARE
+        first: ResearchResult | None = None
         try:
             async with asyncio.timeout(research_s):
-                research = await researcher.research(run_id, q, cutoff, passes=self._fleet.passes)
+                first = await researcher.research(run_id, q, cutoff)
+                if self._fleet.passes == 2:
+                    await researcher.second_pass(run_id, q, cutoff, first)
         except TimeoutError:
             log.warning("research stopped at its deadline", seconds=research_s)
-            research = ResearchResult(
+            if first is not None:
+                # The deadline fell in the second pass: the first brief is complete and stands.
+                first.errors.append("second pass stopped at its deadline; the first brief stands")
+        research = (
+            first
+            if first is not None
+            else ResearchResult(
                 queries=[],
                 sources=[],
                 brief=(
@@ -527,6 +536,7 @@ class ForecastRun:
                 ),
                 errors=["research stopped at its deadline"],
             )
+        )
         n = self._settings.forecasters
         draws_s = (
             None

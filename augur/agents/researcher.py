@@ -251,12 +251,13 @@ class Researcher:
         self._gate(run_id, q, cutoff, found, result, self._max_sources)
         await self._brief(run_id, q, cutoff, result)
         if passes == 2:
-            await self._second_pass(run_id, q, cutoff, result)
+            await self.second_pass(run_id, q, cutoff, result)
         return result
 
-    async def _second_pass(
+    async def second_pass(
         self, run_id: str, q: Question, cutoff: datetime, result: ResearchResult
     ) -> None:
+        """Deepen a finished first pass in place; ``result.brief`` changes only on success."""
         request = LlmRequest(
             model="",  # the router sets each route's model
             messages=(
