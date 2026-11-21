@@ -5,7 +5,9 @@ date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
 committed file differs from a fresh render. M6 measures what leakage is
-worth on a retrieval backtest (Q2) and tries an iterative research loop; M5
+worth on a retrieval backtest (Q2) and tries an iterative research loop; M7
+ablates the fleet (research depth, head count, aggregation, model mix) and
+measures how many questions a difference needs (Q3); M5
 sets the bot against the market price on resolved ForecastBench questions
 (the price alone wins); M4 has the first scored number and the scoring it
 rests on; the first live score waits on a scored round (see Q1 and Q5
@@ -20,15 +22,201 @@ these factors could plausibly make? The design, the predictions P12 to P17
 and the exact replacement rule were committed to PLAN.md (`5b6023d`)
 before any run.
 
+**Method.** The first 40 questions of M6's fixed C2 sample (ForecastBench
+2026-06-21 market questions, frozen 2026-06-11; 29 have an as-of price
+from M5, 11 do not). One model, `nvidia/nemotron-3-ultra-550b-a55b:free`
+(listed 2026-06-04), in every role unless a row names another; cost $0.
+Depth: no retrieval (M5's run), one pass (M6's run) and a new two-pass run
+on the same shared query plan. Head count and model mix hold the research
+fixed: each question's brief and sources were read back from M6's
+one-pass ledger, the rebuilt forecaster request was checked against the
+recorded request hash (40 of 40 matched), and six more draws (seeds 3 to
+8) and three draws of `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`
+(listed 2026-04-28) were made on them. Aggregation rules are computed from
+the same nine draws with no calls. Every difference is paired by question
+with a 10,000-resample bootstrap. The arms ran 2026-11-21 21:28 to 22:48
+UTC, two processes sharing one key. Commands: `make backtest-q3` (each line
+of it); ledgers `data/ledgers/m7-c2-{draws,nano,twopass}.sqlite`; raw
+output `data/runs/m7-c2-*.txt`; power `data/power/m7-power.json`.
+
 <!-- augur:begin fleet -->
-The M7 arms' ledgers are not committed yet.
+The first 40 questions of C2's fixed sample; 40 were forecast by every arm. A negative Brier difference, or a positive head-to-head score, favours the first arm. Cost is $0 for every row (free models); calls, tokens and seconds are per question from the ledgers. Head-count costs add the one-pass research to k draws. On 3 question(s) one of the nine draws returned no text (the model spent its 4,000-token cap reasoning), so, as a live run does, it is dropped and k forecasters are the first k that answered.
+
+**Research depth** (3 draws, median):
+
+| Variant | Model | Brier [95% interval] | Log score | n | Calls / question | Output tokens / question | Wall s / question |
+|---|---|---|---|---|---|---|---|
+| D0: no retrieval | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2304 [0.1336, 0.3377] | -0.800 | 40 |  |  |  |
+| D1: one pass (default) | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2056 [0.1148, 0.3040] | -0.615 | 40 | 4.0 | 4,295 | 85 |
+| D2: two passes with sub-questions | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2053 [0.1138, 0.3054] | -0.629 | 40 | 5.8 | 5,764 | 120 |
+
+| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] | Replacement rule |
+|---|---|---|---|
+| D1 − D0 (one pass against none) | -0.0248 [-0.0673, +0.0147] (0.0583) | +18.5 [+1.7, +38.3] | (reference) |
+| D2 − D1 (second pass against one pass) | -0.0003 [-0.0251, +0.0217] (0.0334) | -1.3 [-10.1, +7.7] | default stays |
+| D2 − D0 | -0.0250 [-0.0690, +0.0195] (0.0628) | +17.1 [+0.7, +35.9] | (reference) |
+
+**Number of forecasters** (median of the first k of nine draws on the one-pass briefs):
+
+| Variant | Model | Brier [95% interval] | Log score | n | Calls / question | Output tokens / question | Wall s / question |
+|---|---|---|---|---|---|---|---|
+| 1 forecaster | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2024 [0.1166, 0.2966] | -0.586 | 40 | 2.0 | 2,361 |  |
+| 3 forecasters | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2056 [0.1148, 0.3040] | -0.615 | 40 | 4.0 | 4,295 |  |
+| 5 forecasters (default) | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2044 [0.1130, 0.3026] | -0.611 | 40 | 6.0 | 6,228 |  |
+| 9 forecasters | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2050 [0.1130, 0.3051] | -0.621 | 40 | 10.0 | 10,095 |  |
+
+| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] | Replacement rule |
+|---|---|---|---|
+| 1 − 5 | -0.0019 [-0.0244, +0.0171] (0.0297) | +2.5 [-5.2, +12.3] | default stays |
+| 3 − 5 | +0.0012 [-0.0135, +0.0143] (0.0199) | -0.4 [-5.8, +5.3] | default stays |
+| 9 − 5 | +0.0007 [-0.0087, +0.0083] (0.0122) | -1.0 [-4.0, +1.8] | default stays |
+
+**Aggregation rule** (the same nine draws; no extra calls):
+
+| Variant | Model | Brier [95% interval] | Log score | n |
+|---|---|---|---|---|
+| median (default), 9 draws | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2050 [0.1130, 0.3051] | -0.621 | 40 |
+| trimmed mean (20% each side), 9 draws | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2059 [0.1151, 0.3042] | -0.613 | 40 |
+| mean of log-odds, 9 draws | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2065 [0.1151, 0.3055] | -0.615 | 40 |
+| extremized log-odds, factor 1.5, 9 draws | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2323 [0.1260, 0.3466] | -0.789 | 40 |
+
+| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] | Replacement rule |
+|---|---|---|---|
+| trimmed mean (20% each side) − median | +0.0008 [-0.0052, +0.0076] (0.0090) | +0.8 [-1.9, +3.8] | default stays |
+| mean of log-odds − median | +0.0014 [-0.0055, +0.0093] (0.0105) | +0.5 [-2.5, +3.7] | default stays |
+| extremized log-odds, factor 1.5 − median | +0.0272 [+0.0089, +0.0483] (0.0283) | -16.8 [-29.1, -5.9] | default stays |
+
+**Model mix** (draws on the same one-pass briefs):
+
+| Variant | Model | Brier [95% interval] | Log score | n |
+|---|---|---|---|---|
+| 3 draws | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2056 [0.1148, 0.3040] | -0.615 | 40 |
+| 3 draws | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | 0.2194 [0.1267, 0.3213] | -0.679 | 40 |
+| 6 draws | `nvidia/nemotron-3-ultra-550b-a55b:free` | 0.2039 [0.1133, 0.3027] | -0.612 | 40 |
+| mixed: 3 + 3 draws | `nvidia/nemotron-3-ultra-550b-a55b:free + nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | 0.2098 [0.1188, 0.3087] | -0.615 | 40 |
+
+| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] | Replacement rule |
+|---|---|---|---|
+| mixed 3 + 3 − 6 of the first model | +0.0059 [-0.0149, +0.0258] (0.0288) | -0.3 [-9.2, +10.0] | default stays |
+
+| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] |
+|---|---|---|
+| second model × 3 − first model × 3 | +0.0138 [-0.0171, +0.0466] (0.0455) | -6.4 [-21.8, +8.6] |
+
+**Edge over the price** (the as-of price from M5, on the 29 priced questions; a negative difference would be an edge):
+
+| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] |
+|---|---|---|
+| D0 no retrieval − price | +0.1381 [+0.0281, +0.2571] (0.1649) | -54.6 [-100.6, -14.0] |
+| D1 one pass, 5 draws − price | +0.1184 [+0.0177, +0.2318] (0.1527) | -32.7 [-66.7, -2.8] |
+| D2 two passes − price | +0.1192 [+0.0198, +0.2300] (0.1511) | -35.6 [-71.8, -4.6] |
+| 9 draws, median − price | +0.1166 [+0.0146, +0.2310] (0.1544) | -32.5 [-67.2, -2.3] |
+| mixed fleet − price | +0.1243 [+0.0236, +0.2360] (0.1531) | -32.8 [-63.1, -5.4] |
+
+**Throughput under the limits** (every call through OpenRouter's client-side bucket of 20 requests a minute, burst 2, one bucket per process; wall minutes are the questions' own measured seconds, since a backtest's call times are its pinned clock):
+
+| Run | Questions | Calls | Failed | Wall minutes | Calls / minute | Latency p50 / p90 (s) |
+|---|---|---|---|---|---|---|
+| head count (6 draws a question in parallel) | 40 | 240 | 3 | 30.9 | 7.8 | 23.4 / 45.4 |
+| two passes (one question at a time) | 40 | 237 | 3 | 79.7 | 3.0 | 16.3 / 29.4 |
+| second model (3 draws a question in parallel) | 40 | 120 | 0 | 9.2 | 13.1 | 9.6 / 16.6 |
+
+Unpriced questions (n = 11; no price to set beside): D0 no retrieval 0.1633 [0.0444, 0.3105]; D1 one pass, 5 draws 0.1207 [0.0162, 0.2683]; D2 two passes 0.1222 [0.0158, 0.2618]; 9 draws, median 0.1281 [0.0173, 0.2882]; mixed fleet 0.1252 [0.0183, 0.2715].
+
+Predictions stated in PLAN.md before the run:
+
+- P12 (two passes within ±0.02 of one, interval including 0, at least two more calls): **held**, **failed** (+1.8 calls).
+- P13 (one forecaster at least 0.01 worse than five: **failed**; nine within ±0.005 of five, interval including 0: **held**; three against five, interval including 0: **held**).
+- P14 (log-odds mean and trimmed mean within ±0.005 of the median: **held**, **held**; extremizing worse, interval including 0: **failed**).
+- P15 (mixed fleet against six draws, interval including 0: **held**; the second model worse than the first: **held**).
+- P17 (Q3: no factor's interval against its default excludes 0): **failed** (extremized log-odds, factor 1.5 − median).
+
+Live default under the replacement rule: unchanged (one pass, five forecasters, median, one model).
 <!-- augur:end fleet -->
 
 **Power.**
 
 <!-- augur:begin power -->
-The power simulation has not been run (`augur power`).
+1000 simulated studies per n (seed 20261121), each n questions drawn with replacement from the 40 per-question differences of a real paired comparison on this backtest (`nvidia/nemotron-3-ultra-550b-a55b:free`), centred, with a known improvement planted. Power is the share of studies whose 95% interval excludes 0 in the improvement's direction; the δ = 0 row is the false-alarm rate (about 2.5% expected). Questions needed is the n reaching 80% power (interpolated in log n).
+
+**research (D2 against D1)**: per-question SD 0.0765 Brier, 29.3 head-to-head points.
+
+| Planted improvement | n = 25 | n = 50 | n = 100 | n = 200 | n = 400 | n = 800 | n = 1,600 | n = 3,200 | n = 6,400 | n = 12,800 | Questions needed |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 Brier | 1% | 2% | 2% | 2% | 3% | 3% | 2% | 2% | 2% | 2% | — |
+| 0.005 Brier | 3% | 5% | 8% | 14% | 27% | 45% | 74% | 96% | 100% | 100% | 1,920 |
+| 0.01 Brier | 8% | 14% | 23% | 48% | 76% | 96% | 100% | 100% | 100% | 100% | 452 |
+| 0.02 Brier | 29% | 48% | 77% | 97% | 100% | 100% | 100% | 100% | 100% | 100% | 110 |
+| 0 points | 2% | 3% | 2% | 2% | 3% | 3% | 2% | 2% | 2% | 3% | — |
+| 2 points | 7% | 8% | 10% | 18% | 31% | 51% | 79% | 98% | 100% | 100% | 1,655 |
+| 5 points | 20% | 25% | 41% | 71% | 93% | 100% | 100% | 100% | 100% | 100% | 268 |
+| 10 points | 47% | 68% | 92% | 100% | 100% | 100% | 100% | 100% | 100% | 100% | 71 |
+
+Questions needed for 80% power, by the comparison whose spread is resampled:
+
+| Comparison | SD (Brier) | 0.01 Brier | 2 points | 5 points | 10 points |
+|---|---|---|---|---|---|
+| research (D2 against D1) | 0.0765 | 452 | 1,655 | 268 | 71 |
+| retrieval (D1 against D0) | 0.1329 | 1,337 | 6,772 | 1,117 | 266 |
+| model mix (mixed against 6 draws) | 0.0664 | 344 | 1,950 | 311 | 66 |
+| head count (9 against 5) | 0.0278 | 47 | 179 | 32 | 25 |
+
+Beside FutureSearch's reported lead of 0.010 ± 0.003 Brier at n = 1,810: if ± is one standard error, their per-question SD is about 0.128 and a 0.01 difference needs about 1,279 questions; if it is a 95% half-width, about 0.065 and 333. Here, at the measured SD of the primary comparison, the same formula gives 460 (the simulation's figure is in the table).
+
+Prediction stated in PLAN.md before the run:
+
+- P16 (80% power on 0.01 Brier needs over 1,000 questions: **failed**; on 10 points under 300: **held**; on 2 points over 2,000: **failed**).
 <!-- augur:end power -->
+
+**What it says.** On these 40 questions nothing the fleet adds beats the
+plain bot. A second research pass is level with one pass (−0.0003
+[−0.025, +0.022]) for 1.8 more calls and 35 more seconds a question; one,
+three, five and nine forecasters are within 0.002 of each other; the
+trimmed mean and the mean of log-odds are within 0.0014 of the median; a
+second, smaller model mixed in is no better than more draws of the first.
+The one resolved effect is a loss: extremizing by 1.5 costs 0.027 Brier
+[+0.009, +0.048] (17 head-to-head points), because this model is already
+overconfident when it is wrong, and the Spring 2026 survey's "extremizing
+−0.30" agrees in sign. Q3's prediction (nothing resolvable) failed only
+on that row. Head count barely matters because the nine draws of one model
+on one brief agree closely (the per-question SD of 9 against 5 is 0.028
+Brier): sampling the same model again is not a second opinion, which is
+also how AIA reported one run against the median (0.1182 against 0.1138)
+and the survey's "aggregates multiple forecasts" (−0.19). Every arm still
+trails the market price on the 29 priced questions by about 0.12 Brier,
+so none of these settings is where the edge would come from. The live
+default is unchanged under the replacement rule: one pass, five
+forecasters, the median, one model. One finding is cost, not score: one
+forecaster is no worse than five here (−0.0019 [−0.024, +0.017]), but the
+rule fixed before the run needs the upper bound under +0.01 for a cheaper
+variant, so five stay.
+
+**Throughput.** Six draws a question in parallel ran at 7.8 calls a minute
+against the bucket's ceiling of 20, and one question at a time with two
+research passes at 3.0: the limit is latency (a median 16 to 23 s a call on
+the free model), not the token bucket. That is why the fleet can run
+questions in parallel (`AUGUR_QUESTION_CONCURRENCY`), still inside the one
+bucket per endpoint; a MiniBench question open for three hours never
+needed it on one model. Six of the 597 calls failed, every one a reasoning
+model spending its whole token cap (4,000 for a draw, 3,000 for the
+sub-question call) before writing an answer; no call was refused by a
+limit.
+
+**What this backtest cannot resolve.** At 40 questions the detectable
+difference is 0.012 to 0.058 Brier depending on the comparison (the MDE
+column), so every difference in the tables except extremizing is "could
+not tell", not "no effect". The power simulation, resampling the spread of
+a research change, puts 80% power on a 0.01 Brier difference at about 450
+questions and on 2 head-to-head points at about 1,650; on retrieval
+against none, whose per-question spread is larger (0.133), 0.01 needs
+about 1,340. FutureSearch's 0.010 lead at n = 1,810 is consistent with
+either reading of its ±0.003 (needing 333 or 1,279 questions). So a
+change worth 0.01 Brier, the size that separates the top pastcasting
+systems, is out of reach of any backtest this key can pay for in a day
+(1,000 free calls is about 160 questions of one arm), and Q1's +5-point
+target needs about 270 paired questions on a spread like these. Every
+finding here is one free model on one ForecastBench set; none says what a
+frontier model would do.
 
 ## M6: what leakage is worth, and the research loop (2026-11-20)
 
@@ -702,6 +890,9 @@ missed, and why).
 | `m6-c2-now.sqlite` | 4 (unrestricted 4) | 64 | 328 | 64 | 0 | 0 | 0 |
 | `m6-c2-open.sqlite` | 3 (backtest 3) | 64 | 320 | 64 | 0 | 0 | 0 |
 | `m6-c2-plan.sqlite` | 1 (backtest 1) | 64 | 64 | 0 | 0 | 0 | 0 |
+| `m7-c2-draws.sqlite` | 1 (backtest 1) | 40 | 240 | 40 | 0 | 0 | 0 |
+| `m7-c2-nano.sqlite` | 1 (backtest 1) | 40 | 120 | 40 | 0 | 0 | 0 |
+| `m7-c2-twopass.sqlite` | 1 (backtest 1) | 40 | 237 | 40 | 0 | 0 | 0 |
 <!-- augur:end ledgers -->
 
 ## M3: every question type live, deadlines, and the schedule (2026-11-18)
@@ -1060,6 +1251,9 @@ works against the real API; they say nothing yet about accuracy.
 | Q2 on past Metaculus tournaments (the corpus El Lahib et al. used) | `augur/resolved.py` loads them, but this bot token sees no resolution on any scored tournament: 0 kept of 59 (MiniBench 2026-11-02), 60 (2026-10-19) and 150 (Summer 2026 FutureEval, first three pages) resolved posts, every binary one with its resolution hidden | With a personal (non-bot) token in `METACULUS_TOKEN`: `load_tournament(client, "minibench-2026-11-02", released=...)` then `write_snapshot`, and the same three arms on that snapshot (a `--metaculus SNAPSHOT` loader option for `augur backtest`) |
 | Q2 and the loop on the frontier model the floor requires live | Nothing paid without the maintainer's say-so | `make backtest-q2` with `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-sonnet-5.5` and `AUGUR_RESEARCH_MODELS` the same, into fresh ledgers. The free run's tokens per question (RESULTS, M6 cost table) put the four arms at roughly $10 to $20 at Sonnet 5.5's listed $2/$10 per million |
 | A scored MiniBench round under the proposed floor, with the shadow template beside it (Q1, Q5) | The maintainer approves the re-based tier and a route first; the key reports a $1 limit | Approve a route from RESULTS.md's floor table, then `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-haiku-5.5 augur forecast --tournament minibench --submit` (worst case $0.92 a 60-question round at Haiku 5.5's listed prices) and `augur baseline --ledger L` on the same model; after resolution `augur score L --mode live --cluster week` and `augur standings --round minibench-2026-11-16 --ledger L` |
+| Forecaster prompt stances (outside view, inside view, sceptic) as a Q3 factor | Built and tested in M7, not ablated: the day's 1,000 free requests went to depth, head count and model mix | `AUGUR_FORECASTERS=4 AUGUR_FORECASTER_VARIANTS=base,outside,inside,sceptic` with `augur backtest forecastbench ... --sample 40 --research-from data/ledgers/m6-c2-open.sqlite --label variants --ledger data/ledgers/m7-c2-variants.sqlite` (160 free calls), then compare against the first four base draws |
+| Q3 at an n that can resolve 0.01 Brier (about 450 questions on a research change, M7's power curve) | One free key gives 1,000 calls a day, about 160 questions of one arm; the C2 set has 138 eligible market questions | Several ForecastBench sets through `augur backtest forecastbench` over several days, or a frontier route once the maintainer approves spend (about $10 to $20 an arm of 64 at Sonnet 5.5 prices, from M6's tokens per question) |
+| The fleet's ablation on a frontier model | Nothing paid without the maintainer's say-so | `make backtest-q3` with `Q3_U=openrouter:anthropic/claude-sonnet-5.5` into fresh ledgers |
 | Groq, Gemini and GitHub Models free tiers | No `GROQ_API_KEY`, `GEMINI_API_KEY` or `GITHUB_TOKEN` here; the presets are configured, not exercised | `AUGUR_FORECAST_MODELS=groq:<model> augur models probe --burst 30` (and `gemini:`, `github:`) |
 | Tokens-per-minute limits | OpenRouter sends no token-limit header and the bursts are tiny | the same burst on Groq, which sends `x-ratelimit-limit-tokens` |
 | AskNews sources | No `ASKNEWS_CLIENT_ID`/`ASKNEWS_CLIENT_SECRET` in the build environment; the searcher is tested only against recorded payloads | `make test-integration` with both set, then `augur forecast --tournament minibench` |
