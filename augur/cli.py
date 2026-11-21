@@ -316,6 +316,15 @@ def _parser() -> argparse.ArgumentParser:
         "--check", action="store_true", help="exit 1 if the file differs from a fresh render"
     )
 
+    pw = sub.add_parser(
+        "power",
+        help="the M7 power simulation: questions needed to detect a planted improvement",
+    )
+    pw.add_argument("--out", type=Path, default=report.POWER_PATH)
+    pw.add_argument(
+        "--check", action="store_true", help="exit 1 if the committed file differs from a re-run"
+    )
+
     standings.add_parser(sub)
     baseline.add_parser(sub)
 
@@ -757,6 +766,24 @@ def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _power(args: argparse.Namespace) -> int:
+    snap = report.power_snapshot(Path.cwd())
+    if snap is None:
+        raise AugurError("the M7 arms' ledgers are not all in data/ledgers; run them first")
+    text = json.dumps(snap, indent=1) + "\n"
+    out: Path = args.out
+    if args.check:
+        if not out.exists() or out.read_text(encoding="utf-8") != text:
+            print(f"{out} differs from a fresh simulation; run augur power")
+            return 1
+        print(f"{out} matches a fresh simulation")
+        return 0
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+    print(f"wrote {out}")
+    return 0
+
+
 def _report(args: argparse.Namespace) -> int:
     path: Path = args.path
     if not path.exists():
@@ -813,6 +840,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _score(args)
         if args.command == "report":
             return _report(args)
+        if args.command == "power":
+            return _power(args)
         if args.ledger_command == "import":
             result = import_exports(args.paths, args.out, SystemClock())
             dupes = sum(result.duplicates.values())
