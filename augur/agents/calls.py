@@ -43,7 +43,11 @@ MIN_COOL_S = 30.0
 
 
 class BudgetExceededError(AugurError):
-    """A cost cap would be crossed; the run stops spending."""
+    """The run's cost cap would be crossed; the run stops spending."""
+
+
+class QuestionBudgetExceededError(BudgetExceededError):
+    """One question's cost cap would be crossed: that question fails, the run goes on."""
 
 
 @dataclass
@@ -72,7 +76,7 @@ class Budget:
             question_id, 0.0
         )
         if q_total + amount > self.max_per_question:
-            raise BudgetExceededError(
+            raise QuestionBudgetExceededError(
                 f"question {question_id} budget ${self.max_per_question:.2f} spent; "
                 "raise AUGUR_MAX_COST_PER_QUESTION to go on"
             )

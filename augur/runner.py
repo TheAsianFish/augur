@@ -30,6 +30,7 @@ from augur.agents.calls import (
     Budget,
     BudgetExceededError,
     CallRecorder,
+    QuestionBudgetExceededError,
     estimate_cost,
 )
 from augur.agents.forecaster import MemberForecast, draw_forecasts, forecaster_request
@@ -333,9 +334,9 @@ class ForecastRun:
                 f"${self._settings.max_cost_per_run:.2f} a run)"
             )
 
-        # Shared by the questions in flight. A budget refusal stops the run:
+        # Shared by the questions in flight. A run-budget refusal stops the run:
         # questions already running finish (their own calls are refused by the
-        # same budget), none starts after it.
+        # same budget), none starts after it. A question's own cap fails only it.
         stop_reason = ""
 
         async def handle(item: tuple[Question, dict[str, Any]]) -> QuestionReport:
@@ -364,6 +365,10 @@ class ForecastRun:
             except BelowFloorError as exc:
                 log.warning("question skipped by the floor", question_id=q.question_id)
                 outcome = QuestionReport(q, "skipped", f"submit floor: {exc}")
+            except QuestionBudgetExceededError as exc:
+                # This question's cap: it fails without an ensemble cut short,
+                # and the others go on with their own budgets.
+                outcome = QuestionReport(q, "failed", str(exc))
             except BudgetExceededError as exc:
                 stop_reason = stop_reason or str(exc)
                 outcome = QuestionReport(q, "failed", str(exc))

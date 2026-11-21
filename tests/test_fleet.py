@@ -382,10 +382,9 @@ async def test_the_question_budget_refuses_concurrent_members_past_the_cap(
     rows = _outcomes(s.ledger, report.run_id)
     assert len(rows) == 6
     failed = [r for st, r in rows.values() if st == "failed"]
-    assert len(failed) == len(by_question) == 3, "the three questions in flight"
+    assert len(failed) == len(by_question) == 6, "every question hit its own cap"
     assert all("budget $0.15 spent" in r for r in failed)
-    # A budget refusal stops the run: no question starts after it.
-    assert sorted(st for st, _ in rows.values()) == ["failed"] * 3 + ["skipped"] * 3
+    # A question's own cap fails that question only: every question was tried.
     s.ledger.close()
 
 
