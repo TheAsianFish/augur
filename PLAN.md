@@ -259,6 +259,57 @@ below the price (−0.046 [−0.117, +0.022]): the leak alone makes the bot
 look level with the market. Past Metaculus tournaments could not be a
 corpus (a bot token sees no resolutions; 0 of 269 resolved posts kept).
 
+**M7's predictions and decision rules, committed 2026-11-21 before any
+M7 run.** Q3's reconciled prediction above stands unedited; this fixes how
+it is tested.
+
+The design:
+
+- **Corpus:** the first 40 questions of M6's fixed C2 sample (the loop's
+  40), so every M7 arm sits beside M6's N, O and L on the same questions.
+  Binary market questions only: aggregation rules for multiple choice,
+  numeric and discrete questions are built and unit-tested, but this
+  corpus cannot score them.
+- **Model:** `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04)
+  in every role unless a row names another; $0.
+- **Research depth:** D0 is N (no retrieval), D1 is O (one pass as of
+  open), and D2 is two passes: the one pass on the shared query plan, then
+  a second pass in which the model reads the first brief, writes up to
+  three sub-questions whose answers would most change the forecast, each
+  with a search query; those queries run as of open, pass the gate, and a
+  final brief is written from every admitted source. 3 draws, median.
+- **Head count:** O's three recorded draws (members 0 to 2) plus six new
+  draws on the identical recorded request, seeds 3 to 8. k forecasters is
+  the median of members 0 to k−1, for k = 1, 3, 5, 9. The live default is
+  5.
+- **Aggregation**, on the same nine draws, no new calls: median (the
+  default), trimmed mean (drop the lowest and highest 20%, rounded down:
+  one of nine), mean of log-odds, and extremized log-odds at the fixed
+  factor 1.5 (M5's).
+- **Model mix:** three draws of `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`
+  (listed 2026-04-28, the only other free model that answered the probe
+  on 2026-11-21) on the same recorded requests. Mixed fleet: the median
+  of ultra's members 0 to 2 and nano's 0 to 2, against ultra's members 0
+  to 5 (the same head count).
+
+Predictions:
+
+| # | Prediction |
+|---|------------|
+| P12 | Two passes against one: \|Brier(D2) − Brier(D1)\| < 0.02 with an interval that includes 0, for at least two more model calls a question. |
+| P13 | Head count: one forecaster is worse than five (point estimate at least +0.01); nine against five is within ±0.005 with an interval including 0; three against five has an interval including 0. |
+| P14 | Aggregation against the median of nine: mean of log-odds and trimmed mean within ±0.005; extremizing at 1.5 worse (point estimate above 0) with an interval that includes 0. |
+| P15 | Model mix: the mixed fleet against six ultra draws has an interval including 0; three nano draws are worse than three ultra draws (point estimate). |
+| P16 | Power, from a simulation that plants a known improvement in this sample's resampled per-question scores: 80% detection of a 0.01 Brier difference needs more than 1,000 questions; of 10 head-to-head points, fewer than 300; of 2 points, more than 2,000. |
+| P17 | Q3 as written: no factor's interval against its default excludes 0. |
+
+**Decision rule.** The replacement rule, made exact before the run: a
+variant replaces the live default only if (a) its paired interval of
+Brier(variant) − Brier(default) lies wholly below 0, or (b) it makes fewer
+model calls a question and is no worse, meaning that interval's upper
+bound is below +0.01 Brier (a non-inferiority margin fixed now). Same-cost
+variants (the aggregation rules, the mixed fleet) can only win by (a).
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
