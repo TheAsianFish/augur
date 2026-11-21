@@ -11,6 +11,25 @@ sets the bot against the market price on resolved ForecastBench questions
 rests on; the first live score waits on a scored round (see Q1 and Q5
 below).
 
+## M7: what carries the score, and how many questions it takes to tell (2026-11-21)
+
+**Question.** Which part of the pipeline carries the score: research depth,
+the number of forecasters, the aggregation rule or the model mix (Q3)? And
+how many questions would a backtest need to see a difference of the size
+these factors could plausibly make? The design, the predictions P12 to P17
+and the exact replacement rule were committed to PLAN.md (`5b6023d`)
+before any run.
+
+<!-- augur:begin fleet -->
+The M7 arms' ledgers are not committed yet.
+<!-- augur:end fleet -->
+
+**Power.**
+
+<!-- augur:begin power -->
+The power simulation has not been run (`augur power`).
+<!-- augur:end power -->
+
 ## M6: what leakage is worth, and the research loop (2026-11-20)
 
 **Question.** If a backtest's retrieval is not cut at the question's open
