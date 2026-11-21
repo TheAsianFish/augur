@@ -554,6 +554,16 @@ async def _backtest_prices(args: argparse.Namespace, settings: Settings) -> int:
 async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     if args.backtest_command == "prices":
         return await _backtest_prices(args, settings)
+    researching = args.plan_out is not None or args.retrieval != "none"
+    if researching and (args.research_from is not None or args.first_member):
+        raise ConfigError(
+            "--research-from and --first-member reuse recorded research; "
+            "do not combine them with --retrieval or --plan-out"
+        )
+    if args.passes != 1 and args.retrieval == "none":
+        raise ConfigError(
+            "--passes 2 needs --retrieval open or now: there is no research to deepen"
+        )
     if settings.is_replay:
         raise ConfigError("a backtest needs a live model; set AUGUR_PROVIDER or the chains")
     answering = settings.chains()["forecast"][0]

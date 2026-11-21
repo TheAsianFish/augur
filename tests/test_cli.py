@@ -83,3 +83,30 @@ def test_a_replay_run_never_fetches_the_model_list(
     assert main(["ledger", "export", str(tmp_path / "l.sqlite"), str(exported)]) == 0
     tables = {json.loads(line)["table"] for line in exported.read_text().splitlines()}
     assert {"runs", "llm_calls", "question_outcomes"} <= tables
+
+
+@pytest.mark.parametrize(
+    ("flags", "message"),
+    [
+        (["--retrieval", "open", "--research-from", "x.sqlite"], "reuse recorded research"),
+        (["--retrieval", "now", "--first-member", "5"], "reuse recorded research"),
+        (["--passes", "2"], "no research to deepen"),
+        (["--passes", "2", "--research-from", "x.sqlite"], "no research to deepen"),
+    ],
+)
+def test_backtest_flags_that_would_be_ignored_are_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], flags: list[str], message: str
+) -> None:
+    code = main(
+        [
+            "backtest",
+            "forecastbench",
+            "--questions",
+            str(tmp_path / "q.json"),
+            "--resolutions",
+            str(tmp_path / "r.json"),
+            *flags,
+        ]
+    )
+    assert code == 2
+    assert message in capsys.readouterr().err
