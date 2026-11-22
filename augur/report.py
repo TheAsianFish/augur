@@ -17,20 +17,23 @@ and deterministic: bootstraps are seeded, and nothing reads the clock.
 from __future__ import annotations
 
 import json
+import math
 import re
 import sqlite3
+import statistics
 from collections.abc import Callable, Sequence
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from typing import Any
 
-from augur import q2, replay, scorecard, standings
+from augur import power, q2, q3, replay, scorecard, standings
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
 from augur.llm.catalog import Catalog
-from augur.score import Estimate, detectable_effect
+from augur.score import Z_95, Estimate, detectable_effect
 
 # The spread of one bot's per-question spot peer score, derived in PLAN.md from
 # the Spring 2026 winner's interval: 3.71 / 1.96 * sqrt(288) = 32 points.
@@ -858,6 +861,374 @@ def _q2_verdicts(s: q2.Q2) -> list[str]:
     return lines
 
 
+# -- Q3: the fleet ablation and the power curve (M7) ---------------------------------
+
+Q3_SAMPLE = 40
+Q3_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+Q3_SECOND_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+Q3_ONEPASS = Q2_TOURNAMENT + "+onepass-asof-open"
+Q3_ARMS = {
+    "none": (LEDGERS / "m5-replay-c2.sqlite", Q2_TOURNAMENT),
+    "onepass": (LEDGERS / "m6-c2-open.sqlite", Q3_ONEPASS),
+    "draws": (LEDGERS / "m7-c2-draws.sqlite", Q3_ONEPASS + "+draws"),
+    "twopass": (LEDGERS / "m7-c2-twopass.sqlite", Q2_TOURNAMENT + "+twopass-asof-open"),
+    "second": (LEDGERS / "m7-c2-nano.sqlite", Q3_ONEPASS + "+model-nano"),
+}
+POWER_PATH = Path("data/power/m7-power.json")
+POWER_PRIMARY = "research (D2 against D1)"
+POWER_BRIER = (0.0, 0.005, 0.01, 0.02)
+POWER_H2H = (0.0, 2.0, 5.0, 10.0)
+# FutureSearch, "Iterating on a forecaster" (2026-07-10): a lead of 0.010 Brier,
+# "plus or minus 0.003", over n = 1,810 questions.
+FUTURESEARCH = {"lead": 0.010, "pm": 0.003, "n": 1810}
+
+
+def _q3(root: Path) -> q3.Q3 | None:
+    paths = {k: root / p for k, (p, _) in Q3_ARMS.items()}
+    if not all(paths[k].exists() for k in ("none", "onepass", "draws", "twopass", "second")):
+        return None
+    report = load_set(
+        root / f"{Q2_SET}-llm.subset.json",
+        root / f"{Q2_SET}_resolution_set.subset.json",
+        released=date.min,
+    )
+    src = {k: q2.ArmSource(paths[k], t) for k, (_, t) in Q3_ARMS.items()}
+    return q3.score_q3(
+        questions=report.kept,
+        sample=Q3_SAMPLE,
+        none=src["none"],
+        onepass=src["onepass"],
+        draws=src["draws"],
+        twopass=src["twopass"],
+        second=src["second"],
+        prices=q2.ArmSource(root / LEDGERS / "m5-replay-c2-prices.sqlite", Q2_TOURNAMENT),
+        model=Q3_MODEL,
+        second_model=Q3_SECOND_MODEL,
+    )
+
+
+def _opt(value: float | None, fmt: str) -> str:
+    return "" if value is None else format(value, fmt)
+
+
+def _rows_table(rows: Sequence[q3.Row], cost: bool) -> list[str]:
+    if cost:
+        out = [
+            "| Variant | Model | Brier [95% interval] | Log score | n | Calls / question "
+            "| Output tokens / question | Wall s / question |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+        for r in rows:
+            out.append(
+                f"| {r.label} | `{r.model}` | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} "
+                f"| {_opt(r.calls, '.1f')} | {_opt(r.tokens, ',.0f')} | {_opt(r.seconds, '.0f')} |"
+            )
+        return out
+    out = ["| Variant | Model | Brier [95% interval] | Log score | n |", "|---|---|---|---|---|"]
+    out += [f"| {r.label} | `{r.model}` | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |" for r in rows]
+    return out
+
+
+def _diffs_table(diffs: Sequence[q3.Diff], rule: bool = True) -> list[str]:
+    head = "| Paired difference | Brier [95% interval] (MDE) | Head-to-head points [95% interval] |"
+    sep = "|---|---|---|"
+    if rule:
+        head += " Replacement rule |"
+        sep += "---|"
+    out = [head, sep]
+    for d in diffs:
+        line = (
+            f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) "
+            f"| {d.h2h.mean:+.1f} [{d.h2h.low:+.1f}, {d.h2h.high:+.1f}] |"
+        )
+        if rule:
+            line += f" {d.verdict or '(reference)'} |"
+        out.append(line)
+    return out
+
+
+def render_fleet(root: Path) -> str:
+    s = _q3(root)
+    if s is None:
+        return "The M7 arms' ledgers are not committed yet.\n"
+    out = [
+        f"The first {Q3_SAMPLE} questions of C2's fixed sample; {s.n} were forecast by every "
+        "arm. A negative Brier difference, or a positive head-to-head score, favours the "
+        "first arm. Cost is $0 for every row (free models); calls, tokens and seconds are per "
+        "question from the ledgers. Head-count costs add the one-pass research to k draws. "
+        f"On {s.short} question(s) one of the nine draws returned no text (the model spent its "
+        "4,000-token cap reasoning). It is dropped and k forecasters are the first k that "
+        "answered, so on those questions the next member stands in (a live run would combine "
+        "one draw fewer). This substitution was chosen after the draws were seen; PLAN.md "
+        "planned members 0 to k − 1 with the empty draw left out.",
+        "",
+        "**Research depth** (3 draws, median):",
+        "",
+        *_rows_table(s.depth, cost=True),
+        "",
+        *_diffs_table(s.depth_diffs),
+        "",
+        "**Number of forecasters** (median of the first k of nine draws on the one-pass briefs):",
+        "",
+        *_rows_table(s.heads, cost=True),
+        "",
+        *_diffs_table(s.head_diffs),
+        "",
+        "**Aggregation rule** (the same nine draws; no extra calls):",
+        "",
+        *_rows_table(s.rules, cost=False),
+        "",
+        *_diffs_table(s.rule_diffs),
+        "",
+        "**Model mix** (draws on the same one-pass briefs):",
+        "",
+        *_rows_table(s.mix, cost=False),
+        "",
+        *_diffs_table(s.mix_diffs[:1]),
+        "",
+        *_diffs_table(s.mix_diffs[1:], rule=False),
+        "",
+        f"**Edge over the price** (the as-of price from M5, on the {s.priced} priced questions; "
+        "a negative difference would be an edge):",
+        "",
+        *_diffs_table(s.edge, rule=False),
+        "",
+    ]
+    out += _throughput(root)
+    if s.unpriced:
+        out.append(
+            f"Unpriced questions (n = {s.unpriced[0].n}; no price to set beside): "
+            + "; ".join(f"{r.label} {_est(r.brier, 4)}" for r in s.unpriced)
+            + "."
+        )
+        out.append("")
+    out += _q3_verdicts(s)
+    return "\n".join(out) + "\n"
+
+
+THROUGHPUT_ARMS = {
+    "head count (6 draws a question in parallel)": "draws",
+    "two passes (one question at a time)": "twopass",
+    "second model (3 draws a question in parallel)": "second",
+}
+
+
+def _throughput(root: Path) -> list[str]:
+    rows = [
+        t
+        for label, key in THROUGHPUT_ARMS.items()
+        for t in [q3.throughput(label, root / Q3_ARMS[key][0], Q3_ARMS[key][1])]
+        if t is not None
+    ]
+    if not rows:
+        return []
+    out = [
+        "**Throughput under the limits** (every call through OpenRouter's client-side bucket of "
+        "20 requests a minute, burst 2, one bucket per process; wall minutes are the questions' "
+        "own measured seconds, since a backtest's call times are its pinned clock):",
+        "",
+        "| Run | Questions | Calls | Failed | Wall minutes | Calls / minute "
+        "| Latency p50 / p90 (s) |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for t in rows:
+        out.append(
+            f"| {t.arm} | {t.questions} | {t.calls} | {t.failed} | {t.minutes:.1f} "
+            f"| {t.per_minute:.1f} | {t.median_latency_s:.1f} / {t.p90_latency_s:.1f} |"
+        )
+    out.append("")
+    return out
+
+
+def _q3_verdicts(s: q3.Q3) -> list[str]:
+    d = {x.label: x for x in [*s.depth_diffs, *s.head_diffs, *s.rule_diffs, *s.mix_diffs]}
+    depth = {r.label[:2]: r for r in s.depth}
+    lines = ["Predictions stated in PLAN.md before the run:", ""]
+    two = d["D2 − D1 (second pass against one pass)"].brier
+    more = (depth["D2"].calls or 0) - (depth["D1"].calls or 0)
+    lines.append(
+        f"- P12 (two passes within ±0.02 of one, interval including 0, at least two more "
+        f"calls): {_held(abs(two.mean) < 0.02 and two.low <= 0 <= two.high)}, "
+        f"{_held(more >= 2)} ({more:+.1f} calls)."
+    )
+    one, nine, three = (d[f"{k} − {q3.DEFAULT_K}"].brier for k in (1, 9, 3))
+    lines.append(
+        f"- P13 (one forecaster at least 0.01 worse than five: {_held(one.mean >= 0.01)}; nine "
+        f"within ±0.005 of five, interval including 0: "
+        f"{_held(abs(nine.mean) < 0.005 and nine.low <= 0 <= nine.high)}; three against five, "
+        f"interval including 0: {_held(three.low <= 0 <= three.high)})."
+    )
+    lo = d["mean of log-odds − median"].brier
+    tr = d["trimmed mean (20% each side) − median"].brier
+    ex = d["extremized log-odds, factor 1.5 − median"].brier
+    lines.append(
+        f"- P14 (log-odds mean and trimmed mean within ±0.005 of the median: "
+        f"{_held(abs(lo.mean) < 0.005)}, {_held(abs(tr.mean) < 0.005)}; extremizing worse, "
+        f"interval including 0: {_held(ex.mean > 0 and ex.low <= 0 <= ex.high)})."
+    )
+    mix = d["mixed 3 + 3 − 6 of the first model"].brier
+    second = d["second model × 3 − first model × 3"].brier
+    lines.append(
+        f"- P15 (mixed fleet against six draws, interval including 0: "
+        f"{_held(mix.low <= 0 <= mix.high)}; the second model worse than the first: "
+        f"{_held(second.mean > 0)})."
+    )
+    tested = [x for x in [*s.depth_diffs[1:2], *s.head_diffs, *s.rule_diffs, s.mix_diffs[0]]]
+    resolved = [x.label for x in tested if x.brier.excludes_zero]
+    lines.append(
+        "- P17 (Q3: no factor's interval against its default excludes 0): "
+        + _held(not resolved)
+        + (f" ({', '.join(resolved)})" if resolved else "")
+        + "."
+    )
+    changed = [x for x in tested if x.verdict.startswith("replaces")]
+    lines.append("")
+    lines.append(
+        "Live default under the replacement rule: "
+        + (
+            "; ".join(f"{x.label}: {x.verdict}" for x in changed)
+            if changed
+            else "unchanged (one pass, five forecasters, median, one model)"
+        )
+        + "."
+    )
+    return lines
+
+
+def power_snapshot(root: Path) -> dict[str, object] | None:
+    """The power simulation's inputs and curves, as committed in ``POWER_PATH``."""
+    s = _q3(root)
+    if s is None:
+        return None
+    comparisons: dict[str, object] = {}
+    for name, (gain, h2h) in s.differences.items():
+        brier_curves = power.simulate(gain, POWER_BRIER)
+        h2h_curves = power.simulate(h2h, POWER_H2H)
+        comparisons[name] = {
+            "n": len(gain),
+            "sd_brier": round(statistics.stdev(gain), 6),
+            "sd_h2h": round(statistics.stdev(h2h), 4),
+            "brier": {
+                f"{c.delta:g}": {"rates": list(c.rates), "needed": c.needed()} for c in brier_curves
+            },
+            "h2h": {
+                f"{c.delta:g}": {"rates": list(c.rates), "needed": c.needed()} for c in h2h_curves
+            },
+        }
+    return {
+        "method": "planted effect in resampled per-question differences, normal 95% interval, "
+        "one-sided detection",
+        "grid": list(power.GRID),
+        "sims": power.SIMS,
+        "seed": power.SEED,
+        "questions": s.n,
+        "model": s.model,
+        "comparisons": comparisons,
+    }
+
+
+def _p16(comparisons: dict[str, Any]) -> list[str]:
+    """P16 on the research comparison, and on every other one beside it.
+
+    PLAN.md's P16 does not say whose spread it is judged on; the research
+    comparison was chosen after the runs started, so every reading is shown.
+    """
+
+    def verdicts(comp: dict[str, Any]) -> tuple[bool, bool, bool]:
+        def need(key: str, delta: str) -> float:
+            n = comp[key][delta]["needed"]
+            return math.inf if n is None else float(n)
+
+        return need("brier", "0.01") > 1000, need("h2h", "10") < 300, need("h2h", "2") > 2000
+
+    brier, ten, two = verdicts(comparisons[POWER_PRIMARY])
+    others = "; ".join(
+        f"{name}: " + ", ".join("held" if v else "failed" for v in verdicts(comp))
+        for name, comp in comparisons.items()
+        if name != POWER_PRIMARY
+    )
+    return [
+        "Prediction stated in PLAN.md before the run:",
+        "",
+        f"- P16 (80% power on 0.01 Brier needs over 1,000 questions: {_held(brier)}; "
+        f"on 10 points under 300: {_held(ten)}; on 2 points over 2,000: {_held(two)}).",
+        "",
+        "P16 as written does not name the comparison whose spread it is judged on. The "
+        "verdict above uses the research comparison, chosen after the runs had started; "
+        f"on the other spreads its three parts read: {others}. The reading depends on "
+        "the spread, which is the finding: a backtest's power is a property of the change "
+        "being tested, not of the backtest.",
+    ]
+
+
+def render_power(root: Path) -> str:
+    path = root / POWER_PATH
+    if not path.exists():
+        return "The power simulation has not been run (`augur power`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    grid = [int(n) for n in snap["grid"]]
+    out = [
+        f"{snap['sims']} simulated studies per n (seed {snap['seed']}), each n questions drawn "
+        f"with replacement from the {snap['questions']} per-question differences of a real "
+        f"paired comparison on this backtest (`{snap['model']}`), centred, with a known "
+        "improvement planted. Power is the share of studies whose 95% interval excludes 0 in "
+        "the improvement's direction; the δ = 0 row is the false-alarm rate (about 2.5% "
+        "expected). Questions needed is the n reaching 80% power (interpolated in log n).",
+        "",
+    ]
+    for name, comp in snap["comparisons"].items():
+        if name != POWER_PRIMARY:
+            continue
+        out.append(
+            f"**{name}**: per-question SD {comp['sd_brier']:.4f} Brier, "
+            f"{comp['sd_h2h']:.1f} head-to-head points."
+        )
+        out.append("")
+        out.append(
+            "| Planted improvement | "
+            + " | ".join(f"n = {n:,}" for n in grid)
+            + " | Questions needed |"
+        )
+        out.append("|---|" + "---|" * (len(grid) + 1))
+        for unit, key, fmt in (("Brier", "brier", "{:g}"), ("points", "h2h", "{:g}")):
+            for delta, c in comp[key].items():
+                need = c["needed"]
+                if need is not None:
+                    needed = format(need, ",")
+                else:
+                    needed = f"over {grid[-1]:,}" if float(delta) else "—"
+                rates = " | ".join(f"{r:.0%}" for r in c["rates"])
+                out.append(f"| {fmt.format(float(delta))} {unit} | {rates} | {needed} |")
+        out.append("")
+    out.append("Questions needed for 80% power, by the comparison whose spread is resampled:")
+    out.append("")
+    out.append("| Comparison | SD (Brier) | 0.01 Brier | 2 points | 5 points | 10 points |")
+    out.append("|---|---|---|---|---|---|")
+    for name, comp in snap["comparisons"].items():
+        cells = []
+        for key, delta in (("brier", "0.01"), ("h2h", "2"), ("h2h", "5"), ("h2h", "10")):
+            need = comp[key][delta]["needed"]
+            cells.append(f"over {grid[-1]:,}" if need is None else f"{need:,}")
+        out.append(f"| {name} | {comp['sd_brier']:.4f} | " + " | ".join(cells) + " |")
+    fs = FUTURESEARCH
+    sd_se = fs["pm"] * math.sqrt(fs["n"])
+    sd_ci = fs["pm"] / Z_95 * math.sqrt(fs["n"])
+    out += [
+        "",
+        f"Beside FutureSearch's reported lead of {fs['lead']:.3f} ± {fs['pm']:.3f} Brier at "
+        f"n = {fs['n']:,}: if ± is one standard error, their per-question SD is about "
+        f"{sd_se:.3f} and a 0.01 difference needs about {power.analytic_n(sd_se, 0.01):,} "
+        f"questions; if it is a 95% half-width, about {sd_ci:.3f} and "
+        f"{power.analytic_n(sd_ci, 0.01):,}. Here, at the measured SD of the primary "
+        f"comparison, the same formula gives "
+        f"{power.analytic_n(float(snap['comparisons'][POWER_PRIMARY]['sd_brier']), 0.01):,} "
+        "(the simulation's figure is in the table).",
+        "",
+        *_p16(snap["comparisons"]),
+    ]
+    return "\n".join(out) + "\n"
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -868,6 +1239,8 @@ BLOCKS: dict[str, Block] = {
         Block("templates", render_templates),
         Block("replay", render_replay),
         Block("leakage", render_leakage),
+        Block("fleet", render_fleet),
+        Block("power", render_power),
     )
 }
 

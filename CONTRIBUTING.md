@@ -40,6 +40,10 @@ installs Metaculus's template bot and does not support 3.14.
 | `augur backtest prices --questions Q --resolutions R --ledger L` | Records each ForecastBench market question's exact price as of its freeze instant (Manifold's last bet, Polymarket's last history point, the Metaculus aggregate where the token sees it) as a dated market source. No model call; free. |
 | `augur backtest forecastbench ... --retrieval open\|now [--loop N] [--queries F] [--sample N]` | Research each question as of its open instant (a backtest) or as of this moment (Q2's leaky arm, an `unrestricted` run never scored as a backtest), one pass or the bounded research loop; `--plan-out F` only plans the queries every arm shares. Searchers: Wikipedia revisions and Wayback captures. |
 | `augur judge --ledger L --tournament T --questions Q --resolutions R` | Rates every source an arm's forecasters were shown on El Lahib et al.'s 0 to 4 leakage rubric, with the resolution, against the question's open instant. Resumable. |
+| `make backtest-q3` | Q3's arms on the first 40 of C2's sample: six more draws and a second model on M6's recorded one-pass briefs, and the two-pass researcher; then `augur power` and `make results`. Free hosted models; resumable; about two hours. Manual. |
+| `augur backtest forecastbench ... --research-from L [--research-arm A] [--first-member K] [--label X]` | Forecast from the briefs and sources arm A recorded in ledger L (each rebuilt request must hash to the recorded one), numbering the new draws from K (seed = member): head count and model mix without re-running research. |
+| `augur backtest forecastbench ... --retrieval open --passes 2` | Two research passes: the second writes the sub-questions that would most change the forecast, searches them as of the cutoff and rewrites the brief. |
+| `augur power [--check]` | The planted-effect power simulation over the Q3 arms' per-question differences, written to `data/power/m7-power.json` (seeded; `--check` re-runs and compares, as `make eval` does). |
 | `augur backtest forecastbench ... --prices L` | The replay evaluation's arm (d): the recorded price is the brief's only source; questions without one are skipped. |
 | `augur ledger import PATH... --out DB` | Rebuilds one SQLite ledger from JSONL exports (files or a directory, such as a checkout of the `ledger` branch); the leakage triggers re-check every row. |
 | `augur ledger export DB OUT` | Writes a ledger as JSONL, one row per line, byte-stable; the scheduled workflow pushes one per run to the `ledger` branch. |
@@ -63,6 +67,10 @@ file, a log line, the ledger or a commit.
 | `AUGUR_PROBE` | `0` skips the opening probe. |
 | `AUGUR_RECORD_PATH`, `AUGUR_REPLAY_PATH` | Record every model call to a JSONL file; replay one (with `AUGUR_PROVIDER=replay`). |
 | `AUGUR_FORECASTERS` | Forecaster draws per question (default 5), combined by the median (binary), the per-option median normalised (multiple choice) or the mean of their CDFs (numeric, discrete). |
+| `AUGUR_RESEARCH_PASSES` | `1` (default) or `2`: a second research agent reads the first brief, searches the sub-questions that would most change the forecast, and the brief is rewritten (M7). |
+| `AUGUR_FORECASTER_VARIANTS` | Comma list of prompt stances, cycled over the members: `base` (default), `outside`, `inside`, `sceptic`. |
+| `AUGUR_MEMBER_MODELS` | Optional per-member model chains, `;`-separated, each in the chain syntax above; member m takes chain m mod k (a mixed-model fleet). Every route still passes the floor and the release gate. |
+| `AUGUR_QUESTION_CONCURRENCY` | Questions forecast at once (default 1, at most 8); every call still goes through its endpoint's token bucket and the per-question and per-run caps. |
 | `AUGUR_LEDGER` | Path of the SQLite ledger (default `./augur.db`). |
 | `AUGUR_MAX_QUESTIONS_PER_RUN`, `AUGUR_MAX_COST_PER_QUESTION`, `AUGUR_MAX_COST_PER_RUN` | Caps. The run prints its worst-case cost estimate before the first question. |
 | `AUGUR_CLOSE_MARGIN_MINUTES`, `AUGUR_MIN_FORECAST_MINUTES`, `AUGUR_RUN_DEADLINE_MINUTES` | Deadlines (defaults 5, 4, 30): work on a question stops this long before it closes; a question with less time than the minimum before that is missed, not started; the run starts no question after its own deadline. |

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError, field_validator
 
 from augur.errors import ConfigError
 from augur.llm.endpoints import Endpoint, Role, Route, endpoints_from_env, parse_chain
@@ -44,7 +44,25 @@ class Settings(BaseModel):
     close_margin_minutes: float = Field(default=5.0, ge=0)
     min_forecast_minutes: float = Field(default=4.0, gt=0)
     run_deadline_minutes: float = Field(default=30.0, gt=0)
+    # The fleet (M7). The defaults are the single-researcher, single-prompt,
+    # one-question-at-a-time run every earlier milestone made.
+    research_passes: int = Field(default=1, ge=1, le=2)
+    # Forecaster prompt variants (names in ``augur.agents.forecaster.VARIANTS``);
+    # member m takes variant m % len.
+    forecaster_variants: tuple[str, ...] = ("base",)
+    # Per-member model chains, ``;``-separated, each in AUGUR_FORECAST_MODELS's
+    # syntax; member m takes chain m % len. ``None``: the forecast chain.
+    member_models: str | None = None
+    question_concurrency: int = Field(default=1, ge=1, le=8)
     log_level: str = "INFO"
+
+    @field_validator("forecaster_variants")
+    @classmethod
+    def _known_variants(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        unknown = [v for v in value if v not in _variant_names()]
+        if not value or unknown:
+            raise ValueError(f"unknown forecaster variant(s) {unknown}")
+        return value
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str]) -> Settings:
@@ -59,6 +77,7 @@ class Settings(BaseModel):
                 "OPENROUTER_API_KEY and AUGUR_FORECAST_MODELS=openrouter:<model> instead"
             )
         endpoints = endpoints_from_env(environ)
+        variants = _parse_variants(get("AUGUR_FORECASTER_VARIANTS"))
         keys = {
             e.key_env: SecretStr(value)
             for e in endpoints.values()
@@ -88,6 +107,10 @@ class Settings(BaseModel):
             "close_margin_minutes": get("AUGUR_CLOSE_MARGIN_MINUTES"),
             "min_forecast_minutes": get("AUGUR_MIN_FORECAST_MINUTES"),
             "run_deadline_minutes": get("AUGUR_RUN_DEADLINE_MINUTES"),
+            "research_passes": get("AUGUR_RESEARCH_PASSES"),
+            "forecaster_variants": variants,
+            "member_models": get("AUGUR_MEMBER_MODELS"),
+            "question_concurrency": get("AUGUR_QUESTION_CONCURRENCY"),
             "log_level": get("AUGUR_LOG_LEVEL"),
         }
         try:
@@ -98,6 +121,7 @@ class Settings(BaseModel):
                 f"invalid settings ({fields}); check the AUGUR_* variables in CONTRIBUTING.md"
             ) from None
         settings.chains()  # fail now, not mid-run, on a bad model list
+        settings.member_chains()
         return settings
 
     @property
@@ -120,6 +144,20 @@ class Settings(BaseModel):
         )
         return {"research": research, "forecast": forecast}
 
+    def member_chains(self) -> tuple[tuple[Route, ...], ...]:
+        """Each member's own model chain, in order; empty: members use the forecast chain."""
+        if not self.member_models:
+            return ()
+        endpoints = self._endpoints()
+        parts = self.member_models.split(";")
+        if any(not part.strip() for part in parts):
+            raise ConfigError(
+                f"AUGUR_MEMBER_MODELS {self.member_models!r} has an empty member chain; give "
+                "one endpoint:model,... list per member, separated by ';' "
+                "(for example openrouter:openai/gpt-5;openrouter:anthropic/claude-sonnet-4.5)"
+            )
+        return tuple(parse_chain(part, endpoints) for part in parts)
+
     @property
     def has_metaculus_token(self) -> bool:
         return self.metaculus_token is not None
@@ -136,8 +174,32 @@ class Settings(BaseModel):
         data["keys_set"] = sorted(self.keys)
         chains = self.chains()
         data["chains"] = {role: [r.key for r in routes] for role, routes in chains.items()}
-        used = {r.endpoint.name for routes in chains.values() for r in routes}
+        members = self.member_chains()
+        data["member_chains"] = [[r.key for r in routes] for routes in members]
+        used = {r.endpoint.name for routes in (*chains.values(), *members) for r in routes}
         data["endpoints"] = {
             name: e.model_dump(mode="json") for name, e in self._endpoints().items() if name in used
         }
         return data
+
+
+def _variant_names() -> tuple[str, ...]:
+    # Imported here: the agents import half the package, and settings load first.
+    from augur.agents.forecaster import VARIANTS
+
+    return tuple(VARIANTS)
+
+
+def _parse_variants(raw: str | None) -> tuple[str, ...] | None:
+    """``AUGUR_FORECASTER_VARIANTS``: a comma list of known variant names, or ``None`` (unset)."""
+    if raw is None:
+        return None
+    names = tuple(v.strip().lower() for v in raw.split(","))
+    known = _variant_names()
+    unknown = [v for v in names if v not in known]
+    if unknown or not names:
+        raise ConfigError(
+            f"AUGUR_FORECASTER_VARIANTS {raw!r}: unknown variant(s) "
+            f"{', '.join(repr(v) for v in unknown)}; use a comma list of {', '.join(known)}"
+        )
+    return names

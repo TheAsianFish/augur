@@ -14,7 +14,12 @@ Combining members, per type:
   a weighted mean), and it keeps the members' disagreement as spread, where a
   median of percentiles would hide it.
 
-M7 compares these rules against the alternatives; until then they are fixed.
+These are the default, ``rule="median"``, and do not change. M7 compares them
+against the alternatives in :mod:`augur.aggregate` (``aggregate(..., rule=...)``).
+For numeric and discrete questions the default stays the mean of the CDFs; the
+pointwise median of CDFs is not reachable through ``aggregate`` (its "median"
+names the binary and choice rule), only through
+:func:`augur.aggregate.combine_cdfs`.
 """
 
 from __future__ import annotations
@@ -25,7 +30,14 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from augur.aggregate import median
+from augur.aggregate import (
+    check_rule,
+    choice_method,
+    combine_binary,
+    combine_cdfs,
+    combine_choice,
+    median,
+)
 from augur.distributions import (
     Scaling,
     mix_cdfs,
@@ -72,26 +84,45 @@ def _median(values: Sequence[float]) -> float:
     return float(statistics.median(values))
 
 
-def aggregate(q: Question, members: Sequence[Prediction]) -> tuple[Prediction, str]:
-    """The combined prediction and the name of the rule that made it."""
+def aggregate(
+    q: Question, members: Sequence[Prediction], rule: str = "median"
+) -> tuple[Prediction, str]:
+    """The combined prediction and the name of the method that made it.
+
+    ``rule`` is one of :data:`augur.aggregate.RULES` (``ValueError`` otherwise);
+    the default, ``median``, is the fixed rule of M1 to M6: the binary median,
+    the per-option median normalised, and the mean of the CDFs.
+    """
+    check_rule(rule)
     if not members:
         raise ValueError("cannot aggregate zero forecasts")
     if q.type == "binary":
         ps = [_binary(m).probability for m in members]
-        return BinaryPrediction(round(median(ps), 3)), "median"
+        if rule == "median":
+            return BinaryPrediction(round(median(ps), 3)), "median"
+        return BinaryPrediction(round(combine_binary(ps, rule), 3)), rule
     if q.type == "multiple_choice":
         options = _options(q)
-        per_option = {o: _median([_choice(m).probabilities[o] for m in members]) for o in options}
-        return ChoicePrediction(
-            normalise_probabilities(per_option, options)
-        ), "median_per_option_normalised"
+        if rule == "median":
+            per_option = {
+                o: _median([_choice(m).probabilities[o] for m in members]) for o in options
+            }
+            return ChoicePrediction(
+                normalise_probabilities(per_option, options)
+            ), "median_per_option_normalised"
+        dicts = [_choice(m).probabilities for m in members]
+        return ChoicePrediction(combine_choice(dicts, options, rule)), choice_method(rule)
     scaling = _scaling(q)
-    mixed = mix_cdfs([_continuous(m).cdf for m in members])
+    cdfs = [_continuous(m).cdf for m in members]
+    if rule == "median":
+        mixed, method = mix_cdfs(cdfs), "mean_cdf"
+    else:
+        mixed, method = combine_cdfs(cdfs, scaling, rule)
     errors = validate_cdf(mixed, scaling)
     if errors:
         raise ValueError("internal: the mixed CDF is invalid: " + "; ".join(errors))
     levels = tuple((lv, quantile(mixed, scaling, lv)) for lv in PERCENTILE_LEVELS)
-    return ContinuousPrediction(tuple(mixed), levels), "mean_cdf"
+    return ContinuousPrediction(tuple(mixed), levels), method
 
 
 def check(q: Question, prediction: Prediction) -> list[str]:

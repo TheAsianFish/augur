@@ -12,10 +12,16 @@ from __future__ import annotations
 import asyncio
 import math
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from augur.agents.calls import BudgetExceededError, CallContext, CallRecorder
+from augur.agents.calls import (
+    BudgetExceededError,
+    CallContext,
+    CallRecorder,
+    QuestionBudgetExceededError,
+)
 from augur.agents.researcher import ResearchResult, question_text
 from augur.distributions import cdf_from_percentiles, normalise_probabilities
 from augur.errors import AugurError, BelowFloorError, ForecastParseError
@@ -253,22 +259,51 @@ def answer_format(q: Question) -> str:
     return ""
 
 
-def system_prompt(q: Question) -> str:
+# Forecaster prompt variants: one stance added to the system prompt, so the
+# members of a fleet disagree for a reason and not only by sampling noise.
+# ``base`` adds nothing, so its requests (and their replay hashes) are the
+# ones every earlier milestone recorded.
+VARIANTS: dict[str, str] = {
+    "base": "",
+    "outside": (
+        "Lean on the outside view: start from the base rate of comparable events and move "
+        "from it only as far as specific evidence forces you."
+    ),
+    "inside": (
+        "Lean on the inside view: work out the concrete mechanism and the scheduled events "
+        "that decide this question, then check your answer against a base rate."
+    ),
+    "sceptic": (
+        "Be the sceptic: before you answer, write down the strongest case against the "
+        "outcome the research seems to favour, and do not go past 90% or below 10% unless "
+        "the question is already all but settled."
+    ),
+}
+
+
+def system_prompt(q: Question, variant: str = "base") -> str:
+    if variant not in VARIANTS:
+        raise AugurError(
+            f"unknown forecaster variant {variant!r}; use one of {', '.join(VARIANTS)}"
+        )
     if q.type == "multiple_choice":
-        return CHOICE_SYSTEM
-    if q.type in CONTINUOUS_TYPES:
-        return NUMERIC_SYSTEM
-    return FORECASTER_SYSTEM
+        base = CHOICE_SYSTEM
+    elif q.type in CONTINUOUS_TYPES:
+        base = NUMERIC_SYSTEM
+    else:
+        base = FORECASTER_SYSTEM
+    stance = VARIANTS[variant]
+    return f"{stance} {base}" if stance else base
 
 
 def forecaster_request(
-    q: Question, cutoff: datetime, research: ResearchResult, member: int
+    q: Question, cutoff: datetime, research: ResearchResult, member: int, variant: str = "base"
 ) -> LlmRequest:
     shape = answer_format(q)
     return LlmRequest(
         model="",  # the router sets each route's model
         messages=(
-            Message(role="system", content=system_prompt(q)),
+            Message(role="system", content=system_prompt(q, variant)),
             Message(
                 role="user",
                 content=question_text(q, cutoff)
@@ -293,13 +328,24 @@ async def draw_forecasts(
     n: int,
     concurrency: int,
     timeout_s: float | None = None,
+    first_member: int = 0,
+    variants: Sequence[str] = ("base",),
+    chains: Sequence[Sequence[Route] | None] = (None,),
 ) -> tuple[list[MemberForecast], list[str]]:
     """``n`` independent draws (distinct seeds), at most ``concurrency`` at a time.
+
+    Members are numbered from ``first_member`` and member ``m`` uses seed
+    ``m``, so a later run can add draws to a recorded ensemble without
+    repeating one. Member ``m`` takes ``variants[m % len(variants)]`` as its
+    prompt and ``chains[m % len(chains)]`` as its model chain (``None``: the
+    forecast role's chain), which is how a fleet mixes stances and models.
 
     With ``timeout_s``, draws still running when it expires are cancelled and
     the ones that finished are returned: near a question's deadline the best
     ensemble available is worth more than a complete one posted too late.
     """
+    if not variants or not chains:
+        raise AugurError("internal: a fleet needs at least one variant and one chain")
     slots = asyncio.Semaphore(concurrency)
     errors: list[str] = []
     refused: list[BudgetExceededError] = []
@@ -309,10 +355,12 @@ async def draw_forecasts(
 
     async def one(member: int) -> MemberForecast | None:
         async with slots:
-            request = forecaster_request(q, cutoff, research, member)
+            variant = variants[member % len(variants)]
+            chain = chains[member % len(chains)]
+            request = forecaster_request(q, cutoff, research, member, variant)
             ctx = CallContext(run_id, q.question_id, "forecaster", member)
             try:
-                done = await calls.complete(ctx, request, source_ids=cited)
+                done = await calls.complete(ctx, request, source_ids=cited, chain=chain)
                 prediction = parse_prediction(q, done.response.text)
             except BudgetExceededError as exc:
                 refused.append(exc)
@@ -334,7 +382,7 @@ async def draw_forecasts(
                 done.route,
             )
 
-    tasks = [asyncio.create_task(one(m)) for m in range(n)]
+    tasks = [asyncio.create_task(one(m)) for m in range(first_member, first_member + n)]
     try:
         _, pending = await asyncio.wait(tasks, timeout=timeout_s)
     except BaseException:
@@ -352,8 +400,11 @@ async def draw_forecasts(
         if not t.cancelled() and (bug := t.exception()) is not None:
             raise bug  # an exception one() does not handle is a bug, not a failed draw
     if refused:
-        # Never submit an ensemble the budget cut short; the run stops here.
-        raise refused[0]
+        # Never submit an ensemble the budget cut short. A run-level refusal wins over a
+        # question-level one, so the run stops rather than failing each later question.
+        raise next(
+            (e for e in refused if not isinstance(e, QuestionBudgetExceededError)), refused[0]
+        )
     members = [r for t in tasks if not t.cancelled() and (r := t.result()) is not None]
     if floored and len(members) < math.ceil(n / 2):
         # Too few draws from the tier: the question is skipped, not failed.

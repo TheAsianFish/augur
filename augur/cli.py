@@ -57,6 +57,7 @@ from augur.llm.registry import FRONTIER_TIER_NAME, in_frontier_tier
 from augur.log import configure_logging, get_logger
 from augur.metaculus import MetaculusClient
 from augur.ratelimit import RateLimiter
+from augur.redraw import recorded_research, research_from
 from augur.replay import (
     LIVE_BLEND,
     LIVE_MARKETS,
@@ -215,6 +216,35 @@ def _parser() -> argparse.ArgumentParser:
         help="arm (d): show each question's price recorded by `augur backtest prices` in this "
         "ledger as the brief's only source, and skip questions without one",
     )
+    fb.add_argument(
+        "--passes",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="with --retrieval: 2 adds a second research pass on sub-questions",
+    )
+    fb.add_argument(
+        "--research-from",
+        type=Path,
+        metavar="LEDGER",
+        help="forecast from the briefs an arm recorded in this ledger (head count, model mix)",
+    )
+    fb.add_argument(
+        "--research-arm",
+        default="onepass-asof-open",
+        help="with --research-from: the arm's label (default onepass-asof-open)",
+    )
+    fb.add_argument(
+        "--first-member",
+        type=int,
+        default=0,
+        help="number the draws from here (seed = member), to add to a recorded ensemble",
+    )
+    fb.add_argument(
+        "--label",
+        default="",
+        help="with --research-from: a suffix naming this run's arm in the ledger",
+    )
     bp = bt_sub.add_parser(
         "prices",
         help="record each ForecastBench market question's exact price as of its freeze date",
@@ -284,6 +314,15 @@ def _parser() -> argparse.ArgumentParser:
     rep.add_argument("--path", type=Path, default=Path("RESULTS.md"))
     rep.add_argument(
         "--check", action="store_true", help="exit 1 if the file differs from a fresh render"
+    )
+
+    pw = sub.add_parser(
+        "power",
+        help="the M7 power simulation: questions needed to detect a planted improvement",
+    )
+    pw.add_argument("--out", type=Path, default=report.POWER_PATH)
+    pw.add_argument(
+        "--check", action="store_true", help="exit 1 if the committed file differs from a re-run"
     )
 
     standings.add_parser(sub)
@@ -515,6 +554,16 @@ async def _backtest_prices(args: argparse.Namespace, settings: Settings) -> int:
 async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     if args.backtest_command == "prices":
         return await _backtest_prices(args, settings)
+    researching = args.plan_out is not None or args.retrieval != "none"
+    if researching and (args.research_from is not None or args.first_member):
+        raise ConfigError(
+            "--research-from and --first-member reuse recorded research; "
+            "do not combine them with --retrieval or --plan-out"
+        )
+    if args.passes != 1 and args.retrieval == "none":
+        raise ConfigError(
+            "--passes 2 needs --retrieval open or now: there is no research to deepen"
+        )
     if settings.is_replay:
         raise ConfigError("a backtest needs a live model; set AUGUR_PROVIDER or the chains")
     answering = settings.chains()["forecast"][0]
@@ -538,7 +587,16 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
         if args.prices is not None:
             raise ConfigError("--prices is its own arm; do not combine it with --retrieval")
         return await _backtest_research(args, settings, questions, tournament, ledger_path)
-    if args.prices is not None:
+    if args.research_from is not None:
+        if args.prices is not None:
+            raise ConfigError("--research-from and --prices are separate arms")
+        arm = f"{tournament}+{args.research_arm}"
+        recorded = recorded_research(args.research_from, arm)
+        print(f"{len(recorded)} recorded brief(s) of {arm} in {args.research_from}")
+        research = research_from(recorded)
+        extra = {"retrieval": f"recorded: {arm}", "research_ledger": str(args.research_from)}
+        tournament = arm + (f"+{args.label}" if args.label else "+redraw")
+    elif args.prices is not None:
         prices = recorded_prices(args.prices, tournament)
         print(f"{len(prices)} recorded prices in {args.prices}")
         research = price_research(prices)
@@ -560,6 +618,7 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
                     code_version=code_version(),
                     research_for=research,
                     extra_settings=extra,
+                    first_member=args.first_member,
                 )
             finally:
                 await router.aclose()
@@ -623,6 +682,7 @@ async def _backtest_research(
                     as_of="now" if args.retrieval == "now" else "open",
                     queries=queries,
                     loop_steps=args.loop,
+                    passes=args.passes,
                 )
                 result = await run_forecastbench(
                     questions=questions,
@@ -716,6 +776,24 @@ def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _power(args: argparse.Namespace) -> int:
+    snap = report.power_snapshot(Path.cwd())
+    if snap is None:
+        raise AugurError("the M7 arms' ledgers are not all in data/ledgers; run them first")
+    text = json.dumps(snap, indent=1) + "\n"
+    out: Path = args.out
+    if args.check:
+        if not out.exists() or out.read_text(encoding="utf-8") != text:
+            print(f"{out} differs from a fresh simulation; run augur power")
+            return 1
+        print(f"{out} matches a fresh simulation")
+        return 0
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+    print(f"wrote {out}")
+    return 0
+
+
 def _report(args: argparse.Namespace) -> int:
     path: Path = args.path
     if not path.exists():
@@ -772,6 +850,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _score(args)
         if args.command == "report":
             return _report(args)
+        if args.command == "power":
+            return _power(args)
         if args.ledger_command == "import":
             result = import_exports(args.paths, args.out, SystemClock())
             dupes = sum(result.duplicates.values())

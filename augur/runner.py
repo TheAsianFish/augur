@@ -30,12 +30,14 @@ from augur.agents.calls import (
     Budget,
     BudgetExceededError,
     CallRecorder,
+    QuestionBudgetExceededError,
     estimate_cost,
 )
 from augur.agents.forecaster import MemberForecast, draw_forecasts, forecaster_request
 from augur.agents.researcher import (
     BRIEF_MAX_TOKENS,
     PLAN_MAX_TOKENS,
+    SUBQ_MAX_TOKENS,
     Researcher,
     ResearchResult,
 )
@@ -43,9 +45,11 @@ from augur.clock import Clock
 from augur.comment import render_comment
 from augur.config import Settings
 from augur.errors import AugurError, BelowFloorError, MetaculusError, SubmitFloorError
+from augur.fleet import FleetPlan, bounded_map
 from augur.leakage import RunMode
 from augur.ledger import Ledger
 from augur.llm.base import Provider
+from augur.llm.endpoints import Route
 from augur.llm.probe import ProbeResult, new_session_id, probe_routes, record_probes
 from augur.llm.registry import FRONTIER_TIER_NAME, PRACTICE_TOURNAMENTS, in_frontier_tier
 from augur.llm.router import Router
@@ -219,6 +223,9 @@ class ForecastRun:
         self._clock = clock
         self._ledger = ledger
         self._router = router
+        # Research passes, the members' prompt variants and model chains, and
+        # how many questions run at once (M7); the defaults are the old run.
+        self._fleet = FleetPlan.from_settings(settings, router)
         # Providers without retries for the opening probe; ``None`` skips it.
         self._probe_providers = probe_providers
         self._reforecast = False
@@ -282,6 +289,7 @@ class ForecastRun:
         )
         self._print(f"run {run_id} ({mode.value}) on {source}")
         self._print(f"models: {chains}")
+        self._print(self._fleet.describe())
         budget = Budget(self._settings.max_cost_per_question, self._settings.max_cost_per_run)
         calls = CallRecorder(self._router, self._ledger, self._clock, budget)
         if scored:
@@ -326,24 +334,29 @@ class ForecastRun:
                 f"${self._settings.max_cost_per_run:.2f} a run)"
             )
 
+        # Shared by the questions in flight. A run-budget refusal stops the run:
+        # questions already running finish (their own calls are refused by the
+        # same budget), none starts after it. A question's own cap fails only it.
         stop_reason = ""
-        for q, post in chosen:
+
+        async def handle(item: tuple[Question, dict[str, Any]]) -> QuestionReport:
+            nonlocal stop_reason
+            q, post = item
             if stop_reason or no_model:
-                reports.append(QuestionReport(q, "skipped", stop_reason or no_model))
-                continue
+                return QuestionReport(q, "skipped", stop_reason or no_model)
+            # Taken when the question starts, not when the run listed it: a
+            # question waiting for a slot can reach its deadline, or the run's.
             budget_s = self._time_budget_s(q, live=not use_samples)
             if budget_s is not None and budget_s < self._settings.min_forecast_minutes * 60:
                 left = self._minutes_left(q, live=True)
-                reports.append(
-                    QuestionReport(
-                        q,
-                        "missed",
-                        f"too little time left ({budget_s / 60:.1f} min before its deadline, "
-                        f"under the {self._settings.min_forecast_minutes:g} a forecast needs)",
-                        minutes_left=left,
-                    )
+                return QuestionReport(
+                    q,
+                    "missed",
+                    f"too little time left ({budget_s / 60:.1f} min before its deadline, "
+                    f"under the {self._settings.min_forecast_minutes:g} a forecast needs)",
+                    minutes_left=left,
                 )
-                continue
+            # Each question runs in its own task, so this binding is its own.
             structlog.contextvars.bind_contextvars(question_id=q.question_id)
             t0 = time.perf_counter()
             spent_before = budget.spent_question.get(q.question_id, 0.0)
@@ -352,16 +365,22 @@ class ForecastRun:
             except BelowFloorError as exc:
                 log.warning("question skipped by the floor", question_id=q.question_id)
                 outcome = QuestionReport(q, "skipped", f"submit floor: {exc}")
+            except QuestionBudgetExceededError as exc:
+                # This question's cap: it fails without an ensemble cut short,
+                # and the others go on with their own budgets.
+                outcome = QuestionReport(q, "failed", str(exc))
             except BudgetExceededError as exc:
-                stop_reason = str(exc)
-                outcome = QuestionReport(q, "failed", stop_reason)
+                stop_reason = stop_reason or str(exc)
+                outcome = QuestionReport(q, "failed", str(exc))
             except AugurError as exc:
                 log.error("question failed", question_id=q.question_id, error=str(exc))
                 outcome = QuestionReport(q, "failed", str(exc))
             outcome.seconds = time.perf_counter() - t0
             outcome.cost_usd = budget.spent_question.get(q.question_id, 0.0) - spent_before
             outcome.minutes_left = self._minutes_left(q, live=not use_samples)
-            reports.append(outcome)
+            return outcome
+
+        reports.extend(await bounded_map(chosen, handle, self._fleet.question_concurrency))
         structlog.contextvars.unbind_contextvars("question_id")
         report = RunReport(run_id, mode, source, reports, budget.spent_run)
         for r in reports:
@@ -417,19 +436,29 @@ class ForecastRun:
 
     def _estimate_question_cost(self, q: Question) -> float:
         """Worst case for one question on the first route of each chain: the
-        planner and the brief at their token caps, and every forecaster draw."""
+        planner and the brief at their token caps, with two research passes the
+        sub-question call and a second brief, and every forecaster draw on its
+        own variant and its own chain's first route."""
         total = 0.0
         research = self._router.chain("research")[0]
-        forecast = self._router.chain("forecast")[0]
         research_price = self._router.price(research)
-        forecast_price = self._router.price(forecast)
+        question_tokens = len(q.title) // 3 + 200
         if research_price is not None:
-            total += research_price.cost(len(q.title) // 3 + 200, PLAN_MAX_TOKENS)
+            total += research_price.cost(question_tokens, PLAN_MAX_TOKENS)
             total += research_price.cost(4000, BRIEF_MAX_TOKENS)
-        if forecast_price is not None:
-            brief = ResearchResult(queries=[], sources=[], brief="x" * ESTIMATED_BRIEF_CHARS)
-            request = forecaster_request(q, self._clock.now(), brief, 0)
-            total += self._settings.forecasters * estimate_cost(request, forecast_price)
+            if self._fleet.passes == 2:
+                brief_tokens = ESTIMATED_BRIEF_CHARS // 3
+                total += research_price.cost(question_tokens + brief_tokens, SUBQ_MAX_TOKENS)
+                # The rewritten brief reads up to twice the sources.
+                total += research_price.cost(8000, BRIEF_MAX_TOKENS)
+        brief = ResearchResult(queries=[], sources=[], brief="x" * ESTIMATED_BRIEF_CHARS)
+        for member in self._fleet.plans():
+            price = self._router.price(member.chain[0])
+            if price is not None:
+                request = forecaster_request(
+                    q, self._clock.now(), brief, member.member, member.variant
+                )
+                total += estimate_cost(request, price)
         return total
 
     async def _candidates(
@@ -484,12 +513,21 @@ class ForecastRun:
             mode=mode,
         )
         research_s = None if budget_s is None else budget_s * RESEARCH_SHARE
+        first: ResearchResult | None = None
         try:
             async with asyncio.timeout(research_s):
-                research = await researcher.research(run_id, q, cutoff)
+                first = await researcher.research(run_id, q, cutoff)
+                if self._fleet.passes == 2:
+                    await researcher.second_pass(run_id, q, cutoff, first)
         except TimeoutError:
             log.warning("research stopped at its deadline", seconds=research_s)
-            research = ResearchResult(
+            if first is not None:
+                # The deadline fell in the second pass: the first brief is complete and stands.
+                first.errors.append("second pass stopped at its deadline; the first brief stands")
+        research = (
+            first
+            if first is not None
+            else ResearchResult(
                 queries=[],
                 sources=[],
                 brief=(
@@ -498,6 +536,7 @@ class ForecastRun:
                 ),
                 errors=["research stopped at its deadline"],
             )
+        )
         n = self._settings.forecasters
         draws_s = (
             None
@@ -513,6 +552,8 @@ class ForecastRun:
             n=n,
             concurrency=n,
             timeout_s=draws_s,
+            variants=self._fleet.variants,
+            chains=self._fleet.chains,
         )
         needed = math.ceil(n / 2)
         if len(members) < needed:
@@ -754,7 +795,11 @@ class ForecastRun:
         """Probe every route once; disable the ones that do not answer. Returns the cost."""
         assert self._probe_providers is not None
         routes = self._router.routes()
-        roles = {r: list(self._router.roles_of(r)) for r in routes}
+        roles: dict[Route, list[str]] = {r: list(self._router.roles_of(r)) for r in routes}
+        for route in self._fleet.extra_routes():
+            if route not in roles:
+                routes.append(route)
+            roles[route] = [*roles.get(route, []), "member"]
         results = await probe_routes(routes, roles, self._probe_providers, self._router.catalog)
         record_probes(self._ledger, results, new_session_id(), run_id)
         for r in results:

@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q3 power
 
 UV ?= uv
 
@@ -36,6 +36,7 @@ results: ## Re-render RESULTS.md's generated blocks from the committed ledgers a
 eval: ## Offline and free: scan every committed ledger, re-score the backtest, check RESULTS.md
 	$(UV) run augur ledger check data/ledgers/*.sqlite
 	$(UV) run augur score $(FB_LEDGER) --mode backtest
+	$(UV) run augur power --check
 	$(UV) run augur report --check
 
 backtest: ## ForecastBench, no retrieval, local model; hours on a CPU (ARGS adds options)
@@ -63,3 +64,22 @@ backtest-q2: ## Q2 and the research loop on C2's fixed sample (free hosted model
 	$(UV) run augur judge $(Q2_ARGS) --ledger data/ledgers/m6-c2-now.sqlite \
 		--tournament "$(Q2_TOURNAMENT)+onepass-asof-now"
 	$(UV) run augur report
+
+Q3_U = openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+Q3_N = openrouter:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free
+Q3_OPEN = data/ledgers/m6-c2-open.sqlite
+
+backtest-q3: ## Q3's arms on the first 40 of C2's sample (free hosted models; about 2 hours)
+	AUGUR_FORECAST_MODELS=$(Q3_U) AUGUR_RESEARCH_MODELS=$(Q3_U) AUGUR_FORECASTERS=6 \
+		$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 40 --research-from $(Q3_OPEN) \
+		--first-member 3 --label draws --ledger data/ledgers/m7-c2-draws.sqlite
+	AUGUR_FORECAST_MODELS=$(Q3_N) AUGUR_RESEARCH_MODELS=$(Q3_N) AUGUR_FORECASTERS=3 \
+		$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 40 --research-from $(Q3_OPEN) \
+		--label model-nano --ledger data/ledgers/m7-c2-nano.sqlite
+	AUGUR_FORECAST_MODELS=$(Q3_U) AUGUR_RESEARCH_MODELS=$(Q3_U) AUGUR_FORECASTERS=3 \
+		$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 40 --retrieval open --passes 2 \
+		--queries $(Q2_QUERIES) --ledger data/ledgers/m7-c2-twopass.sqlite
+	$(MAKE) power results
+
+power: ## The planted-effect power simulation from the Q3 arms (data/power/m7-power.json)
+	$(UV) run augur power

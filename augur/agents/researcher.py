@@ -45,6 +45,39 @@ BRIEF_SYSTEM = (
 )
 
 
+SUBQ_MAX_TOKENS = 3000
+SUBQ_SYSTEM = (
+    "You review research for a forecaster. You get the question and a brief written "
+    "from the first round of searching. Find what is missing: write at most {n} "
+    "sub-questions whose answers would most change the forecast, especially evidence "
+    "that would overturn what the brief suggests, each with one search query (2 to 6 "
+    "words) for an encyclopedia that could answer it. Reply with a JSON array of "
+    'objects and nothing else: [{{"sub_question": "...", "query": "..."}}].'
+)
+
+
+def parse_subquestions(text: str, limit: int) -> list[tuple[str, str]]:
+    """``(sub_question, query)`` pairs from a second-pass reply; prose around the JSON is fine."""
+    match = re.search(r"\[.*\]", text, re.S)
+    pairs: list[tuple[str, str]] = []
+    if match:
+        try:
+            raw = json.loads(match.group(0))
+        except json.JSONDecodeError:
+            raw = []
+        for item in raw if isinstance(raw, list) else []:
+            if isinstance(item, dict):
+                sub = str(item.get("sub_question") or "").strip()
+                query = str(item.get("query") or "").strip()
+            elif isinstance(item, str):
+                sub, query = "", item.strip()
+            else:
+                continue
+            if query and len(query) <= 120 and query.lower() not in (p[1].lower() for p in pairs):
+                pairs.append((sub[:300], query))
+    return pairs[:limit]
+
+
 LOOP_MAX_TOKENS = 3000
 LOOP_SYSTEM = (
     "You research a forecasting question one search at a time. You get the question, "
@@ -101,6 +134,10 @@ class ResearchResult:
     errors: list[str] = field(default_factory=list)
     steps: list[LoopStep] = field(default_factory=list)
     """The research loop's steps, in order (empty for the one-pass researcher)."""
+    sub_questions: list[tuple[str, str]] = field(default_factory=list)
+    """The second pass's ``(sub_question, query)`` pairs (empty for one pass)."""
+    first_brief: str = ""
+    """With two passes, the first pass's brief (``brief`` is the final one)."""
 
     def label(self, source_id: str) -> str:
         for i, s in enumerate(self.sources, start=1):
@@ -187,9 +224,22 @@ class Researcher:
         self._max_sources = max_sources
 
     async def research(
-        self, run_id: str, q: Question, cutoff: datetime, queries: list[str] | None = None
+        self,
+        run_id: str,
+        q: Question,
+        cutoff: datetime,
+        queries: list[str] | None = None,
+        passes: int = 1,
     ) -> ResearchResult:
-        """One pass: plan (unless ``queries`` are given), search, gate, write the brief."""
+        """Plan (unless ``queries`` are given), search, gate, write the brief.
+
+        With ``passes=2`` a second research agent then reads that brief,
+        writes the sub-questions whose answers would most change the
+        forecast (evidence against the brief's lean first), searches for
+        them, and the brief is rewritten from every admitted source.
+        """
+        if passes not in (1, 2):
+            raise ValueError("research runs one or two passes")
         result = ResearchResult(queries=[], sources=[])
         result.queries = (
             list(queries[: self._max_queries])
@@ -200,7 +250,59 @@ class Researcher:
         found += await self._search_all(result.queries, cutoff, result)
         self._gate(run_id, q, cutoff, found, result, self._max_sources)
         await self._brief(run_id, q, cutoff, result)
+        if passes == 2:
+            await self.second_pass(run_id, q, cutoff, result)
         return result
+
+    async def second_pass(
+        self, run_id: str, q: Question, cutoff: datetime, result: ResearchResult
+    ) -> None:
+        """Deepen a finished first pass in place; ``result.brief`` changes only on success."""
+        request = LlmRequest(
+            model="",  # the router sets each route's model
+            messages=(
+                Message(role="system", content=SUBQ_SYSTEM.format(n=self._max_queries)),
+                Message(
+                    role="user",
+                    content=question_text(q, cutoff) + "\n\nFirst brief:\n" + result.brief,
+                ),
+            ),
+            temperature=0.0,
+            seed=0,
+            max_tokens=SUBQ_MAX_TOKENS,
+        )
+        ctx = CallContext(run_id=run_id, question_id=q.question_id, role="subquestions")
+        try:
+            done = await self._calls.complete(
+                ctx, request, source_ids=[s.source_id for s in result.sources]
+            )
+        except ProviderError as exc:
+            result.errors.append(f"second pass failed: {exc}")
+            return
+        seen = {x.lower() for x in result.queries}
+        pairs = [
+            p
+            for p in parse_subquestions(done.response.text, self._max_queries)
+            if p[1].lower() not in seen
+        ]
+        result.sub_questions = pairs
+        if not pairs:
+            result.errors.append("second pass wrote no new query; the first brief stands")
+            return
+        result.queries.extend(p[1] for p in pairs)
+        found = await self._search_all([p[1] for p in pairs], cutoff, result)
+        new = self._gate(run_id, q, cutoff, found, result, self._max_sources)
+        if not new:
+            # Nothing new to read: the first brief already covers every source.
+            return
+        first, first_call = result.brief, result.brief_call_id
+        result.first_brief = first
+        failed = len(result.errors)
+        await self._brief(run_id, q, cutoff, result, sub_questions=[p[0] for p in pairs if p[0]])
+        if len(result.errors) > failed:
+            # The rewrite failed: the first brief is still a good brief.
+            result.brief, result.brief_call_id = first, first_call
+            result.errors.append("the rewritten brief failed; the first brief stands")
 
     def _gate(
         self,
@@ -392,7 +494,12 @@ class Researcher:
         return ordered
 
     async def _brief(
-        self, run_id: str, q: Question, cutoff: datetime, result: ResearchResult
+        self,
+        run_id: str,
+        q: Question,
+        cutoff: datetime,
+        result: ResearchResult,
+        sub_questions: list[str] | None = None,
     ) -> None:
         if not result.sources:
             result.brief = "No sources dated before the cutoff were found."
@@ -404,7 +511,15 @@ class Researcher:
                 Message(role="system", content=BRIEF_SYSTEM),
                 Message(
                     role="user",
-                    content=question_text(q, cutoff) + "\n\nSources:\n\n" + "\n\n".join(blocks),
+                    content=question_text(q, cutoff)
+                    + (
+                        "\n\nAnswer these sub-questions where the sources allow:\n"
+                        + "\n".join(f"- {x}" for x in sub_questions)
+                        if sub_questions
+                        else ""
+                    )
+                    + "\n\nSources:\n\n"
+                    + "\n\n".join(blocks),
                 ),
             ),
             temperature=0.0,

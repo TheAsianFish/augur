@@ -259,6 +259,77 @@ below the price (−0.046 [−0.117, +0.022]): the leak alone makes the bot
 look level with the market. Past Metaculus tournaments could not be a
 corpus (a bot token sees no resolutions; 0 of 269 resolved posts kept).
 
+**M7's predictions and decision rules, committed 2026-11-21 before any
+M7 run.** Q3's reconciled prediction above stands unedited; this fixes how
+it is tested.
+
+The design:
+
+- **Corpus:** the first 40 questions of M6's fixed C2 sample (the loop's
+  40), so every M7 arm sits beside M6's N, O and L on the same questions.
+  Binary market questions only: aggregation rules for multiple choice,
+  numeric and discrete questions are built and unit-tested, but this
+  corpus cannot score them.
+- **Model:** `nvidia/nemotron-3-ultra-550b-a55b:free` (listed 2026-06-04)
+  in every role unless a row names another; $0.
+- **Research depth:** D0 is N (no retrieval), D1 is O (one pass as of
+  open), and D2 is two passes: the one pass on the shared query plan, then
+  a second pass in which the model reads the first brief, writes up to
+  three sub-questions whose answers would most change the forecast, each
+  with a search query; those queries run as of open, pass the gate, and a
+  final brief is written from every admitted source. 3 draws, median.
+- **Head count:** O's three recorded draws (members 0 to 2) plus six new
+  draws on the identical recorded request, seeds 3 to 8. k forecasters is
+  the median of members 0 to k−1, for k = 1, 3, 5, 9. The live default is
+  5.
+- **Aggregation**, on the same nine draws, no new calls: median (the
+  default), trimmed mean (drop the lowest and highest 20%, rounded down:
+  one of nine), mean of log-odds, and extremized log-odds at the fixed
+  factor 1.5 (M5's).
+- **Model mix:** three draws of `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`
+  (listed 2026-04-28, the only other free model that answered the probe
+  on 2026-11-21) on the same recorded requests. Mixed fleet: the median
+  of ultra's members 0 to 2 and nano's 0 to 2, against ultra's members 0
+  to 5 (the same head count).
+
+Predictions:
+
+| # | Prediction |
+|---|------------|
+| P12 | Two passes against one: \|Brier(D2) − Brier(D1)\| < 0.02 with an interval that includes 0, for at least two more model calls a question. |
+| P13 | Head count: one forecaster is worse than five (point estimate at least +0.01); nine against five is within ±0.005 with an interval including 0; three against five has an interval including 0. |
+| P14 | Aggregation against the median of nine: mean of log-odds and trimmed mean within ±0.005; extremizing at 1.5 worse (point estimate above 0) with an interval that includes 0. |
+| P15 | Model mix: the mixed fleet against six ultra draws has an interval including 0; three nano draws are worse than three ultra draws (point estimate). |
+| P16 | Power, from a simulation that plants a known improvement in this sample's resampled per-question scores: 80% detection of a 0.01 Brier difference needs more than 1,000 questions; of 10 head-to-head points, fewer than 300; of 2 points, more than 2,000. |
+| P17 | Q3 as written: no factor's interval against its default excludes 0. |
+
+**Decision rule.** The replacement rule, made exact before the run: a
+variant replaces the live default only if (a) its paired interval of
+Brier(variant) − Brier(default) lies wholly below 0, or (b) it makes fewer
+model calls a question and is no worse, meaning that interval's upper
+bound is below +0.01 Brier (a non-inferiority margin fixed now). Same-cost
+variants (the aggregation rules, the mixed fleet) can only win by (a).
+
+**M7's results (2026-11-21; RESULTS.md, the predictions above unedited).**
+On the 40 questions with `nemotron-3-ultra:free`: P12's size part held
+(two passes against one −0.0003 [−0.025, +0.022]) and its cost part
+failed (1.8 more calls a question, not 2: the brief is not rewritten when
+the second pass finds nothing new). P13: one forecaster was not worse than
+five (−0.002 [−0.024, +0.017], failed); nine against five (+0.0007) and
+three against five held. P14: the trimmed mean (+0.0008) and the log-odds
+mean (+0.0014) held; extremizing at 1.5 was worse with an interval that
+excludes 0 (+0.027 [+0.009, +0.048]), so its "interval includes 0" part
+failed. P15 held (mixed fleet +0.006 [−0.015, +0.026] against six draws;
+the second model 0.014 worse than the first). P16: 80% power on 0.01
+Brier needs about 450 questions on a research change's spread, not over
+1,000 (failed); 10 points about 70 (held); 2 points about 1,650, not over
+2,000 (failed). P16 did not name the spread it is judged on, and the
+research spread was chosen after the runs began; on the noisier retrieval
+spread all three parts hold, so its verdict is reported with every reading
+beside it. P17 failed on extremizing alone, a loss. No variant passed
+the replacement rule, so the live default is unchanged: one pass, five
+forecasters, the median, one model.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
@@ -617,10 +688,32 @@ documented ones.
 - [x] M4: Baselines, scoring and the first scored report (Q1, Q5 first reading) — the shadow template baseline (`baseline` extra) logging the real template's unpublished forecast for the same live questions; the tokenless ForecastBench number (the M1 pipeline without retrieval on `qwen2.5:7b` over at least 100 resolved ForecastBench binary questions that opened after the model's release, with a minimal loader extended in M6; Brier and Metaculus baseline score against always-50% and the set's base rate, with paired bootstrap intervals; $0); `augur resolve` appending resolutions and annulments; `augur score` with Brier, log, baseline and head-to-head scores for all question types, the question-clustered paired bootstrap and the minimum detectable effect; `augur ledger export|import` (import rebuilds the ledger from the `ledger` branch); `augur report` rendering RESULTS.md from the ledger with a test that the committed file matches a render; the first scheduled runs on `main` checked from the `ledger` branch (questions forecast, skipped, missed, minutes billed); `augur standings`: rank, average spot peer score and interval per MiniBench round from the leaderboard API, beside the best template bot, the best open-source bot and rank 1, with each missed question explained from the ledger. Done when scoring is checked against hand-computed cases and against Metaculus's own score for at least one resolved question per type, RESULTS.md holds Augur against the shadow template and against the community prediction (where the API exposes it) on every resolved live question with intervals and the detectable effect at that n,, RESULTS.md holds the tokenless ForecastBench row with its method, model and cost and the standings table with dated sources and every unfair comparison named, Q1's prediction is marked held, failed or not yet resolvable, and Q5's first reading is reported with the sample-size limits stated under Questions.
 - [x] M5: Market prices, the community prior, and evaluating the bot that ships — the `markets` searcher: the Metaculus community prediction where the API exposes it, and similar questions on Polymarket, Manifold and Kalshi through their public APIs, each price taken as of the cutoff with the trade or candle timestamp as its date evidence, so `tests/test_leakage.py` covers prices too; the replay evaluation: re-forecasting resolved live questions from the sources the ledger recorded, under alternative settings (with and without market prices, research depth, number of forecasters, aggregation rule), on the hosted models actually used live, with paired bootstrap intervals and the detectable effect at its n. Done when RESULTS.md holds the replay table labelled by model, with the market searcher's effect answered against the Frontier table's survey signal (checking similar markets, r = 0.34), the live default changed only under the replacement rule in M7, and a fake-server test proving a price dated after the cutoff is rejected.
 - [x] M6: The leakage-proof backtest and what leakage is worth (Q2) — the resolved-question loader (past tournaments by API, ForecastBench sets without a token) with its eligibility filters; the model registry's release dates enforced; the `wayback` searcher (capture at or before the instant; the CDX `to=` bound is inclusive of the whole day, so the capture timestamp is compared, not the query); `augur backtest` with the clock pinned to each open date; the three-arm experiment (no retrieval, as of open, as of today) on the same questions, with the prediction above; a bounded research loop in the researcher (search, read, write down a belief and what is unknown, choose the next query, stop after a fixed number of steps or the question's deadline), measured against the one-pass brief on the same backtest with its cost and latency (direction of 2026-11-20); in `augur standings`, every template bot by model, the agent-against-template difference for every model pair, and a proposed floor re-based on the latest round (a model is admitted only if its template's average is at or above 0) with the worst-case cost of a 60-question round on each admitted route, for the maintainer to approve; an LLM judge using the published 0 to 4 leakage rubric on admitted sources, with a hand-labelled sample to check the judge. Every finding is labelled with its model. Done when `tests/test_leakage.py` passes on the committed backtest ledger and fails on a planted violation of each kind (late source, undated source, model too new), RESULTS.md holds the three arms with paired intervals, the residual leak rate and the judge's agreement with the hand labels, and the published 0.242 to 0.108 gap is shown beside mine with the protocol differences stated. (Amended 2026-11-20: scoring the judge's 40-source sample by hand needs a person, which the build environment does not have. The blind sheet and a checked step that installs the filled labels are built and tested; RESULTS.md reports the judge against a provisional second-model rating, labelled as such, P9 reads "not yet tested" until the hand labels are installed, and the exact steps are under To measure.)
-- [ ] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
+- [x] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
 - [ ] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
 - [ ] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
 - [ ] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
+
+**Plan changes, 2026-11-21 (M7, decided while building it).**
+
+- *The ablation runs on 40 questions, not the full sample.* One key gives
+  1,000 free requests a day; nine draws, the second pass and a second
+  model on all 64 would need about 1,000 calls. The 40 are M6's loop
+  sample, so the loop sits beside every M7 arm on the same questions.
+- *Head count and model mix reuse the recorded research.* New draws are
+  made on M6's one-pass briefs, rebuilt from the ledger and checked against
+  the recorded request hash before any call (40 of 40 matched), so a
+  forecaster comparison carries no research noise.
+- *Prompt variants are built, not ablated.* The stances (outside view,
+  inside view, sceptic) are a setting with tests; measuring them is a
+  fifth factor the day's allowance did not cover. It is under To measure.
+- *The replay evaluation on live questions (C3) still has nothing to
+  replay*: no live question with research has resolved, so every Q3
+  factor is measured on the backtest only.
+- *A question's own cost cap now fails only that question.* With questions
+  in parallel, the shared error would have stopped every later question.
+- *Mixed fleets are per-member chains*, so the floor and the release gate
+  judge each member's model; a below-tier member in a scored run is
+  refused and the rest still forecast.
 
 **Plan changes, 2026-11-19 (M4, decided while building it).**
 

@@ -43,6 +43,7 @@ CALL_ROLE_CHAIN: dict[str, Role] = {
     "planner": "research",
     "researcher": "research",
     "loop": "research",
+    "subquestions": "research",
     "judge": "research",
     "forecaster": "forecast",
 }

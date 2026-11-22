@@ -73,6 +73,7 @@ class Retrieval:
     as_of: Literal["open", "now"] = "open"
     queries: dict[int, list[str]] | None = None
     loop_steps: int = 0
+    passes: int = 1
     max_queries: int = 3
     per_query: int = 2
     max_sources: int = 6
@@ -83,7 +84,10 @@ class Retrieval:
         return RunMode.UNRESTRICTED if self.as_of == "now" else RunMode.BACKTEST
 
     def label(self) -> str:
-        how = f"loop{self.loop_steps}" if self.loop_steps else "onepass"
+        if self.loop_steps:
+            how = f"loop{self.loop_steps}"
+        else:
+            how = "twopass" if self.passes == 2 else "onepass"
         return f"{how}-asof-{self.as_of}"
 
 
@@ -149,6 +153,7 @@ async def run_forecastbench(
     extra_settings: dict[str, object] | None = None,
     retrieval: Retrieval | None = None,
     wall_clock: Clock | None = None,
+    first_member: int = 0,
 ) -> BacktestResult:
     """Forecast each question once, as of its freeze date.
 
@@ -181,6 +186,7 @@ async def run_forecastbench(
             "searchers": [] if retrieval is None else [s.name for s in retrieval.searchers],
             "questions": len(questions),
             "resumed": len(done),
+            "first_member": first_member,
         }
         | (extra_settings or {}),
         code_version=code_version,
@@ -236,7 +242,9 @@ async def run_forecastbench(
                         deadline=time.monotonic() + retrieval.loop_deadline_s,
                     )
                 else:
-                    research = await researcher.research(run_id, q, cutoff, queries=planned)
+                    research = await researcher.research(
+                        run_id, q, cutoff, queries=planned, passes=retrieval.passes
+                    )
             except AugurError as exc:
                 failed += 1
                 _outcome(ledger, run_id, fb, "failed", f"research: {exc}"[:300], started)
@@ -269,6 +277,7 @@ async def run_forecastbench(
                 research=research,
                 n=n,
                 concurrency=n,
+                first_member=first_member,
             )
             if len(members) < math.ceil(n / 2):
                 raise AugurError(f"only {len(members)} of {n} draws parsed: {'; '.join(errors)}")

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 
 from augur.clock import Clock
@@ -43,7 +43,11 @@ MIN_COOL_S = 30.0
 
 
 class BudgetExceededError(AugurError):
-    """A cost cap would be crossed; the run stops spending."""
+    """The run's cost cap would be crossed; the run stops spending."""
+
+
+class QuestionBudgetExceededError(BudgetExceededError):
+    """One question's cost cap would be crossed: that question fails, the run goes on."""
 
 
 @dataclass
@@ -72,7 +76,7 @@ class Budget:
             question_id, 0.0
         )
         if q_total + amount > self.max_per_question:
-            raise BudgetExceededError(
+            raise QuestionBudgetExceededError(
                 f"question {question_id} budget ${self.max_per_question:.2f} spent; "
                 "raise AUGUR_MAX_COST_PER_QUESTION to go on"
             )
@@ -137,12 +141,18 @@ class CallRecorder:
         self._model_gate = model_gate
 
     async def complete(
-        self, ctx: CallContext, request: LlmRequest, source_ids: list[str]
+        self,
+        ctx: CallContext,
+        request: LlmRequest,
+        source_ids: list[str],
+        chain: Sequence[Route] | None = None,
     ) -> CallResult:
         """Run ``request`` on the first route of its role's chain that answers.
 
         ``request.model`` is replaced by each route's model in turn. All of
         ``source_ids`` must have been admitted by the gate for this question.
+        ``chain`` replaces the role's chain for this call (a mixed fleet gives
+        each member its own); the floor and the model gate still apply.
         """
         role = CALL_ROLE_CHAIN.get(ctx.role)
         if role is None:
@@ -151,7 +161,7 @@ class CallRecorder:
         moved_from: tuple[Route, FallbackError] | None = None
         skipped: list[str] = []
         last_skipped: tuple[Route, str] | None = None
-        for route in self.router.chain(role):
+        for route in chain if chain is not None else self.router.chain(role):
             why_not = self.router.unavailable(route)
             if why_not is not None:
                 skipped.append(f"{route.key}: {why_not}")
