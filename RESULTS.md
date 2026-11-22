@@ -4,16 +4,42 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M6 measures what leakage is
-worth on a retrieval backtest (Q2) and tries an iterative research loop; M7
-ablates the fleet (research depth, head count, aggregation, model mix) and
-measures how many questions a difference needs (Q3); M5
-sets the bot against the market price on resolved ForecastBench questions
-(the price alone wins); M4 has the first scored number and the scoring it
-rests on; the first live score waits on a scored round (see Q1 and Q5
-below).
+committed file differs from a fresh render. M8 learns calibration from
+926 resolved questions under a strict time order and ships a Platt map for
+the model it was fitted on (Q4); M7 ablates the fleet (research depth,
+head count, aggregation, model mix) and measures how many questions a
+difference needs (Q3); M6 measures what leakage is worth on a retrieval
+backtest (Q2) and tries an iterative research loop; M5 sets the bot
+against the market price on resolved ForecastBench questions (the price
+alone wins); M4 has the first scored number and the scoring it rests on;
+the first live score waits on a scored round (see Q1 and Q5 below).
 
 ## M8: calibration learned from the bot's own resolved history (2026-11-22)
+
+**Question.** Can calibration be learned from the bot's own resolved
+history (Q4)? The plan's prediction, written at the start: not with fewer
+than about 200 resolutions, and isotonic worse than Platt. The design,
+P18 to P22 and the decision rule were committed to PLAN.md (`951f0a7`)
+before any run; P19 says why I expected a fitted line to help on this
+model.
+
+**Method.** Corpus C4: every market question in nine ForecastBench sets
+(2026-06-21 to 2026-10-11, frozen 2026-06-11 to 2026-10-09) that resolved
+to 0 or 1 and was posed after the model's listing date, forecast by
+`nvidia/nemotron-3-ultra-550b-a55b:free` with no retrieval and one draw.
+2026-06-21 is member 0 of M5's C2 arm (b); the eight later sets ran
+2026-11-22 05:20 to 06:05 UTC, eight processes on one key (`make
+backtest-q4`, raw output `data/runs/m8-c4-*.txt`, ledger
+`data/ledgers/m8-c4.sqlite`): 802 calls, 457,570 input and 786,525
+output tokens, $0. 789 of 792 instances were forecast; three never gave a
+parseable answer in three attempts, and one 2026-06-21 question has no
+member 0, so C4 holds 926 instances, not the 930 planned, and W 671, not
+673. A question is calibrated only on questions whose resolution date
+is before the day it opened (`augur/q4.py`, `check_time_order`); each fit's
+latest resolution is in `data/calibration/m8-calibration.json`, and a test
+checks it is before the open day for every fit. `augur calibrate` writes
+the snapshot, the diagram and the live calibrator; `make eval` re-runs it
+and fails on any difference.
 
 <!-- augur:begin calibration -->
 Corpus C4: 926 question instances (541 markets) from 9 ForecastBench sets (2026-06-21 to 2026-10-11), `nvidia/nemotron-3-ultra-550b-a55b:free`, no retrieval, one draw, base rate 34.9%. Walk-forward test (W): 671 instances (425 markets, sets 2026-07-19 to 2026-10-11), each calibrated on every instance resolved before it opened (68 to 666 resolutions; the latest resolution each fit saw is in the snapshot and is always before the day its questions opened). Intervals: paired bootstrap over markets, 10,000 resamples.
@@ -80,6 +106,39 @@ Predictions stated in PLAN.md before the run:
 
 Decision (M7's replacement rule on W): **Platt** replaces raw for this model's binary forecasts.
 <!-- augur:end calibration -->
+
+**What it says.** The free model, with no retrieval, is badly
+overconfident: it puts 1% to 3% on questions that resolve Yes about 20%
+of the time, and 91% on ones that resolve Yes 74% of the time. A
+two-parameter line in log-odds, fitted only on what had resolved before
+each question opened, removes most of that. On the 671 walk-forward
+questions Platt is 0.022 Brier better than raw [0.008, 0.037] and cuts the
+calibration error from 0.152 to 0.055. The fitted slope on all of C4 is
+0.32 (`augur/live_calibrator.json`), so the model's log-odds are worth
+about a third of what it states. That is the same fact M7 found from the
+other side: extremizing by 1.5 hurt there and hurts here (+0.015
+[+0.010, +0.020]). Calibration is not just regression to the base rate:
+Platt beats the history's base rate by 0.024 [0.009, 0.038], so the
+forecasts carry information once rescaled. Q4's own prediction mostly
+holds: below 200 resolutions no interval clears 0 (k = 25, 50, 100), and
+from 200 on both fitted calibrators do. Its second half fails: isotonic is
+not reliably worse than Platt (it is better at k = 25 and 50, worse at 100
+and on W).
+
+**What it cannot say.** The learning curve's 206 questions opened on only
+three days, so each k is three fits, and its points move together. That is
+why k = 50 looks better than k = 100; read the curve's shape, not its
+steps. Everything here is one free model with no retrieval, on market
+questions. Calibrated, it still trails the price by 0.090 on the markets
+the bot can read and by 0.046 on those it cannot (the price is
+ForecastBench's recorded freeze value), so calibration narrows the gap
+and does not close it. Live forecasts have research, five draws, prices
+and, from M5, the blend, so their miscalibration may differ. And under
+the submit floor no scored forecast comes from this model. The live
+calibrator therefore applies only where its model answers (dry runs and
+the bot-testing-area), and a frontier model's forecasts stay raw until
+it has resolved history of its own (To measure).
+
 
 ## M7: what carries the score, and how many questions it takes to tell (2026-11-21)
 
@@ -1312,6 +1371,9 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| Q4's live arm: calibration fitted on the bot's own resolved live forecasts | 3 posted binary forecasts in the committed ledgers, 0 resolved; a bot token sees no resolution on scored tournaments (M4), and under the floor no scored forecast comes from the model the live calibrator was fitted on | Once live questions resolve: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL`), then `augur calibrate`; the harness counts them in its `live` field. A Spring 2027 measurement (PLAN.md) |
+| A calibrator for the frontier model that answers scored forecasts | The live map is fitted on the free model, and a frontier model's forecasts stay raw until it has resolved history. C4 cannot provide it: the release gate admits a model only on questions posed after its listing date, and the admitted routes are listed late (Claude Haiku 5.5 on OpenRouter 2026-10-07), so of C4 only the 2026-10-11 set would remain | Forecast later ForecastBench sets as they resolve (2026-10-25 onward), e.g. `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-haiku-5.5 AUGUR_FORECASTERS=1 augur backtest forecastbench --questions ... --ledger data/ledgers/m8-haiku.sqlite`, at about $0.0005 a call at its listed $0.10/$0.50 per million and C4's 570 input and 980 output tokens a call (paid: needs the maintainer's approval); or the live arm above |
+| Calibration with research, not only on the no-retrieval arm | Live forecasts are researched; a with-research corpus over nine sets is about 4,000 free calls (four days of the key's allowance) | `make backtest-q4` with `--retrieval open --queries ...` per set (M6's one pass), into a second ledger, then the harness on it |
 | A frontier model answering, and forecasts with private comments on a live MiniBench round | No billed model was called: the key reports a $1 limit that may not be the sponsorship, and nothing paid is spent without the maintainer's say-so. The floor refused the free chain (exit 2, `data/runs/m3-submit-floor-minibench.txt`) | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high,openrouter:anthropic/claude-opus-5 AUGUR_RESEARCH_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free augur models probe`, then the same variables with `augur forecast --tournament minibench --submit --coverage coverage.json` while a round is open (from about 2026-11-30). Worst case about $0.30 to $0.35 a question at GPT-5.4's listed $2.50/$15 per million: five 4,000-token draws ($0.30) plus their prompts of about 3,000 tokens each; needs `METACULUS_TOKEN` |
 | This repository's own cron delay and coverage, and the first scheduled runs on `main` | Private, and no GitHub credentials here, so the `ledger` branch cannot be read | After merge, with `AUGUR_SCHEDULE=minibench`: `git fetch origin ledger && git worktree add /tmp/ledger FETCH_HEAD && augur ledger import /tmp/ledger/ledger --out /tmp/live.sqlite && augur standings --round minibench --ledger /tmp/live.sqlite` (forecast, skipped, missed and why per question); the run times are the `*.txt` files' timestamps against the two cron lines; billed minutes: `gh api repos/TheAsianFish/augur/actions/runs --jq '.workflow_runs[] \| select(.event=="schedule") \| [.created_at, .run_started_at, .updated_at]'` |
 | Augur against the same-model shadow template and the community prediction on resolved live questions (Q1) | No live MiniBench forecast yet (the floor), and a bot token sees no resolution on scored tournaments | After each forecast run: `uv sync --extra baseline && augur baseline --ledger L` (same model as Augur, AskNews keys set so the template searches as it does on the leaderboard); after resolution: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` read from the question page), then `augur score L data/ledgers/m4-shadow-template.sqlite --mode live --cluster week` |
