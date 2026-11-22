@@ -1,8 +1,8 @@
 # Augur
 
-**Status: in progress.** M8 of 10 (calibration learned from 926 resolved
-questions, each calibrated only on what had resolved before it opened);
-see [PLAN.md](PLAN.md).
+**Status: in progress.** M9 of 10 (does disagreement among the fleet's
+forecasts predict its errors, tested against controls for plain
+overconfidence; not resolvable at this n); see [PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -202,6 +202,14 @@ any fit that would see a later outcome (a test proves a leaky history rule
 is refused), and the snapshot records the latest resolution every fit saw
 so `make eval` can re-check it.
 
+M9 turns the same suspicion on a result that would look good. The model's
+log-odds are worth a third of their face value, so any rule that pulls
+forecasts toward 50% beats raw. A rule that shrinks *by disagreement*
+therefore counts only if it beats, on the same questions, a constant shrink
+of the same strength and the source-aware calibrator; a rule that skips
+disagreed questions must beat skipping as many at random. Measured that
+way, every apparent gain disappeared into its control.
+
 ## Design decisions
 
 | Decision | Chosen | Alternative | Why |
@@ -227,6 +235,7 @@ so `make eval` can re-check it.
 | Template baseline | Metaculus's real `TemplateBot` (optional `baseline` extra), unpublished, every role on Augur's model | Reimplementing its prompt | "Beats the template" must not mean "beats my copy of it", and the model must be the same so the difference is the pipeline. |
 | Comparisons | Paired per question, bootstrap over clusters (question, opening week), 10,000 resamples, seeded; the detectable effect printed beside every interval | Unpaired means, or a t-test | Pairing removes question difficulty; questions that move together are not independent; the detectable effect keeps "no difference" apart from "could not tell". |
 | Checking the scores | Against Metaculus's own `score_math.py` run on fixed cases (outputs committed) | Against the API's per-question scores | The API hides resolutions and scores from a bot token (0 of 80 resolved posts). The code check found an open-tail bug that hand-computed cases had not. |
+| Judging a disagreement policy | Against constant shrinkage, the source-aware map and (for skip) random skipping, all fitted leave-one-out on the same questions | Against raw | Raw is overconfident everywhere, so any shrink beats it: a constant shrink did (−0.007 [−0.014, −0.000]), and skipping the most-disagreed quarter gained +7.3 points against raw scoring but +0.8 [−3.0, +5.1] against random skips. |
 | Calibration | A Platt map fitted on the free model's resolved backtest history, applied only when every member answered from that model, before the exact-price blend, and withheld from Metaculus questions until a map is shown to be no worse than raw there | One map for every model; isotonic; no calibration; a per-source map | Calibration belongs to a forecaster: the free model's log-odds are worth about a third of what it states (slope 0.32), which says nothing about a frontier model. Platt and isotonic both passed the rule on 671 walk-forward questions; Platt by more, with two parameters instead of a step per block. |
 | Changing a default | Only if the paired interval against the default lies below 0, or a cheaper variant's upper bound is under +0.01 Brier (fixed before M7's run) | Adopting whatever scores best on the backtest | At 40 questions most differences are noise; a rule written first keeps a lucky draw out of the live bot. |
 | RESULTS.md | Prose plus blocks rendered from the committed ledgers; a test fails if the file differs from a fresh render | Hand-copied tables | A number in the report cannot drift from the data it came from. |
@@ -237,6 +246,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M9, does the fleet know when it does not know (Q6): draws already in the ledgers, 135 and 39 ForecastBench market questions, `nemotron-3-ultra:free` (and `nemotron-3-nano:free` for the model gap); every policy against constant shrinkage and the source-aware calibrator, fitted leave-one-out ($0) | No disagreement measure predicts a large error: draw spread AUROC 0.51 [0.41, 0.61] on 135 questions; research passes 0.53, the two-model gap 0.33 on 39. A plain constant shrink beats raw (−0.007 [−0.014, −0.000]); scaling it by disagreement adds −0.005, inside the interval. Skipping the most-disagreed quarter gains +7.3 points against forecasting everything but +0.8 [−3.0, +5.1] against skipping at random. Not resolvable at this n (an AUROC of 0.6 needs about 250 questions); the pre-registered label proved to mark hedged forecasts; the live test is registered by question-id parity and has 0 resolutions |
 | M8, calibration learned from resolved history (Q4): 926 ForecastBench market questions over nine sets, `nemotron-3-ultra:free`, no retrieval; each question calibrated only on questions resolved before it opened ($0, 802 free calls) | By source first: the gain is all on Polymarket and Manifold (−0.041 and −0.051 Brier against raw); on the 190 Metaculus questions, the nearest to what the bot forecasts live, pooled Platt is 0.035 *worse* than raw [0.013, 0.054]. Source-aware maps (per-source, or partially pooled with a shrunk per-source intercept) cut that to +0.014 and +0.019 but are not shown to be no worse than raw (upper bounds +0.032, +0.043), so the live map is withheld from Metaculus questions and live forecasts go out raw. Overall, on 671 walk-forward questions, Platt is 0.022 better than raw [0.007, 0.037] and cuts calibration error 0.152 → 0.069; extremizing by 1.5 hurts (+0.015). Outcomes are dated by the markets' own APIs (ForecastBench's dates were close dates for 239 of 536 markets) |
 | M7, what carries the score (Q3): the first 40 of the same sample, `nemotron-3-ultra:free`, one factor at a time against the default, paired on the same questions ($0) | A second research pass on sub-questions: −0.0003 Brier [−0.025, +0.022] for 1.8 more calls a question. One, three, five or nine forecasters: within 0.002 of each other. Trimmed mean and mean of log-odds: within 0.0014 of the median. A smaller second model mixed in: +0.006 [−0.015, +0.026]. Extremizing by 1.5: 0.027 worse [0.009, 0.048], the only resolved effect. The live default is unchanged |
 | M7, how many questions a difference needs: a planted improvement in resampled per-question differences, 1,000 studies per n | 80% power on 0.01 Brier at about 450 questions (research-change spread) to 1,340 (retrieval against none); 5 head-to-head points at about 270; FutureSearch's 0.010 lead at n = 1,810 is consistent with either. At 40 questions this backtest resolves only differences of about 0.03 Brier or more |
@@ -302,6 +312,10 @@ difference needs about 300 resolved questions.
   answers, and not on Metaculus questions, where no map has yet been shown
   to be no worse than raw; a frontier model's forecasts stay raw until it
   has resolved history (the release gate keeps it off C4's earlier sets).
+- Q6's backtest is 39 to 135 questions of one free model on market
+  questions; it cannot resolve an AUROC below about 0.68 (n = 39) or 0.60
+  (n = 135) from chance. Its live half waits on resolved shadow-round or
+  scored questions.
 
 ## Roadmap
 
@@ -310,8 +324,8 @@ repository public at its merge; M3 (done) every question type, a deadline
 per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
 first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
-backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9
-"does it know when it does not know"; M10 release and a season postmortem. Details in
+backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9 (done)
+"does it know when it does not know", against controls for overconfidence; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 
 ## Development

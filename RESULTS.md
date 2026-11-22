@@ -4,7 +4,11 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M8 learns calibration from
+committed file differs from a fresh render. M9 asks whether disagreement
+among the fleet's forecasts predicts its errors (Q6), against controls for
+plain overconfidence, and pre-registers the live test; it also makes the
+calibrator source-aware, which withholds M8's map from Metaculus questions.
+M8 learns calibration from
 926 resolved questions under a strict time order and ships a Platt map for
 the model it was fitted on (Q4); M7 ablates the fleet (research depth,
 head count, aggregation, model mix) and measures how many questions a
@@ -1626,6 +1630,9 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| Q6's live half, as pre-registered (M9) | 2 units in the committed ledgers, both in the control half, 0 resolved; the analysis is due when the odd-id half has 60 resolved binary questions or on 2027-03-31 | After each shadow or scored round: commit its ledger to `data/ledgers/`, then `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` where the bot token is blind) and `augur q6 && make results`; the block reports the paired comparisons once due |
+| Q6 at an n that can resolve it, on the wrong-side label | An AUROC of 0.6 needs about 250 questions; the policies need 95 to 1,063 for 0.01 Brier. C2 has 138 eligible questions, and C4 has one draw each | Three to five draws per question on C4's later sets (`AUGUR_FORECASTERS=3 augur backtest forecastbench --questions ... --ledger data/ledgers/m9-c4-draws.sqlite` per set; about 2,400 free calls over three days), a new pre-registration with the wrong-side label, then the same analysis |
+| The $0 shadow round: Augur and the real template, same free model, unpublished, on MiniBench 2026-11-30 (Q1, direction of 2026-11-22) | The round opens about 2026-11-30, after this milestone | During the round: `AUGUR_FORECAST_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free AUGUR_LEDGER=data/ledgers/m10-shadow-minibench.sqlite augur forecast --tournament minibench --coverage cov.json` (no `--submit`) each window, and `uv sync --extra baseline && augur baseline --ledger data/ledgers/m10-shadow-minibench.sqlite`; commit the ledger before resolution; after it, `augur resolve --ledger L` and `augur score L --mode live --cluster week`, labelled an unsubmitted shadow comparison on a below-floor model |
 | Q4's live arm: calibration fitted on the bot's own resolved live forecasts | 3 posted binary forecasts in the committed ledgers, 0 resolved; a bot token sees no resolution on scored tournaments (M4), and under the floor no scored forecast comes from the model the live calibrator was fitted on | Once live questions resolve: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL`), then `augur calibrate`; the harness counts them in its `live` field. A Spring 2027 measurement (PLAN.md) |
 | A calibrator for the frontier model that answers scored forecasts | The live map is fitted on the free model, and a frontier model's forecasts stay raw until it has resolved history. C4 cannot provide it: the release gate admits a model only on questions posed after its listing date, and the admitted routes are listed late (Claude Haiku 5.5 on OpenRouter 2026-10-07), so of C4 only the 2026-10-11 set would remain | Forecast later ForecastBench sets as they resolve (2026-10-25 onward), e.g. `AUGUR_FORECAST_MODELS=openrouter:anthropic/claude-haiku-5.5 AUGUR_FORECASTERS=1 augur backtest forecastbench --questions ... --ledger data/ledgers/m8-haiku.sqlite`, at about $0.0005 a call at its listed $0.10/$0.50 per million and C4's 570 input and 980 output tokens a call (paid: needs the maintainer's approval); or the live arm above |
 | Calibration with research, not only on the no-retrieval arm | Live forecasts are researched; a with-research corpus over nine sets is about 4,000 free calls (four days of the key's allowance) | `make backtest-q4` with `--retrieval open --queries ...` per set (M6's one pass), into a second ledger, then the harness on it |
