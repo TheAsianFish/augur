@@ -99,6 +99,7 @@ backtest-q4: ## Q4's corpus C4: eight ForecastBench sets, no retrieval, one draw
 		$(UV) run augur resolve --ledger $(Q4_LEDGER) \
 		--forecastbench data/forecastbench/$${s}_resolution_set.subset.json || exit 1; \
 	done
+	$(UV) run python scripts/resolution_times.py data/calibration/m8-resolution-times.json
 	$(MAKE) calibration results
 
 calibration: ## Q4: the calibrators, walk-forward and learning curve (data/calibration/)

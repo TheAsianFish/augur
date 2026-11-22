@@ -1256,15 +1256,20 @@ def render_calibration(root: Path) -> str:
     snap = json.loads(path.read_text(encoding="utf-8"))
     c, w, lc = snap["corpus"], snap["walk_forward"], snap["learning_curve"]
     fits = w["fits"]
+    ev = c["resolution_evidence"]
     out = [
         f"Corpus C4: {c['instances']} question instances ({c['markets']} markets) from "
         f"{len(c['sets'])} ForecastBench sets ({c['sets'][0]} to {c['sets'][-1]}), "
-        f"`{c['model']}`, no retrieval, one draw, base rate {c['base_rate']:.1%}. "
-        f"Walk-forward test (W): {w['instances']} instances ({w['markets']} markets, sets "
-        f"{w['sets'][0]} to {w['sets'][-1]}), each calibrated on every instance resolved "
-        f"before it opened ({fits[0]['n']} to {fits[-1]['n']} resolutions; the latest "
-        "resolution each fit saw is in the snapshot and is always before the day its "
-        "questions opened). Intervals: paired bootstrap over markets, 10,000 resamples.",
+        f"`{c['model']}`, no retrieval, one draw, base rate {c['base_rate']:.1%}. An outcome "
+        "counts as known on the later of ForecastBench's resolution date and the time the "
+        f"market's own API says it resolved: {ev['markets']} markets have that evidence, "
+        f"{ev['later_than_forecastbench']} of them resolved after ForecastBench's date, and "
+        f"the {ev['none']} without it ({ev['no_evidence_instances']} instances) are never "
+        f"trained on. Walk-forward test (W): {w['instances']} instances ({w['markets']} "
+        f"markets, sets {w['sets'][0]} to {w['sets'][-1]}), each calibrated on every outcome "
+        f"known before it opened ({fits[0]['n']} to {fits[-1]['n']}; the latest each fit saw "
+        "is in the snapshot, always before the day its questions opened). Intervals: paired "
+        "bootstrap over markets, 10,000 resamples.",
         "",
         "| Calibrator | Brier | Brier − raw | Log score − raw (higher is better) | Log score | "
         "ECE | Sharpness | Mean | Rule |",
@@ -1298,7 +1303,8 @@ def render_calibration(root: Path) -> str:
     out += [
         "",
         f"Learning curve (L): the same {lc['instances']} instances ({lc['markets']} markets) "
-        f"at every k, each calibrated on its k most recent resolutions before it opened. "
+        f"at every k, each calibrated on the k outcomes most recently known before it opened "
+        f"(the instances with at least {snap['method']['l_min']} known when they opened). "
         f"Raw Brier on them: {lc['raw_brier']:.3f}. Cells: Brier − raw [95% interval].",
         "",
         "| Resolutions used to fit (k) | " + " | ".join(CALIBRATOR_NAMES[n] for n in names) + " |",

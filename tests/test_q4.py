@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import random
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import date, timedelta
 
 import pytest
@@ -25,6 +26,7 @@ def _inst(key: str, opened: date, resolved: date, outcome: int, p: float) -> q4.
         question_set=opened.isoformat(),
         opened=opened,
         resolved=resolved,
+        known=resolved,
         outcome=outcome,
         p=p,
         price=0.5,
@@ -58,10 +60,23 @@ def test_history_is_strictly_before_the_open_day() -> None:
     assert [i.key for i in q4.history([a, same_day, later], D0 + timedelta(days=10))] == ["a"]
 
 
+def test_history_uses_the_market_s_own_resolution_time() -> None:
+    # ForecastBench says it resolved on day 3 (the close); the market says day 20.
+    late = replace(_inst("late", D0, D0 + timedelta(days=3), 1, 0.4), known=D0 + timedelta(days=20))
+    unknown = replace(_inst("infer", D0, D0 + timedelta(days=3), 0, 0.4), known=None)
+    opened = D0 + timedelta(days=10)
+    assert q4.history([late, unknown], opened) == []
+    with pytest.raises(LeakageError):
+        q4.check_time_order([late], opened)
+    with pytest.raises(LeakageError):
+        q4.check_time_order([unknown], opened)
+    assert q4.history([late], D0 + timedelta(days=21)) == [late]
+
+
 def test_check_time_order_refuses_a_later_resolution() -> None:
     train = [_inst("x", D0, D0 + timedelta(days=5), 1, 0.3)]
     q4.check_time_order(train, D0 + timedelta(days=6))
-    with pytest.raises(LeakageError, match="resolved on or after"):
+    with pytest.raises(LeakageError, match="not shown to be public before"):
         q4.check_time_order(train, D0 + timedelta(days=5))
 
 
@@ -158,5 +173,7 @@ def test_committed_snapshot_respects_the_time_order() -> None:
         assert fits
         for f in fits:
             assert f["latest_resolution"] < f["opened"]
+    evidence = snap["corpus"]["resolution_evidence"]
+    assert evidence["markets"] + evidence["none"] == snap["corpus"]["markets"]
     assert all(f["n"] >= q4.W_MIN for f in snap["walk_forward"]["fits"])
     assert {f["n"] for f in snap["learning_curve"]["fits"]} == {q4.KS[-1]}

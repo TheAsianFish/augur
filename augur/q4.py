@@ -9,8 +9,13 @@ set: a market posed in three sets is three instances, forecast three times,
 and the bootstrap resamples markets so those instances move together.
 
 The rule that makes it a backtest, and the one thing this module must never
-get wrong: **a test instance is calibrated only with instances that resolved
-before the day it opened** (resolution date < freeze date).
+get wrong: **a test instance is calibrated only with instances whose outcome
+was public before the day it opened.** The day an outcome became public is
+the later of ForecastBench's resolution date (often only the market's close)
+and the resolution time the market's own API reports
+(``scripts/resolution_times.py``, committed in :data:`RESOLUTION_TIMES`); an
+instance with no such evidence (INFER, which has no public API) is tested
+but never trained on.
 :func:`history` selects that history and :func:`check_time_order` refuses
 any fit that would see a later resolution; every fit is recorded with the
 latest resolution it saw, so the committed snapshot can be re-checked.
@@ -31,13 +36,14 @@ byte for byte, and ``augur report`` renders RESULTS.md from it.
 
 from __future__ import annotations
 
+import json
 import math
 import sqlite3
 import statistics
 from collections.abc import Callable, Hashable, Sequence
 from contextlib import closing
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +73,7 @@ LEDGER = Path("data/ledgers/m8-c4.sqlite")
 FIRST_SET_LEDGER = Path("data/ledgers/m5-replay-c2.sqlite")
 """2026-06-21 reuses member 0 of M5's C2 arm (b), the first draw C2 already reports."""
 SNAPSHOT = Path("data/calibration/m8-calibration.json")
+RESOLUTION_TIMES = Path("data/calibration/m8-resolution-times.json")
 
 W_MIN = 50
 L_MIN = 400
@@ -90,6 +97,9 @@ class Instance:
     question_set: str
     opened: date
     resolved: date
+    """ForecastBench's resolution date (often the market's close)."""
+    known: date | None
+    """The day the outcome was public, on the market's own evidence; ``None``: no evidence."""
     outcome: int
     p: float
     price: float | None
@@ -106,6 +116,7 @@ def load_corpus(root: Path) -> list[Instance]:
     corpus can never be scored as if it were whole.
     """
     out: list[Instance] = []
+    times = _known_times(root / RESOLUTION_TIMES)
     for qs in SETS:
         report = load_set(
             root / FORECASTBENCH / f"{qs}-llm.subset.json",
@@ -134,12 +145,30 @@ def load_corpus(root: Path) -> list[Instance]:
                     question_set=qs,
                     opened=q.freeze_datetime.date(),
                     resolved=q.resolution_date,
+                    known=_known(q.resolution_date, times.get(f"{q.source}:{q.fb_id}")),
                     outcome=q.outcome,
                     p=raw[q.question_id],
                     price=q.freeze_value,
                 )
             )
     return out
+
+
+def _known_times(path: Path) -> dict[str, date | None]:
+    if not path.exists():
+        raise CalibrationDataError(
+            f"no {path}; run python scripts/resolution_times.py {path} to record when each "
+            "market's outcome became public"
+        )
+    markets = json.loads(path.read_text(encoding="utf-8"))["markets"]
+    return {
+        key: None if m["known_at"] is None else datetime.fromisoformat(m["known_at"]).date()
+        for key, m in markets.items()
+    }
+
+
+def _known(resolution_date: date, evidence: date | None) -> date | None:
+    return None if evidence is None else max(resolution_date, evidence)
 
 
 def _aggregates(path: Path, name: str) -> dict[int, float]:
@@ -163,20 +192,18 @@ def _aggregates(path: Path, name: str) -> dict[int, float]:
 
 
 def history(instances: Sequence[Instance], opened: date) -> list[Instance]:
-    """Every instance resolved before ``opened``, oldest resolution first."""
-    return sorted(
-        (i for i in instances if i.resolved < opened),
-        key=lambda i: (i.resolved, i.opened, i.key),
-    )
+    """Every instance whose outcome was public before ``opened``, oldest first."""
+    known = [i for i in instances if i.known is not None and i.known < opened]
+    return sorted(known, key=lambda i: (i.known, i.opened, i.key))
 
 
 def check_time_order(train: Sequence[Instance], opened: date) -> None:
     """Refuse a fit that would see an outcome not known when the question opened."""
-    late = [i.key for i in train if i.resolved >= opened]
+    late = [i.key for i in train if i.known is None or i.known >= opened]
     if late:
         raise LeakageError(
-            f"{len(late)} training outcome(s) resolved on or after {opened} "
-            f"(first: {late[0]}); calibrate only on history resolved before a question opened"
+            f"{len(late)} training outcome(s) not shown to be public before {opened} "
+            f"(first: {late[0]}); calibrate only on outcomes known before a question opened"
         )
 
 
@@ -237,7 +264,7 @@ def walk_forward(
             Fit(
                 opened=day,
                 n=len(train),
-                latest_resolution=max(i.resolved for i in train),
+                latest_resolution=max(i.known for i in train if i.known is not None),
                 tests=len(group),
                 params={name: m.params() for name, m in maps.items()},
             )
@@ -474,6 +501,14 @@ def snapshot(root: Path) -> dict[str, Any]:
             "markets": len({i.market for i in corpus}),
             "base_rate": round(sum(i.outcome for i in corpus) / len(corpus), 4),
             "by_set": {qs: sum(1 for i in corpus if i.question_set == qs) for qs in SETS},
+            "resolution_evidence": {
+                "markets": len({i.market for i in corpus if i.known is not None}),
+                "later_than_forecastbench": len(
+                    {i.market for i in corpus if i.known is not None and i.known > i.resolved}
+                ),
+                "none": len({i.market for i in corpus if i.known is None}),
+                "no_evidence_instances": sum(1 for i in corpus if i.known is None),
+            },
         },
         "method": {
             "bootstrap": "paired, resampling markets, 10,000 resamples, seeded",
@@ -515,7 +550,7 @@ def live_calibrator(root: Path, snap: dict[str, Any]) -> dict[str, Any]:
     corpus = load_corpus(root)
     name = live_choice(snap)
     fitted = by_name(name).fit([i.p for i in corpus], [i.outcome for i in corpus])
-    latest = max(i.resolved for i in corpus)
+    latest = max(i.known or i.resolved for i in corpus)
     return {
         "model": MODEL,
         "fitted_on": f"M8 corpus C4: {len(corpus)} resolutions through {latest.isoformat()}, "
