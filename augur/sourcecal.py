@@ -175,8 +175,11 @@ def fit_logistic(
                 break
             scale /= 2.0
         else:
-            return beta, steps
-    return beta, steps
+            return beta, steps  # no step lowers the objective: at the optimum to rounding
+    raise CalibrationError(
+        f"the calibration fit did not converge in {max_iterations} Newton steps; "
+        "check the history for extreme or duplicated forecasts, or raise max_iterations"
+    )
 
 
 # -- the protocol ----------------------------------------------------------------

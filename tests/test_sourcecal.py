@@ -250,3 +250,10 @@ def test_unknown_or_incomplete_params_raise() -> None:
         sourced_from_params({"name": "platt-partial", "a": 1.0})
     with pytest.raises(CalibrationError, match="incomplete"):
         sourced_from_params({"name": "platt-by-source", "min_n": 30})
+
+
+def test_fit_logistic_refuses_a_fit_that_does_not_converge() -> None:
+    rows = [[float(x), 1.0] for x in range(-3, 4)]
+    targets = [0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9]
+    with pytest.raises(CalibrationError, match="did not converge"):
+        fit_logistic(rows, targets, [0.0, 0.0], max_iterations=1)

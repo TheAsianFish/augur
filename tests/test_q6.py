@@ -406,6 +406,45 @@ def test_live_units_selects_the_pre_registered_units(tmp_path: Path) -> None:
     assert units[1].outcome is None
 
 
+def test_live_units_take_the_earliest_run_across_ledgers_and_the_latest_resolution(
+    tmp_path: Path,
+) -> None:
+    clock = FixedClock(T0)
+    (tmp_path / "data/ledgers").mkdir(parents=True)
+    three = [(0.6, "a"), (0.7, "a"), (0.8, "a")]
+    # "a-2" sorts before "a.", but its run starts later: the earlier ledger's run counts.
+    with Ledger.open(tmp_path / "data/ledgers/a.sqlite", clock) as led:
+        _add_run(led, mode=RunMode.DRY_RUN, tournament="minibench", questions={1: three})
+        led.record_resolution(
+            question_id=1,
+            post_id=1001,
+            question_type="binary",
+            status="resolved",
+            value="yes",
+            resolved_at=T0,
+            source="manual",
+            evidence="e",
+        )
+    clock.advance(60)
+    with Ledger.open(tmp_path / "data/ledgers/a-2.sqlite", clock) as led:
+        _add_run(led, mode=RunMode.DRY_RUN, tournament="minibench", questions={1: [(0.1, "a")] * 3})
+        clock.advance(60)
+        led.record_resolution(  # a later annulment removes the earlier outcome
+            question_id=1,
+            post_id=1001,
+            question_type="binary",
+            status="annulled",
+            value=None,
+            resolved_at=T0,
+            source="manual",
+            evidence="e",
+        )
+    (unit,) = q6.live_units(tmp_path)
+    assert unit.ledger == "a.sqlite"
+    assert unit.draws == (0.6, 0.7, 0.8)
+    assert unit.outcome is None
+
+
 def test_live_units_without_ledgers_is_empty(tmp_path: Path) -> None:
     assert q6.live_units(tmp_path) == []
 

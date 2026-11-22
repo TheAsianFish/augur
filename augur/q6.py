@@ -666,29 +666,39 @@ def live_units(root: Path) -> list[LiveUnit]:
     """Every pre-registered unit in the committed ledgers (PLAN.md, the live test).
 
     The first single-model binary forecast with at least three draws per
-    question counts, across ledgers in name order and runs in start order.
+    question counts: the eligible run that started earliest, across every
+    ledger. A question's outcome is its latest resolution row by recording
+    time over every ledger, so a later annulment removes an earlier outcome.
+    The split uses the question id (the id of the question inside a
+    Metaculus post, not the post id).
     """
-    seen: dict[int, LiveUnit] = {}
-    outcomes: dict[int, int] = {}
+    seen: dict[int, tuple[str, LiveUnit]] = {}
+    latest: dict[int, tuple[str, int | None]] = {}
     for path in sorted((root / LEDGERS).glob("*.sqlite")):
         with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}
             if not {"runs", "forecasts", "questions", "llm_calls"} <= tables:
                 continue
             if "resolutions" in tables:
-                for qid, status, value, qtype in conn.execute(
-                    "SELECT question_id, status, value, question_type FROM resolutions "
-                    "ORDER BY recorded_at"
+                for qid, status, value, qtype, at in conn.execute(
+                    "SELECT question_id, status, value, question_type, recorded_at FROM resolutions"
                 ):
-                    if status == "resolved" and qtype == "binary" and value is not None:
-                        outcomes[int(qid)] = binary_outcome(str(value))
+                    if qtype != "binary":
+                        continue
+                    y = (
+                        binary_outcome(str(value))
+                        if status == "resolved" and value is not None
+                        else None
+                    )
+                    if int(qid) not in latest or str(at) >= latest[int(qid)][0]:
+                        latest[int(qid)] = (str(at), y)
             marks = ", ".join("?" for _ in LIVE_MODES)
             runs = conn.execute(
-                f"SELECT run_id, tournament FROM runs WHERE mode IN ({marks}) "  # noqa: S608
-                "ORDER BY started_at",
+                f"SELECT run_id, tournament, started_at FROM runs "  # noqa: S608
+                f"WHERE mode IN ({marks}) ORDER BY started_at",
                 LIVE_MODES,
             ).fetchall()
-            for run_id, tournament in runs:
+            for run_id, tournament, started in runs:
                 if not _eligible_tournament(str(tournament)):
                     continue
                 rows: dict[int, list[tuple[float, str]]] = {}
@@ -704,23 +714,36 @@ def live_units(root: Path) -> list[LiveUnit]:
                     rows.setdefault(int(qid), []).append((float(p), str(model)))
                 for qid, ds in rows.items():
                     models = {m for _, m in ds}
-                    if qid in seen or len(ds) < LIVE_MIN_DRAWS or len(models) != 1:
+                    if len(ds) < LIVE_MIN_DRAWS or len(models) != 1:
+                        continue
+                    if qid in seen and seen[qid][0] <= str(started):
                         continue
                     (opened,) = conn.execute(
                         "SELECT open_time FROM questions WHERE run_id = ? AND question_id = ?",
                         (run_id, qid),
                     ).fetchone()
-                    seen[qid] = LiveUnit(
-                        path.name,
-                        qid,
-                        datetime.fromisoformat(str(opened)).date(),
-                        models.pop(),
-                        tuple(p for p, _ in ds),
-                        None,
+                    seen[qid] = (
+                        str(started),
+                        LiveUnit(
+                            path.name,
+                            qid,
+                            datetime.fromisoformat(str(opened)).date(),
+                            models.pop(),
+                            tuple(p for p, _ in ds),
+                            None,
+                        ),
                     )
+    units = sorted((u for _, u in seen.values()), key=lambda u: u.question_id)
     return [
-        LiveUnit(u.ledger, u.question_id, u.opened, u.model, u.draws, outcomes.get(u.question_id))
-        for u in sorted(seen.values(), key=lambda u: u.question_id)
+        LiveUnit(
+            u.ledger,
+            u.question_id,
+            u.opened,
+            u.model,
+            u.draws,
+            latest[u.question_id][1] if u.question_id in latest else None,
+        )
+        for u in units
     ]
 
 
