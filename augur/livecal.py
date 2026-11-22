@@ -4,8 +4,11 @@ Calibration is a property of one forecaster. A map fitted on one model's
 resolved history says nothing about another model's forecasts, so the live
 calibrator names its model and is applied to a binary aggregate only when
 every member that answered came from that model; otherwise the forecast is
-left raw and the reason is recorded. It is applied after the members are
-combined and before the exact-price blend.
+left raw. It is applied after the members are combined and before the
+exact-price blend. The aggregate row then holds the calibrated probability,
+with the raw one in its ``method``; a later fit on live history must use
+the raw value (or recompute it from the member rows), never the
+calibrated one.
 
 The fitted map is committed as JSON beside this module
 (``live_calibrator.json``), written by ``augur calibrate`` from every
