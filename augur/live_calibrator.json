@@ -1,0 +1,11 @@
+{
+ "fitted_on": "M8 corpus C4: 926 resolutions through 2026-11-15, no retrieval, one draw",
+ "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+ "params": {
+  "a": 0.3229284237999061,
+  "b": -0.1752020291772003,
+  "iterations": 72,
+  "n": 926,
+  "name": "platt"
+ }
+}

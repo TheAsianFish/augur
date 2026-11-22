@@ -330,6 +330,111 @@ beside it. P17 failed on extremizing alone, a loss. No variant passed
 the replacement rule, so the live default is unchanged: one pass, five
 forecasters, the median, one model.
 
+**M8's predictions and decision rule, committed 2026-11-22 before any
+M8 run.** Q4's prediction above stands unedited; this fixes how it is
+tested. It was written before M5 measured this model; C2 since showed the
+free model near always-50% without retrieval (Brier 0.240 against 0.250),
+so I now expect a fitted line to help, and say so as P19 beside it.
+
+The design:
+
+- **Corpus C4:** nine ForecastBench sets, 2026-06-21 to 2026-10-11
+  (freezes 2026-06-11 to 2026-10-09), every market question the loader
+  keeps for a model listed 2026-06-04 (resolved to 0 or 1 in the
+  resolution sets as fetched 2026-11-22): 930 question instances. A
+  market posed in several sets is one instance per set; the bootstrap
+  resamples markets, so its instances move together.
+- **Forecaster:** `nvidia/nemotron-3-ultra-550b-a55b:free`, no retrieval,
+  one draw per instance. 2026-06-21 reuses member 0 of M5's C2 arm (b)
+  (the first draw, as C2 already reports it); the eight later sets are
+  new runs (792 free calls, inside one day's 1,000). Calibration is a
+  property of one forecaster, so every instance comes from the same model
+  and arm.
+- **Time order:** a test instance may be calibrated only with instances
+  whose resolution date is before the day it opened (resolution date <
+  freeze date). The harness enforces it and a test fails if any fit
+  sees a later resolution.
+- **Calibrators**, all on the aggregate, outputs clipped to [0.01, 0.99]
+  as the aggregator clips: raw (identity); fixed extremizing (log-odds ×
+  1.5, M5's factor, not fitted); Platt (a logistic regression of the
+  outcome on the log-odds, maximum likelihood with Platt's smoothed
+  targets); isotonic (pool adjacent violators, a step function); and, as
+  the reference any calibrator must beat to show the forecasts carry
+  information, the history's base rate ((yes + 1) / (n + 2)), which
+  ignores the forecast.
+- **Walk-forward test (W):** every instance with at least 50 resolutions
+  before it opened (sets 2026-07-19 to 2026-10-11, 673 instances), each
+  calibrated on all resolutions before it opened (68 to 670).
+- **Learning curve (L):** the instances with at least 400 resolutions
+  before they opened (sets 2026-09-13 to 2026-10-11, 206 instances), each
+  calibrated on the k most recent resolutions before it opened, k = 25,
+  50, 100, 200, 400; the same 206 at every k.
+- **Metrics:** Brier and log score; paired differences against raw with
+  a bootstrap over markets (10,000 resamples, fixed seed); expected
+  calibration error on 10 equal-mass bins; sharpness (the standard
+  deviation of the forecasts) beside it; the reliability diagram; and the
+  edge over ForecastBench's recorded freeze-time price, reported apart for
+  Polymarket and Manifold (prices the bot can read) and for Metaculus and
+  INFER (hidden from it live).
+- **Live:** the same harness on the committed ledgers' resolved live
+  binary questions; on 2026-11-22 a bot token sees no resolution (M4), so
+  this is expected to be a count of 0.
+
+Predictions:
+
+| # | Prediction |
+|---|------------|
+| P18 | Q4 as written, on L: with fewer than 200 resolutions (k = 25, 50, 100) neither Platt nor isotonic has an interval of Brier(cal) − Brier(raw) wholly below 0, and isotonic's point estimate is worse than Platt's at each k. |
+| P19 | On W, Platt improves Brier over raw by at least 0.02 with an interval wholly below 0, and at least halves raw's calibration error; isotonic's interval is also below 0. |
+| P20 | Fixed extremizing at 1.5 is worse than raw on W, with an interval wholly above 0. |
+| P21 | On L, Platt's gain at k = 50 is at least half its gain at k = 400. |
+| P22 | On W, Platt beats the history's base rate (point estimate), with an interval that includes 0. |
+
+**Decision rule.** M7's replacement rule: a calibrator replaces raw as the
+live default only if its paired interval of Brier(cal) − Brier(raw) on W
+lies wholly below 0 (no calibrator makes a model call, so none wins on
+cost). If more than one passes, the lower point estimate wins. A
+calibrator is a property of the model that was fitted: the live default
+is then that calibrator fitted on all of C4, applied only to binary
+aggregates whose forecast came from that model, before the exact-price
+blend; forecasts from any other model (every scored-tournament forecast,
+under the floor) stay raw until that model has its own resolved history.
+What W cannot say: it is one free model with no retrieval; live
+forecasts have research and, where a price exists, the blend.
+
+**M8's results (2026-11-22; RESULTS.md, the predictions above unedited).**
+C4 holds 926 instances, not 930 (three questions never gave a parseable
+answer, one 2026-06-21 question has no member 0), so W is 671, not 673.
+The rule "resolution date < freeze date" was first applied to
+ForecastBench's resolution date. Review found that date is often only the
+market's close: 239 of 536 markets became public later, by their own APIs.
+The harness now takes the later of the two (INFER, with no API, is never
+trained on), and the corrected reading is the reported one. It leaves W
+as it was and shrinks L from 206 to 130 instances. Verdicts on the
+corrected reading: P18 failed on both parts (isotonic's interval clears 0
+at k = 100, [−0.077, −0.006], and isotonic beats Platt at k = 25 and 50).
+As first read, its first part had held. P19 held (Platt −0.022 [−0.037,
+−0.007]; calibration error 0.152 → 0.069; isotonic −0.018 [−0.030,
+−0.007]). P20 held (extremizing +0.015 [+0.010, +0.020]). P21 failed
+(Platt's gain 0.018 at k = 50 against 0.057 at 400). P22 failed the other
+way: Platt beats the history's base rate with an interval that excludes 0
+(−0.024 [−0.038, −0.009]), so the forecasts carry information once
+rescaled. Q4 as written: about 200 resolutions is right for Platt (first
+interval clear of 0 at 200) and too pessimistic for isotonic (100), and
+isotonic is not worse than Platt at small k. Under the decision rule
+Platt replaces raw for this model's binary forecasts: slope 0.32 and
+intercept −0.18 in log-odds, fitted on all 926 (`augur/live_calibrator.json`).
+Under the floor no scored forecast comes from this model, so the change
+reaches dry runs and the bot-testing-area only. The live arm has 3 posted
+binary forecasts and 0 resolved: nothing to fit. Found in review, after the
+verdicts: split by source, the whole gain is on Polymarket and Manifold
+(Platt −0.044 [−0.063, −0.026], 480 instances); on the 191 Metaculus
+questions, the nearest to MiniBench, Platt is worse than raw (+0.035
+[+0.013, +0.054]), because the pooled map pulls a 17% base-rate group
+toward 35%. The rule was on W as a whole, so the decision stands; a
+source-conditioned map is a candidate for a later milestone, prediction
+first.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
@@ -442,7 +547,7 @@ flowchart LR
 | `augur/leakage.py` | The gate. Admits a source only if its date evidence is at or before the cutoff; refuses undated sources in backtests; refuses a model whose release date is not before the question's open date. Everything it rejects is logged with the reason. |
 | `augur/agents/` | `researcher` (plans queries, reads, writes a brief that cites source ids), `forecaster` (prompt variants: outside view, inside view, sceptic), `parser` (structured output into a typed forecast). |
 | `augur/aggregate.py` | Median, trimmed mean, mean of log-odds, extremized log-odds; for numeric questions, a mixture of CDFs; for multiple choice, normalised per-option aggregates. |
-| `augur/calibrate.py` | Calibrators fitted on resolved history: identity, fixed extremizing, Platt (a line in log-odds), isotonic (pool adjacent violators), with a time-ordered fitting harness. |
+| `augur/calibrate.py`, `augur/q4.py`, `augur/livecal.py` | Calibrators fitted on resolved history: identity, fixed extremizing, the history's base rate, Platt (a line in log-odds), isotonic (pool adjacent violators); the time-ordered harness (walk-forward and learning curve) that fits each question only on outcomes resolved before it opened; the live map, keyed by the model it was fitted on. |
 | `augur/score.py` | Brier, log score, Metaculus baseline score, head-to-head and peer score for all question types; paired, question-clustered bootstrap; minimum detectable effect. |
 | `augur/ledger.py` | Append-only SQLite store and its JSONL export. Nothing is updated in place; a resolution is a new row. |
 | `augur/backtest.py` | Runs the same orchestrator with the clock pinned to each question's open date and submission disabled. |
@@ -689,9 +794,37 @@ documented ones.
 - [x] M5: Market prices, the community prior, and evaluating the bot that ships — the `markets` searcher: the Metaculus community prediction where the API exposes it, and similar questions on Polymarket, Manifold and Kalshi through their public APIs, each price taken as of the cutoff with the trade or candle timestamp as its date evidence, so `tests/test_leakage.py` covers prices too; the replay evaluation: re-forecasting resolved live questions from the sources the ledger recorded, under alternative settings (with and without market prices, research depth, number of forecasters, aggregation rule), on the hosted models actually used live, with paired bootstrap intervals and the detectable effect at its n. Done when RESULTS.md holds the replay table labelled by model, with the market searcher's effect answered against the Frontier table's survey signal (checking similar markets, r = 0.34), the live default changed only under the replacement rule in M7, and a fake-server test proving a price dated after the cutoff is rejected.
 - [x] M6: The leakage-proof backtest and what leakage is worth (Q2) — the resolved-question loader (past tournaments by API, ForecastBench sets without a token) with its eligibility filters; the model registry's release dates enforced; the `wayback` searcher (capture at or before the instant; the CDX `to=` bound is inclusive of the whole day, so the capture timestamp is compared, not the query); `augur backtest` with the clock pinned to each open date; the three-arm experiment (no retrieval, as of open, as of today) on the same questions, with the prediction above; a bounded research loop in the researcher (search, read, write down a belief and what is unknown, choose the next query, stop after a fixed number of steps or the question's deadline), measured against the one-pass brief on the same backtest with its cost and latency (direction of 2026-11-20); in `augur standings`, every template bot by model, the agent-against-template difference for every model pair, and a proposed floor re-based on the latest round (a model is admitted only if its template's average is at or above 0) with the worst-case cost of a 60-question round on each admitted route, for the maintainer to approve; an LLM judge using the published 0 to 4 leakage rubric on admitted sources, with a hand-labelled sample to check the judge. Every finding is labelled with its model. Done when `tests/test_leakage.py` passes on the committed backtest ledger and fails on a planted violation of each kind (late source, undated source, model too new), RESULTS.md holds the three arms with paired intervals, the residual leak rate and the judge's agreement with the hand labels, and the published 0.242 to 0.108 gap is shown beside mine with the protocol differences stated. (Amended 2026-11-20: scoring the judge's 40-source sample by hand needs a person, which the build environment does not have. The blind sheet and a checked step that installs the filled labels are built and tested; RESULTS.md reports the judge against a provisional second-model rating, labelled as such, P9 reads "not yet tested" until the hand labels are installed, and the exact steps are under To measure.)
 - [x] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
-- [ ] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
+- [x] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
 - [ ] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
 - [ ] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
+
+**Plan changes, 2026-11-22 (M8, decided while building it).**
+
+- *The backtest corpus is ForecastBench, nine sets, no retrieval.* A
+  time-ordered fit needs questions that opened on different days; the
+  committed corpora each opened on one day, past Metaculus tournaments
+  show a bot token no resolutions (M6), and a with-research run of nine
+  sets is about 4,000 calls. One draw a question kept the eight new sets
+  inside one day's free allowance (802 of 1,000 calls).
+- *The sets ran as eight processes, one per set, each with its own
+  ledger*, merged afterwards with `augur ledger import`: the backtest runs
+  questions one at a time, and its pinned clock is shared, so running
+  questions concurrently inside one process would need a clock per
+  question.
+- *An outcome's date is evidence from the market, not ForecastBench's
+  resolution date*, which is often the close. A review found the first
+  reading's fits had seen outcomes not yet public; the market APIs'
+  resolution times are committed and the harness uses the later date, as
+  sources are admitted on evidence for their date.
+- *Calibration is per model.* The live map carries the name of the model
+  it was fitted on and leaves every other model's forecasts raw, rather
+  than one map for the bot: a map fitted on a free model's history says
+  nothing about a frontier model's forecasts.
+- *The calibrators ship with simple, correct fits* (gradient descent for
+  Platt, a restarting pool-adjacent-violators scan for isotonic), checked
+  against an independent reference in the tests, with two strict expected
+  failures that a second-order Platt fit and a one-pass isotonic fit
+  would pass. Neither changes a reported number at C4's size.
 
 **Plan changes, 2026-11-21 (M7, decided while building it).**
 

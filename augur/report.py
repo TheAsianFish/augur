@@ -1229,6 +1229,176 @@ def render_power(root: Path) -> str:
     return "\n".join(out) + "\n"
 
 
+# -- calibration (Q4, M8) ------------------------------------------------------
+
+CALIBRATION_PATH = Path("data/calibration/m8-calibration.json")
+CALIBRATOR_NAMES = {
+    "raw": "raw (the default)",
+    "extremize-1.5": "fixed extremizing, ×1.5",
+    "base-rate": "history's base rate (ignores the forecast)",
+    "platt": "Platt",
+    "isotonic": "isotonic",
+}
+
+
+def _sd(e: dict[str, Any], digits: int = 3) -> str:
+    return f"{e['mean']:+.{digits}f} [{e['low']:+.{digits}f}, {e['high']:+.{digits}f}]"
+
+
+def _cd(e: dict[str, Any], digits: int = 3) -> str:
+    return f"{e['mean']:.{digits}f} [{e['low']:.{digits}f}, {e['high']:.{digits}f}]"
+
+
+def render_calibration(root: Path) -> str:
+    path = root / CALIBRATION_PATH
+    if not path.exists():
+        return "The calibration experiment has not been run (`augur calibrate`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    c, w, lc = snap["corpus"], snap["walk_forward"], snap["learning_curve"]
+    fits = w["fits"]
+    ev = c["resolution_evidence"]
+    out = [
+        f"Corpus C4: {c['instances']} question instances ({c['markets']} markets) from "
+        f"{len(c['sets'])} ForecastBench sets ({c['sets'][0]} to {c['sets'][-1]}), "
+        f"`{c['model']}`, no retrieval, one draw, base rate {c['base_rate']:.1%}. An outcome "
+        "counts as known on the later of ForecastBench's resolution date and the time the "
+        f"market's own API says it resolved: {ev['markets']} markets have that evidence, "
+        f"{ev['later_than_forecastbench']} of them resolved after ForecastBench's date, and "
+        f"the {ev['none']} without it ({ev['no_evidence_instances']} instances) are never "
+        f"trained on. Walk-forward test (W): {w['instances']} instances ({w['markets']} "
+        f"markets, sets {w['sets'][0]} to {w['sets'][-1]}), each calibrated on every outcome "
+        f"known before it opened ({fits[0]['n']} to {fits[-1]['n']}; the latest each fit saw "
+        "is in the snapshot, always before the day its questions opened). Intervals: paired "
+        "bootstrap over markets, 10,000 resamples.",
+        "",
+        "| Calibrator | Brier | Brier − raw | Log score − raw (higher is better) | Log score | "
+        "ECE | Sharpness | Mean | Rule |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for r in w["rows"]:
+        raw = r["calibrator"] == "raw"
+        out.append(
+            f"| {CALIBRATOR_NAMES.get(r['calibrator'], r['calibrator'])} | {_cd(r['brier'])} | "
+            f"{'—' if raw else _sd(r['vs_raw_brier'])} | "
+            f"{'—' if raw else _sd(r['vs_raw_log'])} | {r['log']:.3f} | {r['ece']:.3f} | "
+            f"{r['sharpness']:.3f} | {r['mean']:.3f} | {r['verdict'] or '—'} |"
+        )
+    out += [
+        "",
+        "Edge over the price (Brier of the forecast minus Brier of ForecastBench's recorded "
+        "price at the freeze, on the same instances; below 0 would beat the price). "
+        "*Readable*: Polymarket and Manifold, whose prices the bot can read live; "
+        "*hidden*: Metaculus and INFER, whose prices it cannot. Brier − raw is the "
+        "calibrator's effect within the group, from the same walk-forward fits on the pooled "
+        "history.",
+        "",
+        "| Calibrator | Prices | n | Base rate | Price's Brier | Edge over the price "
+        "| Brier − raw |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for e in w["edge"]:
+        effect = "—" if e["calibrator"] == "raw" else _sd(e["vs_raw_brier"])
+        out.append(
+            f"| {CALIBRATOR_NAMES.get(e['calibrator'], e['calibrator'])} | {e['group']} | "
+            f"{e['n']} | {e['base_rate']:.1%} | {e['price_brier']:.3f} | {_sd(e['edge'])} "
+            f"| {effect} |"
+        )
+    ks = sorted({int(r["k"]) for r in lc["rows"]})
+    names = [n for n in CALIBRATOR_NAMES if n not in ("raw", "extremize-1.5")]
+    out += [
+        "",
+        f"Learning curve (L): the same {lc['instances']} instances ({lc['markets']} markets) "
+        f"at every k, each calibrated on the k outcomes most recently known before it opened "
+        f"(the instances with at least {snap['method']['l_min']} known when they opened). "
+        f"Raw Brier on them: {lc['raw_brier']:.3f}. Cells: Brier − raw [95% interval].",
+        "",
+        "| Resolutions used to fit (k) | " + " | ".join(CALIBRATOR_NAMES[n] for n in names) + " |",
+        "|---|" + "---|" * len(names),
+    ]
+    cells = {(int(r["k"]), r["calibrator"]): r for r in lc["rows"]}
+    for k in ks:
+        out.append(
+            f"| {k} | " + " | ".join(_sd(cells[(k, n)]["vs_raw_brier"]) for n in names) + " |"
+        )
+    rows = {r["calibrator"]: r for r in w["rows"]}
+    shown = [n for n in ("raw", "platt", "isotonic") if n in rows]
+    out += [
+        "",
+        "![Reliability diagram, walk-forward test](data/calibration/m8-calibration.svg)",
+        "",
+        "The diagram's points (W, ten equal-mass bins): mean forecast → share resolved Yes.",
+        "",
+        "| Bin | " + " | ".join(CALIBRATOR_NAMES[n] for n in shown) + " |",
+        "|---|" + "---|" * len(shown),
+    ]
+    for b in range(len(rows["raw"]["bins"])):
+        out.append(
+            f"| {b + 1} | "
+            + " | ".join(
+                f"{rows[n]['bins'][b]['mean_p']:.2f} → {rows[n]['bins'][b]['freq']:.2f} "
+                f"(n {rows[n]['bins'][b]['n']})"
+                for n in shown
+            )
+            + " |"
+        )
+    live = snap["live"]
+    out += [
+        "",
+        f"Live: {live['binary_forecasts']} posted binary forecasts in the committed ledgers, "
+        f"{live['resolved']} with a resolution the ledger holds, so the live arm has nothing "
+        "to fit or test yet.",
+        "",
+        *_q4_verdicts(snap),
+    ]
+    return "\n".join(out) + "\n"
+
+
+def _q4_verdicts(snap: dict[str, Any]) -> list[str]:
+    w = {r["calibrator"]: r for r in snap["walk_forward"]["rows"]}
+    lc = {(int(r["k"]), r["calibrator"]): r for r in snap["learning_curve"]["rows"]}
+    small = [k for k in (25, 50, 100) if (k, "platt") in lc]
+    none_win = all(
+        lc[(k, n)]["vs_raw_brier"]["high"] >= 0.0 for k in small for n in ("platt", "isotonic")
+    )
+    iso_worse = all(
+        lc[(k, "isotonic")]["vs_raw_brier"]["mean"] > lc[(k, "platt")]["vs_raw_brier"]["mean"]
+        for k in small
+    )
+    platt, iso = w["platt"]["vs_raw_brier"], w["isotonic"]["vs_raw_brier"]
+    halved = w["platt"]["ece"] <= w["raw"]["ece"] / 2
+    ext = w["extremize-1.5"]["vs_raw_brier"]
+    g50 = -lc[(50, "platt")]["vs_raw_brier"]["mean"]
+    g400 = -lc[(400, "platt")]["vs_raw_brier"]["mean"]
+    pb = snap["walk_forward"]["platt_vs_base_rate"]
+    winners = [n for n, r in w.items() if n != "raw" and r["vs_raw_brier"]["high"] < 0.0]
+    best = min(winners, key=lambda n: w[n]["vs_raw_brier"]["mean"]) if winners else None
+    return [
+        "Predictions stated in PLAN.md before the run:",
+        "",
+        f"- P18 (Q4 as written: with k = 25, 50 and 100, no interval of Platt or isotonic "
+        f"against raw wholly below 0: {_held(none_win)}; isotonic worse than Platt at each k: "
+        f"{_held(iso_worse)}).",
+        f"- P19 (on W, Platt at least 0.02 better than raw with the interval below 0: "
+        f"{_held(platt['mean'] <= -0.02 and platt['high'] < 0.0)} ({_sd(platt)}); halves "
+        f"raw's ECE: {_held(halved)} ({w['raw']['ece']:.3f} → {w['platt']['ece']:.3f}); "
+        f"isotonic's interval below 0: {_held(iso['high'] < 0.0)} ({_sd(iso)})).",
+        f"- P20 (extremizing ×1.5 worse than raw, interval above 0): "
+        f"{_held(ext['low'] > 0.0)} ({_sd(ext)}).",
+        f"- P21 (Platt's gain at k = 50 at least half its gain at k = 400): "
+        f"{_held(g400 > 0 and g50 >= g400 / 2)} ({g50:+.3f} against {g400:+.3f}).",
+        f"- P22 (Platt beats the history's base rate, interval including 0): "
+        f"{_held(pb['mean'] < 0.0 and pb['low'] <= 0.0 <= pb['high'])} "
+        f"(Platt − base rate {_sd(pb)}).",
+        "",
+        "Decision (M7's replacement rule on W): "
+        + (
+            f"**{CALIBRATOR_NAMES[best]}** replaces raw for this model's binary forecasts."
+            if best
+            else "no calibrator's interval lies below 0; raw stays."
+        ),
+    ]
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -1241,6 +1411,7 @@ BLOCKS: dict[str, Block] = {
         Block("leakage", render_leakage),
         Block("fleet", render_fleet),
         Block("power", render_power),
+        Block("calibration", render_calibration),
     )
 }
 

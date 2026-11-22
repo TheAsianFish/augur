@@ -13,7 +13,7 @@ from pathlib import Path
 
 import httpx
 
-from augur import baseline, report, scorecard, standings
+from augur import baseline, diagram, livecal, q4, report, scorecard, standings
 from augur.backtest import (
     PLAN_SUFFIX,
     PinnedClock,
@@ -115,6 +115,13 @@ def _parser() -> argparse.ArgumentParser:
         default=LIVE_BLEND,
         help="blend a binary forecast with the question's own community prediction, when the "
         "markets searcher finds it, one third to two thirds in log-odds (on by default since M5)",
+    )
+    fc.add_argument(
+        "--calibrate",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="apply the live calibrator (augur/live_calibrator.json) to binary forecasts from "
+        "the model it was fitted on; other models' forecasts stay raw (M8)",
     )
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
@@ -325,6 +332,21 @@ def _parser() -> argparse.ArgumentParser:
         "--check", action="store_true", help="exit 1 if the committed file differs from a re-run"
     )
 
+    cal = sub.add_parser(
+        "calibrate",
+        help="Q4: raw against fixed extremizing, Platt and isotonic, fitted only on history "
+        "that resolved before each question opened",
+        description=(
+            "Score M8's calibrators on corpus C4 (walk-forward and learning curve) and write "
+            "the snapshot RESULTS.md renders from, with the reliability diagram beside it. "
+            "Offline, free, deterministic."
+        ),
+    )
+    cal.add_argument("--out", type=Path, default=q4.SNAPSHOT)
+    cal.add_argument(
+        "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
+    )
+
     standings.add_parser(sub)
     baseline.add_parser(sub)
 
@@ -386,6 +408,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                 out=sys.stdout,
                 probe_providers=probe_providers,
                 blend_exact_price=bool(args.markets and args.blend),
+                calibrator=livecal.load_live() if args.calibrate else None,
             )
             try:
                 report = await run.run(
@@ -794,6 +817,31 @@ def _power(args: argparse.Namespace) -> int:
     return 0
 
 
+def _calibrate(args: argparse.Namespace) -> int:
+    out: Path = args.out
+    snap = q4.snapshot(Path.cwd())
+    files = {
+        out: json.dumps(snap, indent=1, sort_keys=True) + "\n",
+        out.with_suffix(".svg"): diagram.reliability_svg(snap),
+        livecal.LIVE_PATH: json.dumps(
+            q4.live_calibrator(Path.cwd(), snap), indent=1, sort_keys=True
+        )
+        + "\n",
+    }
+    if args.check:
+        stale = [p for p, text in files.items() if not p.exists() or p.read_text("utf-8") != text]
+        for p in stale:
+            print(f"{p} differs from a fresh run; run augur calibrate")
+        if not stale:
+            print(f"{out}, its diagram and the live calibrator match a fresh run")
+        return 1 if stale else 0
+    out.parent.mkdir(parents=True, exist_ok=True)
+    for p, text in files.items():
+        p.write_text(text, encoding="utf-8")
+        print(f"wrote {p}")
+    return 0
+
+
 def _report(args: argparse.Namespace) -> int:
     path: Path = args.path
     if not path.exists():
@@ -852,6 +900,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _report(args)
         if args.command == "power":
             return _power(args)
+        if args.command == "calibrate":
+            return _calibrate(args)
         if args.ledger_command == "import":
             result = import_exports(args.paths, args.out, SystemClock())
             dupes = sum(result.duplicates.values())

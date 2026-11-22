@@ -1,8 +1,8 @@
 # Augur
 
-**Status: in progress.** M7 of 10 (a configurable fleet, an ablation of
-what carries the score, and how many questions it takes to tell); see
-[PLAN.md](PLAN.md).
+**Status: in progress.** M8 of 10 (calibration learned from 926 resolved
+questions, each calibrated only on what had resolved before it opened);
+see [PLAN.md](PLAN.md).
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -105,7 +105,8 @@ flowchart LR
   GATE -->|admitted only| BRIEF[one-pass brief, a second pass<br/>on sub-questions, or the loop]
   BRIEF --> FC[forecaster fleet<br/>5 draws by default; stances<br/>and models per member]
   FC --> MED[combine by type<br/>median by default; trimmed,<br/>log-odds, extremized]
-  MED --> VALID{Metaculus's<br/>validity rules}
+  MED --> CAL[calibrator<br/>Platt map, only for the<br/>model it was fitted on]
+  CAL --> VALID{Metaculus's<br/>validity rules}
   VALID --> CHECK{who answered<br/>in the tier?}
   CHECK -->|yes, or practice area| OUT[forecast + private comment<br/>posted or printed]
   ROUTER -.-> RES & FC
@@ -120,7 +121,9 @@ flowchart LR
   BT[augur backtest<br/>clock pinned to open,<br/>or as of now: unrestricted] --> RES
   LED --> JUDGE[augur judge<br/>0-4 leakage rubric]
   JUDGE --> LED
-  SCORE & STAND --> REPORT[augur report<br/>RESULTS.md blocks, drift test]
+  LED --> Q4[augur calibrate<br/>walk-forward: fit only on<br/>outcomes known at open]
+  Q4 -.->|live map| CAL
+  SCORE & STAND & Q4 --> REPORT[augur report<br/>RESULTS.md blocks, drift test]
 ```
 
 | Module | Job |
@@ -134,6 +137,7 @@ flowchart LR
 | `augur/agents/` | Researcher (one pass; a second pass that searches the sub-questions that would most change the answer; or a bounded loop that writes a belief and what is still unknown and picks the next query), forecaster draws with per-member stances and model chains, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
 | `augur/fleet.py`, `augur/aggregate.py` | The fleet plan from settings (research passes, member stances and models) and `bounded_map`, which runs questions in parallel with a fixed bound; aggregation rules for every question type (median, trimmed mean, mean of log-odds, extremized log-odds). |
 | `augur/redraw.py`, `augur/q3.py`, `augur/power.py` | Q3's ablation: new draws or another model on an arm's recorded briefs (each rebuilt request checked against the recorded hash), the depth, head-count, aggregation and model-mix tables, and the planted-effect power simulation. |
+| `augur/calibrate.py`, `augur/q4.py`, `augur/livecal.py`, `augur/diagram.py` | Q4: calibrators (raw, fixed extremizing, base rate, Platt, isotonic) behind one fit-then-map interface; the walk-forward harness that calibrates each question only on outcomes resolved before it opened and refuses any fit that would see a later one; reliability bins, calibration error and sharpness; the live map, applied only to forecasts from the model it was fitted on; the reliability diagram as a byte-stable SVG. |
 | `augur/comment.py` | The private comment, built only from the members' reasoning and the cited sources. |
 | `augur/score.py`, `augur/scorecard.py` | Metaculus's baseline, head-to-head and peer scores for every type (matched to its own `score_math.py`), Brier and log score; scoring every resolved forecast against the template, the community, a market price, 50% and the base rate with a paired, clustered bootstrap and the minimum detectable effect. |
 | `augur/resolve.py`, `augur/baseline.py`, `augur/standings.py` | Resolutions (hidden ones counted, not guessed), the shadow template run unpublished on Augur's model, and each round's leaderboard beside Augur. |
@@ -183,6 +187,19 @@ body with its own transliteration of the server code. Each question has a
 deadline from its close; work still running there is cancelled and charged,
 and what finished is posted.
 
+M8 holds the same rule for what the bot learns from its own record: **a
+calibrator may only see outcomes that were known when the question it
+corrects was opened.** Fitting a calibration map on all resolved questions
+and scoring it on the same ones would leak the answers back in through the
+map. `augur/q4.py` calibrates each question only on outcomes known before
+the day it opened. An outcome is dated on evidence, as a source is: the
+later of the dataset's resolution date and the market's own resolution
+time, because the dataset's date proved to be the close for 239 of 536
+markets. `check_time_order` refuses
+any fit that would see a later outcome (a test proves a leaky history rule
+is refused), and the snapshot records the latest resolution every fit saw
+so `make eval` can re-check it.
+
 ## Design decisions
 
 | Decision | Chosen | Alternative | Why |
@@ -208,6 +225,7 @@ and what finished is posted.
 | Template baseline | Metaculus's real `TemplateBot` (optional `baseline` extra), unpublished, every role on Augur's model | Reimplementing its prompt | "Beats the template" must not mean "beats my copy of it", and the model must be the same so the difference is the pipeline. |
 | Comparisons | Paired per question, bootstrap over clusters (question, opening week), 10,000 resamples, seeded; the detectable effect printed beside every interval | Unpaired means, or a t-test | Pairing removes question difficulty; questions that move together are not independent; the detectable effect keeps "no difference" apart from "could not tell". |
 | Checking the scores | Against Metaculus's own `score_math.py` run on fixed cases (outputs committed) | Against the API's per-question scores | The API hides resolutions and scores from a bot token (0 of 80 resolved posts). The code check found an open-tail bug that hand-computed cases had not. |
+| Calibration | A Platt map fitted on the free model's resolved backtest history, applied only when every member answered from that model, before the exact-price blend | One map for every model; isotonic; no calibration | Calibration belongs to a forecaster: the free model's log-odds are worth about a third of what it states (slope 0.32), which says nothing about a frontier model. Platt and isotonic both passed the rule on 671 walk-forward questions; Platt by more, with two parameters instead of a step per block. |
 | Changing a default | Only if the paired interval against the default lies below 0, or a cheaper variant's upper bound is under +0.01 Brier (fixed before M7's run) | Adopting whatever scores best on the backtest | At 40 questions most differences are noise; a rule written first keeps a lucky draw out of the live bot. |
 | RESULTS.md | Prose plus blocks rendered from the committed ledgers; a test fails if the file differs from a fresh render | Hand-copied tables | A number in the report cannot drift from the data it came from. |
 
@@ -217,6 +235,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M8, calibration learned from resolved history (Q4): 926 ForecastBench market questions over nine sets, `nemotron-3-ultra:free`, no retrieval; each question calibrated only on questions resolved before it opened ($0, 802 free calls) | On 671 walk-forward questions a Platt map is 0.022 Brier better than raw [0.007, 0.037] and cuts calibration error 0.152 → 0.069; isotonic 0.018 better [0.007, 0.030]; extremizing by 1.5 hurts (+0.015). Platt's first interval clear of 0 comes at 200 resolutions, isotonic's at 100. ForecastBench's resolution dates proved to be close dates for 239 of 536 markets, so outcomes are dated by the markets' own APIs. The gain is all on Polymarket and Manifold: on the 191 Metaculus questions Platt is 0.035 worse than raw [0.013, 0.054]. Calibrated, the bot still trails the market price by 0.089 on Polymarket and Manifold questions. Platt is now the live map for that model |
 | M7, what carries the score (Q3): the first 40 of the same sample, `nemotron-3-ultra:free`, one factor at a time against the default, paired on the same questions ($0) | A second research pass on sub-questions: −0.0003 Brier [−0.025, +0.022] for 1.8 more calls a question. One, three, five or nine forecasters: within 0.002 of each other. Trimmed mean and mean of log-odds: within 0.0014 of the median. A smaller second model mixed in: +0.006 [−0.015, +0.026]. Extremizing by 1.5: 0.027 worse [0.009, 0.048], the only resolved effect. The live default is unchanged |
 | M7, how many questions a difference needs: a planted improvement in resampled per-question differences, 1,000 studies per n | 80% power on 0.01 Brier at about 450 questions (research-change spread) to 1,340 (retrieval against none); 5 head-to-head points at about 270; FutureSearch's 0.010 lead at n = 1,810 is consistent with either. At 40 questions this backtest resolves only differences of about 0.03 Brier or more |
 | M6, what leakage is worth (Q2): ForecastBench 2026-06-21, a fixed sample of 64 resolved questions, the same free model in every role, three draws, one shared query plan, Wikipedia revisions and Wayback captures ($0) | Brier: no retrieval 0.205; sources as of each question's open date 0.189, no better than none (−0.016 [−0.050, +0.017]); the same searches as of today 0.063, 0.142 better [0.074, 0.217], about the gap El Lahib et al. published (0.244 to 0.108). On the 47 priced questions, read as of open the bot trails the market price by 0.093 [0.013, 0.176]; read as of today it draws level with it (−0.046 [−0.117, +0.022]). A leaky backtest would have erased a real gap to the market |
@@ -275,6 +294,12 @@ difference needs about 300 resolved questions.
   community prediction, so the blend will rarely fire. Research depth waits
   on resolved live questions (none yet).
 
+- The calibrator is fitted on one free model with no retrieval. Live
+  forecasts are researched, and scored ones come from a frontier model
+  under the floor, so the live map applies only where its own model
+  answers; a frontier model's forecasts stay raw until it has resolved
+  history (the release gate keeps it off C4's earlier sets).
+
 ## Roadmap
 
 M2 (done) one OpenAI-compatible provider with probed model chains, and the
@@ -282,7 +307,7 @@ repository public at its merge; M3 (done) every question type, a deadline
 per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
 first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
-backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 calibration; M9
+backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9
 "does it know when it does not know"; M10 release and a season postmortem. Details in
 [PLAN.md](PLAN.md).
 

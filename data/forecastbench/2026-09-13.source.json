@@ -1,0 +1,18 @@
+{
+ "kept": 76,
+ "licence": "ForecastBench datasets, Forecasting Research Institute, CC BY-SA 4.0",
+ "model_release": "nvidia/nemotron-3-ultra-550b-a55b:free 2026-06-04 (OpenRouter listing date)",
+ "removed": {
+  "not a market question (dataset questions are M6's)": 312,
+  "not resolved to 0 or 1 in the resolution set": 112
+ },
+ "sha256": {
+  "questions": "6bc6c460960077c944dfbcfedb9d103d4d5db13bc33270727aa77becbff5eb22",
+  "resolutions": "ac758768a5bd89b8ca5464eaacf31b5ef373e61a30773898bbdc86237425aaa9"
+ },
+ "total": 500,
+ "urls": {
+  "questions": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/question_sets/2026-09-13-llm.json",
+  "resolutions": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/resolution_sets/2026-09-13_resolution_set.json"
+ }
+}
