@@ -115,7 +115,7 @@ Predictions stated in PLAN.md before the run:
 - P25 (draws' AUROC below 0.6 with an interval including 0.5, on S138 and S40): **held** (0.507 [0.405, 0.608]; 0.563 [0.372, 0.743]).
 - P26 (the two-model gap has the highest AUROC of the three on S40, above 0.6, interval including 0.5: **failed**, it is 0.325 [0.164, 0.505] and the highest is spread across draws (one model); passes' interval includes 0.5: **held** (0.533 [0.337, 0.719])).
 - P27 (control A beats raw on S138 with the interval below 0: **failed** (-0.009 [-0.034, +0.016]); the matched constant beats raw on S138: **held** (-0.007 [-0.014, -0.000])).
-- P28 (no policy beats both controls with an interval excluding 0: **held**; every forecast-changing policy within ±0.01 Brier of B: **held**).
+- P28 (no policy beats both controls, A and B, with an interval excluding 0: **failed**: S138 skip the top quarter by draws; S40 skip the top quarter by draws beat A and B forecasting every question, but not random skipping, which is why none is adopted; every forecast-changing policy within ±0.01 Brier of B: **held**).
 - P29 (not resolvable at this n for every measure: **held**; an AUROC of 0.6 needs more than 300 questions to clear 0.5: **failed** (250)).
 - Q6 as written (disagreement predicts error with AUROC above 0.6: **failed**; the fixed shrink improves on its matched constant by less than the detectable effect: **held**).
 
@@ -161,7 +161,11 @@ only S40's 39 questions, and both models are NVIDIA Nemotron variants;
 Henry et al.'s within-crowd agreement result was across 32 model
 configurations. Skip is scored against ForecastBench's freeze-time value
 as the stand-in for the field, which is the market for these questions,
-not Metaculus's bots. The live half has 2 units and none resolved.
+not Metaculus's bots. The live half has 2 units and none resolved. One
+is a dry run of the local model on a committed sample question (M1); the
+split uses the question id inside the Metaculus post, not the post id
+(they differ in parity for that unit), stated here before any live unit
+has resolved.
 
 <!-- augur:begin q6-preregistration -->
 **Q6's live test, pre-registered 2026-11-22 before it starts.**

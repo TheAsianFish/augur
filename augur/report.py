@@ -1621,13 +1621,30 @@ def _q6_verdicts(snap: dict[str, Any]) -> list[str]:
     dis = {m: s40["auroc"][m]["auroc"] for m in ("draws", "models", "passes")}
     top = max(dis, key=lambda m: dis[m])
     mo = s40["auroc"]["models"]
-    p26a = top == "models" and mo["auroc"] > 0.6 and mo["low"] <= 0.5
+    p26a = top == "models" and mo["auroc"] > 0.6 and mo["low"] <= 0.5 <= mo["high"]
     pa = s40["auroc"]["passes"]
     p26b = pa["low"] <= 0.5 <= pa["high"]
     a_raw = s138["controls"]["A − raw"]["brier"]
     m_raw = s138["controls"]["matched − raw"]["brier"]
     pols = [p for sm in (s138, s40) for p in sm["policies"]]
-    none_adopted = all(p["verdict"] != "adopted" for p in pols)
+
+    # P28 names A and B as "both controls": for skip, that is skip on top of A
+    # (or B) against A (or B) forecasting every question. Adoption also needs
+    # the random-skip and matched controls, so it is a stricter test.
+    def beats_a_and_b(p: dict[str, Any]) -> bool:
+        if p["kind"] == "skip":
+            cs = [c for c in p["comparisons"] if "every question" in c["label"]]
+            return bool(cs) and all(c["gain"]["low"] > 0.0 for c in cs)
+        cs = [c for c in p["comparisons"] if c["label"] in ("against A", "against B")]
+        return all(c["brier"]["high"] < 0.0 for c in cs)
+
+    beat = [
+        f"{sm['name']} {p['policy']}"
+        for sm in (s138, s40)
+        for p in sm["policies"]
+        if beats_a_and_b(p)
+    ]
+    none_adopted = not beat
     within = all(
         abs(c["brier"]["mean"]) <= 0.01
         for p in pols
@@ -1661,8 +1678,15 @@ def _q6_verdicts(snap: dict[str, Any]) -> list[str]:
         f"- P27 (control A beats raw on S138 with the interval below 0: "
         f"{_held(a_raw['high'] < 0)} ({_sd(a_raw)}); the matched constant beats raw on S138: "
         f"{_held(m_raw['mean'] < 0)} ({_sd(m_raw)})).",
-        f"- P28 (no policy beats both controls with an interval excluding 0: "
-        f"{_held(none_adopted)}; every forecast-changing policy within ±0.01 Brier of B: "
+        f"- P28 (no policy beats both controls, A and B, with an interval excluding 0: "
+        f"{_held(none_adopted)}"
+        + (
+            f": {'; '.join(beat)} beat A and B forecasting every question, but not random "
+            "skipping, which is why none is adopted"
+            if beat
+            else ""
+        )
+        + f"; every forecast-changing policy within ±0.01 Brier of B: "
         f"{_held(within)}).",
         f"- P29 (not resolvable at this n for every measure: {_held(resolvable)}; an AUROC of "
         f"0.6 needs more than 300 questions to clear 0.5: {_held(needed > 300)} ({needed})).",

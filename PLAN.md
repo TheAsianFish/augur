@@ -605,8 +605,12 @@ S138, 0.563 [0.372, 0.743] on S40). P26 failed: the two-model gap scored
 lowest, 0.325 [0.164, 0.505]; the passes' interval includes 0.5 (held).
 P27 failed in its first part (control A against raw on S138 −0.009
 [−0.034, +0.016]) and held in its second (the matched constant shrink
-−0.007 [−0.014, −0.000]). P28 held: no policy beat both controls, and
-every forecast-changing policy is within 0.01 of B. P29 held in its first
+−0.007 [−0.014, −0.000]). P28 failed in its first part, read as
+written: skipping by the draws' spread beats A and B forecasting every
+question on both samples (+7.3 [+2.9, +12.2] points on S138), only
+because the model trails the price almost everywhere; against skipping
+at random it gains +0.8 [−3.0, +5.1], so it is not adopted. No shrink
+policy beat A and B, and every one is within 0.01 of B (held). P29 held in its first
 part (not resolvable at this n for every policy) and failed in its second
 (an AUROC of 0.6 needs about 250 questions, not more than 300). Q6 as
 written: its first half failed (no measure above 0.6), its second held
