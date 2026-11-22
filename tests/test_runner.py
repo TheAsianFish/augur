@@ -13,11 +13,13 @@ import httpx
 import pytest
 from pydantic import SecretStr
 
+from augur.calibrate import PlattMap
 from augur.clock import FixedClock
 from augur.config import Settings
 from augur.errors import AugurError, SubmitFloorError
 from augur.leakage import RunMode, scan_ledger
 from augur.ledger import Ledger
+from augur.livecal import LiveCalibrator
 from augur.llm.base import Provider
 from augur.llm.catalog import Catalog
 from augur.llm.endpoints import PRESETS, Endpoint, Route
@@ -100,6 +102,7 @@ async def _run(
     reforecast: bool = False,
     extra_searchers: Sequence[Searcher] = (),
     blend_exact_price: bool = False,
+    calibrator: LiveCalibrator | None = None,
     **settings: object,
 ) -> tuple[RunReport, Ledger]:
     clock = FixedClock(T0)
@@ -119,6 +122,7 @@ async def _run(
         out=out or io.StringIO(),
         probe_providers=probe_providers,
         blend_exact_price=blend_exact_price,
+        calibrator=calibrator,
     )
     slug = tournament or ("bot-testing-area" if submit else "minibench")
     report = await run.run(
@@ -702,3 +706,39 @@ def test_every_date_evidence_has_a_comment_label() -> None:
     from augur.comment import _EVIDENCE
 
     assert set(_EVIDENCE) == set(DateEvidence)
+
+
+def _platt_for(model: str) -> LiveCalibrator:
+    return LiveCalibrator(model=model, fitted_on="test history", map=PlattMap(0.5, 0.2, 1, 10))
+
+
+async def test_the_live_calibrator_applies_only_to_its_own_model(tmp_path: Path) -> None:
+    # Draws 30-50%: median 40%, then the Platt map, then (with a price) the blend.
+    cal = _platt_for(LOCAL.model)
+    expected = round(PlattMap(0.5, 0.2, 1, 10)(0.40), 3)
+    report, ledger = await _run(tmp_path / "a", client=None, calibrator=cal)
+    first = report.reports[0]
+    assert first.probability == pytest.approx(expected)
+    assert f"calibrated to {expected:.1%} by a platt map" in first.comment
+    (method,) = ledger.connection.execute(
+        "SELECT method FROM forecasts WHERE kind = 'aggregate' ORDER BY rowid LIMIT 1"
+    ).fetchone()
+    assert method == "platt calibration of the median (0.400)"
+    ledger.close()
+
+    # Another model's forecasts stay raw.
+    report2, ledger2 = await _run(tmp_path / "b", client=None, calibrator=_platt_for("other"))
+    assert report2.reports[0].probability == pytest.approx(0.40)
+    assert "calibrated" not in report2.reports[0].comment
+    ledger2.close()
+
+    # Calibration comes before the exact-price blend.
+    report3, ledger3 = await _run(
+        tmp_path / "c",
+        client=None,
+        calibrator=cal,
+        extra_searchers=[OwnPrice()],
+        blend_exact_price=True,
+    )
+    assert report3.reports[0].probability == pytest.approx(blend(expected, 0.8))
+    ledger3.close()

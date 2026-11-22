@@ -7,6 +7,7 @@ research brief they read, and the sources it cites with their proven dates.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 
 from augur.agents.forecaster import MemberForecast
@@ -54,6 +55,16 @@ _HOW = {
 }
 
 
+@dataclass(frozen=True)
+class Calibration:
+    """A calibration step applied to a binary aggregate, for the comment."""
+
+    name: str
+    raw: float
+    calibrated: float
+    fitted_on: str
+
+
 def render_comment(
     *,
     q: Question,
@@ -63,6 +74,7 @@ def render_comment(
     cutoff: datetime,
     requested: int,
     blended_with: MarketQuote | None = None,
+    calibrated: Calibration | None = None,
 ) -> str:
     """Markdown for the private comment. Pure: the same inputs give the same text."""
     ordered = sorted(members, key=lambda m: m.member)
@@ -82,6 +94,16 @@ def render_comment(
             else "."
         ),
         "",
+        *(
+            [
+                f"The combined {calibrated.raw:.1%} was then calibrated to "
+                f"{calibrated.calibrated:.1%} by a {calibrated.name} map fitted on this model's "
+                f"resolved backtest history ({calibrated.fitted_on}).",
+                "",
+            ]
+            if calibrated is not None
+            else []
+        ),
         *(
             [
                 f"The forecasters' median was then blended in log-odds with the community "

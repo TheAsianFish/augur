@@ -117,6 +117,13 @@ def _parser() -> argparse.ArgumentParser:
         "markets searcher finds it, one third to two thirds in log-odds (on by default since M5)",
     )
     fc.add_argument(
+        "--calibrate",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="apply the live calibrator (augur/live_calibrator.json) to binary forecasts from "
+        "the model it was fitted on; other models' forecasts stay raw (M8)",
+    )
+    fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
     )
     fc.add_argument(
@@ -401,6 +408,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                 out=sys.stdout,
                 probe_providers=probe_providers,
                 blend_exact_price=bool(args.markets and args.blend),
+                calibrator=livecal.load_live() if args.calibrate else None,
             )
             try:
                 report = await run.run(

@@ -42,12 +42,13 @@ from augur.agents.researcher import (
     ResearchResult,
 )
 from augur.clock import Clock
-from augur.comment import render_comment
+from augur.comment import Calibration, render_comment
 from augur.config import Settings
 from augur.errors import AugurError, BelowFloorError, MetaculusError, SubmitFloorError
 from augur.fleet import FleetPlan, bounded_map
 from augur.leakage import RunMode
 from augur.ledger import Ledger
+from augur.livecal import LiveCalibrator
 from augur.llm.base import Provider
 from augur.llm.endpoints import Route
 from augur.llm.probe import ProbeResult, new_session_id, probe_routes, record_probes
@@ -215,8 +216,12 @@ class ForecastRun:
         out: TextIO,
         probe_providers: Mapping[str, Provider] | None = None,
         blend_exact_price: bool = False,
+        calibrator: LiveCalibrator | None = None,
     ) -> None:
         self._settings = settings
+        # M8's calibrator: applied to a binary aggregate only when every member
+        # answered from the model it was fitted on, before the blend.
+        self._calibrator = calibrator
         # M5's blend: a binary forecast is combined, one third to two thirds in
         # log-odds, with the question's own community prediction when research found it.
         self._blend_exact_price = blend_exact_price
@@ -578,6 +583,17 @@ class ForecastRun:
             prediction, method = aggregate(q, [m.prediction for m in members])
         except ValueError as exc:
             raise AugurError(f"could not combine the members ({exc})") from None
+        calibrated: Calibration | None = None
+        cal = self._calibrator
+        if (
+            cal is not None
+            and isinstance(prediction, BinaryPrediction)
+            and cal.applies([m.route.model for m in members])
+        ):
+            raw = prediction.probability
+            prediction = BinaryPrediction(cal(raw))
+            method = f"{cal.name} calibration of the {method} ({raw:.3f})"
+            calibrated = Calibration(cal.name, raw, prediction.probability, cal.fitted_on)
         own_price = exact_price(research) if self._blend_exact_price else None
         if not isinstance(prediction, BinaryPrediction):
             own_price = None
@@ -610,6 +626,7 @@ class ForecastRun:
             cutoff=cutoff,
             requested=n,
             blended_with=own_price,
+            calibrated=calibrated,
         )
         report = QuestionReport(q, "forecast", prediction=prediction, members=members)
         report.comment = comment
