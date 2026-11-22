@@ -14,6 +14,182 @@ against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
 
+## M9: does the fleet know when it does not know? (2026-11-22)
+
+**Question.** Does disagreement among the fleet's forecasts predict its
+own errors well enough to shrink toward a prior or skip, and does that
+raise the score (Q6)? The plan's prediction, written at the start: AUROC
+above 0.6, and a shrink gain smaller than the detectable effect. The
+design, P25 to P29, the controls and the live test were committed to
+PLAN.md (`ca3aaa9`) before any M9 number was computed.
+
+**Why controls.** M8 measured this model's log-odds at about a third of
+their face value (Platt slope 0.32). Any rule that pulls forecasts toward
+50% will therefore look good against raw, whether or not disagreement
+carries information. So a disagreement policy counts only if it beats, on
+the same questions, (A) constant shrinkage (a Platt map, one slope for
+every question) and (B) the source-aware calibrator (the partially pooled
+map from the M8 follow-up below); the fixed shrink also faces a constant
+shrink of the same average strength. The one published attempt I could
+verify is a null: BLF scaled the mean logit by the disagreement of five
+draws, and leave-one-out tuning chose no shrinkage (arXiv 2604.18576v5).
+
+**Method.** Draws already in the ledgers, no new call, $0
+(`augur q6`, snapshot `data/q6/m9-q6.json`; `make eval` re-runs it and
+fails on any difference). Three disagreement measures, on log-odds of
+forecasts clipped to [0.01, 0.99]: the spread of one model's draws, the
+gap between two models' medians on the same briefs, and the spread of
+three research passes (one pass, the loop, two passes) on the same
+question. Every fitted map is fitted leave-one-out, so the question being
+scored never enters its own fit; the history is one ForecastBench set, not
+time-ordered, so absolute gains are optimistic for controls and policies
+alike. Three questions of C2 lack a third draw and one of M7's 40 lacks a
+fifth, so the samples are 135 and 39, not the 138 and 40 planned.
+
+<!-- augur:begin q6 -->
+Samples: **S138**, C2 (ForecastBench 2026-06-21), no retrieval, three draws, median, 135 questions with all three draws; **S40**, M7's 40 (ForecastBench 2026-06-21), one research pass as of open, five draws, median, 39 questions with five draws, the second model's three and all three research passes. Model `nvidia/nemotron-3-ultra-550b-a55b:free`; second model `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`; no new call, $0. A large error is a Brier score above the sample's median (0.032 on S138, 0.006 on S40). Intervals: percentile bootstrap over questions, 10,000 resamples, seeded. What the n can resolve: the AUROC's half-width at 0.5 is 0.18 at n = 40 and 0.10 at n = 138; a true AUROC of 0.6 needs 250 questions to clear 0.5 with 80% power (Hanley and McNeil).
+
+| Measure | S138: AUROC for a large error | S40: AUROC for a large error | S138: wrong side of 50% (exploratory) | S40: wrong side of 50% (exploratory) |
+|---|---|---|---|---|
+| spread across draws (one model) | 0.507 [0.405, 0.608] | 0.563 [0.372, 0.743] | 0.598 [0.494, 0.696] | 0.670 [0.465, 0.851] |
+| gap between two models | — | 0.325 [0.164, 0.505] | — | 0.513 [0.308, 0.721] |
+| spread across research passes | — | 0.533 [0.337, 0.719] | — | 0.683 [0.468, 0.876] |
+| confidence: distance of the forecast from 50% in log-odds (a reference) | 0.169 [0.098, 0.247] | 0.012 [0.000, 0.043] | 0.456 [0.341, 0.572] | 0.185 [0.068, 0.335] |
+
+Large errors: 67 of 135 and 19 of 39. Wrong side of 50% (|p − outcome| > 0.5, added after the run, see below): 36 and 11.
+
+The controls and the trap (paired Brier difference, below 0 is better; head-to-head in tournament points, 100 × ln on the outcome, above 0 is better). Every fitted map is fitted leave-one-out.
+
+| Comparison | S138: Brier | S138: points | S40: Brier | S40: points |
+|---|---|---|---|---|
+| control A (Platt) − raw | -0.009 [-0.034, +0.016] | +14.3 [+1.9, +27.8] | -0.014 [-0.049, +0.018] | +4.7 [-7.3, +18.3] |
+| control B (source-aware) − raw | -0.010 [-0.037, +0.017] | +14.8 [+2.2, +28.6] | -0.016 [-0.052, +0.017] | +5.1 [-7.1, +19.1] |
+| control B − control A | -0.001 [-0.009, +0.007] | +0.5 [-1.4, +2.4] | -0.002 [-0.011, +0.008] | +0.4 [-1.9, +2.7] |
+| matched constant shrink − raw | -0.007 [-0.014, -0.000] | +9.2 [+4.1, +14.8] | -0.015 [-0.028, -0.003] | +6.3 [+0.7, +12.8] |
+
+The matched constant shrink multiplies every log-odds by k, the sample mean of 1 / (1 + spread): k = 0.741 on S138 and 0.774 on S40 (the live test's frozen k).
+
+Policies that use disagreement, against each control. Forecast-changing policies: Brier difference [interval], tournament points, and the questions needed to detect 0.01 Brier at 80% power on the measured per-question spread. Skip: the tournament-point gain per question of leaving out the most-disagreed quarter, against ForecastBench's freeze-time value as the field (a skipped question scores 0).
+
+| Sample | Policy | Against | Brier | Points | n for 0.01 | Verdict |
+|---|---|---|---|---|---|---|
+| S138 | fitted slope on draws | A | +0.002 [-0.007, +0.013] | -0.3 [-2.6, +1.9] | 292 | not resolvable at this n |
+|  |  | B | +0.004 [-0.002, +0.010] | -0.8 [-2.2, +0.5] | 95 |  |
+| S138 | fixed spread shrink (draws) | A | -0.003 [-0.020, +0.014] | -3.6 [-11.7, +3.5] | 844 | not resolvable at this n |
+|  |  | B | -0.002 [-0.021, +0.018] | -4.1 [-12.6, +3.6] | 1063 |  |
+|  |  | the matched constant | -0.005 [-0.011, +0.002] | +1.5 [-1.8, +4.9] | 120 |  |
+| S138 | skip the top quarter by draws | on top of A, against forecasting every question | — | +7.3 [+2.9, +12.2] | — | not resolvable at this n |
+|  |  | on top of A, against skipping 33 at random | — | +0.8 [-3.0, +5.1] | — |  |
+|  |  | on top of B, against forecasting every question | — | +7.8 [+3.3, +12.8] | — |  |
+|  |  | on top of B, against skipping 33 at random | — | +1.4 [-2.5, +5.8] | — |  |
+| S40 | fitted slope on draws | A | -0.001 [-0.017, +0.016] | -1.9 [-11.1, +4.4] | 218 | not resolvable at this n |
+|  |  | B | +0.001 [-0.011, +0.015] | -2.4 [-11.3, +3.5] | 146 |  |
+| S40 | fitted slope on models | A | -0.002 [-0.016, +0.013] | +0.3 [-3.2, +3.8] | 172 | not resolvable at this n |
+|  |  | B | +0.000 [-0.010, +0.012] | -0.1 [-3.0, +2.5] | 94 |  |
+| S40 | fitted slope on passes | A | -0.007 [-0.038, +0.024] | +1.4 [-7.5, +9.6] | 800 | not resolvable at this n |
+|  |  | B | -0.005 [-0.034, +0.025] | +0.9 [-7.8, +9.0] | 748 |  |
+| S40 | fixed spread shrink (draws) | A | -0.006 [-0.025, +0.014] | +2.9 [-4.9, +9.2] | 319 | not resolvable at this n |
+|  |  | B | -0.004 [-0.024, +0.018] | +2.4 [-5.6, +9.1] | 372 |  |
+|  |  | the matched constant | -0.005 [-0.013, +0.001] | +1.2 [-2.1, +4.7] | 39 |  |
+| S40 | skip the top quarter by draws | on top of A, against forecasting every question | — | +9.6 [+1.8, +19.6] | — | not resolvable at this n |
+|  |  | on top of A, against skipping 9 at random | — | +4.2 [-2.8, +12.8] | — |  |
+|  |  | on top of B, against forecasting every question | — | +9.4 [+1.6, +19.3] | — |  |
+|  |  | on top of B, against skipping 9 at random | — | +4.1 [-2.8, +12.6] | — |  |
+| S40 | skip the top quarter by models | on top of A, against forecasting every question | — | +7.8 [-0.3, +18.4] | — | not resolvable at this n |
+|  |  | on top of A, against skipping 9 at random | — | +2.4 [-4.9, +11.5] | — |  |
+|  |  | on top of B, against forecasting every question | — | +7.0 [-0.6, +17.2] | — |  |
+|  |  | on top of B, against skipping 9 at random | — | +1.8 [-5.2, +10.4] | — |  |
+| S40 | skip the top quarter by passes | on top of A, against forecasting every question | — | +5.7 [-2.7, +15.4] | — | not resolvable at this n |
+|  |  | on top of A, against skipping 9 at random | — | +0.3 [-7.0, +8.5] | — |  |
+|  |  | on top of B, against forecasting every question | — | +5.6 [-2.0, +14.8] | — |  |
+|  |  | on top of B, against skipping 9 at random | — | +0.3 [-6.4, +8.2] | — |  |
+
+Live half (pre-registered below): 2 units in the committed ledgers, 0 in the policy half (odd ids, 0 resolved) and 2 in the control half (even ids, 0 resolved). The analysis runs when the policy half has 60 resolved binary questions or on 2027-03-31: not yet due, so no interval is computed.
+
+Predictions stated in PLAN.md before the run:
+
+- P25 (draws' AUROC below 0.6 with an interval including 0.5, on S138 and S40): **held** (0.507 [0.405, 0.608]; 0.563 [0.372, 0.743]).
+- P26 (the two-model gap has the highest AUROC of the three on S40, above 0.6, interval including 0.5: **failed**, it is 0.325 [0.164, 0.505] and the highest is spread across draws (one model); passes' interval includes 0.5: **held** (0.533 [0.337, 0.719])).
+- P27 (control A beats raw on S138 with the interval below 0: **failed** (-0.009 [-0.034, +0.016]); the matched constant beats raw on S138: **held** (-0.007 [-0.014, -0.000])).
+- P28 (no policy beats both controls with an interval excluding 0: **held**; every forecast-changing policy within ±0.01 Brier of B: **held**).
+- P29 (not resolvable at this n for every measure: **held**; an AUROC of 0.6 needs more than 300 questions to clear 0.5: **failed** (250)).
+- Q6 as written (disagreement predicts error with AUROC above 0.6: **failed**; the fixed shrink improves on its matched constant by less than the detectable effect: **held**).
+
+Verdict (M9's decision rule): no policy is adopted. Every disagreement-conditioned policy is **not resolvable at this n** against the controls; the fixed spread shrink is not posted live, and the live half is recomputed from the member rows as registered.
+<!-- augur:end q6 -->
+
+**What it says.** Nothing in the fleet's disagreement predicts its large
+errors at this n. The spread of one model's draws scores 0.51 on 135
+questions, the research passes 0.53, and the gap between two models
+0.33, *below* chance on the pre-registered label, the opposite of what I
+predicted (P26 failed). The trap the controls guard against is real: a
+constant shrink of the same average strength beats raw on both samples
+with an interval that excludes 0 (−0.007 [−0.014, −0.000] on S138,
+−0.015 [−0.028, −0.003] on S40). Against it, the disagreement-scaled shrink
+adds −0.005 on both samples, inside the interval. Skipping the most-disagreed
+quarter looks good against forecasting everything (+7.3 to +9.6 points a
+question, intervals above 0), but only because this model trails the
+market price on almost every question: skipping the same number of
+questions at random gains nearly as much, and against that control every
+interval includes 0. Without the controls, both shrink and skip would
+have read as wins. Q6's first half fails as written; its second half holds.
+The verdict is *not resolvable at this n*: an AUROC of 0.6 needs about
+250 questions to clear 0.5, and the policies need 95 to 1,063 questions
+to detect 0.01 Brier against their controls.
+
+**The label, diagnosed after the run.** The pre-registered label, a
+Brier score above the sample's median, turned out to mark hedged
+forecasts more than wrong ones. Researched as of open, the model is very
+confident and usually right on these market questions, so S40's median
+Brier is 0.006, and a forecast near 50% scores 0.25 whatever happens.
+The reference row shows it: confidence predicts the label *inversely*
+(AUROC 0.17 on S138, 0.01 on S40), and two models that are both near 50%
+agree closely, so the model gap lands below chance. The exploratory
+columns use a label chosen after seeing this, a forecast on the wrong
+side of 50%. There the draw spread scores 0.60 [0.49, 0.70] on S138 and
+the research passes 0.68 [0.47, 0.88] on S40: the right direction, no
+interval clear of 0.5, and not a pre-stated test. A future pre-registration
+should use the wrong-side label, or score error relative to confidence.
+
+**What it cannot say.** It is one free model, mostly without retrieval,
+on one ForecastBench set of market questions. The two-model measure has
+only S40's 39 questions, and both models are NVIDIA Nemotron variants;
+Henry et al.'s within-crowd agreement result was across 32 model
+configurations. Skip is scored against ForecastBench's freeze-time value
+as the stand-in for the field, which is the market for these questions,
+not Metaculus's bots. The live half has 2 units and none resolved.
+
+<!-- augur:begin q6-preregistration -->
+**Q6's live test, pre-registered 2026-11-22 before it starts.**
+
+1. *Policy:* the fixed spread shrink, `q = sigmoid(logit(p) / (1 + d))`,
+   p the median of the question's draws and d the standard deviation of
+   their log-odds (forecasts clipped to [0.01, 0.99]). Nothing is fitted.
+2. *Unit:* a binary question in MiniBench, FutureEval or a shadow round
+   (dry run) whose forecast in the committed ledgers has at least three
+   member draws, all from one model. The first such forecast per question
+   counts; backtests and the bot-testing-area do not.
+3. *Split:* the question's Metaculus id. Odd ids are the policy half;
+   even ids are the control half.
+4. *What is recorded:* nothing new. Every member draw is already in the
+   ledger, so the policy, the default (the median, raw) and the controls
+   are recomputed from the member rows on every question.
+5. *What is submitted:* on odd ids the policy's forecast, only if the
+   backtest verdict above adopts the fixed spread shrink; otherwise the
+   default everywhere, and the policy is never posted.
+6. *Controls:* the default, and the matched constant shrink
+   `q = sigmoid(k · logit(p))` with k frozen at the value S40 gives.
+7. *Analysis, fixed now:* when the odd half has 60 resolved binary
+   questions, or on 2027-03-31, whichever is first, the mean paired
+   Brier(policy) − Brier(control) and the head-to-head score on the odd
+   half, for each control, with a bootstrap interval clustered by the
+   week the question opened (10,000 resamples, seeded). The even half is
+   analysed the same way and reported beside it, as a replication.
+8. *Verdict:* adopted if both intervals on the odd half lie wholly below
+   0 (Brier); rejected if either lies wholly above 0; otherwise not
+   resolvable at that n, with the count needed.
+<!-- augur:end q6-preregistration -->
+
 ## M8: calibration learned from the bot's own resolved history (2026-11-22)
 
 **Question.** Can calibration be learned from the bot's own resolved

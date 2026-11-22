@@ -13,7 +13,7 @@ from pathlib import Path
 
 import httpx
 
-from augur import baseline, diagram, livecal, q4, report, scorecard, standings
+from augur import baseline, diagram, livecal, q4, q6, report, scorecard, standings
 from augur.backtest import (
     PLAN_SUFFIX,
     PinnedClock,
@@ -345,6 +345,23 @@ def _parser() -> argparse.ArgumentParser:
     cal.add_argument("--out", type=Path, default=q4.SNAPSHOT)
     cal.add_argument(
         "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
+    )
+
+    dis = sub.add_parser(
+        "q6",
+        help="Q6: does disagreement among the fleet's forecasts predict its errors?",
+        description=(
+            "M9: AUROC of each disagreement measure for large errors, and shrink and skip "
+            "policies against constant shrinkage and the source-aware calibrator, on draws "
+            "already in the ledgers; then the pre-registered live half's counts. Offline, "
+            "free, deterministic."
+        ),
+    )
+    dis.add_argument("--out", type=Path, default=q6.SNAPSHOT)
+    dis.add_argument(
+        "--check",
+        action="store_true",
+        help="exit 1 if the committed snapshot differs from a re-run",
     )
 
     standings.add_parser(sub)
@@ -817,6 +834,22 @@ def _power(args: argparse.Namespace) -> int:
     return 0
 
 
+def _q6(args: argparse.Namespace) -> int:
+    snap = q6.snapshot(Path.cwd(), SystemClock().now().date())
+    text = json.dumps(snap, indent=1, sort_keys=True) + "\n"
+    out: Path = args.out
+    if args.check:
+        if not out.exists() or out.read_text(encoding="utf-8") != text:
+            print(f"{out} differs from a fresh run; run augur q6")
+            return 1
+        print(f"{out} matches a fresh run")
+        return 0
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+    print(f"wrote {out}")
+    return 0
+
+
 def _calibrate(args: argparse.Namespace) -> int:
     out: Path = args.out
     snap = q4.snapshot(Path.cwd())
@@ -902,6 +935,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _power(args)
         if args.command == "calibrate":
             return _calibrate(args)
+        if args.command == "q6":
+            return _q6(args)
         if args.ledger_command == "import":
             result = import_exports(args.paths, args.out, SystemClock())
             dupes = sum(result.duplicates.values())

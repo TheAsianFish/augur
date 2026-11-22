@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q3 power backtest-q4 calibration
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q3 power backtest-q4 calibration q6
 
 UV ?= uv
 
@@ -38,6 +38,7 @@ eval: ## Offline and free: scan every committed ledger, re-score the backtest, c
 	$(UV) run augur score $(FB_LEDGER) --mode backtest
 	$(UV) run augur power --check
 	$(UV) run augur calibrate --check
+	$(UV) run augur q6 --check
 	$(UV) run augur report --check
 
 backtest: ## ForecastBench, no retrieval, local model; hours on a CPU (ARGS adds options)
@@ -104,3 +105,7 @@ backtest-q4: ## Q4's corpus C4: eight ForecastBench sets, no retrieval, one draw
 
 calibration: ## Q4: the calibrators, walk-forward and learning curve (data/calibration/)
 	$(UV) run augur calibrate
+
+q6: ## Q6: disagreement against error, shrink and skip policies, the live half's counts (data/q6/)
+	$(UV) run augur q6
+	$(UV) run augur report

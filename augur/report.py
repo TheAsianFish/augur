@@ -1497,6 +1497,199 @@ def _q4_verdicts(snap: dict[str, Any]) -> list[str]:
     ]
 
 
+# -- Q6 (M9) ----------------------------------------------------------------------
+
+Q6_PATH = Path("data/q6/m9-q6.json")
+PREREG = re.compile(
+    r"<!-- q6-preregistration:begin -->\n(?P<body>.*?)<!-- q6-preregistration:end -->", re.S
+)
+MEASURE_NAMES = {
+    "draws": "spread across draws (one model)",
+    "models": "gap between two models",
+    "passes": "spread across research passes",
+    "confidence": "confidence: distance of the forecast from 50% in log-odds (a reference)",
+}
+
+
+def _ci(e: dict[str, Any], digits: int = 3) -> str:
+    return f"{e['auroc']:.{digits}f} [{e['low']:.{digits}f}, {e['high']:.{digits}f}]"
+
+
+def render_q6(root: Path) -> str:
+    path = root / Q6_PATH
+    if not path.exists():
+        return "M9's analysis has not been run (`augur q6`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    pw = snap["power"]
+    s138, s40 = snap["samples"]
+    measures = [m for m in MEASURE_NAMES if m in s40["auroc"]]
+    out = [
+        f"Samples: **S138**, {s138['description']}, {s138['n']} questions with all three "
+        f"draws; **S40**, {s40['description']}, {s40['n']} questions with five draws, the "
+        f"second model's three and all three research passes. Model `{s138['model']}`; "
+        "second model `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`; no new call, $0. "
+        "A large error is a Brier score above the sample's median "
+        f"({s138['median_brier']:.3f} on S138, {s40['median_brier']:.3f} on S40). Intervals: "
+        "percentile bootstrap over questions, 10,000 resamples, seeded. What the n can "
+        f"resolve: the AUROC's half-width at 0.5 is {pw['auroc_halfwidth_40']:.2f} at n = 40 "
+        f"and {pw['auroc_halfwidth_138']:.2f} at n = 138; a true AUROC of "
+        f"{pw['auroc_target']} needs {pw['auroc_needed']} questions to clear 0.5 with 80% "
+        "power (Hanley and McNeil).",
+        "",
+        "| Measure | S138: AUROC for a large error | S40: AUROC for a large error | "
+        "S138: wrong side of 50% (exploratory) | S40: wrong side of 50% (exploratory) |",
+        "|---|---|---|---|---|",
+    ]
+    for m in measures:
+        cells = []
+        for key in ("auroc", "auroc_wrong_side"):
+            for sm in (s138, s40):
+                cells.append(_ci(sm[key][m]) if m in sm[key] else "—")
+        out.append(f"| {MEASURE_NAMES[m]} | {cells[0]} | {cells[1]} | {cells[2]} | {cells[3]} |")
+    out += [
+        "",
+        f"Large errors: {s138['large_errors']} of {s138['n']} and {s40['large_errors']} of "
+        f"{s40['n']}. Wrong side of 50% (|p − outcome| > 0.5, added after the run, see below): "
+        f"{s138['auroc_wrong_side']['draws']['large']} and "
+        f"{s40['auroc_wrong_side']['draws']['large']}.",
+        "",
+        "The controls and the trap (paired Brier difference, below 0 is better; head-to-head "
+        "in tournament points, 100 × ln on the outcome, above 0 is better). Every fitted map "
+        "is fitted leave-one-out.",
+        "",
+        "| Comparison | S138: Brier | S138: points | S40: Brier | S40: points |",
+        "|---|---|---|---|---|",
+    ]
+    for key in ("A − raw", "B − raw", "B − A", "matched − raw"):
+        a, b = s138["controls"][key], s40["controls"][key]
+        out.append(
+            f"| {a['label']} | {_sd(a['brier'])} | {_sd(a['h2h'], 1)} | {_sd(b['brier'])} | "
+            f"{_sd(b['h2h'], 1)} |"
+        )
+    out += [
+        "",
+        f"The matched constant shrink multiplies every log-odds by k, the sample mean of "
+        f"1 / (1 + spread): k = {s138['shrink_k']:.3f} on S138 and {s40['shrink_k']:.3f} on "
+        "S40 (the live test's frozen k).",
+        "",
+        "Policies that use disagreement, against each control. Forecast-changing policies: "
+        "Brier difference [interval], tournament points, and the questions needed to detect "
+        "0.01 Brier at 80% power on the measured per-question spread. Skip: the "
+        "tournament-point gain per question of leaving out the most-disagreed quarter, "
+        "against ForecastBench's freeze-time value as the field (a skipped question scores 0).",
+        "",
+        "| Sample | Policy | Against | Brier | Points | n for 0.01 | Verdict |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for sm in (s138, s40):
+        for p in sm["policies"]:
+            first = True
+            for c in p["comparisons"]:
+                verdict = p["verdict"] if first else ""
+                if "brier" in c:
+                    out.append(
+                        f"| {sm['name'] if first else ''} | {p['policy'] if first else ''} | "
+                        f"{c['label'].removeprefix('against ')} | {_sd(c['brier'])} | "
+                        f"{_sd(c['h2h'], 1)} | {c['needed']} | {verdict} |"
+                    )
+                else:
+                    out.append(
+                        f"| {sm['name'] if first else ''} | {p['policy'] if first else ''} | "
+                        f"{c['label']} | — | {_sd(c['gain'], 1)} | — | {verdict} |"
+                    )
+                first = False
+    live = snap["live"]
+    pol, ctl = live["by_half"]["policy"], live["by_half"]["control"]
+    out += [
+        "",
+        f"Live half (pre-registered below): {live['units']} units in the committed ledgers, "
+        f"{pol['units']} in the policy half (odd ids, {pol['resolved']} resolved) and "
+        f"{ctl['units']} in the control half (even ids, {ctl['resolved']} resolved). The "
+        f"analysis runs when the policy half has {live['target']} resolved binary questions "
+        f"or on {live['deadline']}: "
+        + ("**due**." if live["due"] else "not yet due, so no interval is computed."),
+        "",
+        *_q6_verdicts(snap),
+    ]
+    return "\n".join(out) + "\n"
+
+
+def _q6_verdicts(snap: dict[str, Any]) -> list[str]:
+    s138, s40 = snap["samples"]
+    d138, d40 = s138["auroc"]["draws"], s40["auroc"]["draws"]
+    p25 = all(d["auroc"] < 0.6 and d["low"] <= 0.5 <= d["high"] for d in (d138, d40))
+    dis = {m: s40["auroc"][m]["auroc"] for m in ("draws", "models", "passes")}
+    top = max(dis, key=lambda m: dis[m])
+    mo = s40["auroc"]["models"]
+    p26a = top == "models" and mo["auroc"] > 0.6 and mo["low"] <= 0.5
+    pa = s40["auroc"]["passes"]
+    p26b = pa["low"] <= 0.5 <= pa["high"]
+    a_raw = s138["controls"]["A − raw"]["brier"]
+    m_raw = s138["controls"]["matched − raw"]["brier"]
+    pols = [p for sm in (s138, s40) for p in sm["policies"]]
+    none_adopted = all(p["verdict"] != "adopted" for p in pols)
+    within = all(
+        abs(c["brier"]["mean"]) <= 0.01
+        for p in pols
+        if p["kind"] != "skip"
+        for c in p["comparisons"]
+        if c["label"] == "against B"
+    )
+    resolvable = all(p["verdict"] == "not resolvable at this n" for p in pols)
+    needed = snap["power"]["auroc_needed"]
+    any_above = any(
+        sm["auroc"][m]["auroc"] > 0.6
+        for sm in (s138, s40)
+        for m in sm["auroc"]
+        if m != "confidence"
+    )
+    fixed = [p for sm in (s138, s40) for p in sm["policies"] if p["kind"] == "fixed"]
+    small = all(
+        abs(c["brier"]["mean"]) < c["brier"]["mde"]
+        for p in fixed
+        for c in p["comparisons"]
+        if c["label"] == "against the matched constant"
+    )
+    return [
+        "Predictions stated in PLAN.md before the run:",
+        "",
+        f"- P25 (draws' AUROC below 0.6 with an interval including 0.5, on S138 and S40): "
+        f"{_held(p25)} ({_ci(d138)}; {_ci(d40)}).",
+        f"- P26 (the two-model gap has the highest AUROC of the three on S40, above 0.6, "
+        f"interval including 0.5: {_held(p26a)}, it is {_ci(mo)} and the highest is "
+        f"{MEASURE_NAMES[top]}; passes' interval includes 0.5: {_held(p26b)} ({_ci(pa)})).",
+        f"- P27 (control A beats raw on S138 with the interval below 0: "
+        f"{_held(a_raw['high'] < 0)} ({_sd(a_raw)}); the matched constant beats raw on S138: "
+        f"{_held(m_raw['mean'] < 0)} ({_sd(m_raw)})).",
+        f"- P28 (no policy beats both controls with an interval excluding 0: "
+        f"{_held(none_adopted)}; every forecast-changing policy within ±0.01 Brier of B: "
+        f"{_held(within)}).",
+        f"- P29 (not resolvable at this n for every measure: {_held(resolvable)}; an AUROC of "
+        f"0.6 needs more than 300 questions to clear 0.5: {_held(needed > 300)} ({needed})).",
+        f"- Q6 as written (disagreement predicts error with AUROC above 0.6: "
+        f"{_held(any_above)}; the fixed shrink improves on its matched constant by less than "
+        f"the detectable effect: {_held(small)}).",
+        "",
+        "Verdict (M9's decision rule): "
+        + (
+            "no policy is adopted. Every disagreement-conditioned policy is **not resolvable at "
+            "this n** against the controls; the fixed spread shrink is not posted live, and "
+            "the live half is recomputed from the member rows as registered."
+            if resolvable
+            else "see the table: at least one policy is rejected or adopted."
+        ),
+    ]
+
+
+def render_q6_preregistration(root: Path) -> str:
+    """Q6's live test exactly as PLAN.md registered it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = PREREG.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no q6-preregistration block")
+    return m.group("body")
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -1510,6 +1703,8 @@ BLOCKS: dict[str, Block] = {
         Block("fleet", render_fleet),
         Block("power", render_power),
         Block("calibration", render_calibration),
+        Block("q6", render_q6),
+        Block("q6-preregistration", render_q6_preregistration),
     )
 }
 
