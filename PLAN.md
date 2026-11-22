@@ -587,6 +587,17 @@ Brier at 80% power on the measured per-question spread.
    resolvable at that n, with the count needed.
 <!-- q6-preregistration:end -->
 
+**The source-aware calibrator's result (2026-11-22; RESULTS.md, P23 and
+P24 above unedited).** P23 held in its first part (partially pooled on
+Metaculus +0.019 [−0.008, +0.043] against raw) and failed in its second
+(it cut pooled Platt's +0.035 loss by 47%, not half). P24 failed in its
+first part (per-source Platt +0.014 [−0.008, +0.032], upper bound above
++0.01) and held in its second (both maps within 0.01 of pooled Platt
+overall; per-source is 0.007 better [0.003, 0.011]). No map passes the
+rule's part (i), so the live map stays pooled Platt with `withheld_from:
+["metaculus"]`: live binary forecasts go out raw. M8's "191 Metaculus
+questions" were 190 Metaculus and one INFER question.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the

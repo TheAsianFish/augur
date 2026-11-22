@@ -53,6 +53,7 @@ from augur.forecastbench import load_set
 from augur.q3 import members
 from augur.replay import clip
 from augur.score import Estimate, brier, clustered_bootstrap, log_score, paired
+from augur.sourcecal import SOURCED, SourcedCalibrator, SourcedMap
 
 SETS: tuple[str, ...] = (
     "2026-06-21",
@@ -436,6 +437,131 @@ def live_resolved(root: Path) -> dict[str, int]:
     return {"binary_forecasts": forecasts, "resolved": resolved}
 
 
+# -- source-aware maps (the 2026-11-22 follow-up) ----------------------------------
+
+SOURCES: tuple[str, ...] = ("polymarket", "manifold", "metaculus", "infer")
+NON_INFERIORITY = 0.01
+"""M7's non-inferiority margin, the source-aware decision rule's bound (PLAN.md)."""
+WITHHELD = "metaculus"
+"""The source a map must pass on before it reaches live forecasts (every live question)."""
+
+
+def walk_forward_sourced(
+    instances: Sequence[Instance],
+    calibrators: Sequence[SourcedCalibrator] = SOURCED,
+    *,
+    min_history: int,
+) -> Calibrated:
+    """M8's walk-forward with maps that also see each instance's source.
+
+    The same days, the same histories and the same time-order check as
+    :func:`walk_forward`, so its tests are W's instances in W's order.
+    """
+    tests: list[Instance] = []
+    forecasts: dict[str, list[float]] = {"raw": [], **{c.name: [] for c in calibrators}}
+    fits: list[Fit] = []
+    for day in sorted({i.opened for i in instances}):
+        train = history(instances, day)
+        if len(train) < min_history:
+            continue
+        check_time_order(train, day)
+        group = [i for i in instances if i.opened == day]
+        ps = [i.p for i in train]
+        ys = [i.outcome for i in train]
+        ss = [i.source for i in train]
+        maps: dict[str, SourcedMap] = {c.name: c.fit(ps, ys, ss) for c in calibrators}
+        forecasts["raw"].extend(clip(i.p) for i in group)
+        for name, m in maps.items():
+            forecasts[name].extend(m(i.p, i.source) for i in group)
+        tests.extend(group)
+        fits.append(
+            Fit(
+                opened=day,
+                n=len(train),
+                latest_resolution=max(i.known for i in train if i.known is not None),
+                tests=len(group),
+                params={name: m.params() for name, m in maps.items()},
+            )
+        )
+    return Calibrated(tests, forecasts, fits)
+
+
+def _by_source(c: Calibrated) -> list[dict[str, Any]]:
+    """Each map against raw and against pooled Platt, on all of W and on each source."""
+    out: list[dict[str, Any]] = []
+    for group in ("all", *SOURCES):
+        idx = [k for k, i in enumerate(c.tests) if group in ("all", i.source)]
+        if not idx:
+            continue
+        sub = [c.tests[k] for k in idx]
+        ys = [i.outcome for i in sub]
+        cl = _clusters(sub)
+        own = {name: [ps[k] for k in idx] for name, ps in c.forecasts.items()}
+        raw_b, platt_b = briers(own["raw"], ys), briers(own["platt"], ys)
+        rows = []
+        for name, ps in own.items():
+            b = briers(ps, ys)
+            rows.append(
+                {
+                    "calibrator": name,
+                    "brier": round(statistics.fmean(b), 4),
+                    "mean": round(statistics.fmean(clip(p) for p in ps), 4),
+                    "vs_raw_brier": _est(paired(b, raw_b, cl)),
+                    "vs_platt_brier": _est(paired(b, platt_b, cl)),
+                }
+            )
+        out.append(
+            {
+                "group": group,
+                "n": len(sub),
+                "markets": len({i.market for i in sub}),
+                "base_rate": round(sum(ys) / len(ys), 4),
+                "rows": rows,
+            }
+        )
+    return out
+
+
+def source_choice(snap: dict[str, Any]) -> str | None:
+    """The source-aware map the decision rule admits, or ``None``.
+
+    (i) On W's Metaculus instances, Brier(map) − Brier(raw) has its upper
+    bound below +0.01; (ii) on all of W, Brier(map) − Brier(pooled Platt)
+    has its upper bound below +0.01. The lower overall point estimate wins.
+    """
+    groups = {g["group"]: {r["calibrator"]: r for r in g["rows"]} for g in snap["by_source"]}
+    passing = [
+        name
+        for name in groups["all"]
+        if name not in ("raw", "platt")
+        and float(groups[WITHHELD][name]["vs_raw_brier"]["high"]) < NON_INFERIORITY
+        and float(groups["all"][name]["vs_platt_brier"]["high"]) < NON_INFERIORITY
+    ]
+    if not passing:
+        return None
+    return str(min(passing, key=lambda n: float(groups["all"][n]["vs_raw_brier"]["mean"])))
+
+
+def source_aware(root: Path, corpus: Sequence[Instance] | None = None) -> dict[str, Any]:
+    """The source-aware comparison on W, by source, and the map the rule admits."""
+    c = walk_forward_sourced(load_corpus(root) if corpus is None else corpus, min_history=W_MIN)
+    partial = [f.params["platt-partial"] for f in c.fits]
+    snap: dict[str, Any] = {
+        "instances": len(c.tests),
+        "markets": len({i.market for i in c.tests}),
+        "fits": len(c.fits),
+        "partial_last_fit": {
+            k: (round(v, 4) if isinstance(v, float) else v)
+            for k, v in partial[-1].items()
+            if k != "offsets"
+        }
+        | {"offsets": {s: round(v, 4) for s, v in partial[-1]["offsets"].items()}},
+        "by_source": _by_source(c),
+    }
+    snap["choice"] = source_choice(snap)
+    return snap
+
+
 # -- the snapshot -----------------------------------------------------------------
 
 
@@ -537,6 +663,7 @@ def snapshot(root: Path) -> dict[str, Any]:
             "rows": curve,
         },
         "live": live_resolved(root),
+        "source_aware": source_aware(root, corpus),
     }
 
 
@@ -556,14 +683,29 @@ def live_choice(snap: dict[str, Any]) -> str:
 
 
 def live_calibrator(root: Path, snap: dict[str, Any]) -> dict[str, Any]:
-    """The chosen calibrator fitted on every resolution in C4, for ``augur.livecal``."""
+    """The chosen calibrator fitted on every resolution in C4, for ``augur.livecal``.
+
+    A source-aware map that passes the 2026-11-22 rule replaces the pooled
+    choice and applies everywhere; otherwise the pooled choice is kept and
+    withheld from Metaculus questions, on which it has not been shown to
+    be no worse than raw.
+    """
     corpus = load_corpus(root)
-    name = live_choice(snap)
-    fitted = by_name(name).fit([i.p for i in corpus], [i.outcome for i in corpus])
     latest = max(i.known or i.resolved for i in corpus)
+    ps, ys = [i.p for i in corpus], [i.outcome for i in corpus]
+    sourced = snap.get("source_aware", {}).get("choice")
+    params: dict[str, Any]
+    if sourced:
+        cal = next(c for c in SOURCED if c.name == sourced)
+        params = cal.fit(ps, ys, [i.source for i in corpus]).params()
+        withheld: list[str] = []
+    else:
+        params = by_name(live_choice(snap)).fit(ps, ys).params()
+        withheld = [] if params["name"] == "raw" else [WITHHELD]
     return {
         "model": MODEL,
         "fitted_on": f"M8 corpus C4: {len(corpus)} resolutions through {latest.isoformat()}, "
         "no retrieval, one draw",
-        "params": fitted.params(),
+        "params": params,
+        "withheld_from": withheld,
     }

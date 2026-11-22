@@ -1341,6 +1341,7 @@ def render_calibration(root: Path) -> str:
             )
             + " |"
         )
+    out += _source_aware(snap)
     live = snap["live"]
     out += [
         "",
@@ -1351,6 +1352,103 @@ def render_calibration(root: Path) -> str:
         *_q4_verdicts(snap),
     ]
     return "\n".join(out) + "\n"
+
+
+SOURCE_NAMES = {
+    "all": "all of W",
+    "polymarket": "Polymarket",
+    "manifold": "Manifold",
+    "metaculus": "Metaculus",
+    "infer": "INFER",
+}
+SOURCED_NAMES = {
+    "raw": "raw",
+    "platt": "pooled Platt (M8)",
+    "platt-by-source": "per-source Platt",
+    "platt-partial": "partially pooled Platt",
+}
+
+
+def _source_aware(snap: dict[str, Any]) -> list[str]:
+    """The 2026-11-22 follow-up: maps that know the source, by source (P23, P24)."""
+    sa = snap.get("source_aware")
+    if not sa:
+        return []
+    groups = {g["group"]: g for g in sa["by_source"]}
+    names = [n for n in SOURCED_NAMES if n != "raw"]
+    out = [
+        "",
+        "Source-aware maps (the follow-up stated in PLAN.md before it ran, P23 and P24): the "
+        f"same {sa['instances']} walk-forward instances and the same {sa['fits']} fits, now "
+        "with maps that see each question's source. Cells: Brier − raw [95% interval]; below "
+        "0 is better than raw. The last row of each group is against pooled Platt instead.",
+        "",
+        "| Source | n | Base rate | Raw Brier | "
+        + " | ".join(SOURCED_NAMES[n] for n in names)
+        + " |",
+        "|---|---|---|---|" + "---|" * len(names),
+    ]
+    for key in SOURCE_NAMES:
+        g = groups.get(key)
+        if g is None:
+            continue
+        rows = {r["calibrator"]: r for r in g["rows"]}
+        out.append(
+            f"| {SOURCE_NAMES[key]} | {g['n']} | {g['base_rate']:.1%} | "
+            f"{rows['raw']['brier']:.3f} | "
+            + " | ".join(_sd(rows[n]["vs_raw_brier"]) for n in names)
+            + " |"
+        )
+    for key in ("all", "metaculus"):
+        rows = {r["calibrator"]: r for r in groups[key]["rows"]}
+        out.append(
+            f"| {SOURCE_NAMES[key]}, against pooled Platt | {groups[key]['n']} | | | — | "
+            + " | ".join(_sd(rows[n]["vs_platt_brier"]) for n in names[1:])
+            + " |"
+        )
+    pf = sa["partial_last_fit"]
+    offsets = ", ".join(f"{k} {v:+.2f}" for k, v in pf["offsets"].items())
+    out += [
+        "",
+        f"The partially pooled map's last walk-forward fit ({pf['n']} outcomes): slope "
+        f"{pf['a']:.2f}, shared intercept {pf['b']:+.2f}, offsets {offsets} (log-odds, prior "
+        f"SD {pf['prior_sd']}). INFER is never trained on (no public resolution time), so it "
+        "takes the pooled map or the shared intercept; its one W instance is shown, not read.",
+        "",
+        *_p23_p24(sa),
+    ]
+    return out
+
+
+def _p23_p24(sa: dict[str, Any]) -> list[str]:
+    g = {x["group"]: {r["calibrator"]: r for r in x["rows"]} for x in sa["by_source"]}
+    met, allw = g["metaculus"], g["all"]
+    part, per = met["platt-partial"]["vs_raw_brier"], met["platt-by-source"]["vs_raw_brier"]
+    pooled = met["platt"]["vs_raw_brier"]
+    halved = part["mean"] <= pooled["mean"] / 2
+    within = all(
+        abs(allw[n]["vs_platt_brier"]["mean"]) <= 0.01 for n in ("platt-partial", "platt-by-source")
+    )
+    choice = sa["choice"]
+    return [
+        f"- P23 (partially pooled still worse than raw on Metaculus, point above 0 and upper "
+        f"bound above +0.01: {_held(part['mean'] > 0 and part['high'] > 0.01)} ({_sd(part)}); "
+        f"cuts pooled Platt's Metaculus loss at least in half: {_held(halved)} "
+        f"({pooled['mean']:+.3f} → {part['mean']:+.3f})).",
+        f"- P24 (per-source Platt on Metaculus, upper bound below +0.01: "
+        f"{_held(per['high'] < 0.01)} ({_sd(per)}); both maps within ±0.01 of pooled Platt "
+        f"overall: {_held(within)}).",
+        "",
+        "Decision (the source-aware rule): "
+        + (
+            f"**{SOURCED_NAMES[choice]}** passes on Metaculus and overall and becomes the live map."
+            if choice
+            else "neither map's Metaculus interval clears the +0.01 margin against raw, so the "
+            "live map stays pooled Platt and is **withheld from Metaculus questions** "
+            "(`withheld_from` in `augur/live_calibrator.json`). Every live question is a "
+            "Metaculus question, so live binary forecasts now go out raw."
+        ),
+    ]
 
 
 def _q4_verdicts(snap: dict[str, Any]) -> list[str]:

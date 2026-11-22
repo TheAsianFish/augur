@@ -116,6 +116,25 @@ The diagram's points (W, ten equal-mass bins): mean forecast → share resolved 
 | 9 | 0.64 → 0.48 (n 67) | 0.53 → 0.48 (n 67) | 0.66 → 0.49 (n 67) |
 | 10 | 0.91 → 0.74 (n 68) | 0.69 → 0.72 (n 68) | 0.79 → 0.71 (n 68) |
 
+Source-aware maps (the follow-up stated in PLAN.md before it ran, P23 and P24): the same 671 walk-forward instances and the same 7 fits, now with maps that see each question's source. Cells: Brier − raw [95% interval]; below 0 is better than raw. The last row of each group is against pooled Platt instead.
+
+| Source | n | Base rate | Raw Brier | pooled Platt (M8) | per-source Platt | partially pooled Platt |
+|---|---|---|---|---|---|---|
+| all of W | 671 | 33.4% | 0.224 | -0.022 [-0.037, -0.007] | -0.029 [-0.045, -0.013] | -0.026 [-0.043, -0.011] |
+| Polymarket | 341 | 39.9% | 0.256 | -0.041 [-0.062, -0.021] | -0.041 [-0.065, -0.019] | -0.042 [-0.064, -0.020] |
+| Manifold | 139 | 39.6% | 0.299 | -0.051 [-0.093, -0.013] | -0.056 [-0.100, -0.013] | -0.051 [-0.091, -0.013] |
+| Metaculus | 190 | 16.8% | 0.112 | +0.035 [+0.013, +0.054] | +0.014 [-0.008, +0.032] | +0.019 [-0.008, +0.043] |
+| INFER | 1 | 100.0% | 0.384 | -0.066 [-0.066, -0.066] | -0.066 [-0.066, -0.066] | -0.059 [-0.059, -0.059] |
+| all of W, against pooled Platt | 671 | | | — | -0.007 [-0.011, -0.003] | -0.005 [-0.009, -0.000] |
+| Metaculus, against pooled Platt | 190 | | | — | -0.022 [-0.029, -0.013] | -0.017 [-0.027, -0.004] |
+
+The partially pooled map's last walk-forward fit (641 outcomes): slope 0.32, shared intercept -0.31, offsets manifold +0.55, metaculus -0.82, polymarket +0.27 (log-odds, prior SD 0.5). INFER is never trained on (no public resolution time), so it takes the pooled map or the shared intercept; its one W instance is shown, not read.
+
+- P23 (partially pooled still worse than raw on Metaculus, point above 0 and upper bound above +0.01: **held** (+0.019 [-0.008, +0.043]); cuts pooled Platt's Metaculus loss at least in half: **failed** (+0.035 → +0.019)).
+- P24 (per-source Platt on Metaculus, upper bound below +0.01: **failed** (+0.014 [-0.008, +0.032]); both maps within ±0.01 of pooled Platt overall: **held**).
+
+Decision (the source-aware rule): neither map's Metaculus interval clears the +0.01 margin against raw, so the live map stays pooled Platt and is **withheld from Metaculus questions** (`withheld_from` in `augur/live_calibrator.json`). Every live question is a Metaculus question, so live binary forecasts now go out raw.
+
 Live: 3 posted binary forecasts in the committed ledgers, 0 with a resolution the ledger holds, so the live arm has nothing to fit or test yet.
 
 Predictions stated in PLAN.md before the run:
@@ -160,9 +179,8 @@ map is fitted on the pooled history, so it moves every forecast toward the
 pooled base rate (34.9%), which is the wrong direction for a group that
 resolves Yes half as often. The pre-stated rule was on W as a whole, so
 the decision stands, but nothing here shows that this map helps on
-Metaculus questions. A map that conditions on the source (or is fitted on
-Metaculus history alone) is the next thing to test, with a prediction
-stated first. Calibrated, the bot still trails the price by 0.089 on the
+Metaculus questions. The source-aware follow-up below tested that, and
+the live map is now withheld from Metaculus questions. Calibrated, the bot still trails the price by 0.089 on the
 markets the bot can read; on Metaculus it goes from level with the
 price (+0.015 [−0.016, +0.045]) to behind it (+0.050 [+0.023, +0.074]).
 The price is ForecastBench's recorded freeze value. On the learning curve,
@@ -174,6 +192,31 @@ the submit floor no scored forecast comes from this model. The live
 calibrator therefore applies only where its model answers (dry runs and
 the bot-testing-area), and a frontier model's forecasts stay raw until
 it has resolved history of its own (To measure).
+
+**The source-aware follow-up (2026-11-22).** Two maps that see a
+question's source were added to the same harness, with P23, P24 and the
+decision rule committed first (`ca3aaa9`): Platt fitted per source (the
+pooled map for a source with under 30 outcomes), and a partially pooled
+map with one shared slope and a per-source intercept shrunk toward the
+shared one (prior SD 0.5 log-odds, fixed in advance). Both help overall:
+per-source Platt is 0.007 better than pooled Platt on all of W [0.003,
+0.011], and both cut pooled Platt's Metaculus loss (+0.035 to +0.014 and
++0.019). Neither is shown to be no worse than raw on Metaculus: their
+upper bounds, +0.032 and +0.043, sit above the +0.01 margin. The reason is
+the slope, not the intercept. The partially pooled map moves Metaculus's
+intercept down by 0.82 log-odds, close to its base rate, but the shared
+slope of 0.32 still flattens forecasts that, on Metaculus questions, are
+nearly right as stated (raw Brier 0.112 against a constant base rate's
+0.140). By the rule, the live map stays pooled Platt and is withheld from
+Metaculus questions, which is every question the bot forecasts live, so
+live binary forecasts now go out raw. (M8's "191 Metaculus questions" are
+190 Metaculus and one INFER question; this table splits them.) For reading
+beside it: AIA Forecaster's calibration step is a fixed, unfitted
+extremizer, log-odds × √3, on a frontier model (arXiv 2511.07678), the
+opposite direction to this free model's fitted 0.32; Dai et al. found a
+Platt map fitted on Metaculus and Polymarket made Kalshi worse than raw
+(0.238 to 0.251, arXiv 2605.27668). A calibration map belongs to one model
+and one kind of question, and does not transfer.
 
 
 ## M7: what carries the score, and how many questions it takes to tell (2026-11-21)

@@ -7,6 +7,7 @@ import random
 from collections.abc import Sequence
 from dataclasses import replace
 from datetime import date, timedelta
+from typing import Any
 
 import pytest
 
@@ -192,3 +193,106 @@ def test_edge_reports_the_calibrator_s_effect_within_each_price_group() -> None:
     assert rows["hidden"]["vs_raw_brier"]["mean"] > 0
     assert rows["hidden"]["base_rate"] == 0.0
     assert rows["readable"]["base_rate"] == 0.5
+
+
+# -- source-aware maps ----------------------------------------------------------
+
+
+def _sourced_corpus() -> list[q4.Instance]:
+    sources = ("polymarket", "metaculus", "manifold")
+    return [replace(i, source=sources[n % 3]) for n, i in enumerate(_corpus())]
+
+
+def test_sourced_walk_forward_tests_the_same_instances_in_the_same_order() -> None:
+    corpus = _sourced_corpus()
+    base = q4.walk_forward(corpus, min_history=40)
+    sourced = q4.walk_forward_sourced(corpus, min_history=40)
+    assert sourced.fits
+    assert [i.key for i in sourced.tests] == [i.key for i in base.tests]
+    assert [(f.opened, f.n, f.latest_resolution, f.tests) for f in sourced.fits] == [
+        (f.opened, f.n, f.latest_resolution, f.tests) for f in base.fits
+    ]
+    assert sourced.forecasts["raw"] == [min(max(i.p, 0.01), 0.99) for i in sourced.tests]
+    assert set(sourced.forecasts) == {"raw", "platt", "platt-by-source", "platt-partial"}
+    assert all(len(v) == len(sourced.tests) for v in sourced.forecasts.values())
+    # the pooled arm reproduces M8's Platt exactly
+    assert sourced.forecasts["platt"] == base.forecasts["platt"]
+
+
+def test_sourced_walk_forward_fits_see_only_earlier_outcomes() -> None:
+    corpus = _sourced_corpus()
+    c = q4.walk_forward_sourced(corpus, min_history=40)
+    for f in c.fits:
+        assert f.latest_resolution < f.opened
+        assert f.n == len(q4.history(corpus, f.opened))
+        assert f.params["platt-partial"]["n"] == f.n
+
+
+def test_sourced_walk_forward_skips_short_histories() -> None:
+    c = q4.walk_forward_sourced(_sourced_corpus(), min_history=10_000)
+    assert c.tests == []
+    assert c.fits == []
+
+
+def test_sourced_walk_forward_refuses_a_leaking_history(monkeypatch: pytest.MonkeyPatch) -> None:
+    def leaky(instances: Sequence[q4.Instance], opened: date) -> list[q4.Instance]:
+        return list(instances)
+
+    monkeypatch.setattr(q4, "history", leaky)
+    with pytest.raises(LeakageError):
+        q4.walk_forward_sourced(_sourced_corpus(), min_history=1)
+
+
+def test_sourced_walk_forward_refuses_an_unresolved_training_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    corpus = [replace(i, known=None) if n == 0 else i for n, i in enumerate(_sourced_corpus())]
+
+    def by_open_day(instances: Sequence[q4.Instance], opened: date) -> list[q4.Instance]:
+        return [i for i in instances if i.opened < opened]
+
+    monkeypatch.setattr(q4, "history", by_open_day)
+    with pytest.raises(LeakageError):
+        q4.walk_forward_sourced(corpus, min_history=1)
+
+
+def _source_snap(**per_map: tuple[float, float, float, float]) -> dict[str, Any]:
+    """Each map: (all vs raw mean, metaculus vs raw high, all vs platt high, ...)."""
+    allrows = [
+        {
+            "calibrator": n,
+            "vs_raw_brier": {"mean": v[0], "high": 0.0},
+            "vs_platt_brier": {"mean": 0.0, "high": v[2]},
+        }
+        for n, v in per_map.items()
+    ]
+    metrows = [
+        {"calibrator": n, "vs_raw_brier": {"mean": 0.0, "high": v[1]}, "vs_platt_brier": {}}
+        for n, v in per_map.items()
+    ]
+    base = [{"calibrator": "raw"}, {"calibrator": "platt"}]
+    return {
+        "by_source": [
+            {"group": "all", "rows": base + allrows},
+            {"group": "metaculus", "rows": base + metrows},
+        ]
+    }
+
+
+def test_source_choice_needs_both_bounds_below_the_margin() -> None:
+    # (all-vs-raw mean, metaculus-vs-raw upper, all-vs-platt upper, unused)
+    assert q4.source_choice(_source_snap(a=(-0.02, 0.005, 0.005, 0.0))) == "a"
+    assert q4.source_choice(_source_snap(a=(-0.02, 0.01, 0.005, 0.0))) is None  # not < 0.01
+    assert q4.source_choice(_source_snap(a=(-0.02, 0.005, 0.01, 0.0))) is None
+    assert q4.source_choice(_source_snap(a=(-0.02, 0.02, 0.0, 0.0))) is None
+    assert q4.source_choice(_source_snap(a=(-0.02, 0.0, 0.03, 0.0))) is None
+    assert q4.source_choice(_source_snap()) is None
+
+
+def test_source_choice_picks_the_lowest_overall_point_estimate_among_passers() -> None:
+    snap = _source_snap(
+        failing=(-0.09, 0.05, 0.0, 0.0),  # best overall but fails the Metaculus bound
+        worse=(-0.01, 0.0, 0.0, 0.0),
+        best=(-0.03, 0.0, 0.0, 0.0),
+    )
+    assert q4.source_choice(snap) == "best"
