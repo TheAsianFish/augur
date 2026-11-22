@@ -1,0 +1,998 @@
+{
+ "forecast_due_date": "2026-07-19",
+ "question_set": "2026-07-19-llm.json",
+ "resolutions": [
+  {
+   "direction": null,
+   "id": "1717",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "infer"
+  },
+  {
+   "direction": null,
+   "id": "0PE59gu09y",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "1y80gk7t9k",
+   "resolution_date": "2026-09-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "2ESLt0g85E",
+   "resolution_date": "2026-10-26",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "5CU68Sc52N",
+   "resolution_date": "2026-08-15",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "5GYiswIEZ4dM2NGnxbOR",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "BoijN4o7uHxuA32CTuft",
+   "resolution_date": "2026-09-28",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "Ec0yEIp2ty",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "HBmhlWoJptYQ47HdHPtk",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "I8dZ2pp0lO",
+   "resolution_date": "2026-09-21",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "LZAEp8dzpU",
+   "resolution_date": "2026-09-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "NqZNZgILEL",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "Nu6SdtpOsy",
+   "resolution_date": "2026-07-23",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "OAL8q0Azzl",
+   "resolution_date": "2026-07-26",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "QBF6oIt8FdUqw9vKIESb",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "ZQvUHx5d2tphDz1tJSMM",
+   "resolution_date": "2026-08-13",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "cyczlIsszn",
+   "resolution_date": "2026-08-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "dCP8cP0CLL",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "dIntAyAcUZ",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "dUzApqSQdN",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "gx18r8g6AM5sXGJ0lpSQ",
+   "resolution_date": "2026-10-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "hERQAyOtAZ",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "p5usQPdOgZ",
+   "resolution_date": "2026-09-07",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "shjGGdUWayk0YI1n8Z7A",
+   "resolution_date": "2026-09-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "spuyq56Py5",
+   "resolution_date": "2026-09-23",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "zIdESLd8d2",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "zuNuyO65hP",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "manifold"
+  },
+  {
+   "direction": null,
+   "id": "14025",
+   "resolution_date": "2026-07-29",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "39886",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40701",
+   "resolution_date": "2026-08-07",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40938",
+   "resolution_date": "2026-09-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "41214",
+   "resolution_date": "2026-10-05",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "41804",
+   "resolution_date": "2026-10-10",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "42741",
+   "resolution_date": "2026-09-28",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43333",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43360",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43437",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43491",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43494",
+   "resolution_date": "2026-08-10",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43496",
+   "resolution_date": "2026-08-30",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43501",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43505",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43525",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43527",
+   "resolution_date": "2026-09-02",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43688",
+   "resolution_date": "2026-07-26",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43703",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43707",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43708",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43822",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43824",
+   "resolution_date": "2026-08-14",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43841",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43853",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43881",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43900",
+   "resolution_date": "2026-08-10",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43911",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43941",
+   "resolution_date": "2026-11-02",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43985",
+   "resolution_date": "2026-09-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43986",
+   "resolution_date": "2026-09-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43987",
+   "resolution_date": "2026-08-16",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43992",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44117",
+   "resolution_date": "2026-07-29",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44193",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44230",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44239",
+   "resolution_date": "2026-08-30",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44241",
+   "resolution_date": "2026-08-24",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44247",
+   "resolution_date": "2026-08-13",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44358",
+   "resolution_date": "2026-07-28",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44363",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44395",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "0x023a8c2fd2a78c29c9748a44205e2cbe624d86c11ee41b81d4067ddbbf2a135f",
+   "resolution_date": "2026-10-05",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0bde18e0a0220d1f97173850504a1ed4fa90ef2c6a7bc0932952790053ca0c0e",
+   "resolution_date": "2026-08-04",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0c4cd2055d6ea89354ffddc55d6dbcef9355748112ea952fc925f3db6a5c457f",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0d3ad3afe0e01075d00e6869a09f1982742fba950b4cae8fff452b282b5a80fc",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0f1843cae1fa85c263c1f8118554fcff73f8af53d58d0f9fa5283490e69a7d94",
+   "resolution_date": "2026-08-11",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x1a8808d7a309a210b3e413331005c3d7e8cd27d2da4a4acd4ff04b4072d2ed81",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x1b752eca1cb98032be2d6b30c0e7cb7d7c9c960e50e7ee12b44565ae631fe7ef",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x1baf407855ceab1d3e1a9c9c1fe32b547a3ccd575e4d8eb1f7d4b5b27a1122df",
+   "resolution_date": "2026-09-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x22776ecdacca07302e6cc578cdcf26df93b4233d5a8166cbf131cb32fec425b9",
+   "resolution_date": "2026-08-06",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x27882ac2c84bac7ce950c4187caa74842575d3f915f4d8c9a7c4520934980a58",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2cfbd8aabc3519021dc16ab0c7e0f42b0fdac191e64bcc3c42c2319c4c0117f3",
+   "resolution_date": "2026-08-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x30d4a64f70d80faee66508a797b347ef65e63913e4200bca954718fc824ea10e",
+   "resolution_date": "2026-10-06",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x35fc6fb38021d969a3e0987a7eb51517acfc3b1a3faf3ebfd31afc3874a876d7",
+   "resolution_date": "2026-08-15",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x399b69600812f9997ee0dcac06c74c9351f230baa53765eacbc443a77bc520b9",
+   "resolution_date": "2026-08-04",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x403a2992ce3adb0df0af7054074191b5dffe20fbd3bdcd4b993224529f6d4e4b",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4168c55800f52740c0ca9c326569455ecd66075071e2825f4f4938bed2fafff4",
+   "resolution_date": "2026-08-04",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4427ce55f5fc0cc00f2708f914c585442bce7eede689d5daec4671449dc25f8d",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x5187c6fefe08cf4513e08dd31a514b698aaebc18c259b9a98c8170cca2b7d6e8",
+   "resolution_date": "2026-09-06",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x521d35b8e294b0e0560063a9ed113cef947281fc4d3fea796f1bfb517e68b795",
+   "resolution_date": "2026-07-21",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x574baadddd5ff73355480351a6b067f762d4ad18ffdd619aa99253820b691845",
+   "resolution_date": "2026-10-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x5813dc7ee3feea004711c97bdf27c407c3e943d876432ef50b49b8399eae9f37",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x654ecf1f582c46cd3d1df3bf0e62b20cfe958244bdbc8446c46683f07df6040a",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x68e1f9096971d3f0cf9f78a4258d47402dafc81eab256963a5a62cfb023495d8",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x707ca13ce9038662dcea98e2b87ffceb55c7dbe6c73a864a3ad04c1d6716f5ee",
+   "resolution_date": "2026-10-05",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x71c05b735300b6087ff5588bcc7e83fecf009293d794f613c63c92ea8a16fb2b",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x7351fc78d06ad1bf25ee4e4f07d6e404451ba7ea062a4ce968ccdea9145a1ec3",
+   "resolution_date": "2026-08-06",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x76cface9f6df604ff32447bce58656b7a72b6659324d089c73a13a99f06c8aae",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x7b22caeed454d3c7dbd07b83d8255c74e1482c4f958b4ba4dd0c27b864cd47a2",
+   "resolution_date": "2026-10-05",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x8bf1c1536ecb1c08fe13c6b71e8ab1f58bf3461c4cb79f5f1679f869a06aef86",
+   "resolution_date": "2026-07-29",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x8c48f3acf4177b5ceb012a8a2dc7a9c219eeae4a032d6ddcbc3c2ffab907439a",
+   "resolution_date": "2026-09-20",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x90b3a63203c32bc263c308ed8aabd6114db4cd1c9817e8a9bc9245074dd00157",
+   "resolution_date": "2026-08-06",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x9743ef770e5caafc6a8676aaa87d4303908ebf31f42826cc152948964d0a05d7",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x9ae9e84c0d3b66ee416c0caa915777397b9c656939a0621ecd8c2572073c8893",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xa34f2fb5664f2cc079ba616597ab300bbbe6dd91e3d597f5bc45693c6ea20082",
+   "resolution_date": "2026-08-01",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xac6a2448a21343261722348565ddfe6432a534ac76e2011d101346f1f26ce617",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xaeb57cf07ae50c2846d59f46f210b6269b8192afdd875ee7902e65e1ae64c23f",
+   "resolution_date": "2026-08-06",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xb12f5e328a7d9f7a26e0a074625ea775025104e673c776d575dab422a472ef59",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xb3b24ff2b2a904eb0904d5d31518e127c1c5c1493d75f68cb276ecb4b108395f",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xb5c0abeecb5502e6e8d83155c27819174d8317af3c425c3afc5a8c45257a3793",
+   "resolution_date": "2026-07-29",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xb8e6d129a06d0ccb21d7b32eb529ea455eddba3cf29bfa097112202cbdf5bf21",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xbb333a67a021476c97c9ac368e9d280ca43fe09782042d3ada92e48955c6a90c",
+   "resolution_date": "2026-09-06",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xbeaf469ddc59c3aea0d6c7690eb70b69e3077a9d059f79859130636993ca4f98",
+   "resolution_date": "2026-08-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc11f41372087c4d934ae7adb869ff08272b2bcb3e242d4e628330353c130e480",
+   "resolution_date": "2026-07-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc7bc5d759ecbd05cfbf3b41ec98f1cd7ab306234bf76fd6c1768d3be1d6b9e76",
+   "resolution_date": "2026-10-06",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc9615bb82d6535d630ff98e8094060bc767d8b9446516e98f84d2001a35e50e7",
+   "resolution_date": "2026-09-20",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xcba20965509d04b5f3ae2c51a221747317aff9387c197ca6d5919e85e5a20ee9",
+   "resolution_date": "2026-10-05",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xd25c820d3aee1c735c0fa62c36f4905632ab8c6988653b5b4134593b3209eb7f",
+   "resolution_date": "2026-08-11",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xd8b94a79241263ba30e9cd7f58e88bf2a9013ce2ccdce73606916b2f53033466",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xde1bcc66938e7784e7dff73e6801ae6a4d70a01992211de2fdce1ae065faa31e",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xe70dc5791fd703624bdd33fbdd6c4374bf51723c4c5e2fb88ee87857dc72d762",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xe7d699841d03f695da20c8935f4cdf809057f3b27fa4f382e327ff731b8d75a7",
+   "resolution_date": "2026-08-31",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xed4fd09a24f20a3afc1d722ace811fffff3cffd9a56a3fbffc47f4d3d47a88ed",
+   "resolution_date": "2026-11-04",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xf43d99c0b796e0e5226dffa31c71c9fab943e3f79c0182c144eea93dc6b77ae2",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xfa021d817ad33e0fa28e04051b4fea25b0a090e94bb1b2a38b377bce9778eb8e",
+   "resolution_date": "2026-07-20",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xfcdd3c3c0b496d86b67f302333ca2bcf80fa5258c1b8d85922907815be7ea3b6",
+   "resolution_date": "2026-08-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  }
+ ]
+}
