@@ -330,6 +330,78 @@ beside it. P17 failed on extremizing alone, a loss. No variant passed
 the replacement rule, so the live default is unchanged: one pass, five
 forecasters, the median, one model.
 
+**M8's predictions and decision rule, committed 2026-11-22 before any
+M8 run.** Q4's prediction above stands unedited; this fixes how it is
+tested. It was written before M5 measured this model; C2 since showed the
+free model near always-50% without retrieval (Brier 0.240 against 0.250),
+so I now expect a fitted line to help, and say so as P19 beside it.
+
+The design:
+
+- **Corpus C4:** nine ForecastBench sets, 2026-06-21 to 2026-10-11
+  (freezes 2026-06-11 to 2026-10-09), every market question the loader
+  keeps for a model listed 2026-06-04 (resolved to 0 or 1 in the
+  resolution sets as fetched 2026-11-22): 930 question instances. A
+  market posed in several sets is one instance per set; the bootstrap
+  resamples markets, so its instances move together.
+- **Forecaster:** `nvidia/nemotron-3-ultra-550b-a55b:free`, no retrieval,
+  one draw per instance. 2026-06-21 reuses member 0 of M5's C2 arm (b)
+  (the first draw, as C2 already reports it); the eight later sets are
+  new runs (792 free calls, inside one day's 1,000). Calibration is a
+  property of one forecaster, so every instance comes from the same model
+  and arm.
+- **Time order:** a test instance may be calibrated only with instances
+  whose resolution date is before the day it opened (resolution date <
+  freeze date). The harness enforces it and a test fails if any fit
+  sees a later resolution.
+- **Calibrators**, all on the aggregate, outputs clipped to [0.01, 0.99]
+  as the aggregator clips: raw (identity); fixed extremizing (log-odds ×
+  1.5, M5's factor, not fitted); Platt (a logistic regression of the
+  outcome on the log-odds, maximum likelihood with Platt's smoothed
+  targets); isotonic (pool adjacent violators, a step function); and, as
+  the reference any calibrator must beat to show the forecasts carry
+  information, the history's base rate ((yes + 1) / (n + 2)), which
+  ignores the forecast.
+- **Walk-forward test (W):** every instance with at least 50 resolutions
+  before it opened (sets 2026-07-19 to 2026-10-11, 673 instances), each
+  calibrated on all resolutions before it opened (68 to 670).
+- **Learning curve (L):** the instances with at least 400 resolutions
+  before they opened (sets 2026-09-13 to 2026-10-11, 206 instances), each
+  calibrated on the k most recent resolutions before it opened, k = 25,
+  50, 100, 200, 400; the same 206 at every k.
+- **Metrics:** Brier and log score; paired differences against raw with
+  a bootstrap over markets (10,000 resamples, fixed seed); expected
+  calibration error on 10 equal-mass bins; sharpness (the standard
+  deviation of the forecasts) beside it; the reliability diagram; and the
+  edge over ForecastBench's recorded freeze-time price, reported apart for
+  Polymarket and Manifold (prices the bot can read) and for Metaculus and
+  INFER (hidden from it live).
+- **Live:** the same harness on the committed ledgers' resolved live
+  binary questions; on 2026-11-22 a bot token sees no resolution (M4), so
+  this is expected to be a count of 0.
+
+Predictions:
+
+| # | Prediction |
+|---|------------|
+| P18 | Q4 as written, on L: with fewer than 200 resolutions (k = 25, 50, 100) neither Platt nor isotonic has an interval of Brier(cal) − Brier(raw) wholly below 0, and isotonic's point estimate is worse than Platt's at each k. |
+| P19 | On W, Platt improves Brier over raw by at least 0.02 with an interval wholly below 0, and at least halves raw's calibration error; isotonic's interval is also below 0. |
+| P20 | Fixed extremizing at 1.5 is worse than raw on W, with an interval wholly above 0. |
+| P21 | On L, Platt's gain at k = 50 is at least half its gain at k = 400. |
+| P22 | On W, Platt beats the history's base rate (point estimate), with an interval that includes 0. |
+
+**Decision rule.** M7's replacement rule: a calibrator replaces raw as the
+live default only if its paired interval of Brier(cal) − Brier(raw) on W
+lies wholly below 0 (no calibrator makes a model call, so none wins on
+cost). If more than one passes, the lower point estimate wins. A
+calibrator is a property of the model that was fitted: the live default
+is then that calibrator fitted on all of C4, applied only to binary
+aggregates whose forecast came from that model, before the exact-price
+blend; forecasts from any other model (every scored-tournament forecast,
+under the floor) stay raw until that model has its own resolved history.
+What W cannot say: it is one free model with no retrieval; live
+forecasts have research and, where a price exists, the blend.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
