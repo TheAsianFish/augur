@@ -37,7 +37,7 @@ import statistics
 from collections.abc import Callable, Hashable, Sequence
 from contextlib import closing
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from statistics import NormalDist
 from typing import Any
@@ -91,6 +91,12 @@ LIVE_MIN_DRAWS = 3
 LIVE_MODES = ("live", "dry_run")
 LIVE_TOURNAMENTS = ("minibench", "futureeval", "fall-aib", "spring-aib")
 """Tournament names a live unit may come from (backtests and the bot-testing-area never)."""
+LIVE_PROJECT_IDS = frozenset({"33121"})
+"""Tournament project ids a live unit may come from: the runner records FutureEval
+(``futureeval``, ``fall-2026``) by its project id, not by name."""
+LIVE_REGISTERED = datetime(2026, 11, 22, 15, 9, 51, tzinfo=UTC)
+"""When the live test was registered (commit ``ca3aaa9``): only runs that start at or
+after it are units, so no forecast made before the registration counts."""
 
 _Z = NormalDist().inv_cdf(0.975)
 _Z_POWER = NormalDist().inv_cdf(POWER)
@@ -659,6 +665,8 @@ class LiveUnit:
 
 def _eligible_tournament(name: str) -> bool:
     low = name.lower()
+    if low in LIVE_PROJECT_IDS:
+        return True
     return "bot-testing" not in low and any(t in low for t in LIVE_TOURNAMENTS)
 
 
@@ -667,7 +675,8 @@ def live_units(root: Path) -> list[LiveUnit]:
 
     The first single-model binary forecast with at least three draws per
     question counts: the eligible run that started earliest, across every
-    ledger. A question's outcome is its latest resolution row by recording
+    ledger, among runs that started at or after the registration
+    (:data:`LIVE_REGISTERED`). A question's outcome is its latest resolution row by recording
     time over every ledger, so a later annulment removes an earlier outcome.
     The split uses the question id (the id of the question inside a
     Metaculus post, not the post id).
@@ -700,6 +709,8 @@ def live_units(root: Path) -> list[LiveUnit]:
             ).fetchall()
             for run_id, tournament, started in runs:
                 if not _eligible_tournament(str(tournament)):
+                    continue
+                if datetime.fromisoformat(str(started)) < LIVE_REGISTERED:
                     continue
                 rows: dict[int, list[tuple[float, str]]] = {}
                 # A binary member has a probability (a ledger from before

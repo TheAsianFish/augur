@@ -350,8 +350,11 @@ def _add_run(
             )
 
 
+LIVE_T0 = q6.LIVE_REGISTERED + timedelta(hours=1)
+
+
 def test_live_units_selects_the_pre_registered_units(tmp_path: Path) -> None:
-    clock = FixedClock(T0)
+    clock = FixedClock(LIVE_T0)
     (tmp_path / "data/ledgers").mkdir(parents=True)
     three = [(0.6, "a"), (0.7, "a"), (0.8, "a")]
     with Ledger.open(tmp_path / "data/ledgers/x.sqlite", clock) as led:
@@ -409,7 +412,7 @@ def test_live_units_selects_the_pre_registered_units(tmp_path: Path) -> None:
 def test_live_units_take_the_earliest_run_across_ledgers_and_the_latest_resolution(
     tmp_path: Path,
 ) -> None:
-    clock = FixedClock(T0)
+    clock = FixedClock(LIVE_T0)
     (tmp_path / "data/ledgers").mkdir(parents=True)
     three = [(0.6, "a"), (0.7, "a"), (0.8, "a")]
     # "a-2" sorts before "a.", but its run starts later: the earlier ledger's run counts.
@@ -443,6 +446,30 @@ def test_live_units_take_the_earliest_run_across_ledgers_and_the_latest_resoluti
     assert unit.ledger == "a.sqlite"
     assert unit.draws == (0.6, 0.7, 0.8)
     assert unit.outcome is None
+
+
+def test_live_units_count_futureeval_by_project_id_and_skip_runs_before_registration(
+    tmp_path: Path,
+) -> None:
+    from augur.runner import TOURNAMENTS
+
+    for name, slug in TOURNAMENTS.items():
+        assert q6._eligible_tournament(slug) == (name != "bot-testing-area"), name
+    clock = FixedClock(q6.LIVE_REGISTERED - timedelta(seconds=1))
+    (tmp_path / "data/ledgers").mkdir(parents=True)
+    three = [(0.6, "a"), (0.7, "a"), (0.8, "a")]
+    with Ledger.open(tmp_path / "data/ledgers/x.sqlite", clock) as led:
+        # Forecast before the registration: not a unit, even later in the same question.
+        _add_run(led, mode=RunMode.DRY_RUN, tournament="minibench", questions={1: three})
+        clock.advance(60)
+        _add_run(
+            led,
+            mode=RunMode.LIVE,
+            tournament=TOURNAMENTS["futureeval"],
+            questions={1: [(0.2, "a")] * 3, 2: three},
+        )
+    units = q6.live_units(tmp_path)
+    assert [(u.question_id, u.draws) for u in units] == [(1, (0.2,) * 3), (2, (0.6, 0.7, 0.8))]
 
 
 def test_live_units_without_ledgers_is_empty(tmp_path: Path) -> None:

@@ -587,6 +587,14 @@ Brier at 80% power on the measured per-question spread.
    resolvable at that n, with the count needed.
 <!-- q6-preregistration:end -->
 
+**Q6's live test, two clarifications (2026-11-22, before any unit
+exists; the registered block above is unedited).** "Before it starts"
+is read as: only runs that start at or after the registration commit
+(`ca3aaa9`, 2026-11-22 15:09:51 UTC) are units, so the two earlier dry
+runs in the ledgers do not count. "The question's Metaculus id" is the
+question id inside the post (the ledger's `question_id`), not the post
+id. FutureEval runs are recorded by project id (`33121`) and count.
+
 **The source-aware calibrator's result (2026-11-22; RESULTS.md, P23 and
 P24 above unedited).** P23 held in its first part (partially pooled on
 Metaculus +0.019 [−0.008, +0.043] against raw) and failed in its second

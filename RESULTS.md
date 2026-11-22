@@ -108,7 +108,7 @@ Policies that use disagreement, against each control. Forecast-changing policies
 |  |  | on top of B, against forecasting every question | — | +5.6 [-2.0, +14.8] | — |  |
 |  |  | on top of B, against skipping 9 at random | — | +0.3 [-6.4, +8.2] | — |  |
 
-Live half (pre-registered below): 2 units in the committed ledgers, 0 in the policy half (odd ids, 0 resolved) and 2 in the control half (even ids, 0 resolved). The analysis runs when the policy half has 60 resolved binary questions or on 2027-03-31: not yet due, so no interval is computed.
+Live half (pre-registered below): 0 units in the committed ledgers, 0 in the policy half (odd ids, 0 resolved) and 0 in the control half (even ids, 0 resolved). The analysis runs when the policy half has 60 resolved binary questions or on 2027-03-31: not yet due, so no interval is computed.
 
 Predictions stated in PLAN.md before the run:
 
@@ -161,11 +161,14 @@ only S40's 39 questions, and both models are NVIDIA Nemotron variants;
 Henry et al.'s within-crowd agreement result was across 32 model
 configurations. Skip is scored against ForecastBench's freeze-time value
 as the stand-in for the field, which is the market for these questions,
-not Metaculus's bots. The live half has 2 units and none resolved. One
-is a dry run of the local model on a committed sample question (M1); the
-split uses the question id inside the Metaculus post, not the post id
-(they differ in parity for that unit), stated here before any live unit
-has resolved.
+not Metaculus's bots. The live half has no unit yet. Two clarifications
+of the registration, made before any unit exists: only runs that start
+at or after the registration (2026-11-22 15:09:51 UTC, `ca3aaa9`) count,
+so the two earlier dry runs in the ledgers (one of them the local model
+on a committed sample question, M1) are not units; and the split uses
+the question id inside the Metaculus post, not the post id, which can
+differ in parity. FutureEval runs, which the ledger records by project
+id (`33121`), count as the registration says.
 
 <!-- augur:begin q6-preregistration -->
 **Q6's live test, pre-registered 2026-11-22 before it starts.**
@@ -1634,7 +1637,7 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
-| Q6's live half, as pre-registered (M9) | 2 units in the committed ledgers, both in the control half, 0 resolved; the analysis is due when the odd-id half has 60 resolved binary questions or on 2027-03-31 | After each shadow or scored round: commit its ledger to `data/ledgers/`, then `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` where the bot token is blind) and `augur q6 && make results`; the block reports the paired comparisons once due |
+| Q6's live half, as pre-registered (M9) | 0 units in the committed ledgers (only runs from the registration on count); the analysis is due when the odd-id half has 60 resolved binary questions or on 2027-03-31 | After each shadow or scored round: commit its ledger to `data/ledgers/`, then `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` where the bot token is blind) and `augur q6 && make results`; the block reports the paired comparisons once due |
 | Q6 at an n that can resolve it, on the wrong-side label | An AUROC of 0.6 needs about 250 questions; the policies need 95 to 1,063 for 0.01 Brier. C2 has 138 eligible questions, and C4 has one draw each | Three to five draws per question on C4's later sets (`AUGUR_FORECASTERS=3 augur backtest forecastbench --questions ... --ledger data/ledgers/m9-c4-draws.sqlite` per set; about 2,400 free calls over three days), a new pre-registration with the wrong-side label, then the same analysis |
 | The $0 shadow round: Augur and the real template, same free model, unpublished, on MiniBench 2026-11-30 (Q1, direction of 2026-11-22) | The round opens about 2026-11-30, after this milestone | During the round: `AUGUR_FORECAST_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free AUGUR_LEDGER=data/ledgers/m10-shadow-minibench.sqlite augur forecast --tournament minibench --coverage cov.json` (no `--submit`) each window, and `uv sync --extra baseline && augur baseline --ledger data/ledgers/m10-shadow-minibench.sqlite`; commit the ledger before resolution; after it, `augur resolve --ledger L` and `augur score L --mode live --cluster week`, labelled an unsubmitted shadow comparison on a below-floor model |
 | Q4's live arm: calibration fitted on the bot's own resolved live forecasts | 3 posted binary forecasts in the committed ledgers, 0 resolved; a bot token sees no resolution on scored tournaments (M4), and under the floor no scored forecast comes from the model the live calibrator was fitted on | Once live questions resolve: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL`), then `augur calibrate`; the harness counts them in its `live` field. A Spring 2027 measurement (PLAN.md) |
