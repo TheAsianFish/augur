@@ -177,3 +177,18 @@ def test_committed_snapshot_respects_the_time_order() -> None:
     assert evidence["markets"] + evidence["none"] == snap["corpus"]["markets"]
     assert all(f["n"] >= q4.W_MIN for f in snap["walk_forward"]["fits"])
     assert {f["n"] for f in snap["learning_curve"]["fits"]} == {q4.KS[-1]}
+
+
+def test_edge_reports_the_calibrator_s_effect_within_each_price_group() -> None:
+    # A map that helps the readable group and hurts the hidden one must show
+    # both signs: a pooled improvement can hide a group it makes worse.
+    readable = [replace(_inst(f"r{k}", D0, D0, k % 2, 0.5), source="manifold") for k in range(4)]
+    hidden = [replace(_inst(f"h{k}", D0, D0, 0, 0.1), source="metaculus") for k in range(4)]
+    tests = readable + hidden
+    raw = [i.p for i in tests]
+    cal = [1.0 if i.outcome else 0.0 for i in readable] + [0.4] * 4
+    rows = {e["group"]: e for e in q4._edge("platt", cal, raw, tests)}
+    assert rows["readable"]["vs_raw_brier"]["mean"] < 0
+    assert rows["hidden"]["vs_raw_brier"]["mean"] > 0
+    assert rows["hidden"]["base_rate"] == 0.0
+    assert rows["readable"]["base_rate"] == 0.5

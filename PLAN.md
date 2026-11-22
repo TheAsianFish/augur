@@ -426,7 +426,14 @@ Platt replaces raw for this model's binary forecasts: slope 0.32 and
 intercept −0.18 in log-odds, fitted on all 926 (`augur/live_calibrator.json`).
 Under the floor no scored forecast comes from this model, so the change
 reaches dry runs and the bot-testing-area only. The live arm has 3 posted
-binary forecasts and 0 resolved: nothing to fit.
+binary forecasts and 0 resolved: nothing to fit. Found in review, after the
+verdicts: split by source, the whole gain is on Polymarket and Manifold
+(Platt −0.044 [−0.063, −0.026], 480 instances); on the 191 Metaculus
+questions, the nearest to MiniBench, Platt is worse than raw (+0.035
+[+0.013, +0.054]), because the pooled map pulls a 17% base-rate group
+toward 35%. The rule was on W as a whole, so the decision stands; a
+source-conditioned map is a candidate for a later milestone, prediction
+first.
 
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier

@@ -74,20 +74,20 @@ Corpus C4: 926 question instances (541 markets) from 9 ForecastBench sets (2026-
 | Platt | 0.202 [0.184, 0.222] | -0.022 [-0.037, -0.007] | +0.159 [+0.085, +0.238] | -0.596 | 0.069 | 0.163 | 0.353 | replaces raw (interval below 0) |
 | isotonic | 0.206 [0.183, 0.230] | -0.018 [-0.030, -0.007] | +0.149 [+0.082, +0.225] | -0.605 | 0.086 | 0.210 | 0.340 | replaces raw (interval below 0) |
 
-Edge over the price (Brier of the forecast minus Brier of ForecastBench's recorded price at the freeze, on the same instances; below 0 would beat the price). *Readable*: Polymarket and Manifold, whose prices the bot can read live; *hidden*: Metaculus and INFER, whose prices it cannot.
+Edge over the price (Brier of the forecast minus Brier of ForecastBench's recorded price at the freeze, on the same instances; below 0 would beat the price). *Readable*: Polymarket and Manifold, whose prices the bot can read live; *hidden*: Metaculus and INFER, whose prices it cannot. Brier − raw is the calibrator's effect within the group, from the same walk-forward fits on the pooled history.
 
-| Calibrator | Prices | n | Price's Brier | Edge over the price |
-|---|---|---|---|---|
-| raw (the default) | readable | 480 | 0.135 | +0.133 [+0.095, +0.172] |
-| raw (the default) | hidden | 191 | 0.098 | +0.015 [-0.016, +0.045] |
-| fixed extremizing, ×1.5 | readable | 480 | 0.135 | +0.153 [+0.112, +0.196] |
-| fixed extremizing, ×1.5 | hidden | 191 | 0.098 | +0.018 [-0.018, +0.056] |
-| history's base rate (ignores the forecast) | readable | 480 | 0.135 | +0.107 [+0.080, +0.133] |
-| history's base rate (ignores the forecast) | hidden | 191 | 0.098 | +0.085 [+0.047, +0.121] |
-| Platt | readable | 480 | 0.135 | +0.089 [+0.061, +0.116] |
-| Platt | hidden | 191 | 0.098 | +0.050 [+0.023, +0.074] |
-| isotonic | readable | 480 | 0.135 | +0.098 [+0.069, +0.127] |
-| isotonic | hidden | 191 | 0.098 | +0.040 [+0.010, +0.067] |
+| Calibrator | Prices | n | Base rate | Price's Brier | Edge over the price | Brier − raw |
+|---|---|---|---|---|---|---|
+| raw (the default) | readable | 480 | 39.8% | 0.135 | +0.133 [+0.095, +0.172] | — |
+| raw (the default) | hidden | 191 | 17.3% | 0.098 | +0.015 [-0.016, +0.045] | — |
+| fixed extremizing, ×1.5 | readable | 480 | 39.8% | 0.135 | +0.153 [+0.112, +0.196] | +0.020 [+0.014, +0.026] |
+| fixed extremizing, ×1.5 | hidden | 191 | 17.3% | 0.098 | +0.018 [-0.018, +0.056] | +0.004 [-0.005, +0.014] |
+| history's base rate (ignores the forecast) | readable | 480 | 39.8% | 0.135 | +0.107 [+0.080, +0.133] | -0.025 [-0.060, +0.007] |
+| history's base rate (ignores the forecast) | hidden | 191 | 17.3% | 0.098 | +0.085 [+0.047, +0.121] | +0.070 [+0.029, +0.108] |
+| Platt | readable | 480 | 39.8% | 0.135 | +0.089 [+0.061, +0.116] | -0.044 [-0.063, -0.026] |
+| Platt | hidden | 191 | 17.3% | 0.098 | +0.050 [+0.023, +0.074] | +0.035 [+0.013, +0.054] |
+| isotonic | readable | 480 | 39.8% | 0.135 | +0.098 [+0.069, +0.127] | -0.035 [-0.050, -0.021] |
+| isotonic | hidden | 191 | 17.3% | 0.098 | +0.040 [+0.010, +0.067] | +0.025 [+0.012, +0.037] |
 
 Learning curve (L): the same 130 instances (115 markets) at every k, each calibrated on the k outcomes most recently known before it opened (the instances with at least 400 known when they opened). Raw Brier on them: 0.268. Cells: Brier − raw [95% interval].
 
@@ -151,10 +151,24 @@ becomes the live map.
 **What it cannot say.** The learning curve's 130 questions opened on only
 two days, so each k is two fits, and its points move together. Read the
 curve's shape, not its steps. Everything here is one free model with no retrieval, on market
-questions. Calibrated, it still trails the price by 0.089 on the markets
-the bot can read and by 0.050 on those it cannot (the price is
-ForecastBench's recorded freeze value), so calibration narrows the gap
-and does not close it. Live forecasts have research, five draws, prices
+questions. The gain is not uniform. It all comes from Polymarket and
+Manifold (480 instances, base rate 39.8%), where Platt is 0.044 better
+than raw [0.026, 0.063]. On the 191 Metaculus questions (base rate 17.3%),
+the closest match in C4 to what the bot forecasts on MiniBench, Platt is
+0.035 *worse* than raw [0.013, 0.054], and isotonic is 0.025 worse. The
+map is fitted on the pooled history, so it moves every forecast toward the
+pooled base rate (34.9%), which is the wrong direction for a group that
+resolves Yes half as often. The pre-stated rule was on W as a whole, so
+the decision stands, but nothing here shows that this map helps on
+Metaculus questions. A map that conditions on the source (or is fitted on
+Metaculus history alone) is the next thing to test, with a prediction
+stated first. Calibrated, the bot still trails the price by 0.089 on the
+markets the bot can read; on Metaculus it goes from level with the
+price (+0.015 [−0.016, +0.045]) to behind it (+0.050 [+0.023, +0.074]).
+The price is ForecastBench's recorded freeze value. On the learning curve,
+the history's base rate alone is 0.031 to 0.038 better than raw at every
+k, and Platt does no better than that until k = 100, so with few
+resolutions most of what a fitted map buys is the base rate. Live forecasts have research, five draws, prices
 and, from M5, the blend, so their miscalibration may differ. And under
 the submit floor no scored forecast comes from this model. The live
 calibrator therefore applies only where its model answers (dry runs and

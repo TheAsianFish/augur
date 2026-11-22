@@ -360,8 +360,15 @@ def _row(
     }
 
 
-def _edge(name: str, ps: Sequence[float], tests: Sequence[Instance]) -> list[dict[str, Any]]:
-    """Brier(calibrated) − Brier(price at the freeze), apart by who can read the price."""
+def _edge(
+    name: str, ps: Sequence[float], raw: Sequence[float], tests: Sequence[Instance]
+) -> list[dict[str, Any]]:
+    """Brier(calibrated) − Brier(price at the freeze), apart by who can read the price.
+
+    Each group also carries Brier(calibrated) − Brier(raw) on the same instances
+    and the group's base rate: a map fitted on the pooled history can help one
+    group and hurt the other.
+    """
     out: list[dict[str, Any]] = []
     for group, readable in (("readable", True), ("hidden", False)):
         idx = [
@@ -375,11 +382,14 @@ def _edge(name: str, ps: Sequence[float], tests: Sequence[Instance]) -> list[dic
         ys = [i.outcome for i in sub]
         prices = [i.price for i in sub if i.price is not None]
         mine = [ps[k] for k in idx]
+        own_raw = [raw[k] for k in idx]
         out.append(
             {
                 "calibrator": name,
                 "group": group,
                 "n": len(sub),
+                "base_rate": round(sum(ys) / len(ys), 4),
+                "vs_raw_brier": _est(paired(briers(mine, ys), briers(own_raw, ys), _clusters(sub))),
                 "price_brier": round(statistics.fmean(briers(prices, ys)), 4),
                 "edge": _est(paired(briers(mine, ys), briers(prices, ys), _clusters(sub))),
             }
@@ -454,7 +464,7 @@ def _design(c: Calibrated) -> dict[str, Any]:
         "base_rate": round(sum(ys) / len(ys), 4),
         "fits": _fits(c),
         "rows": rows,
-        "edge": [e for name, ps in c.forecasts.items() for e in _edge(name, ps, c.tests)],
+        "edge": [e for name, ps in c.forecasts.items() for e in _edge(name, ps, raw, c.tests)],
     }
 
 

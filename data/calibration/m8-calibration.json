@@ -340,6 +340,7 @@
   "base_rate": 0.3338,
   "edge": [
    {
+    "base_rate": 0.3979,
     "calibrator": "raw",
     "edge": {
      "clusters": 344,
@@ -351,9 +352,18 @@
     },
     "group": "readable",
     "n": 480,
-    "price_brier": 0.1353
+    "price_brier": 0.1353,
+    "vs_raw_brier": {
+     "clusters": 344,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 480
+    }
    },
    {
+    "base_rate": 0.1728,
     "calibrator": "raw",
     "edge": {
      "clusters": 81,
@@ -365,9 +375,18 @@
     },
     "group": "hidden",
     "n": 191,
-    "price_brier": 0.0983
+    "price_brier": 0.0983,
+    "vs_raw_brier": {
+     "clusters": 81,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 191
+    }
    },
    {
+    "base_rate": 0.3979,
     "calibrator": "extremize-1.5",
     "edge": {
      "clusters": 344,
@@ -379,9 +398,18 @@
     },
     "group": "readable",
     "n": 480,
-    "price_brier": 0.1353
+    "price_brier": 0.1353,
+    "vs_raw_brier": {
+     "clusters": 344,
+     "high": 0.0259,
+     "low": 0.0139,
+     "mde": 0.0087,
+     "mean": 0.0198,
+     "n": 480
+    }
    },
    {
+    "base_rate": 0.1728,
     "calibrator": "extremize-1.5",
     "edge": {
      "clusters": 81,
@@ -393,9 +421,18 @@
     },
     "group": "hidden",
     "n": 191,
-    "price_brier": 0.0983
+    "price_brier": 0.0983,
+    "vs_raw_brier": {
+     "clusters": 81,
+     "high": 0.0138,
+     "low": -0.0046,
+     "mde": 0.0132,
+     "mean": 0.0038,
+     "n": 191
+    }
    },
    {
+    "base_rate": 0.3979,
     "calibrator": "base-rate",
     "edge": {
      "clusters": 344,
@@ -407,9 +444,18 @@
     },
     "group": "readable",
     "n": 480,
-    "price_brier": 0.1353
+    "price_brier": 0.1353,
+    "vs_raw_brier": {
+     "clusters": 344,
+     "high": 0.0074,
+     "low": -0.0596,
+     "mde": 0.0479,
+     "mean": -0.0255,
+     "n": 480
+    }
    },
    {
+    "base_rate": 0.1728,
     "calibrator": "base-rate",
     "edge": {
      "clusters": 81,
@@ -421,9 +467,18 @@
     },
     "group": "hidden",
     "n": 191,
-    "price_brier": 0.0983
+    "price_brier": 0.0983,
+    "vs_raw_brier": {
+     "clusters": 81,
+     "high": 0.1083,
+     "low": 0.0291,
+     "mde": 0.0565,
+     "mean": 0.0701,
+     "n": 191
+    }
    },
    {
+    "base_rate": 0.3979,
     "calibrator": "platt",
     "edge": {
      "clusters": 344,
@@ -435,9 +490,18 @@
     },
     "group": "readable",
     "n": 480,
-    "price_brier": 0.1353
+    "price_brier": 0.1353,
+    "vs_raw_brier": {
+     "clusters": 344,
+     "high": -0.0262,
+     "low": -0.0633,
+     "mde": 0.0269,
+     "mean": -0.0443,
+     "n": 480
+    }
    },
    {
+    "base_rate": 0.1728,
     "calibrator": "platt",
     "edge": {
      "clusters": 81,
@@ -449,9 +513,18 @@
     },
     "group": "hidden",
     "n": 191,
-    "price_brier": 0.0983
+    "price_brier": 0.0983,
+    "vs_raw_brier": {
+     "clusters": 81,
+     "high": 0.0537,
+     "low": 0.0127,
+     "mde": 0.0291,
+     "mean": 0.035,
+     "n": 191
+    }
    },
    {
+    "base_rate": 0.3979,
     "calibrator": "isotonic",
     "edge": {
      "clusters": 344,
@@ -463,9 +536,18 @@
     },
     "group": "readable",
     "n": 480,
-    "price_brier": 0.1353
+    "price_brier": 0.1353,
+    "vs_raw_brier": {
+     "clusters": 344,
+     "high": -0.0205,
+     "low": -0.0501,
+     "mde": 0.0212,
+     "mean": -0.035,
+     "n": 480
+    }
    },
    {
+    "base_rate": 0.1728,
     "calibrator": "isotonic",
     "edge": {
      "clusters": 81,
@@ -477,7 +559,15 @@
     },
     "group": "hidden",
     "n": 191,
-    "price_brier": 0.0983
+    "price_brier": 0.0983,
+    "vs_raw_brier": {
+     "clusters": 81,
+     "high": 0.0371,
+     "low": 0.0117,
+     "mde": 0.0181,
+     "mean": 0.0249,
+     "n": 191
+    }
    }
   ],
   "fits": [

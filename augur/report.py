@@ -1288,15 +1288,20 @@ def render_calibration(root: Path) -> str:
         "Edge over the price (Brier of the forecast minus Brier of ForecastBench's recorded "
         "price at the freeze, on the same instances; below 0 would beat the price). "
         "*Readable*: Polymarket and Manifold, whose prices the bot can read live; "
-        "*hidden*: Metaculus and INFER, whose prices it cannot.",
+        "*hidden*: Metaculus and INFER, whose prices it cannot. Brier − raw is the "
+        "calibrator's effect within the group, from the same walk-forward fits on the pooled "
+        "history.",
         "",
-        "| Calibrator | Prices | n | Price's Brier | Edge over the price |",
-        "|---|---|---|---|---|",
+        "| Calibrator | Prices | n | Base rate | Price's Brier | Edge over the price "
+        "| Brier − raw |",
+        "|---|---|---|---|---|---|---|",
     ]
     for e in w["edge"]:
+        effect = "—" if e["calibrator"] == "raw" else _sd(e["vs_raw_brier"])
         out.append(
             f"| {CALIBRATOR_NAMES.get(e['calibrator'], e['calibrator'])} | {e['group']} | "
-            f"{e['n']} | {e['price_brier']:.3f} | {_sd(e['edge'])} |"
+            f"{e['n']} | {e['base_rate']:.1%} | {e['price_brier']:.3f} | {_sd(e['edge'])} "
+            f"| {effect} |"
         )
     ks = sorted({int(r["k"]) for r in lc["rows"]})
     names = [n for n in CALIBRATOR_NAMES if n not in ("raw", "extremize-1.5")]
