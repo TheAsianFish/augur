@@ -13,6 +13,74 @@ sets the bot against the market price on resolved ForecastBench questions
 rests on; the first live score waits on a scored round (see Q1 and Q5
 below).
 
+## M8: calibration learned from the bot's own resolved history (2026-11-22)
+
+<!-- augur:begin calibration -->
+Corpus C4: 926 question instances (541 markets) from 9 ForecastBench sets (2026-06-21 to 2026-10-11), `nvidia/nemotron-3-ultra-550b-a55b:free`, no retrieval, one draw, base rate 34.9%. Walk-forward test (W): 671 instances (425 markets, sets 2026-07-19 to 2026-10-11), each calibrated on every instance resolved before it opened (68 to 666 resolutions; the latest resolution each fit saw is in the snapshot and is always before the day its questions opened). Intervals: paired bootstrap over markets, 10,000 resamples.
+
+| Calibrator | Brier | Brier − raw | Log score − raw (higher is better) | Log score | ECE | Sharpness | Mean | Rule |
+|---|---|---|---|---|---|---|---|---|
+| raw (the default) | 0.224 [0.192, 0.258] | — | — | -0.754 | 0.152 | 0.291 | 0.259 | — |
+| fixed extremizing, ×1.5 | 0.239 [0.203, 0.278] | +0.015 [+0.010, +0.020] | -0.125 [-0.162, -0.090] | -0.879 | 0.189 | 0.322 | 0.234 | raw stays |
+| history's base rate (ignores the forecast) | 0.226 [0.212, 0.240] | +0.002 [-0.025, +0.028] | +0.111 [+0.011, +0.220] | -0.644 | 0.063 | 0.035 | 0.361 | raw stays |
+| Platt | 0.202 [0.183, 0.223] | -0.022 [-0.037, -0.008] | +0.159 [+0.088, +0.235] | -0.596 | 0.055 | 0.166 | 0.345 | replaces raw (interval below 0) |
+| isotonic | 0.206 [0.182, 0.231] | -0.018 [-0.029, -0.008] | +0.150 [+0.085, +0.224] | -0.604 | 0.086 | 0.207 | 0.330 | replaces raw (interval below 0) |
+
+Edge over the price (Brier of the forecast minus Brier of ForecastBench's recorded price at the freeze, on the same instances; below 0 would beat the price). *Readable*: Polymarket and Manifold, whose prices the bot can read live; *hidden*: Metaculus and INFER, whose prices it cannot.
+
+| Calibrator | Prices | n | Price's Brier | Edge over the price |
+|---|---|---|---|---|
+| raw (the default) | readable | 480 | 0.135 | +0.133 [+0.095, +0.172] |
+| raw (the default) | hidden | 191 | 0.098 | +0.015 [-0.016, +0.045] |
+| fixed extremizing, ×1.5 | readable | 480 | 0.135 | +0.153 [+0.112, +0.196] |
+| fixed extremizing, ×1.5 | hidden | 191 | 0.098 | +0.018 [-0.018, +0.056] |
+| history's base rate (ignores the forecast) | readable | 480 | 0.135 | +0.108 [+0.080, +0.134] |
+| history's base rate (ignores the forecast) | hidden | 191 | 0.098 | +0.083 [+0.044, +0.119] |
+| Platt | readable | 480 | 0.135 | +0.090 [+0.061, +0.118] |
+| Platt | hidden | 191 | 0.098 | +0.046 [+0.019, +0.070] |
+| isotonic | readable | 480 | 0.135 | +0.098 [+0.069, +0.128] |
+| isotonic | hidden | 191 | 0.098 | +0.038 [+0.010, +0.065] |
+
+Learning curve (L): the same 206 instances (162 markets) at every k, each calibrated on its k most recent resolutions before it opened. Raw Brier on them: 0.264. Cells: Brier − raw [95% interval].
+
+| Resolutions used to fit (k) | history's base rate (ignores the forecast) | Platt | isotonic |
+|---|---|---|---|
+| 25 | -0.021 [-0.074, +0.029] | +0.008 [-0.033, +0.048] | +0.006 [-0.033, +0.043] |
+| 50 | -0.017 [-0.066, +0.029] | -0.021 [-0.056, +0.012] | -0.022 [-0.058, +0.013] |
+| 100 | -0.002 [-0.052, +0.045] | -0.012 [-0.046, +0.019] | -0.011 [-0.042, +0.018] |
+| 200 | -0.013 [-0.059, +0.031] | -0.031 [-0.058, -0.006] | -0.027 [-0.050, -0.005] |
+| 400 | -0.027 [-0.073, +0.018] | -0.043 [-0.068, -0.020] | -0.040 [-0.059, -0.022] |
+
+![Reliability diagram, walk-forward test](data/calibration/m8-calibration.svg)
+
+The diagram's points (W, ten equal-mass bins): mean forecast → share resolved Yes.
+
+| Bin | raw (the default) | Platt | isotonic |
+|---|---|---|---|
+| 1 | 0.01 → 0.15 (n 67) | 0.13 → 0.31 (n 67) | 0.15 → 0.25 (n 67) |
+| 2 | 0.02 → 0.28 (n 67) | 0.17 → 0.18 (n 67) | 0.17 → 0.24 (n 67) |
+| 3 | 0.03 → 0.22 (n 67) | 0.21 → 0.12 (n 67) | 0.18 → 0.22 (n 67) |
+| 4 | 0.07 → 0.18 (n 67) | 0.26 → 0.27 (n 67) | 0.20 → 0.22 (n 67) |
+| 5 | 0.11 → 0.31 (n 67) | 0.30 → 0.28 (n 67) | 0.22 → 0.09 (n 67) |
+| 6 | 0.16 → 0.30 (n 67) | 0.34 → 0.33 (n 67) | 0.23 → 0.43 (n 67) |
+| 7 | 0.24 → 0.33 (n 67) | 0.38 → 0.28 (n 67) | 0.30 → 0.31 (n 67) |
+| 8 | 0.39 → 0.34 (n 67) | 0.44 → 0.36 (n 67) | 0.44 → 0.37 (n 67) |
+| 9 | 0.64 → 0.48 (n 67) | 0.52 → 0.48 (n 67) | 0.64 → 0.52 (n 67) |
+| 10 | 0.91 → 0.74 (n 68) | 0.70 → 0.72 (n 68) | 0.76 → 0.66 (n 68) |
+
+Live: 3 posted binary forecasts in the committed ledgers, 0 with a resolution the ledger holds, so the live arm has nothing to fit or test yet.
+
+Predictions stated in PLAN.md before the run:
+
+- P18 (Q4 as written: with k = 25, 50 and 100, no interval of Platt or isotonic against raw wholly below 0: **held**; isotonic worse than Platt at each k: **failed**).
+- P19 (on W, Platt at least 0.02 better than raw with the interval below 0: **held** (-0.022 [-0.037, -0.008]); halves raw's ECE: **held** (0.152 → 0.055); isotonic's interval below 0: **held** (-0.018 [-0.029, -0.008])).
+- P20 (extremizing ×1.5 worse than raw, interval above 0): **held** (+0.015 [+0.010, +0.020]).
+- P21 (Platt's gain at k = 50 at least half its gain at k = 400): **failed** (+0.021 against +0.043).
+- P22 (Platt beats the history's base rate, interval including 0): **failed** (Platt − base rate -0.024 [-0.038, -0.009]).
+
+Decision (M7's replacement rule on W): **Platt** replaces raw for this model's binary forecasts.
+<!-- augur:end calibration -->
+
 ## M7: what carries the score, and how many questions it takes to tell (2026-11-21)
 
 **Question.** Which part of the pipeline carries the score: research depth,

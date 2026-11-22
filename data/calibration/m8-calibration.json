@@ -1,0 +1,969 @@
+{
+ "corpus": {
+  "base_rate": 0.3488,
+  "by_set": {
+   "2026-06-21": 137,
+   "2026-07-05": 118,
+   "2026-07-19": 123,
+   "2026-08-02": 125,
+   "2026-08-16": 139,
+   "2026-08-30": 78,
+   "2026-09-13": 76,
+   "2026-09-27": 85,
+   "2026-10-11": 45
+  },
+  "instances": 926,
+  "markets": 541,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "released": "2026-06-04",
+  "sets": [
+   "2026-06-21",
+   "2026-07-05",
+   "2026-07-19",
+   "2026-08-02",
+   "2026-08-16",
+   "2026-08-30",
+   "2026-09-13",
+   "2026-09-27",
+   "2026-10-11"
+  ]
+ },
+ "learning_curve": {
+  "fits": [
+   {
+    "latest_resolution": "2026-09-02",
+    "n": 400,
+    "opened": "2026-09-03",
+    "tests": 76
+   },
+   {
+    "latest_resolution": "2026-09-22",
+    "n": 400,
+    "opened": "2026-09-23",
+    "tests": 85
+   },
+   {
+    "latest_resolution": "2026-10-08",
+    "n": 400,
+    "opened": "2026-10-09",
+    "tests": 45
+   }
+  ],
+  "instances": 206,
+  "markets": 162,
+  "raw_brier": 0.2635,
+  "rows": [
+   {
+    "calibrator": "extremize-1.5",
+    "ece": 0.2557,
+    "k": 25,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0307,
+     "low": 0.014,
+     "mde": 0.012,
+     "mean": 0.022,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "base-rate",
+    "ece": 0.1183,
+    "k": 25,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0288,
+     "low": -0.0741,
+     "mde": 0.0733,
+     "mean": -0.0206,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "platt",
+    "ece": 0.2138,
+    "k": 25,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0476,
+     "low": -0.0332,
+     "mde": 0.0578,
+     "mean": 0.0082,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "isotonic",
+    "ece": 0.2178,
+    "k": 25,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0432,
+     "low": -0.0326,
+     "mde": 0.0542,
+     "mean": 0.0058,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "extremize-1.5",
+    "ece": 0.2557,
+    "k": 50,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0307,
+     "low": 0.014,
+     "mde": 0.012,
+     "mean": 0.022,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "base-rate",
+    "ece": 0.1364,
+    "k": 50,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0295,
+     "low": -0.0664,
+     "mde": 0.0684,
+     "mean": -0.0168,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "platt",
+    "ece": 0.1475,
+    "k": 50,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0121,
+     "low": -0.0559,
+     "mde": 0.0487,
+     "mean": -0.0207,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "isotonic",
+    "ece": 0.1501,
+    "k": 50,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0133,
+     "low": -0.0584,
+     "mde": 0.0513,
+     "mean": -0.0219,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "extremize-1.5",
+    "ece": 0.2557,
+    "k": 100,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0307,
+     "low": 0.014,
+     "mde": 0.012,
+     "mean": 0.022,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "base-rate",
+    "ece": 0.1557,
+    "k": 100,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0447,
+     "low": -0.0518,
+     "mde": 0.0691,
+     "mean": -0.0024,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "platt",
+    "ece": 0.1515,
+    "k": 100,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0192,
+     "low": -0.046,
+     "mde": 0.0468,
+     "mean": -0.0124,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "isotonic",
+    "ece": 0.1606,
+    "k": 100,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0181,
+     "low": -0.042,
+     "mde": 0.0431,
+     "mean": -0.0114,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "extremize-1.5",
+    "ece": 0.2557,
+    "k": 200,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0307,
+     "low": 0.014,
+     "mde": 0.012,
+     "mean": 0.022,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "base-rate",
+    "ece": 0.1523,
+    "k": 200,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0313,
+     "low": -0.059,
+     "mde": 0.0646,
+     "mean": -0.0125,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "platt",
+    "ece": 0.121,
+    "k": 200,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": -0.0064,
+     "low": -0.0583,
+     "mde": 0.0372,
+     "mean": -0.031,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "isotonic",
+    "ece": 0.1401,
+    "k": 200,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": -0.0055,
+     "low": -0.0504,
+     "mde": 0.0324,
+     "mean": -0.0273,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "extremize-1.5",
+    "ece": 0.2557,
+    "k": 400,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0307,
+     "low": 0.014,
+     "mde": 0.012,
+     "mean": 0.022,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "base-rate",
+    "ece": 0.1303,
+    "k": 400,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": 0.0184,
+     "low": -0.0731,
+     "mde": 0.0653,
+     "mean": -0.027,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "platt",
+    "ece": 0.1261,
+    "k": 400,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": -0.0198,
+     "low": -0.068,
+     "mde": 0.0343,
+     "mean": -0.043,
+     "n": 206
+    }
+   },
+   {
+    "calibrator": "isotonic",
+    "ece": 0.1204,
+    "k": 400,
+    "vs_raw_brier": {
+     "clusters": 162,
+     "high": -0.0221,
+     "low": -0.0587,
+     "mde": 0.0265,
+     "mean": -0.0397,
+     "n": 206
+    }
+   }
+  ]
+ },
+ "live": {
+  "binary_forecasts": 3,
+  "resolved": 0
+ },
+ "method": {
+  "bootstrap": "paired, resampling markets, 10,000 resamples, seeded",
+  "clip": [
+   0.01,
+   0.99
+  ],
+  "ece_bins": 10,
+  "ks": [
+   25,
+   50,
+   100,
+   200,
+   400
+  ],
+  "l_min": 400,
+  "w_min": 50
+ },
+ "walk_forward": {
+  "base_rate": 0.3338,
+  "edge": [
+   {
+    "calibrator": "raw",
+    "edge": {
+     "clusters": 344,
+     "high": 0.1724,
+     "low": 0.0953,
+     "mde": 0.0556,
+     "mean": 0.1329,
+     "n": 480
+    },
+    "group": "readable",
+    "n": 480,
+    "price_brier": 0.1353
+   },
+   {
+    "calibrator": "raw",
+    "edge": {
+     "clusters": 81,
+     "high": 0.0452,
+     "low": -0.0162,
+     "mde": 0.0436,
+     "mean": 0.0147,
+     "n": 191
+    },
+    "group": "hidden",
+    "n": 191,
+    "price_brier": 0.0983
+   },
+   {
+    "calibrator": "extremize-1.5",
+    "edge": {
+     "clusters": 344,
+     "high": 0.1957,
+     "low": 0.1118,
+     "mde": 0.0603,
+     "mean": 0.1527,
+     "n": 480
+    },
+    "group": "readable",
+    "n": 480,
+    "price_brier": 0.1353
+   },
+   {
+    "calibrator": "extremize-1.5",
+    "edge": {
+     "clusters": 81,
+     "high": 0.056,
+     "low": -0.0175,
+     "mde": 0.0521,
+     "mean": 0.0185,
+     "n": 191
+    },
+    "group": "hidden",
+    "n": 191,
+    "price_brier": 0.0983
+   },
+   {
+    "calibrator": "base-rate",
+    "edge": {
+     "clusters": 344,
+     "high": 0.1343,
+     "low": 0.0801,
+     "mde": 0.039,
+     "mean": 0.108,
+     "n": 480
+    },
+    "group": "readable",
+    "n": 480,
+    "price_brier": 0.1353
+   },
+   {
+    "calibrator": "base-rate",
+    "edge": {
+     "clusters": 81,
+     "high": 0.1195,
+     "low": 0.0444,
+     "mde": 0.0536,
+     "mean": 0.0827,
+     "n": 191
+    },
+    "group": "hidden",
+    "n": 191,
+    "price_brier": 0.0983
+   },
+   {
+    "calibrator": "platt",
+    "edge": {
+     "clusters": 344,
+     "high": 0.1181,
+     "low": 0.0614,
+     "mde": 0.0409,
+     "mean": 0.0897,
+     "n": 480
+    },
+    "group": "readable",
+    "n": 480,
+    "price_brier": 0.1353
+   },
+   {
+    "calibrator": "platt",
+    "edge": {
+     "clusters": 81,
+     "high": 0.07,
+     "low": 0.0193,
+     "mde": 0.0364,
+     "mean": 0.046,
+     "n": 191
+    },
+    "group": "hidden",
+    "n": 191,
+    "price_brier": 0.0983
+   },
+   {
+    "calibrator": "isotonic",
+    "edge": {
+     "clusters": 344,
+     "high": 0.128,
+     "low": 0.0686,
+     "mde": 0.043,
+     "mean": 0.0982,
+     "n": 480
+    },
+    "group": "readable",
+    "n": 480,
+    "price_brier": 0.1353
+   },
+   {
+    "calibrator": "isotonic",
+    "edge": {
+     "clusters": 81,
+     "high": 0.0649,
+     "low": 0.0101,
+     "mde": 0.0392,
+     "mean": 0.0384,
+     "n": 191
+    },
+    "group": "hidden",
+    "n": 191,
+    "price_brier": 0.0983
+   }
+  ],
+  "fits": [
+   {
+    "latest_resolution": "2026-07-08",
+    "n": 68,
+    "opened": "2026-07-09",
+    "tests": 123
+   },
+   {
+    "latest_resolution": "2026-07-22",
+    "n": 122,
+    "opened": "2026-07-23",
+    "tests": 125
+   },
+   {
+    "latest_resolution": "2026-08-04",
+    "n": 210,
+    "opened": "2026-08-06",
+    "tests": 139
+   },
+   {
+    "latest_resolution": "2026-08-19",
+    "n": 287,
+    "opened": "2026-08-20",
+    "tests": 78
+   },
+   {
+    "latest_resolution": "2026-09-02",
+    "n": 432,
+    "opened": "2026-09-03",
+    "tests": 76
+   },
+   {
+    "latest_resolution": "2026-09-22",
+    "n": 534,
+    "opened": "2026-09-23",
+    "tests": 85
+   },
+   {
+    "latest_resolution": "2026-10-08",
+    "n": 666,
+    "opened": "2026-10-09",
+    "tests": 45
+   }
+  ],
+  "instances": 671,
+  "markets": 425,
+  "platt_vs_base_rate": {
+   "clusters": 425,
+   "high": -0.0091,
+   "low": -0.0379,
+   "mde": 0.0207,
+   "mean": -0.0236,
+   "n": 671
+  },
+  "rows": [
+   {
+    "bins": [
+     {
+      "freq": 0.1493,
+      "mean_p": 0.01,
+      "n": 67
+     },
+     {
+      "freq": 0.2836,
+      "mean_p": 0.0152,
+      "n": 67
+     },
+     {
+      "freq": 0.2239,
+      "mean_p": 0.0284,
+      "n": 67
+     },
+     {
+      "freq": 0.1791,
+      "mean_p": 0.0676,
+      "n": 67
+     },
+     {
+      "freq": 0.3134,
+      "mean_p": 0.1142,
+      "n": 67
+     },
+     {
+      "freq": 0.2985,
+      "mean_p": 0.1587,
+      "n": 67
+     },
+     {
+      "freq": 0.3284,
+      "mean_p": 0.2445,
+      "n": 67
+     },
+     {
+      "freq": 0.3433,
+      "mean_p": 0.3922,
+      "n": 67
+     },
+     {
+      "freq": 0.4776,
+      "mean_p": 0.6399,
+      "n": 67
+     },
+     {
+      "freq": 0.7353,
+      "mean_p": 0.9084,
+      "n": 68
+     }
+    ],
+    "brier": {
+     "clusters": 425,
+     "high": 0.2584,
+     "low": 0.1918,
+     "mde": 0.0477,
+     "mean": 0.224,
+     "n": 671
+    },
+    "calibrator": "raw",
+    "ece": 0.1522,
+    "log": -0.7544,
+    "mean": 0.2589,
+    "sharpness": 0.291,
+    "verdict": "",
+    "vs_raw_brier": {
+     "clusters": 425,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 671
+    },
+    "vs_raw_log": {
+     "clusters": 425,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 671
+    }
+   },
+   {
+    "bins": [
+     {
+      "freq": 0.1493,
+      "mean_p": 0.01,
+      "n": 67
+     },
+     {
+      "freq": 0.2388,
+      "mean_p": 0.01,
+      "n": 67
+     },
+     {
+      "freq": 0.2687,
+      "mean_p": 0.01,
+      "n": 67
+     },
+     {
+      "freq": 0.1791,
+      "mean_p": 0.0196,
+      "n": 67
+     },
+     {
+      "freq": 0.3134,
+      "mean_p": 0.0446,
+      "n": 67
+     },
+     {
+      "freq": 0.2985,
+      "mean_p": 0.076,
+      "n": 67
+     },
+     {
+      "freq": 0.3284,
+      "mean_p": 0.1583,
+      "n": 67
+     },
+     {
+      "freq": 0.3433,
+      "mean_p": 0.3433,
+      "n": 67
+     },
+     {
+      "freq": 0.4776,
+      "mean_p": 0.7001,
+      "n": 67
+     },
+     {
+      "freq": 0.7353,
+      "mean_p": 0.955,
+      "n": 68
+     }
+    ],
+    "brier": {
+     "clusters": 425,
+     "high": 0.2775,
+     "low": 0.2031,
+     "mde": 0.0531,
+     "mean": 0.2392,
+     "n": 671
+    },
+    "calibrator": "extremize-1.5",
+    "ece": 0.189,
+    "log": -0.8793,
+    "mean": 0.2338,
+    "sharpness": 0.3217,
+    "verdict": "raw stays",
+    "vs_raw_brier": {
+     "clusters": 425,
+     "high": 0.0204,
+     "low": 0.0102,
+     "mde": 0.0073,
+     "mean": 0.0152,
+     "n": 671
+    },
+    "vs_raw_log": {
+     "clusters": 425,
+     "high": -0.0904,
+     "low": -0.1619,
+     "mde": 0.0507,
+     "mean": -0.1249,
+     "n": 671
+    }
+   },
+   {
+    "bins": [
+     {
+      "freq": 0.3433,
+      "mean_p": 0.2903,
+      "n": 67
+     },
+     {
+      "freq": 0.3433,
+      "mean_p": 0.3136,
+      "n": 67
+     },
+     {
+      "freq": 0.3731,
+      "mean_p": 0.3271,
+      "n": 67
+     },
+     {
+      "freq": 0.2687,
+      "mean_p": 0.3686,
+      "n": 67
+     },
+     {
+      "freq": 0.3582,
+      "mean_p": 0.3724,
+      "n": 67
+     },
+     {
+      "freq": 0.1791,
+      "mean_p": 0.3821,
+      "n": 67
+     },
+     {
+      "freq": 0.3433,
+      "mean_p": 0.3821,
+      "n": 67
+     },
+     {
+      "freq": 0.4328,
+      "mean_p": 0.3841,
+      "n": 67
+     },
+     {
+      "freq": 0.3582,
+      "mean_p": 0.3935,
+      "n": 67
+     },
+     {
+      "freq": 0.3382,
+      "mean_p": 0.3952,
+      "n": 68
+     }
+    ],
+    "brier": {
+     "clusters": 425,
+     "high": 0.2402,
+     "low": 0.2116,
+     "mde": 0.0204,
+     "mean": 0.2256,
+     "n": 671
+    },
+    "calibrator": "base-rate",
+    "ece": 0.0626,
+    "log": -0.6438,
+    "mean": 0.3609,
+    "sharpness": 0.0354,
+    "verdict": "raw stays",
+    "vs_raw_brier": {
+     "clusters": 425,
+     "high": 0.0281,
+     "low": -0.0255,
+     "mde": 0.0383,
+     "mean": 0.0016,
+     "n": 671
+    },
+    "vs_raw_log": {
+     "clusters": 425,
+     "high": 0.2195,
+     "low": 0.0113,
+     "mde": 0.1484,
+     "mean": 0.1106,
+     "n": 671
+    }
+   },
+   {
+    "bins": [
+     {
+      "freq": 0.3134,
+      "mean_p": 0.1329,
+      "n": 67
+     },
+     {
+      "freq": 0.1791,
+      "mean_p": 0.1734,
+      "n": 67
+     },
+     {
+      "freq": 0.1194,
+      "mean_p": 0.2096,
+      "n": 67
+     },
+     {
+      "freq": 0.2687,
+      "mean_p": 0.2577,
+      "n": 67
+     },
+     {
+      "freq": 0.2836,
+      "mean_p": 0.3006,
+      "n": 67
+     },
+     {
+      "freq": 0.3284,
+      "mean_p": 0.3366,
+      "n": 67
+     },
+     {
+      "freq": 0.2836,
+      "mean_p": 0.3758,
+      "n": 67
+     },
+     {
+      "freq": 0.3582,
+      "mean_p": 0.4352,
+      "n": 67
+     },
+     {
+      "freq": 0.4776,
+      "mean_p": 0.5233,
+      "n": 67
+     },
+     {
+      "freq": 0.7206,
+      "mean_p": 0.6952,
+      "n": 68
+     }
+    ],
+    "brier": {
+     "clusters": 425,
+     "high": 0.2228,
+     "low": 0.1828,
+     "mde": 0.0288,
+     "mean": 0.202,
+     "n": 671
+    },
+    "calibrator": "platt",
+    "ece": 0.0552,
+    "log": -0.5959,
+    "mean": 0.3446,
+    "sharpness": 0.166,
+    "verdict": "replaces raw (interval below 0)",
+    "vs_raw_brier": {
+     "clusters": 425,
+     "high": -0.0077,
+     "low": -0.037,
+     "mde": 0.0209,
+     "mean": -0.022,
+     "n": 671
+    },
+    "vs_raw_log": {
+     "clusters": 425,
+     "high": 0.2353,
+     "low": 0.0878,
+     "mde": 0.1059,
+     "mean": 0.1585,
+     "n": 671
+    }
+   },
+   {
+    "bins": [
+     {
+      "freq": 0.2537,
+      "mean_p": 0.1497,
+      "n": 67
+     },
+     {
+      "freq": 0.2388,
+      "mean_p": 0.1735,
+      "n": 67
+     },
+     {
+      "freq": 0.2239,
+      "mean_p": 0.1819,
+      "n": 67
+     },
+     {
+      "freq": 0.2239,
+      "mean_p": 0.2045,
+      "n": 67
+     },
+     {
+      "freq": 0.0896,
+      "mean_p": 0.2182,
+      "n": 67
+     },
+     {
+      "freq": 0.4328,
+      "mean_p": 0.2302,
+      "n": 67
+     },
+     {
+      "freq": 0.3134,
+      "mean_p": 0.2971,
+      "n": 67
+     },
+     {
+      "freq": 0.3731,
+      "mean_p": 0.4359,
+      "n": 67
+     },
+     {
+      "freq": 0.5224,
+      "mean_p": 0.641,
+      "n": 67
+     },
+     {
+      "freq": 0.6618,
+      "mean_p": 0.7642,
+      "n": 68
+     }
+    ],
+    "brier": {
+     "clusters": 425,
+     "high": 0.2308,
+     "low": 0.1824,
+     "mde": 0.0346,
+     "mean": 0.2059,
+     "n": 671
+    },
+    "calibrator": "isotonic",
+    "ece": 0.0862,
+    "log": -0.604,
+    "mean": 0.3303,
+    "sharpness": 0.2068,
+    "verdict": "replaces raw (interval below 0)",
+    "vs_raw_brier": {
+     "clusters": 425,
+     "high": -0.0076,
+     "low": -0.0294,
+     "mde": 0.0156,
+     "mean": -0.0181,
+     "n": 671
+    },
+    "vs_raw_log": {
+     "clusters": 425,
+     "high": 0.2237,
+     "low": 0.0849,
+     "mde": 0.0998,
+     "mean": 0.1504,
+     "n": 671
+    }
+   }
+  ],
+  "sets": [
+   "2026-07-19",
+   "2026-08-02",
+   "2026-08-16",
+   "2026-08-30",
+   "2026-09-13",
+   "2026-09-27",
+   "2026-10-11"
+  ]
+ }
+}
