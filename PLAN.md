@@ -435,6 +435,202 @@ toward 35%. The rule was on W as a whole, so the decision stands; a
 source-conditioned map is a candidate for a later milestone, prediction
 first.
 
+**The source-aware calibrator: prediction and decision rule, committed
+2026-11-22 before any run.** M8's pooled Platt map is 0.035 Brier worse
+than raw on the hidden-price group of W (Metaculus and INFER), the group
+nearest to what MiniBench asks. Two maps that know a question's source
+join M8's walk-forward harness, on the same 671 instances and the same
+fits (each instance calibrated only on outcomes known before it opened):
+
+- **Per-source Platt (`platt-by-source`):** a separate Platt map for each
+  source, fitted on that source's history alone; a source with fewer than
+  30 known outcomes in the history (INFER always: it is never trained on)
+  gets the pooled map.
+- **Partially pooled Platt (`platt-partial`):** one shared slope and a
+  per-source intercept, `q = sigmoid(a · logit(p) + b + u_s)`, fitted by
+  penalised maximum likelihood on Platt's smoothed targets with the
+  penalty `u_s² / (2 · 0.5²)` on each source's offset (a normal prior of
+  standard deviation 0.5 log-odds around the shared intercept, fixed now
+  and never tuned). A source the history has not seen gets `u_s = 0`.
+
+Both are compared with raw and with pooled Platt overall and by source
+(Polymarket, Manifold, Metaculus, INFER), paired bootstrap over markets as
+in M8, by `augur calibrate` and checked by `make eval`. For reading beside
+it: AIA Forecaster's calibration step is a fixed, unfitted extremizer
+(log-odds × √3) on a frontier model, the opposite direction to this free
+model's fitted slope of 0.32, so no map transfers across models.
+
+| # | Prediction |
+|---|------------|
+| P23 | On W's Metaculus instances the partially pooled map is still worse than raw: point estimate above 0 and the interval's upper bound above +0.01. It cuts pooled Platt's Metaculus loss by at least half (point estimates). |
+| P24 | Per-source Platt on W's Metaculus instances: the interval of Brier − raw has its upper bound below +0.01. Overall (all of W) both source-aware maps are within ±0.01 of pooled Platt (point estimates). |
+
+**Decision rule.** A source-aware map replaces pooled Platt as the live map
+only if (i) on W's Metaculus instances the upper bound of Brier(map) −
+Brier(raw) is below +0.01 (M7's non-inferiority margin), and (ii) on all of
+W the upper bound of Brier(map) − Brier(pooled Platt) is below +0.01. If
+both maps pass, the lower overall point estimate wins. Until some map
+passes (i), the live calibrator is not applied to forecasts on Metaculus
+questions; every live and bot-testing-area question is a Metaculus
+question, so until then live binary forecasts go out raw.
+
+**M9's design, predictions and decision rules (Q6), committed 2026-11-22
+before any M9 run.** Q6's prediction above stands unedited. The risk this
+design guards against: this model's log-odds are worth about a third of
+their face value (M8's slope 0.32), so *any* rule that shrinks forecasts
+will look good against raw, whether or not disagreement carries
+information. A disagreement-conditioned policy therefore counts only if it
+beats two controls on the same questions: **(A) constant shrinkage**, a
+Platt map on the final forecast (one slope for every question), and **(B)
+the source-aware calibrator**, the partially pooled map above. BLF's
+attempt at the same thing, a shrink of the mean logit scaled by the
+disagreement of five draws, was a null: leave-one-out tuning chose no
+shrinkage (arXiv 2604.18576v5). Everything runs on draws already in the
+ledgers, $0, no new model call.
+
+- **Samples.** S138: C2's 138 questions (ForecastBench 2026-06-21), no
+  retrieval, `nemotron-3-ultra:free`, three draws each (M5's arm (b));
+  final forecast the median of the three. S40: M7's 40 questions, one
+  research pass as of open, final forecast the median of draws 0 to 4 of
+  the same model (the live default's shape); for it also three draws of
+  `nemotron-3-nano:free` on the same briefs, and the loop (L) and
+  two-pass (D2) briefs.
+- **Disagreement measures**, all on log-odds of forecasts clipped to
+  [0.01, 0.99]: *draws*, the standard deviation of the draws' log-odds
+  (S138: three, S40: five); *models*, the absolute log-odds gap between
+  the median of three ultra draws and the median of three nano draws (S40);
+  *passes*, the standard deviation of the three researched briefs' medians
+  (one pass, loop, two passes; S40). Beside them, as a reference and not a
+  disagreement measure, *confidence*, |logit p| of the final forecast.
+- **Error.** A large error is a Brier score of the final forecast strictly
+  above the sample's median Brier. AUROC of each measure for large errors
+  (ties count a half), with a percentile bootstrap interval over questions
+  (10,000 resamples, seeded).
+- **What the n can resolve, stated before running.** With half the
+  questions in each class, the AUROC's interval half-width is about 0.18
+  at n = 40 and 0.10 at n = 138 (Hanley and McNeil), so at n = 40 only an
+  AUROC above about 0.68 can clear 0.5, and at 138 above about 0.60. For a
+  policy's paired Brier difference, M7's measured per-question spreads
+  (0.028 for 9 against 5 draws to 0.077 for two passes against one) put
+  the detectable effect at n = 40 between 0.012 and 0.034 Brier, and at
+  n = 138 between 0.007 and 0.018.
+- **Policies.** Every fitted map (A, B and the fitted policy) is fitted
+  leave-one-out within the sample: the question being forecast never
+  enters its own fit. These are one ForecastBench set, so the history is
+  not time-ordered as M8's is; the procedure is the same for controls and
+  policies, and the absolute gains are optimistic for all of them alike.
+  (1) *Fitted slope*: B plus a disagreement term in the slope,
+  `q = sigmoid((a + c · z) · logit(p) + b + u_s)`, z the measure
+  standardised on the training questions, one policy per measure.
+  (2) *Fixed spread shrink*, no parameter fitted:
+  `q = sigmoid(logit(p) / (1 + d))`, d the draws measure, with its own
+  third control, the *matched constant shrink*
+  `q = sigmoid(k · logit(p))`, k the sample mean of `1 / (1 + d)`
+  (forecasts only, no outcome). (3) *Skip*: forecast the control's value
+  except on the quarter of questions with the largest disagreement
+  (rounded down; ties by question id), scored in tournament units against
+  ForecastBench's recorded freeze-time value as the stand-in for the
+  field (a skipped question scores 0), against the same control
+  forecasting every question and against skipping the same number at
+  random (its expectation).
+- **Tournament units.** For a forecast-changing policy, the mean
+  head-to-head score against the control, 100 × ln(q(outcome) /
+  control(outcome)): the change in peer score from submitting q instead,
+  whatever the field. Beside it the paired Brier difference.
+
+| # | Prediction |
+|---|------------|
+| P25 | Draws: the AUROC of the draws' spread has a point estimate below 0.6 and an interval that includes 0.5, on S138 and on S40 (same-model draws carry little independent signal: M7 found one to nine draws within 0.002 Brier). |
+| P26 | Models: on S40 the gap between the two models has the highest AUROC point estimate of the three measures, above 0.6, with an interval that includes 0.5. Passes: its interval includes 0.5. |
+| P27 | The trap is real: control A (leave-one-out Platt) beats raw on S138 with the interval of Brier(A) − Brier(raw) below 0, and the matched constant shrink beats raw on S138 (point estimate). |
+| P28 | No disagreement-conditioned policy (fitted slope, fixed spread shrink, skip) beats both controls with an interval excluding 0, on either sample; every policy's point estimate against B is within ±0.01 Brier. |
+| P29 | Verdict: not resolvable at this n, for every measure; the count needed for an AUROC of 0.6 to clear 0.5 with 80% power is more than 300 questions. |
+
+**Decision rule.** A policy is adopted only if, on the same questions, its
+paired interval of Brier(policy) − Brier(control) lies wholly below 0
+against both A and B (and, for the fixed spread shrink, against the
+matched constant too; for skip, its tournament-unit gain has an interval
+above 0 against the control forecasting everything and against random
+skipping, on top of A and of B). A policy whose interval against either
+control lies wholly above 0 is rejected. Anything else is *not resolvable
+at this n*, reported with the count of questions that would detect 0.01
+Brier at 80% power on the measured per-question spread.
+
+<!-- q6-preregistration:begin -->
+**Q6's live test, pre-registered 2026-11-22 before it starts.**
+
+1. *Policy:* the fixed spread shrink, `q = sigmoid(logit(p) / (1 + d))`,
+   p the median of the question's draws and d the standard deviation of
+   their log-odds (forecasts clipped to [0.01, 0.99]). Nothing is fitted.
+2. *Unit:* a binary question in MiniBench, FutureEval or a shadow round
+   (dry run) whose forecast in the committed ledgers has at least three
+   member draws, all from one model. The first such forecast per question
+   counts; backtests and the bot-testing-area do not.
+3. *Split:* the question's Metaculus id. Odd ids are the policy half;
+   even ids are the control half.
+4. *What is recorded:* nothing new. Every member draw is already in the
+   ledger, so the policy, the default (the median, raw) and the controls
+   are recomputed from the member rows on every question.
+5. *What is submitted:* on odd ids the policy's forecast, only if the
+   backtest verdict above adopts the fixed spread shrink; otherwise the
+   default everywhere, and the policy is never posted.
+6. *Controls:* the default, and the matched constant shrink
+   `q = sigmoid(k · logit(p))` with k frozen at the value S40 gives.
+7. *Analysis, fixed now:* when the odd half has 60 resolved binary
+   questions, or on 2027-03-31, whichever is first, the mean paired
+   Brier(policy) − Brier(control) and the head-to-head score on the odd
+   half, for each control, with a bootstrap interval clustered by the
+   week the question opened (10,000 resamples, seeded). The even half is
+   analysed the same way and reported beside it, as a replication.
+8. *Verdict:* adopted if both intervals on the odd half lie wholly below
+   0 (Brier); rejected if either lies wholly above 0; otherwise not
+   resolvable at that n, with the count needed.
+<!-- q6-preregistration:end -->
+
+**Q6's live test, two clarifications (2026-11-22, before any unit
+exists; the registered block above is unedited).** "Before it starts"
+is read as: only runs that start at or after the registration commit
+(`ca3aaa9`, 2026-11-22 15:09:51 UTC) are units, so the two earlier dry
+runs in the ledgers do not count. "The question's Metaculus id" is the
+question id inside the post (the ledger's `question_id`), not the post
+id. FutureEval runs are recorded by project id (`33121`) and count.
+
+**The source-aware calibrator's result (2026-11-22; RESULTS.md, P23 and
+P24 above unedited).** P23 held in its first part (partially pooled on
+Metaculus +0.019 [−0.008, +0.043] against raw) and failed in its second
+(it cut pooled Platt's +0.035 loss by 47%, not half). P24 failed in its
+first part (per-source Platt +0.014 [−0.008, +0.032], upper bound above
++0.01) and held in its second (both maps within 0.01 of pooled Platt
+overall; per-source is 0.007 better [0.003, 0.011]). No map passes the
+rule's part (i), so the live map stays pooled Platt with `withheld_from:
+["metaculus"]`: live binary forecasts go out raw. M8's "191 Metaculus
+questions" were 190 Metaculus and one INFER question.
+
+**M9's results (2026-11-22; RESULTS.md, P25 to P29 above unedited).** The
+samples are 135 and 39 questions (three of C2's lack a third draw, one of
+M7's 40 a fifth). P25 held (draw spread AUROC 0.507 [0.405, 0.608] on
+S138, 0.563 [0.372, 0.743] on S40). P26 failed: the two-model gap scored
+lowest, 0.325 [0.164, 0.505]; the passes' interval includes 0.5 (held).
+P27 failed in its first part (control A against raw on S138 −0.009
+[−0.034, +0.016]) and held in its second (the matched constant shrink
+−0.007 [−0.014, −0.000]). P28 failed in its first part, read as
+written: skipping by the draws' spread beats A and B forecasting every
+question on both samples (+7.3 [+2.9, +12.2] points on S138), only
+because the model trails the price almost everywhere; against skipping
+at random it gains +0.8 [−3.0, +5.1], so it is not adopted. No shrink
+policy beat A and B, and every one is within 0.01 of B (held). P29 held in its first
+part (not resolvable at this n for every policy) and failed in its second
+(an AUROC of 0.6 needs about 250 questions, not more than 300). Q6 as
+written: its first half failed (no measure above 0.6), its second held
+(the fixed shrink improves on its matched constant by 0.005, below the
+detectable effect). Verdict: **not resolvable at this n**, with 95 to
+1,063 questions needed per policy for 0.01 Brier; the fixed spread shrink
+is not posted live. Found after the run: the pre-registered label (Brier
+above the median) marks hedged forecasts more than wrong ones (confidence
+predicts it at AUROC 0.17 and 0.01), so a future registration should use
+the wrong-side label; on that label, reported as exploratory, the draw
+spread scores 0.60 [0.49, 0.70] and the research passes 0.68 [0.47, 0.88].
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
@@ -795,7 +991,7 @@ documented ones.
 - [x] M6: The leakage-proof backtest and what leakage is worth (Q2) — the resolved-question loader (past tournaments by API, ForecastBench sets without a token) with its eligibility filters; the model registry's release dates enforced; the `wayback` searcher (capture at or before the instant; the CDX `to=` bound is inclusive of the whole day, so the capture timestamp is compared, not the query); `augur backtest` with the clock pinned to each open date; the three-arm experiment (no retrieval, as of open, as of today) on the same questions, with the prediction above; a bounded research loop in the researcher (search, read, write down a belief and what is unknown, choose the next query, stop after a fixed number of steps or the question's deadline), measured against the one-pass brief on the same backtest with its cost and latency (direction of 2026-11-20); in `augur standings`, every template bot by model, the agent-against-template difference for every model pair, and a proposed floor re-based on the latest round (a model is admitted only if its template's average is at or above 0) with the worst-case cost of a 60-question round on each admitted route, for the maintainer to approve; an LLM judge using the published 0 to 4 leakage rubric on admitted sources, with a hand-labelled sample to check the judge. Every finding is labelled with its model. Done when `tests/test_leakage.py` passes on the committed backtest ledger and fails on a planted violation of each kind (late source, undated source, model too new), RESULTS.md holds the three arms with paired intervals, the residual leak rate and the judge's agreement with the hand labels, and the published 0.242 to 0.108 gap is shown beside mine with the protocol differences stated. (Amended 2026-11-20: scoring the judge's 40-source sample by hand needs a person, which the build environment does not have. The blind sheet and a checked step that installs the filled labels are built and tested; RESULTS.md reports the judge against a provisional second-model rating, labelled as such, P9 reads "not yet tested" until the hand labels are installed, and the exact steps are under To measure.)
 - [x] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
 - [x] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
-- [ ] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
+- [x] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
 - [ ] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
 
 **Plan changes, 2026-11-22 (M8, decided while building it).**

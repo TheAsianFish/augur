@@ -1,0 +1,879 @@
+{
+ "live": {
+  "by_half": {
+   "control": {
+    "resolved": 0,
+    "units": 0
+   },
+   "policy": {
+    "resolved": 0,
+    "units": 0
+   }
+  },
+  "deadline": "2027-03-31",
+  "due": false,
+  "k": 0.7738,
+  "target": 60,
+  "units": 0
+ },
+ "method": {
+  "bootstrap": "percentile, resampling questions, 10,000 resamples, seeded",
+  "brier_target": 0.01,
+  "fits": "leave-one-out within the sample",
+  "large_error": "Brier strictly above the sample's median Brier",
+  "prior_sd": 0.5,
+  "skip_share": "1/4"
+ },
+ "power": {
+  "auroc_halfwidth_138": 0.097,
+  "auroc_halfwidth_40": 0.181,
+  "auroc_needed": 250,
+  "auroc_target": 0.6
+ },
+ "samples": [
+  {
+   "auroc": {
+    "confidence": {
+     "auroc": 0.1688,
+     "high": 0.2474,
+     "large": 67,
+     "low": 0.0984,
+     "n": 135
+    },
+    "draws": {
+     "auroc": 0.5072,
+     "high": 0.6084,
+     "large": 67,
+     "low": 0.4054,
+     "n": 135
+    }
+   },
+   "auroc_wrong_side": {
+    "confidence": {
+     "auroc": 0.4558,
+     "high": 0.5723,
+     "large": 36,
+     "low": 0.3412,
+     "n": 135
+    },
+    "draws": {
+     "auroc": 0.5982,
+     "high": 0.6956,
+     "large": 36,
+     "low": 0.494,
+     "n": 135
+    }
+   },
+   "controls": {
+    "A \u2212 raw": {
+     "brier": {
+      "high": 0.016,
+      "low": -0.0341,
+      "mde": 0.0357,
+      "mean": -0.0087,
+      "n": 135
+     },
+     "h2h": {
+      "high": 27.81,
+      "low": 1.9,
+      "mde": 18.19,
+      "mean": 14.3,
+      "n": 135
+     },
+     "label": "control A (Platt) \u2212 raw",
+     "needed": 1792,
+     "needed_observed": 2387,
+     "sd": 0.15108
+    },
+    "B \u2212 A": {
+     "brier": {
+      "high": 0.007,
+      "low": -0.0093,
+      "mde": 0.0117,
+      "mean": -0.0013,
+      "n": 135
+     },
+     "h2h": {
+      "high": 2.35,
+      "low": -1.39,
+      "mde": 2.69,
+      "mean": 0.48,
+      "n": 135
+     },
+     "label": "control B \u2212 control A",
+     "needed": 192,
+     "needed_observed": 11374,
+     "sd": 0.04933
+    },
+    "B \u2212 raw": {
+     "brier": {
+      "high": 0.0165,
+      "low": -0.0367,
+      "mde": 0.0379,
+      "mean": -0.01,
+      "n": 135
+     },
+     "h2h": {
+      "high": 28.56,
+      "low": 2.17,
+      "mde": 18.73,
+      "mean": 14.78,
+      "n": 135
+     },
+     "label": "control B (source-aware) \u2212 raw",
+     "needed": 2020,
+     "needed_observed": 2036,
+     "sd": 0.16042
+    },
+    "matched \u2212 raw": {
+     "brier": {
+      "high": -0.0003,
+      "low": -0.0141,
+      "mde": 0.0098,
+      "mean": -0.007,
+      "n": 135
+     },
+     "h2h": {
+      "high": 14.82,
+      "low": 4.06,
+      "mde": 7.58,
+      "mean": 9.19,
+      "n": 135
+     },
+     "label": "matched constant shrink \u2212 raw",
+     "needed": 135,
+     "needed_observed": 272,
+     "sd": 0.04145
+    }
+   },
+   "description": "C2 (ForecastBench 2026-06-21), no retrieval, three draws, median",
+   "large_errors": 67,
+   "mean_measure": {
+    "confidence": 2.2681,
+    "draws": 0.4485
+   },
+   "median_brier": 0.0324,
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "n": 135,
+   "name": "S138",
+   "policies": [
+    {
+     "comparisons": [
+      {
+       "brier": {
+        "high": 0.0127,
+        "low": -0.0075,
+        "mde": 0.0145,
+        "mean": 0.0023,
+        "n": 135
+       },
+       "h2h": {
+        "high": 1.87,
+        "low": -2.63,
+        "mde": 3.21,
+        "mean": -0.32,
+        "n": 135
+       },
+       "label": "against A",
+       "needed": 292,
+       "needed_observed": 5365,
+       "sd": 0.06098
+      },
+      {
+       "brier": {
+        "high": 0.0099,
+        "low": -0.0017,
+        "mde": 0.0084,
+        "mean": 0.0036,
+        "n": 135
+       },
+       "h2h": {
+        "high": 0.45,
+        "low": -2.23,
+        "mde": 1.92,
+        "mean": -0.8,
+        "n": 135
+       },
+       "label": "against B",
+       "needed": 95,
+       "needed_observed": 717,
+       "sd": 0.03468
+      }
+     ],
+     "kind": "fitted",
+     "measure": "draws",
+     "policy": "fitted slope on draws",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "brier": {
+        "high": 0.0144,
+        "low": -0.0196,
+        "mde": 0.0245,
+        "mean": -0.0029,
+        "n": 135
+       },
+       "h2h": {
+        "high": 3.5,
+        "low": -11.68,
+        "mde": 10.83,
+        "mean": -3.62,
+        "n": 135
+       },
+       "label": "against A",
+       "needed": 844,
+       "needed_observed": 9744,
+       "sd": 0.10364
+      },
+      {
+       "brier": {
+        "high": 0.0178,
+        "low": -0.0208,
+        "mde": 0.0275,
+        "mean": -0.0016,
+        "n": 135
+       },
+       "h2h": {
+        "high": 3.59,
+        "low": -12.64,
+        "mde": 11.53,
+        "mean": -4.1,
+        "n": 135
+       },
+       "label": "against B",
+       "needed": 1063,
+       "needed_observed": 39241,
+       "sd": 0.11636
+      },
+      {
+       "brier": {
+        "high": 0.0017,
+        "low": -0.0113,
+        "mde": 0.0093,
+        "mean": -0.0046,
+        "n": 135
+       },
+       "h2h": {
+        "high": 4.92,
+        "low": -1.79,
+        "mde": 4.79,
+        "mean": 1.49,
+        "n": 135
+       },
+       "label": "against the matched constant",
+       "needed": 120,
+       "needed_observed": 575,
+       "sd": 0.03902
+      }
+     ],
+     "kind": "fixed",
+     "measure": "draws",
+     "policy": "fixed spread shrink (draws)",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "gain": {
+        "high": 12.18,
+        "low": 2.93,
+        "mde": 6.59,
+        "mean": 7.31,
+        "n": 135
+       },
+       "label": "on top of A, against forecasting every question",
+       "n": 135,
+       "skipped": 33
+      },
+      {
+       "gain": {
+        "high": 5.11,
+        "low": -3.01,
+        "mde": 5.84,
+        "mean": 0.82,
+        "n": 135
+       },
+       "label": "on top of A, against skipping 33 at random",
+       "n": 135,
+       "skipped": 33
+      },
+      {
+       "gain": {
+        "high": 12.83,
+        "low": 3.33,
+        "mde": 6.74,
+        "mean": 7.83,
+        "n": 135
+       },
+       "label": "on top of B, against forecasting every question",
+       "n": 135,
+       "skipped": 33
+      },
+      {
+       "gain": {
+        "high": 5.79,
+        "low": -2.47,
+        "mde": 5.95,
+        "mean": 1.45,
+        "n": 135
+       },
+       "label": "on top of B, against skipping 33 at random",
+       "n": 135,
+       "skipped": 33
+      }
+     ],
+     "kind": "skip",
+     "measure": "draws",
+     "policy": "skip the top quarter by draws",
+     "verdict": "not resolvable at this n"
+    }
+   ],
+   "priced": 135,
+   "raw_brier": 0.2163,
+   "shrink_k": 0.741
+  },
+  {
+   "auroc": {
+    "confidence": {
+     "auroc": 0.0118,
+     "high": 0.0428,
+     "large": 19,
+     "low": 0.0,
+     "n": 39
+    },
+    "draws": {
+     "auroc": 0.5632,
+     "high": 0.7434,
+     "large": 19,
+     "low": 0.3717,
+     "n": 39
+    },
+    "models": {
+     "auroc": 0.325,
+     "high": 0.5053,
+     "large": 19,
+     "low": 0.164,
+     "n": 39
+    },
+    "passes": {
+     "auroc": 0.5329,
+     "high": 0.7193,
+     "large": 19,
+     "low": 0.3373,
+     "n": 39
+    }
+   },
+   "auroc_wrong_side": {
+    "confidence": {
+     "auroc": 0.1851,
+     "high": 0.3348,
+     "large": 11,
+     "low": 0.068,
+     "n": 39
+    },
+    "draws": {
+     "auroc": 0.6705,
+     "high": 0.8505,
+     "large": 11,
+     "low": 0.4645,
+     "n": 39
+    },
+    "models": {
+     "auroc": 0.513,
+     "high": 0.7208,
+     "large": 11,
+     "low": 0.3081,
+     "n": 39
+    },
+    "passes": {
+     "auroc": 0.6834,
+     "high": 0.8759,
+     "large": 11,
+     "low": 0.4675,
+     "n": 39
+    }
+   },
+   "controls": {
+    "A \u2212 raw": {
+     "brier": {
+      "high": 0.0181,
+      "low": -0.0491,
+      "mde": 0.0483,
+      "mean": -0.0138,
+      "n": 39
+     },
+     "h2h": {
+      "high": 18.32,
+      "low": -7.34,
+      "mde": 18.6,
+      "mean": 4.69,
+      "n": 39
+     },
+     "label": "control A (Platt) \u2212 raw",
+     "needed": 962,
+     "needed_observed": 503,
+     "sd": 0.1107
+    },
+    "B \u2212 A": {
+     "brier": {
+      "high": 0.0076,
+      "low": -0.0109,
+      "mde": 0.0133,
+      "mean": -0.0019,
+      "n": 39
+     },
+     "h2h": {
+      "high": 2.66,
+      "low": -1.94,
+      "mde": 3.29,
+      "mean": 0.43,
+      "n": 39
+     },
+     "label": "control B \u2212 control A",
+     "needed": 74,
+     "needed_observed": 2060,
+     "sd": 0.03058
+    },
+    "B \u2212 raw": {
+     "brier": {
+      "high": 0.0166,
+      "low": -0.052,
+      "mde": 0.0491,
+      "mean": -0.0157,
+      "n": 39
+     },
+     "h2h": {
+      "high": 19.11,
+      "low": -7.11,
+      "mde": 18.89,
+      "mean": 5.12,
+      "n": 39
+     },
+     "label": "control B (source-aware) \u2212 raw",
+     "needed": 997,
+     "needed_observed": 403,
+     "sd": 0.11268
+    },
+    "matched \u2212 raw": {
+     "brier": {
+      "high": -0.0031,
+      "low": -0.0278,
+      "mde": 0.0177,
+      "mean": -0.0149,
+      "n": 39
+     },
+     "h2h": {
+      "high": 12.83,
+      "low": 0.7,
+      "mde": 8.77,
+      "mean": 6.31,
+      "n": 39
+     },
+     "label": "matched constant shrink \u2212 raw",
+     "needed": 130,
+     "needed_observed": 59,
+     "sd": 0.0406
+    }
+   },
+   "description": "M7's 40 (ForecastBench 2026-06-21), one research pass as of open, five draws, median",
+   "large_errors": 19,
+   "mean_measure": {
+    "confidence": 2.6928,
+    "draws": 0.3102,
+    "models": 0.9323,
+    "passes": 0.367
+   },
+   "median_brier": 0.0064,
+   "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "n": 39,
+   "name": "S40",
+   "policies": [
+    {
+     "comparisons": [
+      {
+       "brier": {
+        "high": 0.0158,
+        "low": -0.0166,
+        "mde": 0.0232,
+        "mean": -0.001,
+        "n": 39
+       },
+       "h2h": {
+        "high": 4.4,
+        "low": -11.05,
+        "mde": 11.28,
+        "mean": -1.95,
+        "n": 39
+       },
+       "label": "against A",
+       "needed": 218,
+       "needed_observed": 22042,
+       "sd": 0.05263
+      },
+      {
+       "brier": {
+        "high": 0.0152,
+        "low": -0.0114,
+        "mde": 0.0191,
+        "mean": 0.0009,
+        "n": 39
+       },
+       "h2h": {
+        "high": 3.47,
+        "low": -11.34,
+        "mde": 11.08,
+        "mean": -2.38,
+        "n": 39
+       },
+       "label": "against B",
+       "needed": 146,
+       "needed_observed": 18126,
+       "sd": 0.04301
+      }
+     ],
+     "kind": "fitted",
+     "measure": "draws",
+     "policy": "fitted slope on draws",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "brier": {
+        "high": 0.0127,
+        "low": -0.0158,
+        "mde": 0.0204,
+        "mean": -0.0016,
+        "n": 39
+       },
+       "h2h": {
+        "high": 3.81,
+        "low": -3.19,
+        "mde": 5.02,
+        "mean": 0.32,
+        "n": 39
+       },
+       "label": "against A",
+       "needed": 172,
+       "needed_observed": 6925,
+       "sd": 0.04678
+      },
+      {
+       "brier": {
+        "high": 0.0117,
+        "low": -0.0098,
+        "mde": 0.0154,
+        "mean": 0.0003,
+        "n": 39
+       },
+       "h2h": {
+        "high": 2.48,
+        "low": -2.98,
+        "mde": 3.88,
+        "mean": -0.11,
+        "n": 39
+       },
+       "label": "against B",
+       "needed": 94,
+       "needed_observed": 95352,
+       "sd": 0.03453
+      }
+     ],
+     "kind": "fitted",
+     "measure": "models",
+     "policy": "fitted slope on models",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "brier": {
+        "high": 0.0238,
+        "low": -0.0377,
+        "mde": 0.0445,
+        "mean": -0.0072,
+        "n": 39
+       },
+       "h2h": {
+        "high": 9.57,
+        "low": -7.45,
+        "mde": 12.26,
+        "mean": 1.38,
+        "n": 39
+       },
+       "label": "against A",
+       "needed": 800,
+       "needed_observed": 1541,
+       "sd": 0.10094
+      },
+      {
+       "brier": {
+        "high": 0.0255,
+        "low": -0.0344,
+        "mde": 0.0431,
+        "mean": -0.0053,
+        "n": 39
+       },
+       "h2h": {
+        "high": 9.04,
+        "low": -7.85,
+        "mde": 12.12,
+        "mean": 0.95,
+        "n": 39
+       },
+       "label": "against B",
+       "needed": 748,
+       "needed_observed": 2643,
+       "sd": 0.09756
+      }
+     ],
+     "kind": "fitted",
+     "measure": "passes",
+     "policy": "fitted slope on passes",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "brier": {
+        "high": 0.0143,
+        "low": -0.0247,
+        "mde": 0.0278,
+        "mean": -0.0063,
+        "n": 39
+       },
+       "h2h": {
+        "high": 9.16,
+        "low": -4.92,
+        "mde": 10.16,
+        "mean": 2.86,
+        "n": 39
+       },
+       "label": "against A",
+       "needed": 319,
+       "needed_observed": 790,
+       "sd": 0.06368
+      },
+      {
+       "brier": {
+        "high": 0.0179,
+        "low": -0.0239,
+        "mde": 0.0299,
+        "mean": -0.0045,
+        "n": 39
+       },
+       "h2h": {
+        "high": 9.07,
+        "low": -5.64,
+        "mde": 10.69,
+        "mean": 2.43,
+        "n": 39
+       },
+       "label": "against B",
+       "needed": 372,
+       "needed_observed": 1869,
+       "sd": 0.06883
+      },
+      {
+       "brier": {
+        "high": 0.0009,
+        "low": -0.0128,
+        "mde": 0.0098,
+        "mean": -0.0053,
+        "n": 39
+       },
+       "h2h": {
+        "high": 4.71,
+        "low": -2.15,
+        "mde": 4.8,
+        "mean": 1.24,
+        "n": 39
+       },
+       "label": "against the matched constant",
+       "needed": 39,
+       "needed_observed": 136,
+       "sd": 0.02208
+      }
+     ],
+     "kind": "fixed",
+     "measure": "draws",
+     "policy": "fixed spread shrink (draws)",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "gain": {
+        "high": 19.6,
+        "low": 1.81,
+        "mde": 13.08,
+        "mean": 9.6,
+        "n": 39
+       },
+       "label": "on top of A, against forecasting every question",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 12.81,
+        "low": -2.84,
+        "mde": 11.35,
+        "mean": 4.21,
+        "n": 39
+       },
+       "label": "on top of A, against skipping 9 at random",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 19.29,
+        "low": 1.64,
+        "mde": 12.82,
+        "mean": 9.42,
+        "n": 39
+       },
+       "label": "on top of B, against forecasting every question",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 12.62,
+        "low": -2.78,
+        "mde": 11.11,
+        "mean": 4.13,
+        "n": 39
+       },
+       "label": "on top of B, against skipping 9 at random",
+       "n": 39,
+       "skipped": 9
+      }
+     ],
+     "kind": "skip",
+     "measure": "draws",
+     "policy": "skip the top quarter by draws",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "gain": {
+        "high": 18.37,
+        "low": -0.33,
+        "mde": 13.88,
+        "mean": 7.76,
+        "n": 39
+       },
+       "label": "on top of A, against forecasting every question",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 11.47,
+        "low": -4.92,
+        "mde": 11.89,
+        "mean": 2.37,
+        "n": 39
+       },
+       "label": "on top of A, against skipping 9 at random",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 17.2,
+        "low": -0.55,
+        "mde": 13.13,
+        "mean": 7.05,
+        "n": 39
+       },
+       "label": "on top of B, against forecasting every question",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 10.43,
+        "low": -5.19,
+        "mde": 11.32,
+        "mean": 1.76,
+        "n": 39
+       },
+       "label": "on top of B, against skipping 9 at random",
+       "n": 39,
+       "skipped": 9
+      }
+     ],
+     "kind": "skip",
+     "measure": "models",
+     "policy": "skip the top quarter by models",
+     "verdict": "not resolvable at this n"
+    },
+    {
+     "comparisons": [
+      {
+       "gain": {
+        "high": 15.4,
+        "low": -2.74,
+        "mde": 12.88,
+        "mean": 5.74,
+        "n": 39
+       },
+       "label": "on top of A, against forecasting every question",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 8.49,
+        "low": -7.04,
+        "mde": 11.15,
+        "mean": 0.35,
+        "n": 39
+       },
+       "label": "on top of A, against skipping 9 at random",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 14.82,
+        "low": -2.02,
+        "mde": 12.05,
+        "mean": 5.63,
+        "n": 39
+       },
+       "label": "on top of B, against forecasting every question",
+       "n": 39,
+       "skipped": 9
+      },
+      {
+       "gain": {
+        "high": 8.24,
+        "low": -6.44,
+        "mde": 10.53,
+        "mean": 0.34,
+        "n": 39
+       },
+       "label": "on top of B, against skipping 9 at random",
+       "n": 39,
+       "skipped": 9
+      }
+     ],
+     "kind": "skip",
+     "measure": "passes",
+     "policy": "skip the top quarter by passes",
+     "verdict": "not resolvable at this n"
+    }
+   ],
+   "priced": 39,
+   "raw_brier": 0.2018,
+   "shrink_k": 0.7738
+  }
+ ]
+}

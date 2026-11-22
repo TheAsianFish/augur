@@ -48,7 +48,7 @@ from augur.errors import AugurError, BelowFloorError, MetaculusError, SubmitFloo
 from augur.fleet import FleetPlan, bounded_map
 from augur.leakage import RunMode
 from augur.ledger import Ledger
-from augur.livecal import LiveCalibrator
+from augur.livecal import LIVE_SOURCE, LiveCalibrator
 from augur.llm.base import Provider
 from augur.llm.endpoints import Route
 from augur.llm.probe import ProbeResult, new_session_id, probe_routes, record_probes
@@ -588,10 +588,10 @@ class ForecastRun:
         if (
             cal is not None
             and isinstance(prediction, BinaryPrediction)
-            and cal.applies([m.route.model for m in members])
+            and cal.applies([m.route.model for m in members], LIVE_SOURCE)
         ):
             raw = prediction.probability
-            prediction = BinaryPrediction(cal(raw))
+            prediction = BinaryPrediction(cal(raw, LIVE_SOURCE))
             method = f"{cal.name} calibration of the {method} ({raw:.3f})"
             calibrated = Calibration(cal.name, raw, prediction.probability, cal.fitted_on)
         own_price = exact_price(research) if self._blend_exact_price else None

@@ -19,7 +19,7 @@ from augur.config import Settings
 from augur.errors import AugurError, SubmitFloorError
 from augur.leakage import RunMode, scan_ledger
 from augur.ledger import Ledger
-from augur.livecal import LiveCalibrator
+from augur.livecal import LiveCalibrator, Unsourced
 from augur.llm.base import Provider
 from augur.llm.catalog import Catalog
 from augur.llm.endpoints import PRESETS, Endpoint, Route
@@ -709,7 +709,9 @@ def test_every_date_evidence_has_a_comment_label() -> None:
 
 
 def _platt_for(model: str) -> LiveCalibrator:
-    return LiveCalibrator(model=model, fitted_on="test history", map=PlattMap(0.5, 0.2, 1, 10))
+    return LiveCalibrator(
+        model=model, fitted_on="test history", map=Unsourced(PlattMap(0.5, 0.2, 1, 10))
+    )
 
 
 async def test_the_live_calibrator_applies_only_to_its_own_model(tmp_path: Path) -> None:

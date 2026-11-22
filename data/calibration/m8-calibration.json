@@ -336,6 +336,487 @@
   "l_min": 400,
   "w_min": 50
  },
+ "source_aware": {
+  "by_source": [
+   {
+    "base_rate": 0.3338,
+    "group": "all",
+    "markets": 425,
+    "n": 671,
+    "rows": [
+     {
+      "brier": 0.224,
+      "calibrator": "raw",
+      "mean": 0.2589,
+      "vs_platt_brier": {
+       "clusters": 425,
+       "high": 0.0373,
+       "low": 0.0068,
+       "mde": 0.0219,
+       "mean": 0.0217,
+       "n": 671
+      },
+      "vs_raw_brier": {
+       "clusters": 425,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 671
+      }
+     },
+     {
+      "brier": 0.2023,
+      "calibrator": "platt",
+      "mean": 0.353,
+      "vs_platt_brier": {
+       "clusters": 425,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 671
+      },
+      "vs_raw_brier": {
+       "clusters": 425,
+       "high": -0.0068,
+       "low": -0.0373,
+       "mde": 0.0219,
+       "mean": -0.0217,
+       "n": 671
+      }
+     },
+     {
+      "brier": 0.1952,
+      "calibrator": "platt-by-source",
+      "mean": 0.359,
+      "vs_platt_brier": {
+       "clusters": 425,
+       "high": -0.0028,
+       "low": -0.0112,
+       "mde": 0.0059,
+       "mean": -0.0071,
+       "n": 671
+      },
+      "vs_raw_brier": {
+       "clusters": 425,
+       "high": -0.0131,
+       "low": -0.0454,
+       "mde": 0.0232,
+       "mean": -0.0288,
+       "n": 671
+      }
+     },
+     {
+      "brier": 0.1976,
+      "calibrator": "platt-partial",
+      "mean": 0.3525,
+      "vs_platt_brier": {
+       "clusters": 425,
+       "high": -0.0003,
+       "low": -0.0088,
+       "mde": 0.006,
+       "mean": -0.0046,
+       "n": 671
+      },
+      "vs_raw_brier": {
+       "clusters": 425,
+       "high": -0.0109,
+       "low": -0.0428,
+       "mde": 0.0229,
+       "mean": -0.0264,
+       "n": 671
+      }
+     }
+    ]
+   },
+   {
+    "base_rate": 0.3988,
+    "group": "polymarket",
+    "markets": 272,
+    "n": 341,
+    "rows": [
+     {
+      "brier": 0.2556,
+      "calibrator": "raw",
+      "mean": 0.2873,
+      "vs_platt_brier": {
+       "clusters": 272,
+       "high": 0.0624,
+       "low": 0.0211,
+       "mde": 0.0295,
+       "mean": 0.0414,
+       "n": 341
+      },
+      "vs_raw_brier": {
+       "clusters": 272,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 341
+      }
+     },
+     {
+      "brier": 0.2142,
+      "calibrator": "platt",
+      "mean": 0.3619,
+      "vs_platt_brier": {
+       "clusters": 272,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 341
+      },
+      "vs_raw_brier": {
+       "clusters": 272,
+       "high": -0.0211,
+       "low": -0.0624,
+       "mde": 0.0295,
+       "mean": -0.0414,
+       "n": 341
+      }
+     },
+     {
+      "brier": 0.2142,
+      "calibrator": "platt-by-source",
+      "mean": 0.403,
+      "vs_platt_brier": {
+       "clusters": 272,
+       "high": 0.0056,
+       "low": -0.0056,
+       "mde": 0.0081,
+       "mean": 0.0,
+       "n": 341
+      },
+      "vs_raw_brier": {
+       "clusters": 272,
+       "high": -0.0188,
+       "low": -0.065,
+       "mde": 0.0331,
+       "mean": -0.0414,
+       "n": 341
+      }
+     },
+     {
+      "brier": 0.214,
+      "calibrator": "platt-partial",
+      "mean": 0.3926,
+      "vs_platt_brier": {
+       "clusters": 272,
+       "high": 0.0042,
+       "low": -0.0048,
+       "mde": 0.0064,
+       "mean": -0.0003,
+       "n": 341
+      },
+      "vs_raw_brier": {
+       "clusters": 272,
+       "high": -0.02,
+       "low": -0.0643,
+       "mde": 0.0318,
+       "mean": -0.0417,
+       "n": 341
+      }
+     }
+    ]
+   },
+   {
+    "base_rate": 0.3957,
+    "group": "manifold",
+    "markets": 72,
+    "n": 139,
+    "rows": [
+     {
+      "brier": 0.2989,
+      "calibrator": "raw",
+      "mean": 0.1853,
+      "vs_platt_brier": {
+       "clusters": 72,
+       "high": 0.0934,
+       "low": 0.0126,
+       "mde": 0.0577,
+       "mean": 0.0514,
+       "n": 139
+      },
+      "vs_raw_brier": {
+       "clusters": 72,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 139
+      }
+     },
+     {
+      "brier": 0.2476,
+      "calibrator": "platt",
+      "mean": 0.3102,
+      "vs_platt_brier": {
+       "clusters": 72,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 139
+      },
+      "vs_raw_brier": {
+       "clusters": 72,
+       "high": -0.0126,
+       "low": -0.0934,
+       "mde": 0.0577,
+       "mean": -0.0514,
+       "n": 139
+      }
+     },
+     {
+      "brier": 0.2434,
+      "calibrator": "platt-by-source",
+      "mean": 0.3175,
+      "vs_platt_brier": {
+       "clusters": 72,
+       "high": 0.0028,
+       "low": -0.0116,
+       "mde": 0.0103,
+       "mean": -0.0042,
+       "n": 139
+      },
+      "vs_raw_brier": {
+       "clusters": 72,
+       "high": -0.0135,
+       "low": -0.1004,
+       "mde": 0.0625,
+       "mean": -0.0556,
+       "n": 139
+      }
+     },
+     {
+      "brier": 0.2485,
+      "calibrator": "platt-partial",
+      "mean": 0.3132,
+      "vs_platt_brier": {
+       "clusters": 72,
+       "high": 0.0055,
+       "low": -0.0038,
+       "mde": 0.0065,
+       "mean": 0.0009,
+       "n": 139
+      },
+      "vs_raw_brier": {
+       "clusters": 72,
+       "high": -0.0129,
+       "low": -0.0908,
+       "mde": 0.0561,
+       "mean": -0.0505,
+       "n": 139
+      }
+     }
+    ]
+   },
+   {
+    "base_rate": 0.1684,
+    "group": "metaculus",
+    "markets": 80,
+    "n": 190,
+    "rows": [
+     {
+      "brier": 0.1115,
+      "calibrator": "raw",
+      "mean": 0.261,
+      "vs_platt_brier": {
+       "clusters": 80,
+       "high": -0.0134,
+       "low": -0.0541,
+       "mde": 0.0291,
+       "mean": -0.0355,
+       "n": 190
+      },
+      "vs_raw_brier": {
+       "clusters": 80,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 190
+      }
+     },
+     {
+      "brier": 0.147,
+      "calibrator": "platt",
+      "mean": 0.3681,
+      "vs_platt_brier": {
+       "clusters": 80,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": 0.0,
+       "mean": 0.0,
+       "n": 190
+      },
+      "vs_raw_brier": {
+       "clusters": 80,
+       "high": 0.0541,
+       "low": 0.0134,
+       "mde": 0.0291,
+       "mean": 0.0355,
+       "n": 190
+      }
+     },
+     {
+      "brier": 0.1251,
+      "calibrator": "platt-by-source",
+      "mean": 0.3098,
+      "vs_platt_brier": {
+       "clusters": 80,
+       "high": -0.013,
+       "low": -0.0289,
+       "mde": 0.0112,
+       "mean": -0.0219,
+       "n": 190
+      },
+      "vs_raw_brier": {
+       "clusters": 80,
+       "high": 0.0324,
+       "low": -0.0081,
+       "mde": 0.0293,
+       "mean": 0.0136,
+       "n": 190
+      }
+     },
+     {
+      "brier": 0.1304,
+      "calibrator": "platt-partial",
+      "mean": 0.309,
+      "vs_platt_brier": {
+       "clusters": 80,
+       "high": -0.0045,
+       "low": -0.0273,
+       "mde": 0.0164,
+       "mean": -0.0166,
+       "n": 190
+      },
+      "vs_raw_brier": {
+       "clusters": 80,
+       "high": 0.0429,
+       "low": -0.0081,
+       "mde": 0.0366,
+       "mean": 0.0189,
+       "n": 190
+      }
+     }
+    ]
+   },
+   {
+    "base_rate": 1.0,
+    "group": "infer",
+    "markets": 1,
+    "n": 1,
+    "rows": [
+     {
+      "brier": 0.3844,
+      "calibrator": "raw",
+      "mean": 0.38,
+      "vs_platt_brier": {
+       "clusters": 1,
+       "high": 0.0663,
+       "low": 0.0663,
+       "mde": -1.0,
+       "mean": 0.0663,
+       "n": 1
+      },
+      "vs_raw_brier": {
+       "clusters": 1,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": -1.0,
+       "mean": 0.0,
+       "n": 1
+      }
+     },
+     {
+      "brier": 0.3181,
+      "calibrator": "platt",
+      "mean": 0.436,
+      "vs_platt_brier": {
+       "clusters": 1,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": -1.0,
+       "mean": 0.0,
+       "n": 1
+      },
+      "vs_raw_brier": {
+       "clusters": 1,
+       "high": -0.0663,
+       "low": -0.0663,
+       "mde": -1.0,
+       "mean": -0.0663,
+       "n": 1
+      }
+     },
+     {
+      "brier": 0.3181,
+      "calibrator": "platt-by-source",
+      "mean": 0.436,
+      "vs_platt_brier": {
+       "clusters": 1,
+       "high": 0.0,
+       "low": 0.0,
+       "mde": -1.0,
+       "mean": 0.0,
+       "n": 1
+      },
+      "vs_raw_brier": {
+       "clusters": 1,
+       "high": -0.0663,
+       "low": -0.0663,
+       "mde": -1.0,
+       "mean": -0.0663,
+       "n": 1
+      }
+     },
+     {
+      "brier": 0.3257,
+      "calibrator": "platt-partial",
+      "mean": 0.4293,
+      "vs_platt_brier": {
+       "clusters": 1,
+       "high": 0.0076,
+       "low": 0.0076,
+       "mde": -1.0,
+       "mean": 0.0076,
+       "n": 1
+      },
+      "vs_raw_brier": {
+       "clusters": 1,
+       "high": -0.0587,
+       "low": -0.0587,
+       "mde": -1.0,
+       "mean": -0.0587,
+       "n": 1
+      }
+     }
+    ]
+   }
+  ],
+  "choice": null,
+  "fits": 7,
+  "instances": 671,
+  "markets": 425,
+  "partial_last_fit": {
+   "a": 0.3221,
+   "b": -0.3142,
+   "iterations": 5,
+   "n": 641,
+   "name": "platt-partial",
+   "offsets": {
+    "manifold": 0.545,
+    "metaculus": -0.8156,
+    "polymarket": 0.2706
+   },
+   "prior_sd": 0.5
+  }
+ },
  "walk_forward": {
   "base_rate": 0.3338,
   "edge": [
