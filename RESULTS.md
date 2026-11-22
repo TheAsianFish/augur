@@ -897,6 +897,7 @@ missed, and why).
 | `m7-c2-draws.sqlite` | 1 (backtest 1) | 40 | 240 | 40 | 0 | 0 | 0 |
 | `m7-c2-nano.sqlite` | 1 (backtest 1) | 40 | 120 | 40 | 0 | 0 | 0 |
 | `m7-c2-twopass.sqlite` | 1 (backtest 1) | 40 | 237 | 40 | 0 | 0 | 0 |
+| `m8-c4.sqlite` | 16 (backtest 16) | 470 | 802 | 789 | 0 | 470 | 470 |
 <!-- augur:end ledgers -->
 
 ## M3: every question type live, deadlines, and the schedule (2026-11-18)
