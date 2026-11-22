@@ -435,6 +435,158 @@ toward 35%. The rule was on W as a whole, so the decision stands; a
 source-conditioned map is a candidate for a later milestone, prediction
 first.
 
+**The source-aware calibrator: prediction and decision rule, committed
+2026-11-22 before any run.** M8's pooled Platt map is 0.035 Brier worse
+than raw on the hidden-price group of W (Metaculus and INFER), the group
+nearest to what MiniBench asks. Two maps that know a question's source
+join M8's walk-forward harness, on the same 671 instances and the same
+fits (each instance calibrated only on outcomes known before it opened):
+
+- **Per-source Platt (`platt-by-source`):** a separate Platt map for each
+  source, fitted on that source's history alone; a source with fewer than
+  30 known outcomes in the history (INFER always: it is never trained on)
+  gets the pooled map.
+- **Partially pooled Platt (`platt-partial`):** one shared slope and a
+  per-source intercept, `q = sigmoid(a · logit(p) + b + u_s)`, fitted by
+  penalised maximum likelihood on Platt's smoothed targets with the
+  penalty `u_s² / (2 · 0.5²)` on each source's offset (a normal prior of
+  standard deviation 0.5 log-odds around the shared intercept, fixed now
+  and never tuned). A source the history has not seen gets `u_s = 0`.
+
+Both are compared with raw and with pooled Platt overall and by source
+(Polymarket, Manifold, Metaculus, INFER), paired bootstrap over markets as
+in M8, by `augur calibrate` and checked by `make eval`. For reading beside
+it: AIA Forecaster's calibration step is a fixed, unfitted extremizer
+(log-odds × √3) on a frontier model, the opposite direction to this free
+model's fitted slope of 0.32, so no map transfers across models.
+
+| # | Prediction |
+|---|------------|
+| P23 | On W's Metaculus instances the partially pooled map is still worse than raw: point estimate above 0 and the interval's upper bound above +0.01. It cuts pooled Platt's Metaculus loss by at least half (point estimates). |
+| P24 | Per-source Platt on W's Metaculus instances: the interval of Brier − raw has its upper bound below +0.01. Overall (all of W) both source-aware maps are within ±0.01 of pooled Platt (point estimates). |
+
+**Decision rule.** A source-aware map replaces pooled Platt as the live map
+only if (i) on W's Metaculus instances the upper bound of Brier(map) −
+Brier(raw) is below +0.01 (M7's non-inferiority margin), and (ii) on all of
+W the upper bound of Brier(map) − Brier(pooled Platt) is below +0.01. If
+both maps pass, the lower overall point estimate wins. Until some map
+passes (i), the live calibrator is not applied to forecasts on Metaculus
+questions; every live and bot-testing-area question is a Metaculus
+question, so until then live binary forecasts go out raw.
+
+**M9's design, predictions and decision rules (Q6), committed 2026-11-22
+before any M9 run.** Q6's prediction above stands unedited. The risk this
+design guards against: this model's log-odds are worth about a third of
+their face value (M8's slope 0.32), so *any* rule that shrinks forecasts
+will look good against raw, whether or not disagreement carries
+information. A disagreement-conditioned policy therefore counts only if it
+beats two controls on the same questions: **(A) constant shrinkage**, a
+Platt map on the final forecast (one slope for every question), and **(B)
+the source-aware calibrator**, the partially pooled map above. BLF's
+attempt at the same thing, a shrink of the mean logit scaled by the
+disagreement of five draws, was a null: leave-one-out tuning chose no
+shrinkage (arXiv 2604.18576v5). Everything runs on draws already in the
+ledgers, $0, no new model call.
+
+- **Samples.** S138: C2's 138 questions (ForecastBench 2026-06-21), no
+  retrieval, `nemotron-3-ultra:free`, three draws each (M5's arm (b));
+  final forecast the median of the three. S40: M7's 40 questions, one
+  research pass as of open, final forecast the median of draws 0 to 4 of
+  the same model (the live default's shape); for it also three draws of
+  `nemotron-3-nano:free` on the same briefs, and the loop (L) and
+  two-pass (D2) briefs.
+- **Disagreement measures**, all on log-odds of forecasts clipped to
+  [0.01, 0.99]: *draws*, the standard deviation of the draws' log-odds
+  (S138: three, S40: five); *models*, the absolute log-odds gap between
+  the median of three ultra draws and the median of three nano draws (S40);
+  *passes*, the standard deviation of the three researched briefs' medians
+  (one pass, loop, two passes; S40). Beside them, as a reference and not a
+  disagreement measure, *confidence*, |logit p| of the final forecast.
+- **Error.** A large error is a Brier score of the final forecast strictly
+  above the sample's median Brier. AUROC of each measure for large errors
+  (ties count a half), with a percentile bootstrap interval over questions
+  (10,000 resamples, seeded).
+- **What the n can resolve, stated before running.** With half the
+  questions in each class, the AUROC's interval half-width is about 0.18
+  at n = 40 and 0.10 at n = 138 (Hanley and McNeil), so at n = 40 only an
+  AUROC above about 0.68 can clear 0.5, and at 138 above about 0.60. For a
+  policy's paired Brier difference, M7's measured per-question spreads
+  (0.028 for 9 against 5 draws to 0.077 for two passes against one) put
+  the detectable effect at n = 40 between 0.012 and 0.034 Brier, and at
+  n = 138 between 0.007 and 0.018.
+- **Policies.** Every fitted map (A, B and the fitted policy) is fitted
+  leave-one-out within the sample: the question being forecast never
+  enters its own fit. These are one ForecastBench set, so the history is
+  not time-ordered as M8's is; the procedure is the same for controls and
+  policies, and the absolute gains are optimistic for all of them alike.
+  (1) *Fitted slope*: B plus a disagreement term in the slope,
+  `q = sigmoid((a + c · z) · logit(p) + b + u_s)`, z the measure
+  standardised on the training questions, one policy per measure.
+  (2) *Fixed spread shrink*, no parameter fitted:
+  `q = sigmoid(logit(p) / (1 + d))`, d the draws measure, with its own
+  third control, the *matched constant shrink*
+  `q = sigmoid(k · logit(p))`, k the sample mean of `1 / (1 + d)`
+  (forecasts only, no outcome). (3) *Skip*: forecast the control's value
+  except on the quarter of questions with the largest disagreement
+  (rounded down; ties by question id), scored in tournament units against
+  ForecastBench's recorded freeze-time value as the stand-in for the
+  field (a skipped question scores 0), against the same control
+  forecasting every question and against skipping the same number at
+  random (its expectation).
+- **Tournament units.** For a forecast-changing policy, the mean
+  head-to-head score against the control, 100 × ln(q(outcome) /
+  control(outcome)): the change in peer score from submitting q instead,
+  whatever the field. Beside it the paired Brier difference.
+
+| # | Prediction |
+|---|------------|
+| P25 | Draws: the AUROC of the draws' spread has a point estimate below 0.6 and an interval that includes 0.5, on S138 and on S40 (same-model draws carry little independent signal: M7 found one to nine draws within 0.002 Brier). |
+| P26 | Models: on S40 the gap between the two models has the highest AUROC point estimate of the three measures, above 0.6, with an interval that includes 0.5. Passes: its interval includes 0.5. |
+| P27 | The trap is real: control A (leave-one-out Platt) beats raw on S138 with the interval of Brier(A) − Brier(raw) below 0, and the matched constant shrink beats raw on S138 (point estimate). |
+| P28 | No disagreement-conditioned policy (fitted slope, fixed spread shrink, skip) beats both controls with an interval excluding 0, on either sample; every policy's point estimate against B is within ±0.01 Brier. |
+| P29 | Verdict: not resolvable at this n, for every measure; the count needed for an AUROC of 0.6 to clear 0.5 with 80% power is more than 300 questions. |
+
+**Decision rule.** A policy is adopted only if, on the same questions, its
+paired interval of Brier(policy) − Brier(control) lies wholly below 0
+against both A and B (and, for the fixed spread shrink, against the
+matched constant too; for skip, its tournament-unit gain has an interval
+above 0 against the control forecasting everything and against random
+skipping, on top of A and of B). A policy whose interval against either
+control lies wholly above 0 is rejected. Anything else is *not resolvable
+at this n*, reported with the count of questions that would detect 0.01
+Brier at 80% power on the measured per-question spread.
+
+<!-- q6-preregistration:begin -->
+**Q6's live test, pre-registered 2026-11-22 before it starts.**
+
+1. *Policy:* the fixed spread shrink, `q = sigmoid(logit(p) / (1 + d))`,
+   p the median of the question's draws and d the standard deviation of
+   their log-odds (forecasts clipped to [0.01, 0.99]). Nothing is fitted.
+2. *Unit:* a binary question in MiniBench, FutureEval or a shadow round
+   (dry run) whose forecast in the committed ledgers has at least three
+   member draws, all from one model. The first such forecast per question
+   counts; backtests and the bot-testing-area do not.
+3. *Split:* the question's Metaculus id. Odd ids are the policy half;
+   even ids are the control half.
+4. *What is recorded:* nothing new. Every member draw is already in the
+   ledger, so the policy, the default (the median, raw) and the controls
+   are recomputed from the member rows on every question.
+5. *What is submitted:* on odd ids the policy's forecast, only if the
+   backtest verdict above adopts the fixed spread shrink; otherwise the
+   default everywhere, and the policy is never posted.
+6. *Controls:* the default, and the matched constant shrink
+   `q = sigmoid(k · logit(p))` with k frozen at the value S40 gives.
+7. *Analysis, fixed now:* when the odd half has 60 resolved binary
+   questions, or on 2027-03-31, whichever is first, the mean paired
+   Brier(policy) − Brier(control) and the head-to-head score on the odd
+   half, for each control, with a bootstrap interval clustered by the
+   week the question opened (10,000 resamples, seeded). The even half is
+   analysed the same way and reported beside it, as a replication.
+8. *Verdict:* adopted if both intervals on the odd half lie wholly below
+   0 (Brier); rejected if either lies wholly above 0; otherwise not
+   resolvable at that n, with the count needed.
+<!-- q6-preregistration:end -->
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
