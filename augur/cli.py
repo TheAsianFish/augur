@@ -121,7 +121,8 @@ def _parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="apply the live calibrator (augur/live_calibrator.json) to binary forecasts from "
-        "the model it was fitted on; other models' forecasts stay raw (M8)",
+        "the model it was fitted on; other models' forecasts stay raw (M8), and so do "
+        "questions from sources it is withheld from (Metaculus, so every live question)",
     )
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
