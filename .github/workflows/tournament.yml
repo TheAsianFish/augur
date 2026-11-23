@@ -7,7 +7,8 @@ name: Tournament
 # forecast only when it is set, since a dry run posts nothing, so every later
 # tick would forecast the same questions again; dry runs are manual dispatches),
 # AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS, AUGUR_MAX_QUESTIONS_PER_RUN,
-# AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the fallback trigger below; unset = off).
+# AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the fallback trigger below; unset = off),
+# AUGUR_FUTUREEVAL (the FutureEval project id; default 33121, Fall 2026).
 #
 # Cadence (RESULTS.md M3): every 90 minutes on two offset lines, which caught
 # 99.25% of 3-hour MiniBench windows in simulation against the measured delays,
@@ -72,7 +73,9 @@ jobs:
           # Scheduled runs obey the variable (unset or 'off' is the kill switch);
           # a manual run polls the tournament it was asked for.
           AUGUR_SCHEDULE: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && 'all' || vars.AUGUR_SCHEDULE || 'off' }}
-          AUGUR_POLL_TOURNAMENTS: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && (inputs.tournament == 'futureeval' && '33121' || inputs.tournament) || '' }}
+          AUGUR_POLL_TOURNAMENTS: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && (inputs.tournament == 'futureeval' && (vars.AUGUR_FUTUREEVAL || '33121') || inputs.tournament) || '' }}
+          # The FutureEval project 'all' polls: 33121 is Fall 2026; set the Spring 2027 id.
+          AUGUR_FUTUREEVAL: ${{ vars.AUGUR_FUTUREEVAL }}
         run: python3 scripts/poll.py
 
   forecast:

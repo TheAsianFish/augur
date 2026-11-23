@@ -149,6 +149,40 @@ def test_override_polls_the_named_tournaments() -> None:
     assert len(api.urls) == 1
 
 
+def test_all_polls_the_futureeval_project_named_by_the_variable() -> None:
+    api = FakeApi({"minibench": [], "spring-futureeval-2027": []}, {})
+    _, _, lines = poll_script.poll(
+        _env(AUGUR_SCHEDULE="all", AUGUR_FUTUREEVAL=" Spring-FutureEval-2027 "),
+        api,
+        lambda _s: None,
+        NOW,
+    )
+    assert lines == [
+        "minibench: 0 open, 0 not yet forecast",
+        "spring-futureeval-2027: 0 open, 0 not yet forecast",
+    ]
+
+
+def test_a_malformed_futureeval_variable_falls_back_to_fall_2026() -> None:
+    api = FakeApi({"minibench": [], "33121": []}, {})
+    _, _, lines = poll_script.poll(
+        _env(AUGUR_SCHEDULE="all", AUGUR_FUTUREEVAL="33121&x=1"), api, lambda _s: None, NOW
+    )
+    assert lines[0].startswith("warning: AUGUR_FUTUREEVAL=")
+    assert lines[1:] == [
+        "minibench: 0 open, 0 not yet forecast",
+        "33121: 0 open, 0 not yet forecast",
+    ]
+
+
+def test_minibench_schedule_ignores_the_futureeval_variable() -> None:
+    api = FakeApi({"minibench": []}, {})
+    _, _, lines = poll_script.poll(
+        _env(AUGUR_SCHEDULE="minibench", AUGUR_FUTUREEVAL="99999"), api, lambda _s: None, NOW
+    )
+    assert lines == ["minibench: 0 open, 0 not yet forecast"]
+
+
 def test_main_writes_github_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     out = tmp_path / "out.txt"
     env = _env(AUGUR_SCHEDULE="minibench", GITHUB_OUTPUT=str(out))
