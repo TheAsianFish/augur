@@ -139,8 +139,9 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Set the date of the 0.1.0 entry in CHANGELOG.md in the same commit that
-the tag points at, or in the next one.
+Set the date of the 0.1.0 entry in CHANGELOG.md on `main` before tagging:
+the workflow refuses a tag whose commit is not on `main`, and refuses one
+that does not match the package version.
 
 ### What the workflow checks
 
