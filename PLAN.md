@@ -11,7 +11,7 @@ Both halves are measured facts, not worries:
 
 - **Slow, noisy feedback.** In Metaculus's Spring 2026 bot tournament the ten
   best bots averaged 13.2 to 18.9 spot peer points per question with intervals
-  about 8.5 points wide over 297 questions: after three months, no bot was
+  about 8.5 points wide (the winner covered 288 questions): after three months, no bot was
   clearly separated from the next
   ([results](https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK)).
 - **Leaky backtests.** An audit of Google's `before:` filter on 393 resolved
@@ -631,6 +631,62 @@ predicts it at AUROC 0.17 and 0.01), so a future registration should use
 the wrong-side label; on that label, reported as exploratory, the draw
 spread scores 0.60 [0.49, 0.70] and the research passes 0.68 [0.47, 0.88].
 
+**M10's same-question row: predictions and reading rule, committed
+2026-11-23 before any comparison is computed.** ForecastBench publishes
+every entrant's forecasts for each question set (its processed forecast
+sets, `forecastbench.org/datasets`, file last modified 2026-11-17). On
+exactly the question instances Augur's committed backtests forecast, each
+entrant's Brier is set beside Augur's, paired per question.
+
+- **Augur's arms:** C1 (2026-05-24, 139 questions, `qwen2.5:7b`, no
+  retrieval, one draw; M4); C2 (2026-06-21, `nemotron-3-ultra:free`, no
+  retrieval, median of three draws; M5's arm (b)); O (the same model, one
+  research pass as of open, 64 of C2's questions; M6); C4 (nine sets,
+  `nemotron-3-ultra:free`, no retrieval, one draw; M8).
+- **Entrants:** every forecast file in the set: ForecastBench's own
+  zero-shot LLM runs (with and without the market's freeze value in the
+  prompt), the external entries (teams that forecast live with their own
+  tools), and ForecastBench's baselines (always 0.5, the naive
+  forecaster). An entrant is compared only on questions where its own
+  forecast is not imputed, and that n is printed. The freeze value (the
+  market price ForecastBench recorded) is a row of its own.
+- **Statistic:** Brier(Augur) − Brier(entrant), paired, bootstrap over
+  markets (10,000 resamples, seeded), and Augur's rank among each group.
+
+| # | Prediction |
+|---|------------|
+| P30 | On C2 and on C4, Augur's no-retrieval arm is worse than the median zero-shot LLM entrant shown no freeze value (point estimate), and ranks in that group's bottom quarter. |
+| P31 | On C2, at least 90% of the zero-shot entrants shown the freeze value beat Augur's no-retrieval arm with an interval of Augur − entrant wholly above 0. |
+| P32 | Researched as of open (O, 64 questions), Augur is still worse than the median external entry on the same questions (point estimate). |
+| P33 | No Augur arm beats any external entry with an interval wholly below 0. |
+
+**Reading rule.** This is a placing, not a decision: nothing in the live
+bot changes with it. The entrants forecast live with their own tools and
+models; Augur's arms are backtests of one free (or small local) model,
+mostly without retrieval, so a gap measures tools and model together. The
+row is labelled a backtest and never ranked on ForecastBench's own
+leaderboard.
+
+**M10's same-question results (2026-11-23; RESULTS.md, P30 to P33 above
+unedited).** Augur's arms reproduce their committed Brier exactly, and
+ForecastBench's files resolve every instance as Augur was scored. P30
+failed: on C2 the no-retrieval arm is level with the median zero-shot LLM
+shown no freeze value (+0.002) and ranks 13 of 23, not in the bottom
+quarter; on C4 it is worse (+0.017) and in the bottom quarter (59 of 78), but only
+because the group includes ForecastBench's web-search runs (34 of 53
+without them; noted at review, RESULTS.md).
+P31 failed: 17 of 22 entrants shown the freeze value (77%, not 90%) beat it
+with an interval above 0. P32 held: researched as of open, all 16 external
+entries beat it, by a median of +0.083 Brier. P33 failed: on C4 it beats two
+blind entries of one anonymous team (−0.035 [−0.067, −0.004] and −0.038
+[−0.071, −0.004]). Readings fixed while building and stated in RESULTS.md:
+"median" is the median of the paired differences; an entrant compared on
+one market has no interval. Found while building: the files'
+`market_value_on_due_date` is a price about ten days after the freeze, not
+the freeze value, so both appear as rows. The placing in one line: without
+retrieval the free model is an ordinary zero-shot LLM; every external entry
+on C1, C2 and O, and most models shown the price, beat it.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
@@ -859,27 +915,35 @@ The strongest outside results on this problem, re-read at their sources on
 2026-11-17 and corrected on 2026-11-18 (M3): the survey's r = 0.42 belongs to
 GPT-5.4 as the final model, not to frontier models in general; FutureSearch
 never reported 0.01 Brier gaps as ties; its self-reported final Summer 2026
-standing is #2 of 284;
-and the ForecastBench leaderboard figures could not be read at the source.
+standing is #2 of 284. Every row was re-verified at its source on
+2026-11-23 (M10), which corrected four details (Spring's question count, the
+template count, AIA's Table 4 n, and where the "8 of 8" figure comes from)
+and added the Summer 2026 final board, the live Fall 2026 board, the Fall
+2025 payouts and the bots in the Summer Metaculus Cup. No organiser results
+post for Summer 2026 was found as of 2026-11-23.
 
 | Result | Number | Protocol | Source, date |
 |--------|--------|----------|--------------|
-| Best bot, FutureEval Spring 2026 | GreeneiBot2: average spot peer score 18.90 [15.18, 22.61], 288 of 297 questions, 1st of 173 bots (111 outside Metaculus). Closed source; parallel AskNews, Perplexity and GPT-5 search pipelines. | Spot peer score at question close | [LessWrong results post](https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK), 2026 |
+| Best bot, FutureEval Spring 2026 | GreeneiBot2: average spot peer score 18.90 [15.18, 22.61] on 288 questions, 1st of 173 bots (111 outside Metaculus). Closed source; parallel AskNews, Perplexity and GPT-5 search pipelines. | Spot peer score at question close | [LessWrong results post](https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK), 2026 |
 | Best template bot, same tournament | `metac-gpt-5-1-high+asknews`: 11.32 [7.18, 15.45], 18th of 173 | Same | Same |
 | Best open-source bot, same tournament | nostreambot, 10th or 11th (the post gives both), MIT licence, model ensemble with median | Same | Same |
 | Professional forecasters | Top-10 bot team minus pro team: −1.25 head-to-head points per question, 95% CI [−4.87, 2.37], 99 shared questions (not significant) | Head-to-head on shared questions | Same |
-| Professional forecasters, Summer 2026 | Bots minus pros: −0.26 [−6.47, 5.96] on 97 questions, p = 0.94, 282 bots; an organiser analysis, no results post yet | Head-to-head on shared questions | [Metaculus aib-analysis PR #33](https://github.com/Metaculus/aib-analysis/pull/33), 2026-10-15 |
-| MiniBench 2026-11-02 (finalized), rank 1 and the template | takeoff.watch 22.77 [17.36, 29.05], 1st of 435 on 59 questions; best template bot `metac-claude-opus-5-5-high+asknews` 3.66 [−0.97, 7.94], rank 107; only 4 of about 60 template bots averaged above 0; the template on Augur's free model (`metac-nemotron-3-ultra+asknews`) −7.66 [−14.5, −0.7] | Average spot peer score | [Leaderboard API, project 33135](https://www.metaculus.com/api/leaderboards/project/33135/), fetched 2026-11-20; snapshot `data/standings/minibench-2026-11-02.json` |
-| Agentic harness against the template, same model | Metaculus's `metac-agent-*` bots beat `metac-*+asknews` on the same model in 10 of 10 pairs, by 7.7 to 16.2 points a question (Opus 5.5 11.34 against 3.66; Gemini 3.8 Flash 10.78 against 2.76); differences of averages, no paired interval | Same round | Same |
+| Professional forecasters, Summer 2026 | Bots minus pros: −0.26 [−6.47, 5.96] on 97 questions, p = 0.94, 282 bots (pros won 60 of 97); Metaculus's own chart (PR #5292, merged 2026-11-09) shows the same as a pro lead of 0.26 [−5.96, 6.47], and 1.20 [−6.19, 8.59] on the 46 binary questions; no results post found as of 2026-11-23 | Head-to-head on shared questions | [Metaculus aib-analysis PR #33](https://github.com/Metaculus/aib-analysis/pull/33), 2026-10-15; [metaculus PR #5292](https://github.com/Metaculus/metaculus/pull/5292), 2026-11-09 |
+| MiniBench 2026-11-02 (finalized), rank 1 and the template | takeoff.watch 22.77 [17.36, 29.05], 1st of 435 on 59 questions; best template bot `metac-claude-opus-5-5-high+asknews` 3.66 [−0.97, 7.94], rank 107; only 4 of 57 template bots averaged above 0; the template on Augur's free model (`metac-nemotron-3-ultra+asknews`) −7.66 [−14.5, −0.7] | Average spot peer score | [Leaderboard API, project 33135](https://www.metaculus.com/api/leaderboards/project/33135/), fetched 2026-11-20, re-read 2026-11-23 (finalized, unchanged); snapshot `data/standings/minibench-2026-11-02.json` |
+| Agentic harness against the template, same model | Metaculus's `metac-agent-*` bots beat `metac-*+asknews` on the same model in 10 of 10 pairs where both covered all 59 questions (12 of 12 counting two agents with 17), by 7.7 to 16.2 points a question (Opus 5.5 11.34 against 3.66; Gemini 3.8 Flash 10.78 against 2.76); differences of averages, no paired interval | Same round | Same |
 | Prize money, Q2 2025 | 1st Panshul42 (open source) $7,550; 2nd pgodzinai $4,563; 3rd CumulativeBot $3,270 | Tournament payout | [Metaculus notebook 39140](https://www.metaculus.com/notebooks/39140/), 2025 (re-read 2026-11-17) |
+| Prize money, Fall 2025 | Preseen-Atlas $6,859, manticAI $6,009, GreeneiBot2 $5,793; no Spring, Summer or Fall 2026 payout announcement found as of 2026-11-23 | Tournament payout | [Metaculus notebook 43469](https://www.metaculus.com/notebooks/43469/), 2026-05-08 |
+| Best bots, FutureEval Summer 2026 (finalized) | laertes 17.91 [14.63, 21.17] on 324 questions, futuresearch 17.80, preseen 17.13; best template `metac-claude-opus-4-8-high+asknews` 9.39 [5.53, 13.16], rank 21; reputation-weighted community 13.65 (rank 13); 282 bots | Average spot peer score | [Leaderboard API, project 33022](https://www.metaculus.com/api/leaderboards/project/33022/), read 2026-11-23; organiser |
+| FutureEval Fall 2026 (live, not finalized) | Panshul42 20.86 [9.69, 31.66] on 38 scored questions, 596 entries; best template `metac-claude-fable-5-1-high+asknews` 13.49 [4.52, 23.27] (rank 44); best agent house bot `metac-agent-gpt-6-astra` 11.81 (rank 56); unweighted community 14.71 (rank 36); the template on Augur's free model −15.55 (rank 449); no Augur entry | Same; early, wide intervals | [Leaderboard API, project 33121](https://www.metaculus.com/api/leaderboards/project/33121/), read 2026-11-23; snapshot `data/standings/fall-futureeval-2026.json` |
+| Bots against humans, Summer 2026 Metaculus Cup | Laertes and ManticAI finished 1st and 2nd overall, FutureSearch 5th (bots ineligible for prizes); the question "will a bot beat all humans" resolved Yes | Human tournament, bots entered unranked for prizes | [Metaculus notebook 45734](https://www.metaculus.com/notebooks/45734/), 2026-09-18; organiser |
 | Rest of the Spring 2026 top five, by summed score | Preseen-Atlas 18.25 [13.52, 22.99], SynapseSeer 16.87 [12.26, 21.47], manticAI 16.01 [11.72, 20.30], Preseen-Chestnut 18.26 [11.87, 24.64]; with GreeneiBot2 these are the top five by sum. The intervals overlap: no top bot is separated from the next | Same | [Spring 2026 results](https://forum.effectivealtruism.org/posts/iJ3qBDwpWCfNy9ZGd), 2026-09-09 |
 | Best bot, Summer 2026 (self-reported) | FutureSearch: #2 of 284 bots in Summer 2026 FutureEval behind laertes (5,783.66 against 5,803.42 summed spot peer score); no organiser results post for Summer 2026 found | Spot peer score, live | [FutureSearch evals](https://evals.futuresearch.ai/), 2026 |
-| Pastcasting, frozen web (self-reported) | FutureSearch: Brier 0.116 [0.109, 0.123] against Claude Opus 5 (xhigh) 0.120 on 2,386 Bench to the Future 3 questions, paired difference −0.0047, p < 0.001; its earlier lead of 0.010 ± 0.003 (n = 1,810) is reported as real, and the tie it reports is between two other models (0.0005, p = 0.85) | Backtest on frozen snapshots | [FutureSearch evals](https://evals.futuresearch.ai/); [Iterating on a forecaster](https://futuresearch.ai/iterating-on-a-forecaster), 2026-07-10 |
-| ForecastBench (the reference M4's number is set beside) | AIA Forecaster: Brier 0.1076 against superforecasters' 0.1110 on FB-7-21 (0.0753 against 0.0740 on its market subset), with agentic search and a fixed Platt step. Its ablation on the FB-Market subset (n = 76, Table 4): the market price alone 0.096; the model shown the price without search 0.103; no search, no price 0.116; agentic search 0.085; search and price 0.075. So a frontier model shown the price without search also failed to beat it, the outside twin of Augur's arm (d). A no-retrieval `qwen2.5:7b` run (M4) is **not comparable** to it: different questions, no search, a small local model; it is reported beside it only to show the distance | Backtest, self-reported | [AIA Forecaster, arXiv 2511.07678](https://arxiv.org/abs/2511.07678), 2025-11-10 |
-| ForecastBench tournament leaderboard | Top two entries (NeuroFusion, Anonymous 24) 69.4 difficulty-adjusted Brier Index; superforecaster median 68.1 (rank 9); public median 62.9. Baseline (no tools) leaderboard: superforecasters 66.9, best LLM 61.0. The first plan's 70.6 and 67.9 came from search snippets and are dropped | Live biweekly question sets; humans surveyed on older questions; organiser-reported | [leaderboard_tournament.csv](https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/leaderboards/csv/leaderboard_tournament.csv), read 2026-11-20 |
+| Pastcasting, frozen web (self-reported) | FutureSearch: Brier 0.116 [0.109, 0.123] against Claude Opus 5 (xhigh) 0.120 on 2,386 Bench to the Future 3 questions, paired difference −0.0047 (FutureSearch minus Opus 5; the source prints it as +0.0047, top minus left), p < 0.001; its earlier lead of 0.010 ± 0.003 (n = 1,810) is reported as real, and the tie it reports is between two other models (0.0005, p = 0.85) | Backtest on frozen snapshots | [FutureSearch evals](https://evals.futuresearch.ai/); [Iterating on a forecaster](https://futuresearch.ai/iterating-on-a-forecaster), 2026-07-10 |
+| ForecastBench (the reference M4's number is set beside) | AIA Forecaster: Brier 0.1076 against superforecasters' 0.1110 on FB-7-21 (0.0753 against 0.0740 on its market subset), with agentic search and a fixed Platt step. Its ablation on the FB-Market subset (Table 4, which states no n): the market price alone 0.096; the model shown the price without search 0.103; no search, no price 0.116; agentic search 0.085; search and price 0.075. So a frontier model shown the price without search also failed to beat it, the outside twin of Augur's arm (d). A no-retrieval `qwen2.5:7b` run (M4) is **not comparable** to it: different questions, no search, a small local model; it is reported beside it only to show the distance | Backtest, self-reported | [AIA Forecaster, arXiv 2511.07678](https://arxiv.org/abs/2511.07678), 2025-11-10 |
+| ForecastBench tournament leaderboard | Top two entries (NeuroFusion, Anonymous 24) 69.4 difficulty-adjusted Brier Index; superforecaster median 68.1 (rank 9); public median 62.9. Baseline (no tools) leaderboard: superforecasters 66.9, best LLM 61.0. FutureSearch's `futuresearch_bull_v4` 67.4 (rank 22 of 550). The first plan's 70.6 and 67.9 came from search snippets and are dropped | Live biweekly question sets; humans surveyed on older questions; organiser-reported | [leaderboard_tournament.csv](https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/leaderboards/csv/leaderboard_tournament.csv), read 2026-11-20, re-read 2026-11-23 (CSV last changed 2026-11-17) |
 | Copying the shown market price (the Copier Line) | Copying the price ForecastBench shows scores Brier 0.0843 over 3,175 questions (Brier Index 70.93); 442 of 527 entries are significantly worse than the price they were shown and none beats it after FDR correction; baseline models go from 51.5 without the price to 68.1 with it. On market questions nobody has shown an edge over the shown price, so absolute Brier there mostly measures the price | Independent analysis of ForecastBench submissions | [The Copier Line](https://ea.greaterwrong.com/posts/8YuG9EuhyYqaNBt7F), 2026-08-21 |
 | Leakage through date-filtered search | Brier 0.244 with no retrieval, 0.242 with leak-free documents, 0.108 with documents rated 3 to 4 on their 0 to 4 rubric; 93 binary questions opened in 2025 (from 393 audited); gpt-oss-120b | Retrospective, Google `before:` | [El Lahib et al.](https://arxiv.org/abs/2602.00758), ACL 2026 |
-| What separated winners | No strategy significant after correction (n about 40, 33 features); strongest raw signals: **GPT-5.4 as the final model r = +0.42** (a frontier final model in general only +0.20), checking similar questions or markets +0.34, extremizing −0.30, aggregating several forecasts −0.19; higher-reasoning variants beat their standard twins in 8 of 8 pairs (p = 0.004) | Self-reported survey against score | [Spring 2026 survey](https://forum.effectivealtruism.org/posts/tJoxFWkRev5wrEBar), 2026-09-09 |
+| What separated winners | No strategy significant after correction (42 bots with at least 100 scored questions, 33 features); strongest raw signals: **GPT-5.4 as the final model r = +0.42** (a frontier final model in general only +0.20), checking similar questions or markets +0.34, extremizing −0.30, aggregating several forecasts −0.19; and, in the results post rather than the survey, higher-reasoning template variants beat their standard twins in 8 of 8 pairs (one-sided p = 0.004) | Self-reported survey against score | [Spring 2026 survey](https://forum.effectivealtruism.org/posts/tJoxFWkRev5wrEBar), 2026-09-09; [results post](https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK) |
 
 **How Augur is compared, like for like.**
 
@@ -943,6 +1007,18 @@ count.
   or private data is in the code, the logs or the history. Until it is
   public the schedule is throttled (see Risks). The audit and the
   maintainer's steps for the switch are in RELEASE.md (M2).
+- **Container.** `Dockerfile` (`make docker`): `python:3.12-slim`,
+  installed from `uv.lock`, non-root, the ledger on a `/data` volume,
+  secrets only at `docker run`; for running the bot on a server's cron
+  instead of Actions.
+- **Release workflow.** `.github/workflows/release.yml`: every run builds,
+  runs `make check` and `make install-check`; only a pushed `v*` tag
+  publishes, through the `pypi` environment by trusted publishing (no
+  token). Steps in RELEASE.md.
+- **Standings.** `.github/workflows/standings.yml` re-reads each round's
+  leaderboard daily onto the `ledger` branch.
+- **Postmortem.** `docs/postmortem-fall-2026.md`, as committed on
+  Metaculus's credits form.
 - **Heavy runs.** Backtests and local-model evals are `make` targets and a
   `workflow_dispatch` workflow; the per-PR workflow is lint, types and unit
   tests only.
@@ -983,6 +1059,31 @@ documented ones.
 
 ## Milestones
 
+**Plan changes, 2026-11-23 (M10, decided while building it).**
+
+- *The season's final rank cannot be recorded at the release.* Fall
+  FutureEval and the last two MiniBench rounds are still open, and Augur
+  has no scored forecast in any round. Instead of a one-off reading, a
+  `Standings` workflow re-reads the current round, the two before it and
+  the FutureEval season every day and keeps each reading on the `ledger`
+  branch; RESULTS.md's season table renders every snapshot committed, and
+  the final ranks are under To measure. No prize.
+- *The same-question row uses ForecastBench's processed forecast sets*,
+  which publish every entrant's forecast per question. The datasets
+  repository keeps forecast sets only for 2024-07-21; the processed archive
+  on forecastbench.org has every 2026 set. A 1.2 MB extract of the rows for
+  Augur's instances is committed, so `make eval` re-checks it offline.
+- *The sample question ships inside the wheel*, so a dry run works from an
+  installed package and in the container without a checkout.
+- *No end-to-end replay of a recorded run exists for the install check*:
+  every prompt carries the current minute, so a recording never matches a
+  later run. The install check scores a committed ledger instead, and
+  forecasts only where a local model is present.
+- *The FutureEval project is a repository variable* (`AUGUR_FUTUREEVAL`),
+  since Spring 2027's id is not known yet.
+- *A test now holds the README and the postmortem to RESULTS.md*; at its
+  first run six README numbers had drifted and were corrected.
+
 - [x] M1: Scaffold, CI and one MiniBench question forecast end to end — `uv` project on Python 3.12, `ruff`, `mypy --strict`, `pytest`, `make check`, GitHub Actions with a dependency cache and `timeout-minutes`; the `Question` model and Metaculus client (list open questions, details, `my_forecasts` skip) against a fake server; `Provider` protocol with `ollama`, `metaculus_proxy` and `replay`; one searcher (`wikipedia`, as of an instant) and the AskNews searcher behind its credentials; the `Source` record, the leakage gate and `tests/test_leakage.py` from the first commit that stores a source; a single researcher and five forecaster draws combined by median for binary questions; the ledger schema; the comment renderer; `augur forecast --tournament minibench` (dry run without a token, on committed sample questions; real listing, binary submission and the private reasoning comment with `--submit` and a token). Done when `make check` is green, `augur forecast` on the sample questions with a local Ollama model writes questions, calls, dated sources and forecasts to the ledger and prints the forecast and comment it would post, a fake-server test covers the submit and comment calls, a test proves a source dated after the cutoff is rejected and that a ledger containing one fails, and no token ever appears in logs (tested). If `METACULUS_TOKEN` is present in the build environment, the bot also submits binary forecasts with comments in the bot-testing-area and then on the current MiniBench round, and the ledger rows are cited in the PR; otherwise the exact commands are under "To measure". (Amended 2026-11-18 by the submit floor: M1 submits in the bot-testing-area only, and the MiniBench command is under "To measure".)
 - [x] M2: Model access and the submit floor on the answering model — replace `metaculus_proxy` with one generic OpenAI-compatible provider (base URL, the name of the environment variable holding its key, model; Bearer auth), so OpenRouter (the sponsored key and `:free` models), Groq, Gemini's OpenAI endpoint, GitHub Models and Ollama are configuration, not code; an ordered model list per role (a cheap model for query planning and the brief, the best answering model for the forecasts); `augur models probe`, run at the start of every run, which calls each listed model once, records which answer and measures each free tier's real limits (requests and tokens per minute, the error a limit returns) rather than assuming them; fallback to the next model on rate-limit and out-of-credit errors, with every switch in the ledger; prices and listing dates read from OpenRouter's model list instead of the hand-written registry (an unknown model must not be priced at frontier rates and trip the caps; the listing date is the conservative stand-in for the release-date gate); the submit floor (built in M1) applied to the model that actually answers each question, so a fallback below the frontier tier skips the question rather than posting. Release notes for the merge: the repository audit for going public (no secrets in the history, licence, README first screen) and the steps to make it public and list it on Metaculus as an open-source bot, done by the maintainer when M2 merges. Done when `make check` is green, a fake-server test proves a fallback below the tier never submits, the probe lists answering models with their measured limits, and a bot-testing-area run completes on a free hosted model (with `OPENROUTER_API_KEY`; otherwise the exact commands are under "To measure").
 - [x] M3: Live on MiniBench (Q1 starts) — only what a live round needs: multiple choice, numeric and discrete forecasts (percentiles to a valid CDF, property-tested against Metaculus's validity rules); per-run and per-question caps, cost estimates, and a deadline per question so a run stays inside the round's window and reports its coverage (questions forecast in time, missed, skipped, and why); the scheduled workflow with the standard-library poll job, concurrency group and `AUGUR_SCHEDULE` switch, cheap while the repository is private (skip what is already forecast, cap each run); a measured check of how late GitHub's cron actually fires against the measured question windows, with a fallback trigger if it misses; the durable live ledger (each scheduled run pushes its JSONL export to the `ledger` branch). Done when every question type is accepted in the bot-testing-area, a fake-server test proves a second run never forecasts a question twice, the scheduled workflow passes a `workflow_dispatch` or `act` dry run, RESULTS.md records the open-time measurement, the cron delay measured against it and the chosen cadence with its billed minutes per month, and the bot has submitted forecasts with private comments on live MiniBench questions (only if the floor passes; otherwise the exact commands are under "To measure").
@@ -992,7 +1093,7 @@ documented ones.
 - [x] M7: The fleet: research depth, head count, model mix and aggregation (Q3) — the orchestrator: several research agents (query planning, sub-questions, a second pass that looks for what would change the answer), forecaster prompt variants, token-bucket limits per provider and a per-question budget, with a concurrency test on a fake provider that proves limits hold under load and a failed member does not sink the question; then the ablation on the M6 backtest and, for the factors M5 did not settle, on the replay evaluation: research depth (none, one pass, two passes with sub-questions) and number of forecasters (1, 3, 5, 9), one factor at a time. Then aggregation rules (median, trimmed mean, mean of log-odds, extremized log-odds with a fixed factor) for all question types; mixed-model fleets from the hosted models the probe found, or two local models without a token; a simulation that plants a known improvement in resampled backtest scores and reports how often each n detects it. Done when RESULTS.md holds the ablation, aggregation and model-mix tables on the same questions with paired intervals, cost and latency per variant and every row labelled by model; the power curve (questions needed to detect 2, 5 and 10 head-to-head points, and a 0.01 Brier difference, set beside FutureSearch's reported 0.010 ± 0.003 at n = 1,810); Q3's reconciled prediction answered; the live default changed only under the rule stated in this file (a variant replaces the default only if its interval against the default excludes 0, or it is no worse and cheaper); throughput under the limits measured; and a plain statement of which differences this backtest cannot resolve.
 - [x] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
 - [x] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
-- [ ] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
+- [x] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
 
 **Plan changes, 2026-11-22 (M8, decided while building it).**
 

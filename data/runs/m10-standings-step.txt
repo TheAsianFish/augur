@@ -1,0 +1,271 @@
+== augur standings --round minibench
+## MiniBench (`minibench`)
+
+Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:41.230931Z from https://www.metaculus.com/api/leaderboards/project/33169/.
+
+The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 2026-12-04T00:00:00Z); there is nothing to compare.
+
+### Questions Augur did not forecast (minibench)
+
+No ledger given (--ledger PATH), so missed questions are not explained.
+== augur standings --round minibench-2026-11-02
+## MiniBench - 2026-11-02 (`minibench-2026-11-02`)
+
+Finalized: yes. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:49.238756Z from https://www.metaculus.com/api/leaderboards/project/33135/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | takeoff.watch | bot | 59 | 22.77 [17.36, 29.05] | 1343.4 |
+| Best template bot | 107 | metac-claude-opus-5-5-high+asknews | Metaculus template bot | 59 | 3.66 [-0.97, 7.94] | 216.0 |
+| Best Metaculus house bot (not the template) | 3 | metac-autocast-experimental | Metaculus house bot (not the template) | 59 | 16.34 [10.92, 21.58] | 964.2 |
+| Community prediction | 80 | community prediction (unweighted) | community prediction | 59 | 5.06 [4.08, 6.12] | 298.6 |
+| Community prediction | 63 | community prediction (recency_weighted) | community prediction | 59 | 6.17 [4.77, 7.69] | 364.2 |
+| Community prediction | 48 | community prediction (reputation_weighted) | community prediction | 59 | 7.56 [6.13, 9.07] | 446.2 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Best listed open-source bot: no listed open-source bot in this round.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+### Questions Augur did not forecast (minibench-2026-11-02)
+
+No ledger given (--ledger PATH), so missed questions are not explained.
+
+### Template bots and the agent harness (minibench-2026-11-02)
+
+Source: https://www.metaculus.com/api/leaderboards/project/33135/, fetched 2026-11-23T06:20:49.238756Z; round `minibench-2026-11-02`, score type spot_peer_tournament. The snapshot's finalized flag is yes. Averages are Metaculus's summed spot peer score divided by questions covered; intervals are Metaculus's, rescaled the same way.
+
+**1. Template bots (`metac-<model>+asknews`).** 57 entries (54 plain, 3 experiment variants); 4 plain templates average >= 0.
+
+| Model | Bot | Rank | Avg spot peer score / question [interval] | Questions |
+|---|---|---|---|---|
+| claude-opus-5-5-high | `metac-claude-opus-5-5-high+asknews` | 107 | 3.66 [-0.97, 7.94] | 59 |
+| gemini-3-8-flash | `metac-gemini-3-8-flash+asknews` | 130 | 2.76 [-0.37, 6.13] | 59 |
+| claude-sonnet-5-5-high | `metac-claude-sonnet-5-5-high+asknews` | 136 | 2.39 [-2.31, 6.57] | 59 |
+| claude-haiku-5-5-high | `metac-claude-haiku-5-5-high+asknews` | 177 | 0.87 [-5.90, 7.37] | 59 |
+| claude-fable-5-1-high | `metac-claude-fable-5-1-high+asknews` | 211 | -0.08 [-5.63, 4.61] | 59 |
+| glm-5-3-flash | `metac-glm-5-3-flash+asknews` | 213 | -0.12 [-4.30, 4.22] | 59 |
+| gemini-4-argon-high | `metac-gemini-4-argon-high+asknews` | 238 | -0.84 [-7.18, 4.61] | 59 |
+| muse-wonder-high | `metac-muse-wonder-high+asknews` | 248 | -1.51 [-5.56, 2.45] | 59 |
+| gpt-6-astra-high | `metac-gpt-6-astra-high+asknews` | 251 | -1.77 [-5.96, 2.43] | 59 |
+| gpt-6-1-sol-high | `metac-gpt-6-1-sol-high+asknews` | 261 | -2.55 [-6.63, 1.63] | 59 |
+| glm-5-3 | `metac-glm-5-3+asknews` | 261 | -2.61 [-7.43, 1.72] | 59 |
+| qwen-3-8-flash | `metac-qwen-3-8-flash+asknews` | 269 | -2.86 [-7.77, 2.28] | 59 |
+| gpt-6-sol-high | `metac-gpt-6-sol-high+asknews` | 273 | -2.97 [-8.77, 2.01] | 59 |
+| gpt-6-luna-high | `metac-gpt-6-luna-high+asknews` | 277 | -3.18 [-7.13, 0.98] | 59 |
+| kimi-k3 | `metac-kimi-k3+asknews` | 277 | -3.21 [-9.28, 2.18] | 59 |
+| inkling-small | `metac-inkling-small+asknews` | 280 | -3.50 [-10.84, 3.98] | 59 |
+| muse-spark-1-3 | `metac-muse-spark-1-3+asknews` | 282 | -3.64 [-10.18, 2.09] | 59 |
+| claude-sonnet-5 | `metac-claude-sonnet-5+asknews` | 282 | -3.68 [-7.74, 0.25] | 59 |
+| glm-5-1 | `metac-glm-5-1+asknews` | 284 | -3.87 [-8.78, 0.94] | 59 |
+| qwen-3-7-plus | `metac-qwen-3-7-plus+asknews` | 284 | -4.23 [-12.20, 3.21] | 59 |
+| mistral-large-4-high | `metac-mistral-large-4-high+asknews` | 285 | -4.25 [-9.98, 1.67] | 59 |
+| nemotron-3-5-super-vl-high | `metac-nemotron-3-5-super-vl-high+asknews` | 280 | -4.75 [-11.38, 1.89] | 44 |
+| deepseek-v4-pro-high | `metac-deepseek-v4-pro-high+asknews` | 287 | -4.89 [-10.02, 0.36] | 59 |
+| glm-5-2 | `metac-glm-5-2+asknews` | 288 | -5.07 [-10.41, 0.12] | 59 |
+| kimi-k2-6 | `metac-kimi-k2-6+asknews` | 288 | -5.27 [-9.90, -0.69] | 59 |
+| qwen-3-6-plus | `metac-qwen-3-6-plus+asknews` | 290 | -6.20 [-13.32, 0.37] | 59 |
+| deepseek-v3-1 (variance-test-2) | `metac-deepseek-v3-1+asknews(variance-test-2)` | 290 | -6.21 [-13.25, 0.60] | 59 |
+| gpt-5-4-mini | `metac-gpt-5-4-mini+asknews` | 292 | -6.35 [-12.71, -0.30] | 59 |
+| grok-4-6 | `metac-grok-4-6+asknews` | 292 | -6.49 [-11.69, -1.59] | 59 |
+| minimax-m3 | `metac-minimax-m3+asknews` | 292 | -6.61 [-12.11, -0.75] | 59 |
+| qwen-3-8-max | `metac-qwen-3-8-max+asknews` | 292 | -6.63 [-10.71, -2.44] | 59 |
+| claude-haiku-4-5 | `metac-claude-haiku-4-5+asknews` | 293 | -6.97 [-13.29, -1.00] | 59 |
+| grok-4-7-high | `metac-grok-4-7-high+asknews` | 293 | -7.02 [-12.10, -1.90] | 59 |
+| gpt-4-1 | `metac-gpt-4-1+asknews` | 294 | -7.37 [-15.39, -0.09] | 59 |
+| nemotron-3-ultra | `metac-nemotron-3-ultra+asknews` | 295 | -7.66 [-14.51, -0.73] | 59 |
+| gemini-3-1-pro-high | `metac-gemini-3-1-pro-high+asknews` | 297 | -8.31 [-19.30, 0.73] | 59 |
+| gpt-4-1 [optimized-prompt] | `metac-gpt-4-1+asknews[optimized-prompt]` | 300 | -8.44 [-16.75, -1.08] | 59 |
+| deepseek-3-2-reasoning | `metac-deepseek-3-2-reasoning+asknews` | 307 | -9.42 [-15.76, -3.14] | 59 |
+| deepseek-v3-1-reasoning | `metac-deepseek-v3-1-reasoning+asknews` | 308 | -9.54 [-16.67, -2.70] | 59 |
+| gpt-5-4-nano | `metac-gpt-5-4-nano+asknews` | 308 | -9.56 [-16.59, -2.72] | 59 |
+| gemini-3-1-pro | `metac-gemini-3-1-pro+asknews` | 308 | -9.71 [-20.41, -0.88] | 59 |
+| gpt-oss-120b | `metac-gpt-oss-120b+asknews` | 308 | -9.82 [-17.98, -2.10] | 59 |
+| deepseek-v3-1 (variance-test-1) | `metac-deepseek-v3-1+asknews(variance-test-1)` | 309 | -9.97 [-18.63, -1.97] | 59 |
+| muse-glimmer-30b | `metac-muse-glimmer-30b+asknews` | 309 | -10.01 [-18.13, -2.30] | 59 |
+| deepseek-v3-1 | `metac-deepseek-v3-1+asknews` | 310 | -10.51 [-19.35, -2.19] | 59 |
+| llama-4-maverick-17b | `metac-llama-4-maverick-17b+asknews` | 310 | -10.58 [-18.91, -1.57] | 59 |
+| gpt-4o | `metac-gpt-4o+asknews` | 311 | -10.77 [-18.20, -3.59] | 59 |
+| gemma-4-26b | `metac-gemma-4-26b+asknews` | 313 | -11.48 [-18.82, -4.24] | 59 |
+| zai-glm-4-5 | `metac-zai-glm-4-5+asknews` | 314 | -11.85 [-20.77, -4.11] | 59 |
+| nemotron-3-5-lightning | `metac-nemotron-3-5-lightning+asknews` | 315 | -12.14 [-21.08, -3.29] | 59 |
+| deepseek-v4-flash | `metac-deepseek-v4-flash+asknews` | 315 | -12.50 [-19.45, -5.82] | 59 |
+| inkling | `metac-inkling+asknews` | 315 | -12.74 [-22.50, -3.46] | 59 |
+| deepseek-v3 | `metac-deepseek-v3+asknews` | 315 | -12.88 [-21.65, -4.42] | 59 |
+| gpt-4-1-mini | `metac-gpt-4-1-mini+asknews` | 319 | -13.79 [-20.68, -7.13] | 59 |
+| gemini-3-1-flash-lite | `metac-gemini-3-1-flash-lite+asknews` | 319 | -15.23 [-25.01, -6.36] | 59 |
+| gpt-4o-mini | `metac-gpt-4o-mini+asknews` | 322 | -16.55 [-24.88, -8.75] | 59 |
+| minimax-m2-7 | `metac-minimax-m2-7+asknews` | 322 | -16.65 [-24.13, -9.28] | 59 |
+
+**2. Agent harness against template, same model.** `metac-agent-X` is matched to the plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`). Each difference is a difference of two averages, with no paired interval: the two bots' per-question scores are not in the snapshot.
+
+| Model | Agent avg | Template avg | Agent minus template |
+|---|---|---|---|
+| gemini-4-argon | 15.39 | -0.84 | +16.24 |
+| muse-spark-1-3 | 11.80 | -3.64 | +15.44 |
+| qwen-3-8-max | 6.79 | -6.63 | +13.42 |
+| claude-fable-5-1 | 11.81 | -0.08 | +11.89 |
+| grok-4-7 | 4.67 | -7.02 | +11.69 |
+| kimi-k3 | 5.05 | -3.21 | +8.26 |
+| glm-5-3 | 5.58 | -2.61 | +8.19 |
+| gpt-6-1-sol | 5.51 | -2.55 | +8.07 |
+| gemini-3-8-flash | 10.78 | 2.76 | +8.02 |
+| gpt-6-astra | 6.19 | -1.77 | +7.96 |
+| claude-opus-5-5 | 11.34 | 3.66 | +7.68 |
+| muse-wonder | 0.01 | -1.51 | +1.51 |
+
+Unmatched agents: none. Templates with no agent: metac-claude-haiku-4-5+asknews, metac-claude-haiku-5-5-high+asknews, metac-claude-sonnet-5+asknews, metac-claude-sonnet-5-5-high+asknews, metac-deepseek-3-2-reasoning+asknews, metac-deepseek-v3+asknews, metac-deepseek-v3-1+asknews, metac-deepseek-v3-1-reasoning+asknews, metac-deepseek-v4-flash+asknews, metac-deepseek-v4-pro-high+asknews, metac-gemini-3-1-flash-lite+asknews, metac-gemini-3-1-pro+asknews, metac-gemma-4-26b+asknews, metac-glm-5-1+asknews, metac-glm-5-2+asknews, metac-glm-5-3-flash+asknews, metac-gpt-4-1+asknews, metac-gpt-4-1-mini+asknews, metac-gpt-4o+asknews, metac-gpt-4o-mini+asknews, metac-gpt-5-4-mini+asknews, metac-gpt-5-4-nano+asknews, metac-gpt-6-luna-high+asknews, metac-gpt-6-sol-high+asknews, metac-gpt-oss-120b+asknews, metac-grok-4-6+asknews, metac-inkling+asknews, metac-inkling-small+asknews, metac-kimi-k2-6+asknews, metac-llama-4-maverick-17b+asknews, metac-minimax-m2-7+asknews, metac-minimax-m3+asknews, metac-mistral-large-4-high+asknews, metac-muse-glimmer-30b+asknews, metac-nemotron-3-5-lightning+asknews, metac-nemotron-3-5-super-vl-high+asknews, metac-nemotron-3-ultra+asknews, metac-qwen-3-6-plus+asknews, metac-qwen-3-7-plus+asknews, metac-qwen-3-8-flash+asknews, metac-zai-glm-4-5+asknews.
+
+**3. Proposed floor: admit a model iff its template's average spot peer score is >= 0.** 4 admitted, 49 not, of 53 models (a model with templates at two effort settings counts once, by its unsuffixed bot). Worst case per question, from the constants in the agents: one planner call, one brief and 5 draws, 22,500 input and 26,000 output tokens in all, priced at the OpenRouter list (2026-11-18); a round is 60 questions. Where several listings share the name, the dearest prices it.
+
+| Model | Template avg | OpenRouter id (match by name) | $/M in | $/M out | Per question | Per 60-question round |
+|---|---|---|---|---|---|---|
+| claude-opus-5-5 | 3.66 | `anthropic/claude-opus-5.5` (+1 more) | 4 | 20 | $0.61 | $36.60 |
+| gemini-3-8-flash | 2.76 | `google/gemini-3.8-flash` (+1 more) | 0.825 | 4.125 | $0.13 | $7.55 |
+| claude-sonnet-5-5 | 2.39 | `anthropic/claude-sonnet-5.5` (+1 more) | 2 | 10 | $0.30 | $18.30 |
+| claude-haiku-5-5 | 0.87 | `anthropic/claude-haiku-5.5` (+1 more) | 0.1 | 0.5 | $0.02 | $0.92 |
+
+Not admitted (average < 0): claude-fable-5-1 (-0.1), glm-5-3-flash (-0.1), gemini-4-argon (-0.8), muse-wonder (-1.5), gpt-6-astra (-1.8), gpt-6-1-sol (-2.6), glm-5-3 (-2.6), qwen-3-8-flash (-2.9), gpt-6-sol (-3.0), gpt-6-luna (-3.2), kimi-k3 (-3.2), inkling-small (-3.5), muse-spark-1-3 (-3.6), claude-sonnet-5 (-3.7), glm-5-1 (-3.9), qwen-3-7-plus (-4.2), mistral-large-4 (-4.3), nemotron-3-5-super-vl (-4.8), deepseek-v4-pro (-4.9), glm-5-2 (-5.1), kimi-k2-6 (-5.3), qwen-3-6-plus (-6.2), gpt-5-4-mini (-6.3), grok-4-6 (-6.5), minimax-m3 (-6.6), qwen-3-8-max (-6.6), claude-haiku-4-5 (-7.0), grok-4-7 (-7.0), gpt-4-1 (-7.4), nemotron-3-ultra (-7.7), deepseek-3-2-reasoning (-9.4), deepseek-v3-1-reasoning (-9.5), gpt-5-4-nano (-9.6), gemini-3-1-pro (-9.7), gpt-oss-120b (-9.8), muse-glimmer-30b (-10.0), deepseek-v3-1 (-10.5), llama-4-maverick-17b (-10.6), gpt-4o (-10.8), gemma-4-26b (-11.5), zai-glm-4-5 (-11.8), nemotron-3-5-lightning (-12.1), deepseek-v4-flash (-12.5), inkling (-12.7), deepseek-v3 (-12.9), gpt-4-1-mini (-13.8), gemini-3-1-flash-lite (-15.2), gpt-4o-mini (-16.5), minimax-m2-7 (-16.6).
+
+Current frontier tier (`frontier-2026-11b`) without template evidence in this round: `claude-opus-4-1`, `claude-opus-4-5`, `claude-opus-5`, `claude-sonnet-4-5`, `gemini-2-5-pro`, `gemini-3-pro-preview`, `gpt-5`, `gpt-5-1`, `gpt-5-4`, `grok-4`, `o3`. With evidence: `claude-opus-5-5` (+3.7), `claude-sonnet-5-5` (+2.4).
+== augur standings --round minibench-2026-10-19
+## MiniBench - 2026-10-19 (`minibench-2026-10-19`)
+
+Finalized: yes. Leaderboard entries: 410. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:57.410455Z from https://www.metaculus.com/api/leaderboards/project/33132/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | notatrollBotV1 | bot | 58 | 14.47 [7.33, 22.22] | 839.3 |
+| Best template bot | 106 | metac-claude-opus-5-5-high+asknews | Metaculus template bot | 58 | 3.10 [-4.97, 10.01] | 179.6 |
+| Best Metaculus house bot (not the template) | 2 | metac-autocast-experimental | Metaculus house bot (not the template) | 58 | 13.46 [7.18, 20.02] | 780.8 |
+| Community prediction | 37 | community prediction (unweighted) | community prediction | 58 | 7.58 [5.31, 10.44] | 439.6 |
+| Community prediction | 34 | community prediction (recency_weighted) | community prediction | 58 | 7.89 [5.08, 11.45] | 457.6 |
+| Community prediction | 32 | community prediction (reputation_weighted) | community prediction | 58 | 8.21 [5.65, 11.43] | 476.4 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Best listed open-source bot: no listed open-source bot in this round.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+### Questions Augur did not forecast (minibench-2026-10-19)
+
+No ledger given (--ledger PATH), so missed questions are not explained.
+
+### Template bots and the agent harness (minibench-2026-10-19)
+
+Source: https://www.metaculus.com/api/leaderboards/project/33132/, fetched 2026-11-23T06:20:57.410455Z; round `minibench-2026-10-19`, score type spot_peer_tournament. The snapshot's finalized flag is yes. Averages are Metaculus's summed spot peer score divided by questions covered; intervals are Metaculus's, rescaled the same way.
+
+**1. Template bots (`metac-<model>+asknews`).** 62 entries (57 plain, 5 experiment variants); 3 plain templates average >= 0.
+
+| Model | Bot | Rank | Avg spot peer score / question [interval] | Questions |
+|---|---|---|---|---|
+| claude-opus-5-5-high | `metac-claude-opus-5-5-high+asknews` | 106 | 3.10 [-4.97, 10.01] | 58 |
+| claude-fable-5-1-high | `metac-claude-fable-5-1-high+asknews` | 115 | 2.70 [-4.19, 8.96] | 57 |
+| gemini-4-argon-high | `metac-gemini-4-argon-high+asknews` | 161 | 0.51 [-6.25, 6.56] | 57 |
+| qwen-3-6-plus | `metac-qwen-3-6-plus+asknews` | 177 | -0.11 [-6.26, 5.85] | 58 |
+| qwen-3-8-flash | `metac-qwen-3-8-flash+asknews` | 186 | -0.39 [-6.54, 5.40] | 58 |
+| qwen-3-8-max | `metac-qwen-3-8-max+asknews` | 191 | -0.55 [-7.51, 5.20] | 58 |
+| deepseek-v4-pro-high | `metac-deepseek-v4-pro-high+asknews` | 192 | -0.59 [-8.10, 5.90] | 58 |
+| claude-sonnet-5-5-high | `metac-claude-sonnet-5-5-high+asknews` | 192 | -0.60 [-8.57, 6.33] | 57 |
+| muse-glimmer-30b | `metac-muse-glimmer-30b+asknews` | 192 | -0.62 [-9.82, 7.78] | 58 |
+| claude-sonnet-5 | `metac-claude-sonnet-5+asknews` | 203 | -1.33 [-8.58, 4.56] | 57 |
+| glm-5-3-flash | `metac-glm-5-3-flash+asknews` | 205 | -1.41 [-7.30, 4.07] | 58 |
+| llama-4-maverick-17b | `metac-llama-4-maverick-17b+asknews` | 205 | -1.47 [-7.39, 5.23] | 58 |
+| gpt-5-4-nano | `metac-gpt-5-4-nano+asknews` | 207 | -1.61 [-8.36, 5.58] | 58 |
+| muse-spark-1-3 | `metac-muse-spark-1-3+asknews` | 195 | -1.84 [-11.96, 5.71] | 25 |
+| gpt-6-luna-high | `metac-gpt-6-luna-high+asknews` | 212 | -2.03 [-10.93, 4.59] | 58 |
+| glm-5-3 | `metac-glm-5-3+asknews` | 216 | -2.12 [-8.54, 3.46] | 58 |
+| qwen-3-7-plus | `metac-qwen-3-7-plus+asknews` | 216 | -2.18 [-11.80, 6.57] | 57 |
+| grok-4-6 | `metac-grok-4-6+asknews` | 218 | -2.23 [-8.29, 3.61] | 58 |
+| kimi-k3 | `metac-kimi-k3+asknews` | 217 | -2.35 [-9.88, 3.78] | 54 |
+| muse-wonder-high | `metac-muse-wonder-high+asknews` | 197 | -2.46 [-10.96, 3.64] | 24 |
+| nemotron-3-ultra | `metac-nemotron-3-ultra+asknews` | 222 | -2.55 [-9.12, 3.53] | 57 |
+| gpt-6-sol-high | `metac-gpt-6-sol-high+asknews` | 223 | -2.56 [-8.47, 2.79] | 58 |
+| gpt-6-astra-high | `metac-gpt-6-astra-high+asknews` | 224 | -2.64 [-7.32, 1.63] | 58 |
+| gpt-6-1-sol-high | `metac-gpt-6-1-sol-high+asknews` | 224 | -2.69 [-7.53, 1.75] | 58 |
+| kimi-k2-6 | `metac-kimi-k2-6+asknews` | 224 | -2.90 [-10.65, 4.40] | 54 |
+| gpt-oss-120b | `metac-gpt-oss-120b+asknews` | 229 | -2.99 [-9.78, 3.65] | 58 |
+| deepseek-v4-flash | `metac-deepseek-v4-flash+asknews` | 232 | -3.22 [-9.94, 3.35] | 58 |
+| minimax-m2-7 | `metac-minimax-m2-7+asknews` | 232 | -3.28 [-9.12, 2.61] | 58 |
+| grok-4-7-high | `metac-grok-4-7-high+asknews` | 233 | -3.33 [-10.71, 3.57] | 58 |
+| deepseek-v3-1 (variance-test-2) | `metac-deepseek-v3-1+asknews(variance-test-2)` | 240 | -3.96 [-12.31, 3.81] | 58 |
+| minimax-m3 | `metac-minimax-m3+asknews` | 243 | -4.01 [-8.63, 0.52] | 58 |
+| glm-5-2 | `metac-glm-5-2+asknews` | 247 | -4.15 [-9.71, 0.76] | 58 |
+| deepseek-3-2-reasoning | `metac-deepseek-3-2-reasoning+asknews` | 248 | -4.26 [-10.11, 1.91] | 58 |
+| gemini-3-8-flash | `metac-gemini-3-8-flash+asknews` | 251 | -4.60 [-12.72, 2.19] | 58 |
+| gemma-4-26b | `metac-gemma-4-26b+asknews` | 262 | -5.59 [-15.74, 2.86] | 58 |
+| inkling | `metac-inkling+asknews` | 265 | -5.89 [-14.05, 1.84] | 58 |
+| zai-glm-4-5 | `metac-zai-glm-4-5+asknews` | 265 | -6.04 [-12.77, 0.16] | 57 |
+| claude-haiku-4-5 | `metac-claude-haiku-4-5+asknews` | 265 | -6.08 [-12.77, 0.74] | 58 |
+| claude-haiku-5-5-high | `metac-claude-haiku-5-5-high+asknews` | 266 | -6.26 [-16.84, 1.76] | 58 |
+| gemini-3-1-pro | `metac-gemini-3-1-pro+asknews` | 267 | -6.28 [-19.59, 3.71] | 58 |
+| deepseek-v3-1 (variance-test-1) | `metac-deepseek-v3-1+asknews(variance-test-1)` | 267 | -6.30 [-13.99, 1.36] | 58 |
+| gpt-5-4-mini | `metac-gpt-5-4-mini+asknews` | 268 | -6.46 [-11.66, -1.23] | 58 |
+| gemini-3-1-pro-high | `metac-gemini-3-1-pro-high+asknews` | 271 | -6.96 [-19.02, 2.22] | 57 |
+| nemotron-3-5-super-vl-high | `metac-nemotron-3-5-super-vl-high+asknews` | 272 | -6.99 [-13.42, -1.08] | 58 |
+| deepseek-v3 | `metac-deepseek-v3+asknews` | 277 | -7.47 [-13.26, -1.83] | 58 |
+| gpt-4-1-mini | `metac-gpt-4-1-mini+asknews` | 278 | -7.69 [-15.02, -1.05] | 58 |
+| deepseek-v3-1 | `metac-deepseek-v3-1+asknews` | 279 | -7.73 [-14.62, -1.01] | 58 |
+| deepseek-r1 (variance-test) | `metac-deepseek-r1+asknews(variance-test)` | 211 | -8.12 [-20.43, 1.91] | 12 |
+| mistral-large-4-high | `metac-mistral-large-4-high+asknews` | 281 | -8.39 [-14.14, -2.76] | 58 |
+| deepseek-v3-1-reasoning | `metac-deepseek-v3-1-reasoning+asknews` | 281 | -8.46 [-15.66, -1.82] | 58 |
+| gemini-3-1-flash-lite | `metac-gemini-3-1-flash-lite+asknews` | 282 | -9.06 [-17.18, -1.60] | 57 |
+| gpt-4o | `metac-gpt-4o+asknews` | 283 | -9.99 [-18.19, -2.25] | 58 |
+| nemotron-3-5-lightning | `metac-nemotron-3-5-lightning+asknews` | 283 | -10.03 [-19.27, -1.06] | 58 |
+| inkling-small | `metac-inkling-small+asknews` | 283 | -10.08 [-17.09, -3.56] | 58 |
+| glm-5-1 | `metac-glm-5-1+asknews` | 285 | -10.60 [-17.86, -3.64] | 57 |
+| deepseek-r1 | `metac-deepseek-r1+asknews` | 218 | -10.69 [-25.58, 2.06] | 12 |
+| gpt-4-1 [optimized-prompt] | `metac-gpt-4-1+asknews[optimized-prompt]` | 286 | -10.99 [-17.57, -4.90] | 57 |
+| gpt-4-1 | `metac-gpt-4-1+asknews` | 290 | -11.91 [-20.26, -4.64] | 58 |
+| gpt-4o-mini | `metac-gpt-4o-mini+asknews` | 295 | -15.38 [-24.62, -6.08] | 58 |
+| gpt-4-1-nano [optimized-prompt] | `metac-gpt-4-1-nano+asknews[optimized-prompt]` | 295 | -18.10 [-29.75, -6.58] | 57 |
+| gpt-3-5-turbo | `metac-gpt-3-5-turbo+asknews` | 296 | -23.00 [-36.64, -10.06] | 57 |
+| gpt-4-1-nano | `metac-gpt-4-1-nano+asknews` | 296 | -23.97 [-38.79, -9.74] | 57 |
+
+**2. Agent harness against template, same model.** `metac-agent-X` is matched to the plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`). Each difference is a difference of two averages, with no paired interval: the two bots' per-question scores are not in the snapshot.
+
+| Model | Agent avg | Template avg | Agent minus template |
+|---|---|---|---|
+| gpt-6-astra | 9.19 | -2.64 | +11.82 |
+| grok-4-7 | 7.91 | -3.33 | +11.24 |
+| kimi-k3 | 6.93 | -2.35 | +9.28 |
+| gemini-3-8-flash | 3.78 | -4.60 | +8.38 |
+| gemini-4-argon | 8.66 | 0.51 | +8.15 |
+| gpt-6-1-sol | 4.89 | -2.69 | +7.58 |
+| claude-fable-5-1 | 10.05 | 2.70 | +7.35 |
+| claude-opus-5-5 | 7.29 | 3.10 | +4.19 |
+| glm-5-3 | 1.37 | -2.12 | +3.48 |
+| qwen-3-8-max | 2.82 | -0.55 | +3.37 |
+
+Unmatched agents: none. Templates with no agent: metac-claude-haiku-4-5+asknews, metac-claude-haiku-5-5-high+asknews, metac-claude-sonnet-5+asknews, metac-claude-sonnet-5-5-high+asknews, metac-deepseek-3-2-reasoning+asknews, metac-deepseek-r1+asknews, metac-deepseek-v3+asknews, metac-deepseek-v3-1+asknews, metac-deepseek-v3-1-reasoning+asknews, metac-deepseek-v4-flash+asknews, metac-deepseek-v4-pro-high+asknews, metac-gemini-3-1-flash-lite+asknews, metac-gemini-3-1-pro+asknews, metac-gemma-4-26b+asknews, metac-glm-5-1+asknews, metac-glm-5-2+asknews, metac-glm-5-3-flash+asknews, metac-gpt-3-5-turbo+asknews, metac-gpt-4-1+asknews, metac-gpt-4-1-mini+asknews, metac-gpt-4-1-nano+asknews, metac-gpt-4o+asknews, metac-gpt-4o-mini+asknews, metac-gpt-5-4-mini+asknews, metac-gpt-5-4-nano+asknews, metac-gpt-6-luna-high+asknews, metac-gpt-6-sol-high+asknews, metac-gpt-oss-120b+asknews, metac-grok-4-6+asknews, metac-inkling+asknews, metac-inkling-small+asknews, metac-kimi-k2-6+asknews, metac-llama-4-maverick-17b+asknews, metac-minimax-m2-7+asknews, metac-minimax-m3+asknews, metac-mistral-large-4-high+asknews, metac-muse-glimmer-30b+asknews, metac-muse-spark-1-3+asknews, metac-muse-wonder-high+asknews, metac-nemotron-3-5-lightning+asknews, metac-nemotron-3-5-super-vl-high+asknews, metac-nemotron-3-ultra+asknews, metac-qwen-3-6-plus+asknews, metac-qwen-3-7-plus+asknews, metac-qwen-3-8-flash+asknews, metac-zai-glm-4-5+asknews.
+
+**3. Proposed floor: admit a model iff its template's average spot peer score is >= 0.** 3 admitted, 53 not, of 56 models (a model with templates at two effort settings counts once, by its unsuffixed bot). Worst case per question, from the constants in the agents: one planner call, one brief and 5 draws, 22,500 input and 26,000 output tokens in all, priced at the OpenRouter list (2026-11-18); a round is 60 questions. Where several listings share the name, the dearest prices it.
+
+| Model | Template avg | OpenRouter id (match by name) | $/M in | $/M out | Per question | Per 60-question round |
+|---|---|---|---|---|---|---|
+| claude-opus-5-5 | 3.10 | `anthropic/claude-opus-5.5` (+1 more) | 4 | 20 | $0.61 | $36.60 |
+| claude-fable-5-1 | 2.70 | `anthropic/claude-fable-5.1` (+1 more) | 10 | 50 | $1.52 | $91.50 |
+| gemini-4-argon | 0.51 | `google/gemini-4-argon` (+1 more) | 2 | 10 | $0.30 | $18.30 |
+
+Not admitted (average < 0): qwen-3-6-plus (-0.1), qwen-3-8-flash (-0.4), qwen-3-8-max (-0.6), deepseek-v4-pro (-0.6), claude-sonnet-5-5 (-0.6), muse-glimmer-30b (-0.6), claude-sonnet-5 (-1.3), glm-5-3-flash (-1.4), llama-4-maverick-17b (-1.5), gpt-5-4-nano (-1.6), muse-spark-1-3 (-1.8), gpt-6-luna (-2.0), glm-5-3 (-2.1), qwen-3-7-plus (-2.2), grok-4-6 (-2.2), kimi-k3 (-2.3), muse-wonder (-2.5), nemotron-3-ultra (-2.6), gpt-6-sol (-2.6), gpt-6-astra (-2.6), gpt-6-1-sol (-2.7), kimi-k2-6 (-2.9), gpt-oss-120b (-3.0), deepseek-v4-flash (-3.2), minimax-m2-7 (-3.3), grok-4-7 (-3.3), minimax-m3 (-4.0), glm-5-2 (-4.2), deepseek-3-2-reasoning (-4.3), gemini-3-8-flash (-4.6), gemma-4-26b (-5.6), inkling (-5.9), zai-glm-4-5 (-6.0), claude-haiku-4-5 (-6.1), claude-haiku-5-5 (-6.3), gemini-3-1-pro (-6.3), gpt-5-4-mini (-6.5), nemotron-3-5-super-vl (-7.0), deepseek-v3 (-7.5), gpt-4-1-mini (-7.7), deepseek-v3-1 (-7.7), mistral-large-4 (-8.4), deepseek-v3-1-reasoning (-8.5), gemini-3-1-flash-lite (-9.1), gpt-4o (-10.0), nemotron-3-5-lightning (-10.0), inkling-small (-10.1), glm-5-1 (-10.6), deepseek-r1 (-10.7), gpt-4-1 (-11.9), gpt-4o-mini (-15.4), gpt-3-5-turbo (-23.0), gpt-4-1-nano (-24.0).
+
+Current frontier tier (`frontier-2026-11b`) without template evidence in this round: `claude-opus-4-1`, `claude-opus-4-5`, `claude-opus-5`, `claude-sonnet-4-5`, `gemini-2-5-pro`, `gemini-3-pro-preview`, `gpt-5`, `gpt-5-1`, `gpt-5-4`, `grok-4`, `o3`. With evidence: `claude-opus-5-5` (+3.1), `claude-sonnet-5-5` (-0.6).
+== augur standings --round 33121
+## Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`)
+
+Finalized: no. Leaderboard entries: 596. Most questions any entry covers: 38. Score type: spot_peer_tournament. Fetched 2026-11-23T06:21:07.399355Z from https://www.metaculus.com/api/leaderboards/project/33121/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
+| Best template bot | 44 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 38 | 13.49 [4.52, 23.27] | 512.8 |
+| Best Metaculus house bot (not the template) | 27 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 38 | 15.83 [7.83, 24.67] | 601.7 |
+| Best listed open-source bot | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
+| Community prediction | 36 | community prediction (unweighted) | community prediction | 38 | 14.71 [11.48, 18.27] | 559.1 |
+| Community prediction | 56 | community prediction (recency_weighted) | community prediction | 38 | 12.06 [9.14, 15.26] | 458.1 |
+| Community prediction | 46 | community prediction (reputation_weighted) | community prediction | 38 | 13.36 [9.72, 17.12] | 507.5 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+### Questions Augur did not forecast (fall-futureeval-2026)
+
+No ledger given (--ledger PATH), so missed questions are not explained.

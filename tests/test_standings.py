@@ -455,3 +455,23 @@ def test_worst_case_cost_arithmetic_and_unlisted_models() -> None:
     assert gpt.listed_ids == ()
     assert gpt.per_question is None
     assert gpt.per_round is None
+
+
+def test_season_row_shows_the_same_model_template_and_augur() -> None:
+    extra = [_entry("Augur-bot-1", 118.0, 40)]
+    q = standings.RoundQuestion(post_id=7, question_id=70, title="q", status="open")
+    text = standings.season_markdown([_round("Augur-bot-1", extra, [q])], {})
+    row = text.splitlines()[2]
+    assert "| -7.66 [-14.51, -0.73], rank 295 |" in row  # the template on the free model
+    assert "| 2.00 [1.00, 4.00], rank 40 |" in row  # Augur's own row
+    assert row.endswith("| 0 of 1 |")
+
+
+def test_season_without_augur_or_ledgers_says_so() -> None:
+    text = standings.season_markdown([_round()], None)
+    row = text.splitlines()[2]
+    assert row.endswith("| no entry | not read |")
+
+
+def test_season_rows_are_ordered_by_start_and_empty_is_explicit() -> None:
+    assert standings.season_markdown([], None) == "No standings snapshot committed.\n"

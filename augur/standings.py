@@ -762,3 +762,70 @@ async def main(args: argparse.Namespace, settings: Settings) -> int:
         print(f"\n### Template bots and the agent harness ({round_.round.slug})\n")
         print(templates_markdown(round_, load_catalog()), end="")
     return 0
+
+
+# -- the season across rounds (Q5) -----------------------------------------------------
+
+# The template bot on the free model Augur's shadow round uses: the outside line Q1's
+# unsubmitted comparison sits beside.
+SAME_MODEL_TEMPLATE = "metac-nemotron-3-ultra+asknews"
+
+
+def _named(board: Leaderboard, username: str) -> Entry | None:
+    for e in board.entries:
+        if e.user is not None and e.user.username == username:
+            return e
+    return None
+
+
+def _cell(entry: Entry | None) -> str:
+    if entry is None:
+        return "none"
+    rank = f"rank {entry.rank}" if entry.rank is not None else "unranked"
+    return f"{_fmt_avg(entry)}, {rank}"
+
+
+def _named_cell(entry: Entry | None) -> str:
+    return "none" if entry is None else f"{entry.name} {_cell(entry)}"
+
+
+def season_markdown(
+    rounds: Sequence[RoundStandings], outcomes: Mapping[int, list[Outcome]] | None
+) -> str:
+    """One row per round snapshot: where the field stood, and where Augur did.
+
+    Averages are spot peer points a question covered (Metaculus's sum divided by
+    coverage); a round that is not finalized is a reading on the date fetched.
+    """
+    header = (
+        "| Round | Status, as read | Entries | Questions scored | Rank 1 | Best template bot "
+        f"| `{SAME_MODEL_TEMPLATE}` (Augur's free model) | Community (unweighted) "
+        "| Augur | Questions Augur submitted |\n"
+        "|---|---|---|---|---|---|---|---|---|---|\n"
+    )
+    lines: list[str] = []
+    ordered = sorted(rounds, key=lambda r: (r.round.start_date or "", r.round.slug))
+    for r in ordered:
+        board = r.board()
+        top = rank_one(board)
+        community = next(
+            (e for e in community_aggregates(board) if e.aggregation_method == "unweighted"), None
+        )
+        mine = augur_entry(board, r.augur_username)
+        submitted = (
+            sum(explain(q, outcomes)[0] for q in r.questions) if outcomes is not None else None
+        )
+        status = "finalized" if board.finalized else "open"
+        lines.append(
+            f"| {r.round.name} (`{r.round.slug}`, project {r.round.id}) "
+            f"| {status}, {r.fetched_at.date().isoformat()} | {len(board.entries)} "
+            f"| {_fmt_questions(board.max_coverage)} "
+            f"| {_named_cell(top)} "
+            f"| {_named_cell(best_template(board))} | {_cell(_named(board, SAME_MODEL_TEMPLATE))} "
+            f"| {_cell(community)} "
+            f"| {'no entry' if mine is None else _cell(mine)} "
+            f"| {'not read' if submitted is None else f'{submitted} of {len(r.questions)}'} |"
+        )
+    if not lines:
+        return "No standings snapshot committed.\n"
+    return header + "\n".join(lines) + "\n"

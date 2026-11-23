@@ -5,7 +5,9 @@ The first job of the scheduled workflow: it runs on a bare runner in seconds,
 so a run with nothing to do costs a few seconds rather than an install.
 
 Environment: ``METACULUS_TOKEN`` (never printed), ``AUGUR_SCHEDULE`` (``off``,
-``minibench`` or ``all``; anything else is ``off``), ``AUGUR_POLL_TOURNAMENTS``
+``minibench`` or ``all``; anything else is ``off``), ``AUGUR_FUTUREEVAL`` (the
+FutureEval project ``all`` polls: an id or slug, default ``33121``, Fall 2026;
+set the Spring 2027 id when it opens), ``AUGUR_POLL_TOURNAMENTS``
 (a comma list overriding the schedule's tournaments), ``GITHUB_OUTPUT``
 (receives ``has_work=true|false`` and ``tournaments=<comma list>``).
 An API error counts as work, so the forecast job runs and reports it.
@@ -27,7 +29,8 @@ from typing import Any
 API = "https://www.metaculus.com/api"
 USER_AGENT = "augur-forecast-poll (+https://github.com/TheAsianFish/augur)"
 FORECAST_TYPES = "binary,multiple_choice,numeric,discrete"
-SCHEDULES = {"minibench": ["minibench"], "all": ["minibench", "33121"]}
+SCHEDULES = ("minibench", "all")
+FUTUREEVAL_DEFAULT = "33121"  # Fall 2026 FutureEval
 PAUSE_SECONDS = 1.0
 
 Fetch = Callable[[str, Mapping[str, str]], Any]
@@ -120,6 +123,11 @@ def poll_tournament(
     return opened, todo, soonest
 
 
+def _is_name(value: str) -> bool:
+    """A tournament id or slug: lowercase letters, digits and dashes only."""
+    return bool(value) and all(c.isdigit() or c == "-" or "a" <= c <= "z" for c in value)
+
+
 def poll(
     env: Mapping[str, str],
     fetch: Fetch = http_get_json,
@@ -136,7 +144,13 @@ def poll(
         lines.append("schedule is off: nothing polled, no forecast job")
         return False, [], lines
     override = [t.strip() for t in env.get("AUGUR_POLL_TOURNAMENTS", "").split(",") if t.strip()]
-    tournaments = override or SCHEDULES[schedule]
+    futureeval = env.get("AUGUR_FUTUREEVAL", "").strip().lower() or FUTUREEVAL_DEFAULT
+    if not _is_name(futureeval):
+        lines.append(
+            f"warning: AUGUR_FUTUREEVAL={futureeval!r} is not an id or slug; using the default"
+        )
+        futureeval = FUTUREEVAL_DEFAULT
+    tournaments = override or (["minibench", futureeval] if schedule == "all" else ["minibench"])
     token = env.get("METACULUS_TOKEN", "").strip()
     if not token:
         lines.append("no METACULUS_TOKEN: cannot see this account's forecasts; set the secret")

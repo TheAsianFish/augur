@@ -1,0 +1,21 @@
+# The image needs pyproject.toml, uv.lock, README.md, LICENSE, augur/ and
+# data/samples/; everything else stays out of the build context.
+.git
+.github
+.venv
+**/.env
+**/.env.*
+**/__pycache__
+**/*.py[cod]
+.mypy_cache
+.ruff_cache
+.pytest_cache
+dist
+build
+*.db
+*.sqlite
+*.sqlite-*
+tests
+scripts
+data
+!data/samples

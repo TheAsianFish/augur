@@ -28,7 +28,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from augur import power, q2, q3, replay, scorecard, standings
+from augur import fbcompare, power, q2, q3, replay, scorecard, standings
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
@@ -300,6 +300,13 @@ def render_standings(root: Path) -> str:
         ]
         parts.append("\n".join(kept))
     return "\n\n".join(parts) + "\n" if parts else "No standings snapshot committed.\n"
+
+
+def render_season(root: Path) -> str:
+    """Q5 across the season: one row per committed round snapshot, Augur's row beside the field."""
+    rounds = [standings.load_snapshot(p) for p in sorted((root / STANDINGS).glob("*.json"))]
+    outcomes = standings.read_outcomes(_ledgers(root))
+    return standings.season_markdown(rounds, outcomes)
 
 
 TEMPLATES_SNAPSHOT = STANDINGS / "minibench-2026-11-02.json"
@@ -1714,6 +1721,129 @@ def render_q6_preregistration(root: Path) -> str:
     return m.group("body")
 
 
+# -- M10: the ForecastBench same-question row -------------------------------------
+
+FBCOMPARE_TOP = 5
+
+
+def _fd(d: dict[str, Any]) -> str:
+    if d["low"] is None:
+        return f"{d['mean']:+.3f} (one market, no interval)"
+    return f"{d['mean']:+.3f} [{d['low']:+.3f}, {d['high']:+.3f}]"
+
+
+def _fname(e: dict[str, Any]) -> str:
+    name = str(e["name"]).removeprefix("ForecastBench / ")
+    notes = []
+    if e.get("web_search"):
+        notes.append("web search")
+    if e["imputed_excluded"]:
+        notes.append(f"{e['imputed_excluded']} imputed excluded")
+    return name + (f" ({', '.join(notes)})" if notes else "")
+
+
+def _frow(label: str, e: dict[str, Any]) -> str:
+    return (
+        f"| {label} | {_fname(e)} | {e['n']} | {e['brier']:.3f} | {e['augur_brier']:.3f} | "
+        f"{_fd(e['diff'])} |"
+    )
+
+
+def _fcorpus(c: dict[str, Any]) -> list[str]:
+    a = c["augur_brier"]
+    agree = (
+        "ForecastBench's processed files resolve every instance as Augur was scored"
+        if not c["outcome_disagreements"]
+        else f"{c['outcome_disagreements']} instances resolve differently in ForecastBench's "
+        "processed files (scored with Augur's outcome)"
+    )
+    sets = c["sets"][0] if len(c["sets"]) == 1 else f"{c['sets'][0]} to {c['sets'][-1]}"
+    out = [
+        f"**{c['name']}**: {c['description']}, `{c['model']}`; {c['n']} instances "
+        f"({c['markets']} markets, {sets}), base rate {100 * c['base_rate']:.1f}%. "
+        f"Augur's Brier {a['mean']:.4f} [{a['low']:.4f}, {a['high']:.4f}]. {agree}.",
+        "",
+        "| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | "
+        "Augur − entrant [95% interval] |",
+        "|---|---|---|---|---|---|",
+    ]
+    entrants = c["entrants"]
+    for e in entrants:
+        if e["group"] == "market":
+            out.append(_frow("market", e))
+    for g in fbcompare.GROUPS:
+        group = [e for e in entrants if e["group"] == g]
+        s = c["groups"][g]
+        if not group:
+            continue
+        name = fbcompare.GROUP_NAMES[g]
+        by = {e["name"]: e for e in group}
+        out.append(_frow(f"{name}: best", by[s["best"]]))
+        out.append(
+            f"| {name}: median of {s['count']} | — | {s['median_n']:g} (median) | "
+            f"{s['median_brier']:.3f} | — | {s['median_diff']:+.3f} |"
+        )
+        out.append(_frow(f"{name}: worst", by[s["worst"]]))
+    floor = c["groups"]["external"].get("shown_min_n", 0)
+    ranked = [e for e in entrants if e["group"] == "external" and e["n"] >= floor]
+    for k, e in enumerate(ranked[:FBCOMPARE_TOP], start=1):
+        out.append(_frow(f"external #{k}", e))
+    out += [
+        "",
+        "| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | "
+        "Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | "
+        "Median entrant Brier |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for g in fbcompare.GROUPS:
+        s = c["groups"][g]
+        if not s["count"]:
+            continue
+        out.append(
+            f"| {fbcompare.GROUP_NAMES[g]} | {s['count']} | {s['beat_augur']} | "
+            f"{s['beat_augur_interval']} | {s['augur_beats_interval']} | "
+            f"{s['augur_rank']} of {s['ranked']} | {s['median_diff']:+.3f} | "
+            f"{s['median_brier']:.3f} |"
+        )
+    if c["unscored"]:
+        names = ", ".join(_fname(u) for u in c["unscored"])
+        out += ["", f"Not compared (every forecast imputed): {names}."]
+    return [*out, ""]
+
+
+def render_fbcompare(root: Path) -> str:
+    path = root / fbcompare.SNAPSHOT
+    if not path.exists():
+        return "M10's same-question comparison has not been run (`augur fbcompare`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    pv = snap["provenance"]
+    out = [
+        f"Source: ForecastBench's processed forecast sets ({pv['url']}, {pv['bytes']:,} "
+        f"bytes, SHA-256 `{pv['sha256']}`, last modified {pv['last_modified']}, fetched "
+        f"{pv['fetched']}; {pv['licence']}, Forecasting Research Institute), cut to "
+        "Augur's instances in `data/forecastbench/forecast-sets/` by "
+        "`scripts/extract_forecast_sets.py`; snapshot `data/forecastbench/"
+        "m10-same-question.json` (`augur fbcompare`). A positive Augur − entrant means the "
+        "entrant beat Augur on the same questions. Intervals: paired bootstrap over "
+        "markets, 10,000 resamples, seeded. Each entrant is compared only on its non-imputed "
+        "forecasts (n per row). Best and worst are by Augur − entrant, among the group's "
+        "entrants compared on at least half its median n; the external rows are the "
+        f"{FBCOMPARE_TOP} with the largest Augur − entrant under the same floor. Counts, "
+        "ranks and medians use every entrant; full per-entrant numbers are in the snapshot.",
+        "",
+    ]
+    for c in snap["corpora"]:
+        out += _fcorpus(c)
+    out.append("Predictions stated in PLAN.md before the comparison:")
+    out.append("")
+    for v in snap["verdicts"]:
+        out.append(
+            f"- {v['id']} ({v['prediction']}): {_held(bool(v['held']))}. {v['numbers']}. "
+            f"Read as: {v['reading']}."
+        )
+    return "\n".join(out) + "\n"
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -1722,6 +1852,7 @@ BLOCKS: dict[str, Block] = {
         Block("ledgers", render_ledgers),
         Block("standings", render_standings),
         Block("templates", render_templates),
+        Block("season", render_season),
         Block("replay", render_replay),
         Block("leakage", render_leakage),
         Block("fleet", render_fleet),
@@ -1729,6 +1860,7 @@ BLOCKS: dict[str, Block] = {
         Block("calibration", render_calibration),
         Block("q6", render_q6),
         Block("q6-preregistration", render_q6_preregistration),
+        Block("fbcompare", render_fbcompare),
     )
 }
 

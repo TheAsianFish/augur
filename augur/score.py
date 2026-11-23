@@ -33,6 +33,7 @@ import random
 from collections.abc import Hashable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import pairwise
+from operator import itemgetter
 from statistics import NormalDist
 
 from augur.distributions import Scaling
@@ -251,6 +252,24 @@ def clustered_bootstrap(
     ``(z_0.975 + z_0.80) * se``: the true mean difference this design would
     find significant (two-sided, 5%) with 80% power.
     """
+    totals, counts = _clustered(values, clusters)
+    k = len(totals)
+    mean = sum(values) / len(values)
+    if k < 2:
+        return Estimate(mean, mean, mean, len(values), k, math.nan, math.nan, 0, seed)
+    rng = random.Random(seed)
+    index = range(k)
+    means: list[float] = []
+    for _ in range(resamples):
+        picks = rng.choices(index, k=k)
+        means.append(sum(totals[i] for i in picks) / sum(counts[i] for i in picks))
+    return _interval(mean, means, len(values), k, resamples, seed, level)
+
+
+def _clustered(
+    values: Sequence[float], clusters: Sequence[Hashable] | None
+) -> tuple[list[float], list[int]]:
+    """Each cluster's sum and size, clusters in order of first appearance."""
     if not values:
         raise ScoringError("nothing to score: no question has both forecasts and a resolution")
     if clusters is not None and len(clusters) != len(values):
@@ -259,26 +278,19 @@ def clustered_bootstrap(
     groups: dict[Hashable, list[float]] = {}
     for label, value in zip(labels, values, strict=True):
         groups.setdefault(label, []).append(float(value))
-    sums = [(sum(g), len(g)) for g in groups.values()]
-    k = len(sums)
-    mean = sum(values) / len(values)
-    if k < 2:
-        return Estimate(mean, mean, mean, len(values), k, math.nan, math.nan, 0, seed)
-    rng = random.Random(seed)
-    totals = [s for s, _ in sums]
-    counts = [c for _, c in sums]
-    index = range(k)
-    means: list[float] = []
-    for _ in range(resamples):
-        picks = rng.choices(index, k=k)
-        means.append(sum(totals[i] for i in picks) / sum(counts[i] for i in picks))
+    return [sum(g) for g in groups.values()], [len(g) for g in groups.values()]
+
+
+def _interval(
+    mean: float, means: list[float], n: int, k: int, resamples: int, seed: int, level: float
+) -> Estimate:
     means.sort()
     alpha = (1.0 - level) / 2.0
     low = means[min(resamples - 1, max(0, math.floor(alpha * resamples)))]
     high = means[min(resamples - 1, max(0, math.ceil((1.0 - alpha) * resamples) - 1))]
     centre = sum(means) / resamples
     se = math.sqrt(sum((m - centre) ** 2 for m in means) / (resamples - 1))
-    return Estimate(mean, low, high, len(values), k, se, (Z_95 + Z_POWER_80) * se, resamples, seed)
+    return Estimate(mean, low, high, n, k, se, (Z_95 + Z_POWER_80) * se, resamples, seed)
 
 
 def detectable_effect(sd: float, n: int) -> float:
@@ -302,3 +314,46 @@ def paired(
     return clustered_bootstrap(
         [x - y for x, y in zip(a, b, strict=True)], clusters, resamples=resamples, seed=seed
     )
+
+
+def paired_many(
+    pairs: Sequence[tuple[Sequence[float], Sequence[float], Sequence[Hashable] | None]],
+    *,
+    resamples: int = DEFAULT_RESAMPLES,
+    seed: int = DEFAULT_SEED,
+    level: float = 0.95,
+) -> list[Estimate]:
+    """``[paired(a, b, clusters) for a, b, clusters in pairs]``, value for value, faster.
+
+    The seeded draws depend only on the number of clusters, so comparisons
+    with the same number share one sequence of resampled cluster indices
+    instead of drawing it again; the sums run in the same order, so every
+    estimate is bit-identical to :func:`paired`'s. For hundreds of
+    comparisons (every ForecastBench entrant against Augur).
+    """
+    out: list[Estimate | None] = [None] * len(pairs)
+    prepared: dict[int, list[tuple[int, float, int, list[float], list[int] | None]]] = {}
+    for j, (a, b, clusters) in enumerate(pairs):
+        if len(a) != len(b):
+            raise ScoringError("a paired comparison needs both forecasters on the same questions")
+        values = [x - y for x, y in zip(a, b, strict=True)]
+        totals, counts = _clustered(values, clusters)
+        k = len(totals)
+        mean = sum(values) / len(values)
+        if k < 2:
+            out[j] = Estimate(mean, mean, mean, len(values), k, math.nan, math.nan, 0, seed)
+            continue
+        ones = all(c == 1 for c in counts)
+        prepared.setdefault(k, []).append((j, mean, len(values), totals, None if ones else counts))
+    for k, items in prepared.items():
+        rng = random.Random(seed)
+        index = range(k)
+        means: list[list[float]] = [[] for _ in items]
+        for _ in range(resamples):
+            pick = itemgetter(*rng.choices(index, k=k))
+            for slot, (_, _, _, sums, sizes) in zip(means, items, strict=True):
+                total = sum(pick(sums))
+                slot.append(total / (k if sizes is None else sum(pick(sizes))))
+        for slot, (j, mean, n, _, _) in zip(means, items, strict=True):
+            out[j] = _interval(mean, slot, n, k, resamples, seed, level)
+    return [e for e in out if e is not None]

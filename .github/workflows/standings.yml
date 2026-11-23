@@ -1,0 +1,80 @@
+name: Standings
+
+# Re-reads each round's leaderboard once a day and keeps every reading on the
+# `ledger` branch (standings/<date>/), so the final standing of every MiniBench
+# round and of the FutureEval season is recorded without anyone remembering to
+# fetch it: the current MiniBench round, the two before it (they finalize after
+# they close; scripts/standings_rounds.py), and, with AUGUR_SCHEDULE=all, the
+# FutureEval project in AUGUR_FUTUREEVAL (33121 for Fall 2026; set the Spring
+# 2027 id when it opens). Off with the same kill switch as the tournament runs.
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: Comma list of round slugs or project ids (empty = the schedule's)
+        type: string
+        default: ''
+
+concurrency:
+  group: standings
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  standings:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      vars.AUGUR_SCHEDULE == 'minibench' || vars.AUGUR_SCHEDULE == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # the ledger branch push
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install
+        run: uv sync --locked --no-dev
+      - name: Read each round's leaderboard
+        env:
+          METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+          ROUNDS: ${{ inputs.rounds }}
+          SCHEDULE: ${{ vars.AUGUR_SCHEDULE }}
+          FUTUREEVAL: ${{ vars.AUGUR_FUTUREEVAL || '33121' }}
+        run: |
+          mkdir -p standings
+          : > standings/standings.txt
+          status=0
+          fetch() {
+            case "$1" in
+              ''|*[!a-z0-9-]*) echo "refusing round name '$1'" | tee -a standings/standings.txt; status=1; return ;;
+            esac
+            echo "== augur standings --round $1" >> standings/standings.txt
+            uv run --no-sync augur standings --round "$1" --out "standings/$1.json" \
+              >> standings/standings.txt 2>&1 || { echo "($1 not read)" >> standings/standings.txt; return 1; }
+          }
+          if [ -n "$ROUNDS" ]; then
+            IFS=',' read -ra rounds <<< "$ROUNDS"
+            for r in "${rounds[@]}"; do fetch "$r" || status=1; done
+          else
+            fetch minibench || status=1
+            if [ -f standings/minibench.json ]; then
+              # Earlier rounds may not exist under a dated slug yet; a miss is not a failure.
+              for r in $(python3 scripts/standings_rounds.py standings/minibench.json --back 2); do
+                sleep 5; fetch "$r" || true
+              done
+            fi
+            if [ "$SCHEDULE" = "all" ]; then sleep 5; fetch "$FUTUREEVAL" || status=1; fi
+          fi
+          tail -n 60 standings/standings.txt
+          exit "$status"
+      - name: Push the snapshots to the ledger branch
+        if: always()
+        run: bash scripts/push_standings.sh standings

@@ -4,7 +4,11 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M9 asks whether disagreement
+committed file differs from a fresh render. M10 records the season's
+standing (Augur has no scored forecast), places Augur's backtest arms
+beside every ForecastBench entrant on the same questions, and checks the
+release (a fresh clone, the built package, the release workflow and the
+container). M9 asks whether disagreement
 among the fleet's forecasts predicts its errors (Q6), against controls for
 plain overconfidence, and pre-registers the live test; it also makes the
 calibrator source-aware, which withholds M8's map from Metaculus questions.
@@ -17,6 +21,210 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M10: release, and the season's standing (2026-11-23)
+
+### The season so far (Q5)
+
+Every leaderboard snapshot committed under `data/standings/`, one row per
+round (`augur standings --round SLUG --out data/standings/...`; from M10 the
+`Standings` workflow re-reads the current MiniBench round, the two before it
+and the FutureEval season every day and keeps each reading on the `ledger`
+branch). Averages are spot peer points a question covered, with Metaculus's
+interval on the sum divided by the same count.
+
+<!-- augur:begin season -->
+| Round | Status, as read | Entries | Questions scored | Rank 1 | Best template bot | `metac-nemotron-3-ultra+asknews` (Augur's free model) | Community (unweighted) | Augur | Questions Augur submitted |
+|---|---|---|---|---|---|---|---|---|---|
+| Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`, project 33121) | open, 2026-11-23 | 596 | 38 | Panshul42 20.86 [9.69, 31.66], rank 1 | metac-claude-fable-5-1-high+asknews 13.49 [4.52, 23.27], rank 44 | -15.55 [-29.52, -2.01], rank 449 | 14.71 [11.48, 18.27], rank 36 | no entry | 0 of 173 |
+| MiniBench - 2026-10-19 (`minibench-2026-10-19`, project 33132) | finalized, 2026-11-23 | 410 | 59 | notatrollBotV1 14.47 [7.33, 22.22], rank 1 | metac-claude-opus-5-5-high+asknews 3.10 [-4.97, 10.01], rank 106 | -2.55 [-9.12, 3.53], rank 222 | 7.58 [5.31, 10.44], rank 37 | no entry | 0 of 60 |
+| MiniBench - 2026-11-02 (`minibench-2026-11-02`, project 33135) | finalized, 2026-11-20 | 435 | 59 | takeoff.watch 22.77 [17.36, 29.05], rank 1 | metac-claude-opus-5-5-high+asknews 3.66 [-0.97, 7.94], rank 107 | -7.66 [-14.51, -0.73], rank 295 | 5.06 [4.08, 6.12], rank 80 | no entry | 0 of 60 |
+| MiniBench (`minibench`, project 33169) | open, 2026-11-23 | 0 | 0 | none | none | none | none | no entry | 0 of 60 |
+<!-- augur:end season -->
+
+### The ForecastBench same-question row
+
+**Method.** ForecastBench publishes every entrant's forecasts for each
+question set (its processed forecast sets, CC BY-SA 4.0, Forecasting
+Research Institute); the archive was fetched on 2026-11-23 and
+`scripts/extract_forecast_sets.py` cut it to the question instances
+Augur's committed backtests forecast (`data/forecastbench/forecast-sets/`,
+values unchanged, with the archive's URL, size, SHA-256 and date). An
+instance is a (set, source, id) triple, matched to exactly the instances
+each arm scored (C1, C2, O and C4, with the forecast and the outcome
+RESULTS.md scores them with), and every entrant's Brier is paired with
+Augur's on that entrant's own questions; an entrant's imputed forecasts
+are left out and its n is shown. On C4 an entrant is one (organization,
+model) pair pooled over the sets it entered, so ForecastBench's own runs,
+renamed from 2026-07-05, count as different entrants before and after.
+The predictions P30 to P33 and the reading rule were committed to PLAN.md
+(`2c3b87d`) before any comparison was computed. The comparison is not
+fair, and is not meant to be: the entrants forecast live, many with
+frontier models and their own tools (some of ForecastBench's own runs
+search the web), while Augur's arms are backtests of one free model (C1:
+a small local one), all but O without retrieval. This is a backtest row,
+never a place on ForecastBench's leaderboard.
+
+**Sensitivity (checked at review, from the snapshot).** Two readings in
+the verdicts below are fragile. P30's C4 half counts ForecastBench's
+web-search runs as zero-shot LLMs, as the reading rule says; they are 25 of
+the 77 and the strongest of them. Without them Augur ranks 34 of 53 on C4
+(median difference +0.0087), not in the bottom quarter; keeping only
+entrants compared on at least 50 instances it ranks 54 of 72, also not.
+P30 fails on C2 either way, so its verdict does not move. P33's failure
+rests on two entries of one team, Anonymous 18's raw forecasts and their
+Platt-calibrated version, on the same 183 instances, each with an upper
+bound of -0.004, among 309 external comparisons with no correction for
+multiplicity: in effect one marginal result, about what chance alone
+could produce.
+
+<!-- augur:begin fbcompare -->
+Source: ForecastBench's processed forecast sets (https://www.forecastbench.org/assets/data/processed-forecast-sets/processed_forecast_sets.tar.gz, 141,253,184 bytes, SHA-256 `3b3b9630f2ccf4da401e703266a116cdc7de535eabb4cb44c9a10d1c01315b0f`, last modified Tue, 17 Nov 2026 08:27:21 GMT, fetched 2026-11-23; CC BY-SA 4.0, Forecasting Research Institute), cut to Augur's instances in `data/forecastbench/forecast-sets/` by `scripts/extract_forecast_sets.py`; snapshot `data/forecastbench/m10-same-question.json` (`augur fbcompare`). A positive Augur − entrant means the entrant beat Augur on the same questions. Intervals: paired bootstrap over markets, 10,000 resamples, seeded. Each entrant is compared only on its non-imputed forecasts (n per row). Best and worst are by Augur − entrant, among the group's entrants compared on at least half its median n; the external rows are the 5 with the largest Augur − entrant under the same floor. Counts, ranks and medians use every entrant; full per-entrant numbers are in the snapshot.
+
+**C1**: ForecastBench 2026-05-24, no retrieval, one draw (M4), `qwen2.5:7b`; 139 instances (139 markets, 2026-05-24), base rate 40.3%. Augur's Brier 0.2395 [0.1922, 0.2893]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 139 | 0.111 | 0.239 | +0.129 [+0.077, +0.181] |
+| market | freeze value (question set) | 139 | 0.131 | 0.239 | +0.108 [+0.059, +0.160] |
+| ForecastBench zero-shot LLMs, no freeze value: best | GPT-5.5-2026-04-23 (zero shot) (1 imputed excluded) | 138 | 0.205 | 0.241 | +0.036 [-0.020, +0.090] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 21 | — | 138 (median) | 0.243 | — | -0.001 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot) | 139 | 0.358 | 0.239 | -0.118 [-0.179, -0.060] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | GPT-5.5-2026-04-23 (zero shot with freeze values) (1 imputed excluded) | 138 | 0.128 | 0.241 | +0.114 [+0.062, +0.167] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 21 | — | 139 (median) | 0.139 | — | +0.103 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot with freeze values) | 139 | 0.257 | 0.239 | -0.018 [-0.076, +0.040] |
+| external entries: best | Anonymous 8 / ensemble (nocritique-1-99) | 139 | 0.108 | 0.239 | +0.132 [+0.079, +0.186] |
+| external entries: median of 14 | — | 139 (median) | 0.115 | — | +0.124 |
+| external entries: worst | LightningRodLabs / foresight-v3-05-2026 | 139 | 0.185 | 0.239 | +0.054 [+0.015, +0.095] |
+| ForecastBench baselines: best | Imputed Forecaster | 139 | 0.111 | 0.239 | +0.129 [+0.077, +0.181] |
+| ForecastBench baselines: median of 6 | — | 139 (median) | 0.314 | — | -0.075 |
+| ForecastBench baselines: worst | Always 1 | 139 | 0.597 | 0.239 | -0.358 [-0.470, -0.245] |
+| external #1 | Anonymous 8 / ensemble (nocritique-1-99) | 139 | 0.108 | 0.239 | +0.132 [+0.079, +0.186] |
+| external #2 | Anonymous 8 / ensemble (critique-1-99) | 139 | 0.110 | 0.239 | +0.130 [+0.077, +0.183] |
+| external #3 | Anonymous 8 / ensemble (critique-5-95) | 139 | 0.110 | 0.239 | +0.129 [+0.077, +0.183] |
+| external #4 | Artificial Judgement / aj-v1 | 139 | 0.110 | 0.239 | +0.129 [+0.077, +0.182] |
+| external #5 | Anonymous 4 / excited-seal | 139 | 0.112 | 0.239 | +0.128 [+0.073, +0.183] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 21 | 10 | 1 | 2 | 11 of 22 | -0.001 | 0.243 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 21 | 19 | 18 | 0 | 20 of 22 | +0.103 | 0.139 |
+| external entries | 14 | 14 | 14 | 0 | 15 of 15 | +0.124 | 0.115 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.075 | 0.314 |
+
+**C2**: ForecastBench 2026-06-21, no retrieval, median of three draws (M5's arm (b)), `nvidia/nemotron-3-ultra-550b-a55b:free`; 138 instances (138 markets, 2026-06-21), base rate 40.6%. Augur's Brier 0.2176 [0.1663, 0.2708]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 138 | 0.096 | 0.218 | +0.121 [+0.072, +0.173] |
+| market | freeze value (question set) | 138 | 0.108 | 0.218 | +0.110 [+0.061, +0.160] |
+| ForecastBench zero-shot LLMs, no freeze value: best | Grok-4.3 (zero shot) | 138 | 0.186 | 0.218 | +0.032 [+0.007, +0.056] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 22 | — | 138 (median) | 0.219 | — | +0.002 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot) | 138 | 0.258 | 0.218 | -0.040 [-0.098, +0.016] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | Claude-Sonnet-4-6 (zero shot with freeze values) | 138 | 0.101 | 0.218 | +0.117 [+0.069, +0.167] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 22 | — | 138 (median) | 0.119 | — | +0.098 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot with freeze values) | 138 | 0.207 | 0.218 | +0.011 [-0.049, +0.070] |
+| external entries: best | Artificial Judgement / aj-v1 | 138 | 0.088 | 0.218 | +0.129 [+0.081, +0.180] |
+| external entries: median of 16 | — | 138 (median) | 0.104 | — | +0.113 |
+| external entries: worst | Anonymous 10 / alice | 138 | 0.142 | 0.218 | +0.076 [+0.032, +0.122] |
+| ForecastBench baselines: best | Naive Forecaster | 138 | 0.096 | 0.218 | +0.122 [+0.073, +0.173] |
+| ForecastBench baselines: median of 6 | — | 138 (median) | 0.280 | — | -0.063 |
+| ForecastBench baselines: worst | Always 1 | 138 | 0.594 | 0.218 | -0.377 [-0.495, -0.258] |
+| external #1 | Artificial Judgement / aj-v1 | 138 | 0.088 | 0.218 | +0.129 [+0.081, +0.180] |
+| external #2 | Google DeepMind / Gemini | 138 | 0.095 | 0.218 | +0.123 [+0.080, +0.168] |
+| external #3 | haoxin1998 / CLOUD_01 | 138 | 0.096 | 0.218 | +0.121 [+0.073, +0.171] |
+| external #4 | haoxin1998 / CLOUD_03 | 138 | 0.096 | 0.218 | +0.121 [+0.071, +0.173] |
+| external #5 | Anonymous 4 / excited-seal | 138 | 0.099 | 0.218 | +0.118 [+0.068, +0.171] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 22 | 12 | 1 | 0 | 13 of 23 | +0.002 | 0.219 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 22 | 22 | 17 | 0 | 23 of 23 | +0.098 | 0.119 |
+| external entries | 16 | 16 | 16 | 0 | 17 of 17 | +0.113 | 0.104 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.063 | 0.280 |
+
+**O**: ForecastBench 2026-06-21, the first 64 questions by id, one research pass as of open, median of three draws (M6), `nvidia/nemotron-3-ultra-550b-a55b:free`; 64 instances (64 markets, 2026-06-21), base rate 35.9%. Augur's Brier 0.1887 [0.1173, 0.2642]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 64 | 0.097 | 0.189 | +0.091 [+0.029, +0.157] |
+| market | freeze value (question set) | 64 | 0.106 | 0.189 | +0.082 [+0.019, +0.149] |
+| ForecastBench zero-shot LLMs, no freeze value: best | Grok-4.3 (zero shot) | 64 | 0.175 | 0.189 | +0.013 [-0.028, +0.054] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 22 | — | 64 (median) | 0.199 | — | -0.009 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot) | 64 | 0.249 | 0.189 | -0.060 [-0.141, +0.020] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | DeepSeek-V4-Pro (zero shot with freeze values) | 64 | 0.097 | 0.189 | +0.091 [+0.037, +0.151] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 22 | — | 64 (median) | 0.113 | — | +0.074 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot with freeze values) | 64 | 0.183 | 0.189 | +0.006 [-0.071, +0.083] |
+| external entries: best | Artificial Judgement / aj-v1 | 64 | 0.084 | 0.189 | +0.105 [+0.044, +0.170] |
+| external entries: median of 16 | — | 64 (median) | 0.105 | — | +0.083 |
+| external entries: worst | Anonymous 10 / alice | 64 | 0.128 | 0.189 | +0.061 [+0.010, +0.117] |
+| ForecastBench baselines: best | Imputed Forecaster | 64 | 0.097 | 0.189 | +0.091 [+0.029, +0.157] |
+| ForecastBench baselines: median of 6 | — | 64 (median) | 0.281 | — | -0.093 |
+| ForecastBench baselines: worst | Always 1 | 64 | 0.641 | 0.189 | -0.452 [-0.618, -0.281] |
+| external #1 | Artificial Judgement / aj-v1 | 64 | 0.084 | 0.189 | +0.105 [+0.044, +0.170] |
+| external #2 | haoxin1998 / CLOUD_01 | 64 | 0.096 | 0.189 | +0.093 [+0.029, +0.160] |
+| external #3 | haoxin1998 / CLOUD_03 | 64 | 0.096 | 0.189 | +0.093 [+0.026, +0.162] |
+| external #4 | hliu763 / CAIR_01 | 64 | 0.098 | 0.189 | +0.090 [+0.026, +0.157] |
+| external #5 | hliu763 / CAIR_02 | 64 | 0.098 | 0.189 | +0.090 [+0.026, +0.157] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 22 | 7 | 0 | 0 | 8 of 23 | -0.009 | 0.199 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 22 | 22 | 15 | 0 | 23 of 23 | +0.074 | 0.113 |
+| external entries | 16 | 16 | 16 | 0 | 17 of 17 | +0.083 | 0.105 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.093 | 0.281 |
+
+**C4**: ForecastBench 2026-06-21 to 2026-10-11 (nine sets), no retrieval, one draw (M8), `nvidia/nemotron-3-ultra-550b-a55b:free`; 926 instances (541 markets, 2026-06-21 to 2026-10-11), base rate 34.9%. Augur's Brier 0.2248 [0.1956, 0.2539]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 926 | 0.105 | 0.225 | +0.119 [+0.092, +0.147] |
+| market | freeze value (question set) | 926 | 0.121 | 0.225 | +0.104 [+0.078, +0.131] |
+| ForecastBench zero-shot LLMs, no freeze value: best | claude-opus-5-5-high-web-search-128k (web search) | 130 | 0.122 | 0.268 | +0.146 [+0.092, +0.203] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 77 | — | 206 (median) | 0.203 | — | +0.017 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | grok-4.20-0309-non-reasoning | 659 | 0.302 | 0.213 | -0.088 [-0.123, -0.056] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | claude-opus-5-5-high-web-search-128k-zero-shot-with-freeze-values (web search) | 130 | 0.117 | 0.268 | +0.151 [+0.096, +0.207] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 77 | — | 210 (median) | 0.121 | — | +0.102 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | grok-4.20-0309-non-reasoning-zero-shot-with-freeze-values | 659 | 0.227 | 0.213 | -0.013 [-0.046, +0.019] |
+| external entries: best | Anonymous 24 / golden-jaguar | 85 | 0.094 | 0.285 | +0.191 [+0.115, +0.269] |
+| external entries: median of 309 | — | 85 (median) | 0.124 | — | +0.107 |
+| external entries: worst | Anonymous 18 / blind-36b1beb99820+platt209 (1 imputed excluded) | 183 | 0.223 | 0.185 | -0.038 [-0.071, -0.004] |
+| ForecastBench baselines: best | Imputed Forecaster | 926 | 0.105 | 0.225 | +0.119 [+0.092, +0.147] |
+| ForecastBench baselines: median of 6 | — | 926 (median) | 0.289 | — | -0.064 |
+| ForecastBench baselines: worst | Always 1 | 926 | 0.651 | 0.225 | -0.426 [-0.494, -0.358] |
+| external #1 | Anonymous 24 / golden-jaguar | 85 | 0.094 | 0.285 | +0.191 [+0.115, +0.269] |
+| external #2 | NeuroFusion / hybrid ensemble 1 | 85 | 0.094 | 0.285 | +0.191 [+0.115, +0.269] |
+| external #3 | Anonymous 39 / stat-v1 (calibrated market anchor + dataset base rates) | 85 | 0.107 | 0.285 | +0.178 [+0.105, +0.253] |
+| external #4 | yarrow / Yarrow Liang Pi | 85 | 0.108 | 0.285 | +0.177 [+0.103, +0.254] |
+| external #5 | yarrow / Yarrow Mixian | 85 | 0.108 | 0.285 | +0.177 [+0.103, +0.254] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 77 | 58 | 29 | 5 | 59 of 78 | +0.017 | 0.203 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 77 | 76 | 71 | 0 | 77 of 78 | +0.102 | 0.121 |
+| external entries | 309 | 302 | 292 | 2 | 303 of 310 | +0.107 | 0.124 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.064 | 0.289 |
+
+Not compared (every forecast imputed): gemini-3.5-flash-high-web-search (125 imputed excluded).
+
+Predictions stated in PLAN.md before the comparison:
+
+- P30 (On C2 and on C4, Augur's no-retrieval arm is worse than the median zero-shot LLM entrant shown no freeze value (point estimate), and ranks in that group's bottom quarter.): **failed**. C2: median Augur − entrant +0.0024 over 22 entrants (worse than the median); Augur ranks 13 of 23 (12 beat it), not in the bottom quarter (rank above 17.25); C4: median Augur − entrant +0.0171 over 77 entrants (worse than the median); Augur ranks 59 of 78 (58 beat it), in the bottom quarter (rank above 58.5). Read as: the median entrant is the median of Augur − entrant over the group's entrants, each on its own non-imputed questions; the group is every ForecastBench zero-shot file without freeze values, including runs that name web search and entrants left with few questions after imputed ones are excluded; bottom quarter: Augur's rank above 0.75 × the number ranked (the group and Augur).
+- P31 (On C2, at least 90% of the zero-shot entrants shown the freeze value beat Augur's no-retrieval arm with an interval of Augur − entrant wholly above 0.): **failed**. C2: 17 of 22 entrants shown the freeze value (77%) beat Augur with an interval of Augur − entrant wholly above 0 (needed: at least 90%). Read as: share = entrants with the interval wholly above 0 / entrants in the group.
+- P32 (Researched as of open (O, 64 questions), Augur is still worse than the median external entry on the same questions (point estimate).): **held**. O: median Augur − entrant over 16 external entries +0.0834 on the same questions (median n 64); 16 of 16 beat Augur (point estimate). Read as: the median of Augur − entrant over the external entries, on O's 64 questions.
+- P33 (No Augur arm beats any external entry with an interval wholly below 0.): **failed**. external entries with an interval of Augur − entrant wholly below 0: 2 (C1 14, C2 16, O 16, C4 309 entries compared): C4: Anonymous 18 / blind-36b1beb99820 -0.0351 [-0.0667, -0.0041]; C4: Anonymous 18 / blind-36b1beb99820+platt209 -0.0379 [-0.0709, -0.0038]. Read as: every external entry on C1, C2, O and C4; an entry compared on one market has no interval and cannot count.
+<!-- augur:end fbcompare -->
+
+### Release readiness (2026-11-23, $0)
+
+| Check | Command | Result | Raw output |
+|---|---|---|---|
+| A fresh clone runs the README quickstart | `git clone` of this branch into an empty directory, then the quickstart under `env -i PATH HOME` (no token, no key): `uv sync`, `ollama pull qwen2.5:7b`, `augur forecast --tournament minibench`, `augur ledger check augur.db` | The committed sample question forecast in a dry run (5 draws, 5 Wikipedia revisions admitted, 0 rejected), the comment it would post printed, 13 min 50 s on a 4-core CPU shared with other jobs; ledger scan 0 violations | `data/runs/m10-fresh-clone-quickstart.txt` |
+| The built package works outside the repository | `make install-check` | Wheel 291,626 bytes, sdist 558,884 bytes (ledgers, runs and CI left out); `twine check` passed both; each installed into a fresh Python 3.12 venv run from an empty directory with no network: `--help`, `models list` from the bundled snapshot, a dry run on the sample bundled in the wheel, the leakage scan, scoring a committed backtest ledger (Brier 0.2395, as in M4) and an export, import and re-score that matches; with Ollama, a full dry run from the wheel. PASS (19 checks; 18 without the local model, re-run at review) | `data/runs/m10-install-check.txt` |
+| The release workflow dry-runs | `act workflow_dispatch -W .github/workflows/release.yml --input dry_run=true -j build` (act 0.2.98) and `act -n` for a dispatch and for a pushed `v0.1.0` tag | The build job ran in a container and succeeded (`make check` 1 min 38 s, the install check, `uv build`, `twine check`, the artifact upload). A dispatch never plans the publish job; a tag plans the tag-against-version check and the trusted-publishing upload. The tag check run alone: `v0.1.0` passes, `v0.1.1` exits 1. Nothing was published | `data/runs/m10-release-dry-run.txt` |
+| The bot runs outside Actions | `make docker`, then `docker run` with `--network none` (help, model list, the sample listing) and with the host's Ollama (a dry run) | Image `augur-forecast:0.1.0`, 202 MB on disk, runs as a non-root user (uid 10001), ledger on the `/data` volume; the dry run forecast the sample question and its ledger scanned clean (0 violations) | `data/runs/m10-docker.txt` |
+| A ledger survives the round trip | `augur ledger export` then `augur ledger import` of `m4-forecastbench-qwen.sqlite` | Every data table has the same row count (979 rows exported, 974 imported: the 5 old `schema_migrations` rows are not copied, the new ledger records its own 7) | this table |
+| README and postmortem numbers trace to this file | `tests/test_readme_claims.py` in `make check` | Every decimal, percentage and "N of M" count in README.md and `docs/postmortem-fall-2026.md` appears in RESULTS.md as written; at its first run six README numbers did not and were corrected | `make check` |
 
 ## M9: does the fleet know when it does not know? (2026-11-22)
 
@@ -931,7 +1139,7 @@ its cutoff, and the price arms here use Augur's own as-of reads instead
 
 **Beside the frontier, not against it.** AIA Forecaster's ablation on
 ForecastBench (arXiv 2511.07678, self-reported) runs the same experiment
-on a frontier model with agentic search (FB-Market, n = 76, Table 4): the
+on a frontier model with agentic search (FB-Market, Table 4; the table states no n): the
 market price alone 0.096, the model shown the price without search 0.103,
 no search 0.116, search 0.085, both 0.075. Its shown-the-price row is the
 outside twin of arm (d): a frontier model shown the price without search
@@ -1106,6 +1314,48 @@ needs about 300 resolved questions to be detected four times in five; Fall
 (`data/standings/*.json`); `augur report` renders from the snapshots.
 
 <!-- augur:begin standings -->
+#### Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`)
+
+Finalized: no. Leaderboard entries: 596. Most questions any entry covers: 38. Score type: spot_peer_tournament. Fetched 2026-11-23T06:21:07.399355Z from https://www.metaculus.com/api/leaderboards/project/33121/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
+| Best template bot | 44 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 38 | 13.49 [4.52, 23.27] | 512.8 |
+| Best Metaculus house bot (not the template) | 27 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 38 | 15.83 [7.83, 24.67] | 601.7 |
+| Best listed open-source bot | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
+| Community prediction | 36 | community prediction (unweighted) | community prediction | 38 | 14.71 [11.48, 18.27] | 559.1 |
+| Community prediction | 56 | community prediction (recency_weighted) | community prediction | 38 | 12.06 [9.14, 15.26] | 458.1 |
+| Community prediction | 46 | community prediction (reputation_weighted) | community prediction | 38 | 13.36 [9.72, 17.12] | 507.5 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+Median bot by summed score (the line Q5 predicts Augur clears): 34.1 over 5 questions, 6.82 a question (rank 249; the middle of 592 bot entries, many of which covered only part of the round, which a summed score punishes).
+
+Questions in the round: 173; forecast and submitted by Augur: 0; not forecast: 173 no run saw it (from the committed ledgers; `augur standings --from data/standings/fall-futureeval-2026.json --ledger ...` lists each one).
+
+#### MiniBench - 2026-10-19 (`minibench-2026-10-19`)
+
+Finalized: yes. Leaderboard entries: 410. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:57.410455Z from https://www.metaculus.com/api/leaderboards/project/33132/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | notatrollBotV1 | bot | 58 | 14.47 [7.33, 22.22] | 839.3 |
+| Best template bot | 106 | metac-claude-opus-5-5-high+asknews | Metaculus template bot | 58 | 3.10 [-4.97, 10.01] | 179.6 |
+| Best Metaculus house bot (not the template) | 2 | metac-autocast-experimental | Metaculus house bot (not the template) | 58 | 13.46 [7.18, 20.02] | 780.8 |
+| Community prediction | 37 | community prediction (unweighted) | community prediction | 58 | 7.58 [5.31, 10.44] | 439.6 |
+| Community prediction | 34 | community prediction (recency_weighted) | community prediction | 58 | 7.89 [5.08, 11.45] | 457.6 |
+| Community prediction | 32 | community prediction (reputation_weighted) | community prediction | 58 | 8.21 [5.65, 11.43] | 476.4 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Best listed open-source bot: no listed open-source bot in this round.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+Median bot by summed score (the line Q5 predicts Augur clears): 18.7 over 7 questions, 2.67 a question (rank 164; the middle of 407 bot entries, many of which covered only part of the round, which a summed score punishes).
+
+Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 60 no run saw it (from the committed ledgers; `augur standings --from data/standings/minibench-2026-10-19.json --ledger ...` lists each one).
+
 #### MiniBench - 2026-11-02 (`minibench-2026-11-02`)
 
 Finalized: yes. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-20T04:36:14.128494Z from https://www.metaculus.com/api/leaderboards/project/33135/.
@@ -1129,7 +1379,7 @@ Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 60
 
 #### MiniBench (`minibench`)
 
-Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:08.935168Z from https://www.metaculus.com/api/leaderboards/project/33169/.
+Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:41.230931Z from https://www.metaculus.com/api/leaderboards/project/33169/.
 
 The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 2026-12-04T00:00:00Z); there is nothing to compare.
 
@@ -1637,6 +1887,10 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| The season's final ranks and any prize (Q5) | Fall FutureEval and the last MiniBench rounds are still open on 2026-11-23, and Augur has no scored forecast in any of them | Nothing to run by hand: the `Standings` workflow re-reads them daily onto the `ledger` branch; to render one here, `augur standings --round SLUG --out data/standings/SLUG.json && make results` |
+| Publishing 0.1.0 to PyPI and the first real run of the publish job | Publishing is the maintainer's step (trusted publisher, `pypi` environment) | RELEASE.md, "Releasing 0.1.0": `gh workflow run release.yml -f dry_run=true`, then `git tag v0.1.0 && git push origin v0.1.0` |
+| The release and standings workflows on GitHub itself | No GitHub credentials here; both ran under `act` or step by step locally (`data/runs/m10-standings-step.txt`) | `gh workflow run release.yml -f dry_run=true`; `gh workflow run standings.yml` and check `standings/` on the `ledger` branch |
+| The demo GIF | Needs `vhs` and a terminal recording | `vhs docs/demo.tape` |
 | Q6's live half, as pre-registered (M9) | 0 units in the committed ledgers (only runs from the registration on count); the analysis is due when the odd-id half has 60 resolved binary questions or on 2027-03-31 | After each shadow or scored round: commit its ledger to `data/ledgers/`, then `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` where the bot token is blind) and `augur q6 && make results`; the block reports the paired comparisons once due |
 | Q6 at an n that can resolve it, on the wrong-side label | An AUROC of 0.6 needs about 250 questions; the policies need 95 to 1,063 for 0.01 Brier. C2 has 138 eligible questions, and C4 has one draw each | Three to five draws per question on C4's later sets (`AUGUR_FORECASTERS=3 augur backtest forecastbench --questions ... --ledger data/ledgers/m9-c4-draws.sqlite` per set; about 2,400 free calls over three days), a new pre-registration with the wrong-side label, then the same analysis |
 | The $0 shadow round: Augur and the real template, same free model, unpublished, on MiniBench 2026-11-30 (Q1, direction of 2026-11-22) | The round opens about 2026-11-30, after this milestone | During the round: `AUGUR_FORECAST_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free AUGUR_LEDGER=data/ledgers/m10-shadow-minibench.sqlite augur forecast --tournament minibench --coverage cov.json` (no `--submit`) each window, and `uv sync --extra baseline && augur baseline --ledger data/ledgers/m10-shadow-minibench.sqlite`; commit the ledger before resolution; after it, `augur resolve --ledger L` and `augur score L --mode live --cluster week`, labelled an unsubmitted shadow comparison on a below-floor model |

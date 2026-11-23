@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q3 power backtest-q4 calibration q6
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q3 power backtest-q4 calibration q6 install-check docker
 
 UV ?= uv
 
@@ -24,6 +24,14 @@ test:
 test-integration: ## Tests that need a local Ollama or live credentials
 	$(UV) run pytest -q -m integration
 
+install-check: ## Build sdist and wheel, install each in a fresh venv outside the repo, run augur offline
+	bash scripts/check_install.sh
+
+VERSION ?= $(shell sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+
+docker: ## Build the image augur-forecast:VERSION (see Dockerfile; secrets only at docker run)
+	docker build -t augur-forecast:$(VERSION) .
+
 forecast: ## Dry run on MiniBench (live listing with a token, committed samples without)
 	$(UV) run augur forecast --tournament minibench
 
@@ -39,6 +47,7 @@ eval: ## Offline and free: scan every committed ledger, re-score the backtest, c
 	$(UV) run augur power --check
 	$(UV) run augur calibrate --check
 	$(UV) run augur q6 --check
+	$(UV) run augur fbcompare --check
 	$(UV) run augur report --check
 
 backtest: ## ForecastBench, no retrieval, local model; hours on a CPU (ARGS adds options)

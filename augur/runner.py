@@ -78,7 +78,10 @@ TOURNAMENTS: dict[str, str] = {
     "fall-2026": "33121",
     "bot-testing-area": "bot-testing-area",
 }
-SAMPLES_DIR = Path(__file__).resolve().parent.parent / "data" / "samples" / "minibench"
+# The checkout's committed samples; an installed wheel carries a copy in the package.
+_CHECKOUT_SAMPLES = Path(__file__).resolve().parent.parent / "data" / "samples" / "minibench"
+_PACKAGED_SAMPLES = Path(__file__).resolve().parent / "samples" / "minibench"
+SAMPLES_DIR = _CHECKOUT_SAMPLES if _CHECKOUT_SAMPLES.is_dir() else _PACKAGED_SAMPLES
 
 Status = Literal["forecast", "missed", "skipped", "failed"]
 STATUSES: tuple[Status, ...] = ("forecast", "missed", "skipped", "failed")

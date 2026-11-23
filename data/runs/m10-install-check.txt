@@ -1,0 +1,244 @@
+$ make install-check
+bash scripts/check_install.sh
+augur install check: 2026-11-23T06:31:13Z, uv 0.13.9 (x86_64-unknown-linux-gnu)
+commit: 95c5e808a37d
+--- build sdist and wheel
+$ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv build <repo> --out-dir <tmp>/dist
+Building source distribution...
+Building wheel from source distribution...
+Successfully built <tmp>/dist/augur_forecast-0.1.0.tar.gz
+Successfully built <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl
+PASS  build sdist and wheel
+augur_forecast-0.1.0-py3-none-any.whl           291626 bytes
+augur_forecast-0.1.0.tar.gz                     558884 bytes
+--- wheel carries the runtime data files
+$ python3 -c import sys, zipfile
+names = set(zipfile.ZipFile(sys.argv[1]).namelist())
+need = ["augur/py.typed", "augur/live_calibrator.json", "augur/llm/openrouter_models.json",
+        "augur/migrations/0001_initial.sql"]
+missing = [n for n in need if n not in names]
+samples = sorted(n for n in names if n.startswith("augur/samples/minibench/post_"))
+print("\n".join(need + samples))
+sys.exit(1 if missing or not samples else 0) <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl
+augur/py.typed
+augur/live_calibrator.json
+augur/llm/openrouter_models.json
+augur/migrations/0001_initial.sql
+augur/samples/minibench/post_43327.json
+PASS  wheel carries the runtime data files
+--- sdist leaves out the ledgers, runs and CI
+$ python3 -c import sys, tarfile
+names = tarfile.open(sys.argv[1]).getnames()
+bad = [n for n in names if "/data/ledgers/" in n or "/data/runs/" in n or "/.github/" in n]
+print("sdist members:", len(names), "unwanted:", bad)
+sys.exit(1 if bad else 0) <tmp>/dist/augur_forecast-0.1.0.tar.gz
+sdist members: 166 unwanted: []
+PASS  sdist leaves out the ledgers, runs and CI
+--- twine check
+$ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv tool run twine check <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl <tmp>/dist/augur_forecast-0.1.0.tar.gz
+Checking 
+<tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl: PASSED
+Checking <tmp>/dist/augur_forecast-0.1.0.tar.gz: PASSED
+PASS  twine check
+--- fresh Python 3.12 venv (wheel)
+$ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv venv --python 3.12 <tmp>/wheel-venv
+Using CPython 3.12.16
+Creating virtual environment at: <tmp>/wheel-venv
+Activate with: source <tmp>/wheel-venv/bin/activate
+PASS  fresh Python 3.12 venv (wheel)
+--- install the wheel
+$ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv pip install --python <tmp>/wheel-venv/bin/python <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl
+Using Python 3.12.16 environment at: <tmp>/wheel-venv
+Resolved 13 packages in 14ms
+Prepared 1 package in 19ms
+Installed 13 packages in 13ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + augur-forecast==0.1.0 (from file://<tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl)
+ + certifi==2026.11.20
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + pydantic==2.14.4
+ + pydantic-core==2.50.5
+ + structlog==26.1.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+PASS  install the wheel
+--- augur imports from the venv, not the checkout
+$ offline_env <tmp>/wheel-venv/bin/python -c import augur; print(augur.__version__, augur.__file__)
+0.1.0 <tmp>/wheel-venv/lib/python3.12/site-packages/augur/__init__.py
+PASS  augur imports from the venv, not the checkout
+--- augur --help
+$ offline_env <tmp>/wheel-venv/bin/augur --help
+    models              the model chains: list, probe, measure limits
+    backtest            forecast resolved questions with the clock pinned
+    judge               rate each source a backtest arm showed its forecasters
+                        for leakage (0 to 4)
+    resolve             append resolutions (and references Metaculus exposes)
+                        to a ledger
+    score               score resolved forecasts in one or more ledgers, with
+                        paired intervals
+    report              re-render RESULTS.md's generated blocks from the
+                        committed ledgers
+    power               the M7 power simulation: questions needed to detect a
+                        planted improvement
+    calibrate           Q4: raw against fixed extremizing, Platt and isotonic,
+                        fitted only on history that resolved before each
+                        question opened
+    q6                  Q6: does disagreement among the fleet's forecasts
+                        predict its errors?
+    standings           Augur's rank in a MiniBench round beside rank 1, the
+                        template, the community
+    baseline            run Metaculus's template bot unpublished on questions
+                        Augur forecast
+    ledger              inspect a ledger
+
+options:
+  -h, --help            show this help message and exit
+PASS  augur --help
+--- augur models list (offline, bundled snapshot)
+$ offline_env <tmp>/wheel-venv/bin/augur models list
+{"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:31:16.520659Z"}
+model list: snapshot, 478 models, fetched 2026-11-18 11:05 UTC; floor tier frontier-2026-11b
+  ollama:qwen2.5:7b                                effort -       $0/$0 per M  listed 2024-09-19 (release announcement)  below tier  [forecast+research]
+PASS  augur models list (offline, bundled snapshot)
+--- dry run lists the bundled sample questions (no model call)
+$ offline_env <tmp>/wheel-venv/bin/augur forecast --tournament minibench --max-questions 0 --no-markets
+{"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:31:16.929524Z"}
+METACULUS_TOKEN is not set: dry run on the committed sample questions.
+run run_0f1fa3a3c2904cce9263 (dry_run) on samples:<tmp>/wheel-venv/lib/python3.12/site-packages/augur/samples/minibench
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+coverage: 1 listed; 0 forecast in time (0 submitted), 0 missed, 1 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/43327/ over the cap of 0 questions per run
+ledger: <tmp>/run/augur.db (run run_0f1fa3a3c2904cce9263)
+PASS  dry run lists the bundled sample questions (no model call)
+--- ledger written by the run passes the leakage scan
+$ offline_env <tmp>/wheel-venv/bin/augur ledger check <tmp>/run/augur.db
+<tmp>/run/augur.db: 0 violation(s)
+PASS  ledger written by the run passes the leakage scan
+--- ledger check on a committed backtest ledger
+$ offline_env <tmp>/wheel-venv/bin/augur ledger check <tmp>/run/m4.sqlite
+<tmp>/run/m4.sqlite: 0 violation(s)
+PASS  ledger check on a committed backtest ledger
+--- score the committed backtest
+$ offline_env <tmp>/wheel-venv/bin/augur score <tmp>/run/m4.sqlite --mode backtest
+139 scored questions (binary 139); 0 without a resolution, 0 annulled; intervals: 95% bootstrap over question clusters (139), 10000 resamples, seed 20261119
+  baseline score -7.9 [-30.9, 12.9]  (MDE 31.7)
+  log score      -0.748 [-0.908, -0.604]
+  Brier          0.2395 [0.1929, 0.2895]  (binary, n = 139)
+  vs market (n = 139): head-to-head -34.2 [-50.9, -19.0] MDE 22.8; Brier 0.2395 vs 0.1311, difference 0.1084 [0.0582, 0.1612] MDE 0.0740
+  vs always 50% (n = 139): head-to-head -5.5 [-21.4, 9.0] MDE 22.0; Brier 0.2395 vs 0.2500, difference -0.0105 [-0.0571, 0.0395] MDE 0.0691
+  vs base rate (40%) (n = 139): head-to-head -7.4 [-22.0, 5.8] MDE 20.2; Brier 0.2395 vs 0.2406, difference -0.0011 [-0.0432, 0.0427] MDE 0.0614
+PASS  score the committed backtest
+--- ledger export, import, and the rebuilt ledger scores the same
+$ offline_env bash -c "$1" ledger export "$2/m4.sqlite" "$2/m4.jsonl" &&
+        "$1" ledger import "$2/m4.jsonl" --out "$2/rebuilt.sqlite" &&
+        "$1" ledger check "$2/rebuilt.sqlite" &&
+        "$1" score "$2/m4.sqlite" --mode backtest >"$2/a.txt" &&
+        "$1" score "$2/rebuilt.sqlite" --mode backtest >"$2/b.txt" &&
+        diff "$2/a.txt" "$2/b.txt" && echo "scores identical" _ <tmp>/wheel-venv/bin/augur <tmp>/run
+<tmp>/run/m4.jsonl: 979 rows from 16 tables
+<tmp>/run/rebuilt.sqlite: 974 rows from 1 exports (0 already present)
+<tmp>/run/rebuilt.sqlite: 0 violation(s)
+scores identical
+PASS  ledger export, import, and the rebuilt ledger scores the same
+--- dry run on the bundled samples with local qwen2.5:7b, 3 draws
+$ offline_env OLLAMA_HOST=http://localhost:11434 AUGUR_FORECASTERS=3 <tmp>/wheel-venv/bin/augur forecast --tournament minibench --no-markets
+{"attempt": 2, "error": "ConnectError: All connection attempts failed", "event": "wikipedia_transport_error", "level": "warning", "question_id": 43332, "run_id": "run_5615fbd2ae784e46a8c4", "timestamp": "2026-11-23T06:32:04.927825Z"}
+{"error": "Wikipedia search for 'France EU exit 2027' failed after 3 attempts (ConnectError: All connection attempts failed); retry later or run without the Wikipedia searcher", "event": "searcher failed", "level": "warning", "query": "France EU exit 2027", "question_id": 43332, "run_id": "run_5615fbd2ae784e46a8c4", "searcher": "wikipedia", "timestamp": "2026-11-23T06:32:04.927954Z"}
+{"attempt": 2, "error": "ConnectError: All connection attempts failed", "event": "wikipedia_transport_error", "level": "warning", "question_id": 43332, "run_id": "run_5615fbd2ae784e46a8c4", "timestamp": "2026-11-23T06:32:05.929824Z"}
+{"error": "Wikipedia search for 'Italy EU exit 2027' failed after 3 attempts (ConnectError: All connection attempts failed); retry later or run without the Wikipedia searcher", "event": "searcher failed", "level": "warning", "query": "Italy EU exit 2027", "question_id": 43332, "run_id": "run_5615fbd2ae784e46a8c4", "searcher": "wikipedia", "timestamp": "2026-11-23T06:32:05.929947Z"}
+{"error": "no 'Probability: NN%' line in the answer; the draw is dropped", "event": "forecaster failed", "level": "warning", "member": 1, "question_id": 43332, "run_id": "run_5615fbd2ae784e46a8c4", "timestamp": "2026-11-23T06:40:04.043531Z"}
+
+== Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
+   https://www.metaculus.com/questions/43327/ (binary)
+   sources: 0 admitted, 0 rejected; members: 3% | 5%
+   combined: 4%
+   would POST /api/questions/forecast/ (dry run, not sent):
+   [{"question": 43332, "source": "api", "probability_yes": 0.04, "probability_yes_per_category": null, "continuous_cdf": null}]
+   would POST /api/comments/create/ as a private comment (dry run):
+   | **Forecast: 4%**, the median of 2 independent forecasts (3%, 5%) by qwen2.5:7b; 1 of 3 draws failed.
+   | 
+   | **Research** (only sources dated at or before 2026-11-23 06:31 UTC):
+   | 
+   | No sources dated before the cutoff were found.
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (3%) (a) Time Left: 39 days until the question resolves, closing on 2026-12-31 23:59 UTC. (b) Status Quo Outcome: The countries are unlikely to leave the EU in the near term, as the process is complex and requires significant political will. (c) Base Rate: Historically, no founding members of the ECSC (Belgium, France, Germany, Italy, Luxembourg, and the Netherlands) have left the EU. The base rate is thus very low, around 1-2%. (d) Moving from Base Rate: The recent Brexit and growing anti-EU sentiment, particularly in the Netherlands (Nexit), France (Frexit), and Italy (Quitaly), could increase the probability. However, the complexity and political challenges of leaving the EU are significant. …
+   | 3. (5%) (a) The time left is 39 days until the question resolves. (b) The status quo outcome is that none of the countries will leave the EU. Anti-EU sentiment has been present but no country has taken concrete steps to leave. (c) A base rate from past events suggests that the probability of a country leaving the EU is low. Historically, countries rarely leave such a union once formed. (d) Research indicates that while sentiment is growing, there is no imminent political will or process in place for any of these countries to leave. However, sentiment could change quickly. Given the complexity and costs, it’s unlikely but not impossible. (e) **Scenario for Yes:** A sudden political crisis in Italy …
+coverage: 1 listed; 1 forecast in time (0 submitted), 0 missed, 0 skipped, 0 failed; estimated cost $0.0000
+ledger: <tmp>/run/augur.db (run run_5615fbd2ae784e46a8c4)
+PASS  dry run on the bundled samples with local qwen2.5:7b, 3 draws
+--- fresh Python 3.12 venv (sdist)
+$ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv venv --python 3.12 <tmp>/sdist-venv
+Using CPython 3.12.16
+Creating virtual environment at: <tmp>/sdist-venv
+Activate with: source <tmp>/sdist-venv/bin/activate
+PASS  fresh Python 3.12 venv (sdist)
+--- install the sdist
+$ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv pip install --python <tmp>/sdist-venv/bin/python <tmp>/dist/augur_forecast-0.1.0.tar.gz
+Using Python 3.12.16 environment at: <tmp>/sdist-venv
+Resolved 13 packages in 108ms
+   Building augur-forecast @ file://<tmp>/dist/augur_forecast-0.1.0.tar.gz
+      Built augur-forecast @ file://<tmp>/dist/augur_forecast-0.1.0.tar.gz
+Prepared 1 package in 431ms
+Installed 13 packages in 12ms
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + augur-forecast==0.1.0 (from file://<tmp>/dist/augur_forecast-0.1.0.tar.gz)
+ + certifi==2026.11.20
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpx==0.28.1
+ + idna==3.20
+ + pydantic==2.14.4
+ + pydantic-core==2.50.5
+ + structlog==26.1.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+PASS  install the sdist
+--- augur --help (from the sdist)
+$ offline_env <tmp>/sdist-venv/bin/augur --help
+    models              the model chains: list, probe, measure limits
+    backtest            forecast resolved questions with the clock pinned
+    judge               rate each source a backtest arm showed its forecasters
+                        for leakage (0 to 4)
+    resolve             append resolutions (and references Metaculus exposes)
+                        to a ledger
+    score               score resolved forecasts in one or more ledgers, with
+                        paired intervals
+    report              re-render RESULTS.md's generated blocks from the
+                        committed ledgers
+    power               the M7 power simulation: questions needed to detect a
+                        planted improvement
+    calibrate           Q4: raw against fixed extremizing, Platt and isotonic,
+                        fitted only on history that resolved before each
+                        question opened
+    q6                  Q6: does disagreement among the fleet's forecasts
+                        predict its errors?
+    standings           Augur's rank in a MiniBench round beside rank 1, the
+                        template, the community
+    baseline            run Metaculus's template bot unpublished on questions
+                        Augur forecast
+    ledger              inspect a ledger
+
+options:
+  -h, --help            show this help message and exit
+PASS  augur --help (from the sdist)
+--- dry run lists the sample questions (from the sdist)
+$ offline_env <tmp>/sdist-venv/bin/augur forecast --tournament minibench --max-questions 0 --no-markets
+{"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:41:30.386016Z"}
+METACULUS_TOKEN is not set: dry run on the committed sample questions.
+run run_528e66e80678450a88cd (dry_run) on samples:<tmp>/sdist-venv/lib/python3.12/site-packages/augur/samples/minibench
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+coverage: 1 listed; 0 forecast in time (0 submitted), 0 missed, 1 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/43327/ over the cap of 0 questions per run
+ledger: <tmp>/run/augur.db (run run_528e66e80678450a88cd)
+PASS  dry run lists the sample questions (from the sdist)
+
+install check: PASS (19 checks)

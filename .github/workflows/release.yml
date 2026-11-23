@@ -1,0 +1,90 @@
+name: Release
+
+# Builds, checks and (from a version tag only) publishes augur-forecast to PyPI
+# by trusted publishing: PyPI trusts this repository, this workflow file and
+# the `pypi` environment, so no token is stored anywhere. A manual dispatch is
+# always a dry run: it builds and checks, and the publish job is skipped.
+# RELEASE.md, "Releasing 0.1.0", has the maintainer's one-time setup.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Build and check only (a dispatch never publishes; tag to release)
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the tag check below needs main's history
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          # No cache: a release build must not restore a cache other runs wrote.
+          enable-cache: false
+      - name: Install
+        run: uv sync --locked
+      - name: Quality gate (format, lint, types, unit tests; offline)
+        run: make check
+      - name: The tag names the package version
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::tag $TAG does not match pyproject.toml version $version (expected v$version)"
+            exit 1
+          fi
+          echo "tag $TAG matches version $version"
+          # A release comes only from a commit that is on main (which passed CI).
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::tag $TAG points at a commit that is not on main"
+            exit 1
+          fi
+          echo "tag $TAG is on main"
+      - name: Clean-environment install check (sdist and wheel, fresh venvs, offline)
+        run: make install-check
+      - name: Build the distributions
+        run: uv build --out-dir dist
+      - name: Check the distributions' metadata
+        run: uv tool run twine check dist/*
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4, pinned 2026-11-23
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: build
+    # Only a pushed version tag publishes; a dispatch (dry run or not) cannot.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/project/augur-forecast/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4, pinned 2026-11-23
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI (trusted publishing, no token)
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1, pinned 2026-11-23
