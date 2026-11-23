@@ -39,6 +39,7 @@ eval: ## Offline and free: scan every committed ledger, re-score the backtest, c
 	$(UV) run augur power --check
 	$(UV) run augur calibrate --check
 	$(UV) run augur q6 --check
+	$(UV) run augur fbcompare --check
 	$(UV) run augur report --check
 
 backtest: ## ForecastBench, no retrieval, local model; hours on a CPU (ARGS adds options)
