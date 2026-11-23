@@ -34,8 +34,8 @@ On resolved questions, in order of size:
    alone scored a Brier of 0.106. Augur without it scored 0.240; shown the
    price, 0.143, still 0.037 [0.003, 0.073] behind the price it was shown.
    Its own forecast mixed one-third into the price in log-odds scored 0.129.
-   ForecastBench's own entrants tell the same story on the same questions:
-   17 of 22 zero-shot models shown the price beat Augur's no-retrieval arm
+   ForecastBench's own entrants tell the same story on all 138 of that set's
+   market questions: 17 of 22 zero-shot models shown the price beat Augur's no-retrieval arm
    with an interval above 0. On a market question the price is the forecast,
    and live it rarely exists: 2 of 59 MiniBench questions had one.
 2. **The model and its harness.** Without retrieval, the free model is an
@@ -61,9 +61,10 @@ On resolved questions, in order of size:
 
 The same forecaster, the same 64 questions and the same planned searches,
 read once as the pages stood when each question opened and once as they
-stand today: Brier 0.189 against 0.063, a gain of 0.142 [0.074, 0.217] from
-reading the future. El Lahib et al. published 0.136 for the same experiment
-on Google results. Read as of open, research was worth nothing measurable
+stand today: Brier 0.189 against 0.063, a difference (today minus open)
+of −0.1259 [−0.1930, −0.0652] from reading the future. Against no retrieval at all (0.205), today's pages
+are worth 0.142 [0.074, 0.217], about what El Lahib et al. published for
+the same comparison on Google results (0.136). Read as of open, research was worth nothing measurable
 over no retrieval (−0.016 [−0.050, +0.017]); read as of today, the bot
 appears to draw level with the market (−0.046 [−0.117, +0.022]) when as
 of open it trailed by 0.093 [0.013, 0.176]. A judge reading every source
