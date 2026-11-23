@@ -631,6 +631,42 @@ predicts it at AUROC 0.17 and 0.01), so a future registration should use
 the wrong-side label; on that label, reported as exploratory, the draw
 spread scores 0.60 [0.49, 0.70] and the research passes 0.68 [0.47, 0.88].
 
+**M10's same-question row: predictions and reading rule, committed
+2026-11-23 before any comparison is computed.** ForecastBench publishes
+every entrant's forecasts for each question set (its processed forecast
+sets, `forecastbench.org/datasets`, file last modified 2026-11-17). On
+exactly the question instances Augur's committed backtests forecast, each
+entrant's Brier is set beside Augur's, paired per question.
+
+- **Augur's arms:** C1 (2026-05-24, 139 questions, `qwen2.5:7b`, no
+  retrieval, one draw; M4); C2 (2026-06-21, `nemotron-3-ultra:free`, no
+  retrieval, median of three draws; M5's arm (b)); O (the same model, one
+  research pass as of open, 64 of C2's questions; M6); C4 (nine sets,
+  `nemotron-3-ultra:free`, no retrieval, one draw; M8).
+- **Entrants:** every forecast file in the set: ForecastBench's own
+  zero-shot LLM runs (with and without the market's freeze value in the
+  prompt), the external entries (teams that forecast live with their own
+  tools), and ForecastBench's baselines (always 0.5, the naive
+  forecaster). An entrant is compared only on questions where its own
+  forecast is not imputed, and that n is printed. The freeze value (the
+  market price ForecastBench recorded) is a row of its own.
+- **Statistic:** Brier(Augur) − Brier(entrant), paired, bootstrap over
+  markets (10,000 resamples, seeded), and Augur's rank among each group.
+
+| # | Prediction |
+|---|------------|
+| P30 | On C2 and on C4, Augur's no-retrieval arm is worse than the median zero-shot LLM entrant shown no freeze value (point estimate), and ranks in that group's bottom quarter. |
+| P31 | On C2, at least 90% of the zero-shot entrants shown the freeze value beat Augur's no-retrieval arm with an interval of Augur − entrant wholly above 0. |
+| P32 | Researched as of open (O, 64 questions), Augur is still worse than the median external entry on the same questions (point estimate). |
+| P33 | No Augur arm beats any external entry with an interval wholly below 0. |
+
+**Reading rule.** This is a placing, not a decision: nothing in the live
+bot changes with it. The entrants forecast live with their own tools and
+models; Augur's arms are backtests of one free (or small local) model,
+mostly without retrieval, so a gap measures tools and model together. The
+row is labelled a backtest and never ranked on ForecastBench's own
+leaderboard.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
