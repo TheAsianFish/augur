@@ -1,0 +1,143 @@
+# M10 Docker image: build and runs (no secret passed to any container)
+
+$ make docker
+#15 [build 8/9] COPY data/samples ./data/samples
+#15 DONE 0.2s
+
+#16 [build 9/9] RUN uv sync --locked --no-dev --no-editable
+#16 0.365 Resolved 99 packages in 1ms
+#16 0.367    Building augur-forecast @ file:///src
+#16 1.454       Built augur-forecast @ file:///src
+#16 1.469 Prepared 1 package in 1.10s
+#16 1.483 Installed 1 package in 13ms
+#16 1.670 Bytecode compiled 325 files in 185ms
+#16 1.670  + augur-forecast==0.1.0 (from file:///src)
+#16 DONE 1.9s
+
+#17 [stage-2 3/4] COPY --from=build /opt/augur /opt/augur
+#17 DONE 0.6s
+
+#18 [stage-2 4/4] WORKDIR /data
+#18 DONE 0.0s
+
+#19 exporting to image
+#19 exporting layers
+#19 exporting layers 0.7s done
+#19 exporting manifest sha256:ef37a54e69fffb8b2eb826243199c786700c5425c20515b2d6c9712485863428 done
+#19 exporting config sha256:2849338eb9ed991d95e184c011434f58982e3b792b2e364661c78b612e25cf1e done
+#19 exporting attestation manifest sha256:aa36704fb1e0b68caecb031950d4bf15cbb774c412084d5f9b63ff66857faac7 done
+#19 exporting manifest list sha256:af692d20b9332f79c93ff1c753b32dc7ae2bb59db99bfd45aa1c97b201be2323 done
+#19 naming to docker.io/library/augur-forecast:0.1.0 done
+#19 unpacking to docker.io/library/augur-forecast:0.1.0
+#19 unpacking to docker.io/library/augur-forecast:0.1.0 0.2s done
+#19 DONE 0.9s
+
+# Then each docker run below, in order (a dry run with the local Ollama model uses --network host)
+image: augur-forecast:0.1.0
+size: 202MB (disk usage), id af692d20b933
+content size: 49072218 bytes; user: augur; entrypoint: ["augur"]; cmd: ["forecast","--tournament","minibench"]; env: ["PATH=/opt/augur/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","LANG=C.UTF-8","GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305","PYTHON_VERSION=3.12.16","PYTHON_SHA256=b5796915dc45ff745cfb4e990a7e7c93d6f546328a102ce31448d69ebc37575c","PYTHONUNBUFFERED=1","AUGUR_LEDGER=/data/augur.db"]
+
+$ docker run --rm augur-forecast:0.1.0 --help
+usage: augur [-h]
+             {forecast,models,backtest,judge,resolve,score,report,power,calibrate,q6,standings,baseline,ledger}
+             ...
+
+The ``augur`` command line.
+
+positional arguments:
+  {forecast,models,backtest,judge,resolve,score,report,power,calibrate,q6,standings,baseline,ledger}
+    forecast            forecast open questions (a dry run unless --submit)
+    models              the model chains: list, probe, measure limits
+    backtest            forecast resolved questions with the clock pinned
+    judge               rate each source a backtest arm showed its forecasters
+                        for leakage (0 to 4)
+    resolve             append resolutions (and references Metaculus exposes)
+                        to a ledger
+    score               score resolved forecasts in one or more ledgers, with
+                        paired intervals
+    report              re-render RESULTS.md's generated blocks from the
+                        committed ledgers
+    power               the M7 power simulation: questions needed to detect a
+                        planted improvement
+    calibrate           Q4: raw against fixed extremizing, Platt and isotonic,
+                        fitted only on history that resolved before each
+                        question opened
+    q6                  Q6: does disagreement among the fleet's forecasts
+                        predict its errors?
+    standings           Augur's rank in a MiniBench round beside rank 1, the
+                        template, the community
+    baseline            run Metaculus's template bot unpublished on questions
+                        Augur forecast
+    ledger              inspect a ledger
+
+options:
+  -h, --help            show this help message and exit
+(exit 0)
+
+$ docker run --rm --entrypoint id augur-forecast:0.1.0
+uid=10001(augur) gid=10001(augur) groups=10001(augur)
+(exit 0)
+
+$ docker run --rm --network none augur-forecast:0.1.0 models list
+{"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:46:04.759478Z"}
+model list: snapshot, 478 models, fetched 2026-11-18 11:05 UTC; floor tier frontier-2026-11b
+  ollama:qwen2.5:7b                                effort -       $0/$0 per M  listed 2024-09-19 (release announcement)  below tier  [forecast+research]
+(exit 0)
+
+$ docker run --rm --network none -v augur-m10-check:/data augur-forecast:0.1.0 forecast --tournament minibench --max-questions 0 --no-markets
+{"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:46:05.817010Z"}
+METACULUS_TOKEN is not set: dry run on the committed sample questions.
+run run_52816bd0d8c74823b084 (dry_run) on samples:/opt/augur/lib/python3.12/site-packages/augur/samples/minibench
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+{"event": "probe: route did not answer", "level": "warning", "outcome": "error", "route": "ollama:qwen2.5:7b", "run_id": "run_52816bd0d8c74823b084", "timestamp": "2026-11-23T06:46:05.918075Z"}
+probe:
+  ollama:qwen2.5:7b                                error             2 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+{"event": "route disabled for this run", "level": "warning", "reason": "probe: error", "route": "ollama:qwen2.5:7b", "run_id": "run_52816bd0d8c74823b084", "timestamp": "2026-11-23T06:46:05.918720Z"}
+coverage: 1 listed; 0 forecast in time (0 submitted), 0 missed, 1 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/43327/ over the cap of 0 questions per run
+ledger: /data/augur.db (run run_52816bd0d8c74823b084)
+(exit 0)
+
+$ docker run --rm --network host -v augur-m10-check:/data -e AUGUR_FORECASTERS=3 augur-forecast:0.1.0
+METACULUS_TOKEN is not set: dry run on the committed sample questions.
+run run_9f976be22c214418a7f1 (dry_run) on samples:/opt/augur/lib/python3.12/site-packages/augur/samples/minibench
+models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+fleet: one research pass; 3 forecasters (3 base); 1 question at a time
+probe:
+  ollama:qwen2.5:7b                                answered        338 ms  $0/$0 per M            listed 2024-09-19  below tier  [research+forecast]
+estimated worst case $0.0000 a question, $0.0000 for 1 (caps $0.50 a question, $5.00 a run)
+
+== Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
+   https://www.metaculus.com/questions/43327/ (binary)
+   sources: 5 admitted, 0 rejected; members: 5% | 5% | 5%
+   combined: 5%
+   would POST /api/questions/forecast/ (dry run, not sent):
+   [{"question": 43332, "source": "api", "probability_yes": 0.05, "probability_yes_per_category": null, "continuous_cdf": null}]
+   would POST /api/comments/create/ as a private comment (dry run):
+   | **Forecast: 5%**, the median of 3 independent forecasts (5%, 5%, 5%) by qwen2.5:7b.
+   | 
+   | **Research** (only sources dated at or before 2026-11-23 06:46 UTC):
+   | 
+   | The current state of affairs suggests that the likelihood of any of the six original ECSC founders (Belgium, France, Italy, Luxembourg, Netherlands, and Germany) leaving the EU before 2027 is low. There is no immediate political movement or public sentiment indicating a desire to leave the EU among these countries. However, anti-European sentiment is growing in some EU member states, and commentators suggest that Brexit could signal the end of the EU as we know it. [S1] discusses exit taxes, which could complicate the process of leaving the EU, but does not provide evidence of imminent departure. Relevant base rates are not strongly in favor of any of these countries leaving the EU. The UK's Brexit process, while significant, does not necessarily predict similar actions from the original ECSC founders. [S3] notes that the EU has 27 member states, and while the UK's departure was a notable event, it was the only one of the original ECSC founders to leave. Scheduled events before the question resolves include the implementation of the European Travel Information and Authorisation System (ETIAS) in 2027, which will affect visa-exempt travelers to the Schengen Area. [S2] However, this does not directly impact the likelihood of a country leaving the EU. In summary, while anti-European sentiment exists, there are no clear signs or scheduled events that would likely lead to any of the six original ECSC founders leaving the EU before 2027. [S1], [S2], [S3]
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (5%) (a) Time Left: 39 days until the question resolves on 2026-12-31 23:59 UTC. (b) Status Quo Outcome: The six original ECSC founders (Belgium, France, Italy, Luxembourg, Netherlands, and Germany) are unlikely to leave the EU before 2027, given the current political climate and the high barriers to exit. (c) Base Rate: Based on historical data and the current political landscape, the base rate for any of these countries to leave the EU before 2027 is low. Historically, the original ECSC founders have remained committed to the EU. (d) Research and Adjusted Probability: The research indicates that while anti-European sentiment is growing, there are no concrete plans or political movements …
+   | 2. (5%) **Probability: 5%** (a) The time left until the question resolves is 39 days, which is a relatively short period compared to the timeframe of the question. (b) The status quo outcome is that none of the six original ECSC founders leave the EU. This is the most likely outcome given the current political climate and the slow pace of significant political change. (c) The base rate from comparable past events is that historically, the original ECSC founders have remained in the EU. There have been no major political movements or public sentiment indicating a desire to leave among these countries. (d) Research suggests that while anti-European sentiment is growing, it is not strong enough to …
+   | 3. (5%) (a) Time left: 39 days until the question resolves (2026-12-31 23:59 UTC). (b) Status quo outcome: The six original ECSC founders (Belgium, France, Italy, Luxembourg, Netherlands, and Germany) are not expected to leave the EU before 2027. The political and economic benefits of staying in the EU are strong, and there are no significant movements indicating an imminent departure. (c) Base rate: Historically, the likelihood of any of these six countries leaving the EU is low. The UK's departure was an outlier, and the other founding members have strong economic and political ties to the EU. (d) Research: While anti-European sentiment is rising, it has not yet translated into concrete actions …
+   | 
+   | **Sources**
+   | 
+   | - [S1] [Exit tax](https://en.wikipedia.org/w/index.php?oldid=1382000754) (wikipedia, revision of 2026-10-26)
+   | - [S2] [European Travel Information and Authorisation System](https://en.wikipedia.org/w/index.php?oldid=1386668733) (wikipedia, revision of 2026-11-19)
+   | - [S3] [European Union](https://en.wikipedia.org/w/index.php?oldid=1386440745) (wikipedia, revision of 2026-11-18)
+   | - [S4] [Potential accession of Cyprus to the Schengen Area](https://en.wikipedia.org/w/index.php?oldid=1386757323) (wikipedia, revision of 2026-11-20)
+   | - [S5] [Schengen Area](https://en.wikipedia.org/w/index.php?oldid=1386756774) (wikipedia, revision of 2026-11-20)
+coverage: 1 listed; 1 forecast in time (0 submitted), 0 missed, 0 skipped, 0 failed; estimated cost $0.0000
+ledger: /data/augur.db (run run_9f976be22c214418a7f1)
+(exit 0)
+
+$ docker run --rm --network none -v augur-m10-check:/data augur-forecast:0.1.0 ledger check /data/augur.db
+/data/augur.db: 0 violation(s)
+(exit 0)
