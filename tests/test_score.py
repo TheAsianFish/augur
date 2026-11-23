@@ -7,6 +7,7 @@ formula Metaculus publishes, not from the code under test.
 from __future__ import annotations
 
 import math
+import random
 
 import pytest
 
@@ -23,6 +24,7 @@ from augur.score import (
     log_score,
     outcome_probability,
     paired,
+    paired_many,
     peer_score,
     pmf_from_cdf,
     uniform_mass,
@@ -214,6 +216,24 @@ def test_paired_difference() -> None:
     assert est.mean == pytest.approx((0.1 + 0.1 + 0.2) / 3)
     with pytest.raises(ScoringError, match="same questions"):
         paired([0.1], [0.1, 0.2])
+
+
+def test_paired_many_is_paired_value_for_value() -> None:
+    rng = random.Random(7)
+    pairs: list[tuple[list[float], list[float], list[int] | None]] = []
+    for k in (2, 3, 12, 12, 30, 1):
+        a = [rng.random() for _ in range(k)]
+        b = [rng.random() for _ in range(k)]
+        # Even sizes get repeated cluster labels (unequal cluster sizes), odd ones none.
+        labels = [rng.randrange(max(1, k // 2)) for _ in range(k)] if k % 2 == 0 else None
+        pairs.append((a, b, labels))
+    many = paired_many(pairs, resamples=700, seed=3)
+    one = [paired(a, b, c, resamples=700, seed=3) for a, b, c in pairs]
+    assert len(many) == len(one)
+    for x, y in zip(many, one, strict=True):
+        assert repr(x) == repr(y)  # bit-identical, NaN-safe for the one-cluster case
+    with pytest.raises(ScoringError, match="same questions"):
+        paired_many([([0.1], [0.1, 0.2], None)])
 
 
 def test_one_value_has_no_interval() -> None:
