@@ -1,0 +1,456 @@
+# M10 release workflow dry run under act 0.2.98, 2026-11-23
+# Image: catthehacker/ubuntu:act-latest. Paths masked: <repo> is the checkout, ~ the home directory.
+
+$ act workflow_dispatch -W .github/workflows/release.yml --list
+Stage  Job ID   Job name  Workflow name  Workflow file  Events                
+0      build    build     Release        release.yml    push,workflow_dispatch
+1      publish  publish   Release        release.yml    push,workflow_dispatch
+
+# Plan for a dispatch (act -n): only build is planned; publish is skipped by its tag condition
+$ act workflow_dispatch -W .github/workflows/release.yml --input dry_run=true -n -P ubuntu-latest=catthehacker/ubuntu:act-latest | grep -E 'Run Main|Job |publish'
+*DRYRUN* [Release/build] ⭐ Run Main actions/checkout@v4
+*DRYRUN* [Release/build] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+*DRYRUN* [Release/build] ⭐ Run Main Install
+*DRYRUN* [Release/build] ⭐ Run Main Quality gate (format, lint, types, unit tests; offline)
+*DRYRUN* [Release/build] ⭐ Run Main Clean-environment install check (sdist and wheel, fresh venvs, offline)
+*DRYRUN* [Release/build] ⭐ Run Main Build the distributions
+*DRYRUN* [Release/build] ⭐ Run Main Check the distributions' metadata
+*DRYRUN* [Release/build] ⭐ Run Main actions/upload-artifact@v4
+*DRYRUN* [Release/build] 🏁  Job succeeded
+
+# Plan for a pushed tag (act -n, event ref refs/tags/v0.1.0): the tag check and publish are planned, not executed
+$ act push -e tag-event.json -W .github/workflows/release.yml -n -P ubuntu-latest=catthehacker/ubuntu:act-latest | grep -E 'Run Main|Job '
+*DRYRUN* [Release/build] ⭐ Run Main actions/checkout@v4
+*DRYRUN* [Release/build] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+*DRYRUN* [Release/build] ⭐ Run Main Install
+*DRYRUN* [Release/build] ⭐ Run Main Quality gate (format, lint, types, unit tests; offline)
+*DRYRUN* [Release/build] ⭐ Run Main The tag names the package version
+*DRYRUN* [Release/build] ⭐ Run Main Clean-environment install check (sdist and wheel, fresh venvs, offline)
+*DRYRUN* [Release/build] ⭐ Run Main Build the distributions
+*DRYRUN* [Release/build] ⭐ Run Main Check the distributions' metadata
+*DRYRUN* [Release/build] ⭐ Run Main actions/upload-artifact@v4
+*DRYRUN* [Release/build] 🏁  Job succeeded
+*DRYRUN* [Release/publish] ⭐ Run Main actions/download-artifact@v4
+*DRYRUN* [Release/publish] ⭐ Run Main Publish to PyPI (trusted publishing, no token)
+*DRYRUN* [Release/publish] ⭐ Run Main Reset path if needed
+*DRYRUN* [Release/publish] ⭐ Run Main Discover pre-installed Python
+*DRYRUN* [Release/publish] ⭐ Run Main Install Python 3
+*DRYRUN* [Release/publish] ⭐ Run Main Create Docker container action
+*DRYRUN* [Release/publish] ⭐ Run Main Run Docker container
+*DRYRUN* [Release/publish] 🏁  Job succeeded
+
+# The real run of the dispatch: the build job executed in Docker; publish not run
+$ act workflow_dispatch -W .github/workflows/release.yml --input dry_run=true -P ubuntu-latest=catthehacker/ubuntu:act-latest --env AUGUR_INSTALL_CHECK_MODEL=0 --artifact-server-path /tmp/act-artifacts
+time="2026-11-23T06:45:11Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+time="2026-11-23T06:45:11Z" level=info msg="Start server on http://127.0.0.1:34567"
+[Release/build] ⭐ Run Set up job
+[Release/build] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Release/build]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Release/build] using DockerAuthConfig authentication for docker pull
+[Release/build]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Release/build]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Release/build]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Release/build]   ✅  Success - Set up job
+[Release/build]   ☁  git clone 'https://github.com/astral-sh/setup-uv' # ref=v10.3.0
+[Release/build]   ☁  git clone 'https://github.com/actions/upload-artifact' # ref=v4
+[Release/build] ⭐ Run Main actions/checkout@v4
+[Release/build]   🐳  docker cp src=<repo>/. dst=<repo>
+[Release/build]   ✅  Success - Main actions/checkout@v4 [141.1173ms]
+[Release/build] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+[Release/build]   🐳  docker cp src=~/.cache/act/astral-sh-setup-uv@v10.3.0/ dst=/var/run/act/actions/astral-sh-setup-uv@v10.3.0/
+[Release/build]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/setup/index.cjs] user= workdir=
+[Release/build]   | Trying to find version for uv in: <repo>/uv.toml
+[Release/build]   | Could not find file: <repo>/uv.toml
+[Release/build]   | Trying to find version for uv in: <repo>/pyproject.toml
+[Release/build]   | Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+[Release/build]   | Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+[Release/build]   | Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.13.9/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+[Release/build]   | [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /tmp/fcf84e18-d0be-4136-9e99-a969f64968e9 -f /tmp/aa3b7302-33ab-414e-98fb-cf1143689d35
+[Release/build]   | Added /root/.local/bin to the path
+[Release/build]   | Added /opt/hostedtoolcache/uv/0.13.9/x86_64 to the path
+[Release/build]   | Set UV_PYTHON_INSTALL_DIR to /root/.local/share/uv/python
+[Release/build]   | Added /root/.local/share/uv/python to the path
+[Release/build]   ❓ add-matcher /run/act/actions/astral-sh-setup-uv@v10.3.0/.github/python.json
+[Release/build]   | Set UV_CACHE_DIR to /root/.cache/uv
+[Release/build]   | Successfully installed uv version 0.13.9
+[Release/build]   | Searching files using cache dependency glob: <repo>/uv.lock
+[Release/build]   | <repo>/uv.lock
+[Release/build]   | Found 1 files to hash.
+[Release/build]   | Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Release/build]   | No GitHub Actions cache found for key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Release/build]   ✅  Success - Main astral-sh/setup-uv@v10.3.0 [1.483815079s]
+[Release/build]   ⚙  ::set-env:: UV_PYTHON_INSTALL_DIR=/root/.local/share/uv/python
+[Release/build]   ⚙  ::set-env:: UV_CACHE_DIR=/root/.cache/uv
+[Release/build]   ⚙  ::set-output:: cache-hit=false
+[Release/build]   ⚙  ::set-output:: python-cache-hit=false
+[Release/build]   ⚙  ::set-output:: uv-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uv
+[Release/build]   ⚙  ::set-output:: uvx-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uvx
+[Release/build]   ⚙  ::set-output:: uv-version=0.13.9
+[Release/build]   ⚙  ::set-output:: python-version=unknown
+[Release/build]   ⚙  ::set-output:: python-runtime-id=
+[Release/build]   ⚙  ::set-output:: cache-key=setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Release/build]   ⚙  ::add-path:: /root/.local/bin
+[Release/build]   ⚙  ::add-path:: /opt/hostedtoolcache/uv/0.13.9/x86_64
+[Release/build]   ⚙  ::add-path:: /root/.local/share/uv/python
+[Release/build] ⭐ Run Main Install
+[Release/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Release/build]   | Downloading cpython-3.12.16-linux-x86_64-gnu (download) (33.1MiB)
+[Release/build]   |  Downloaded cpython-3.12.16-linux-x86_64-gnu (download)
+[Release/build]   | Using CPython 3.12.16
+[Release/build]   | Creating virtual environment at: .venv
+[Release/build]   | Resolved 99 packages in 0.76ms
+[Release/build]   |    Building augur-forecast @ file://<repo>
+[Release/build]   | Downloading pydantic-core (2.2MiB)
+[Release/build]   | Downloading pygments (1.2MiB)
+[Release/build]   | Downloading ruff (10.1MiB)
+[Release/build]   | Downloading mypy (14.8MiB)
+[Release/build]   | Downloading ast-serialize (1.3MiB)
+[Release/build]   | Downloading hypothesis (1.1MiB)
+[Release/build]   |  Downloaded ast-serialize
+[Release/build]   |  Downloaded hypothesis
+[Release/build]   |  Downloaded pydantic-core
+[Release/build]   |  Downloaded pygments
+[Release/build]   |  Downloaded ruff
+[Release/build]   |  Downloaded mypy
+[Release/build]   |       Built augur-forecast @ file://<repo>
+[Release/build]   | Prepared 27 packages in 1.05s
+[Release/build]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Release/build]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Release/build]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Release/build]   | Installed 27 packages in 2.00s
+[Release/build]   |  + annotated-types==0.8.0
+[Release/build]   |  + anyio==4.16.0
+[Release/build]   |  + ast-serialize==0.13.1
+[Release/build]   |  + augur-forecast==0.1.0 (from file://<repo>)
+[Release/build]   |  + certifi==2026.10.23
+[Release/build]   |  + h11==0.16.0
+[Release/build]   |  + httpcore==1.0.9
+[Release/build]   |  + httpx==0.28.1
+[Release/build]   |  + hypothesis==6.170.15
+[Release/build]   |  + idna==3.20
+[Release/build]   |  + iniconfig==2.3.1
+[Release/build]   |  + librt==0.16.0
+[Release/build]   |  + mypy==2.4.1
+[Release/build]   |  + mypy-extensions==1.2.0
+[Release/build]   |  + packaging==26.3
+[Release/build]   |  + pathspec==1.1.1
+[Release/build]   |  + pluggy==1.7.0
+[Release/build]   |  + pydantic==2.14.3
+[Release/build]   |  + pydantic-core==2.50.4
+[Release/build]   |  + pygments==2.21.0
+[Release/build]   |  + pytest==9.2.0
+[Release/build]   |  + pytest-asyncio==1.5.0
+[Release/build]   |  + ruff==0.17.5
+[Release/build]   |  + sortedcontainers==2.4.0
+[Release/build]   |  + structlog==26.1.0
+[Release/build]   |  + typing-extensions==4.16.0
+[Release/build]   |  + typing-inspection==0.4.5
+[Release/build]   ✅  Success - Main Install [4.839400001s]
+[Release/build] ⭐ Run Main Quality gate (format, lint, types, unit tests; offline)
+[Release/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[Release/build]   | uv run ruff format --check .
+[Release/build]   | 147 files already formatted
+[Release/build]   | uv run ruff check .
+[Release/build]   | All checks passed!
+[Release/build]   | uv run mypy
+[Release/build]   | Success: no issues found in 142 source files
+[Release/build]   | uv run pytest -q
+[Release/build]   | ........................................................................ [  6%]
+[Release/build]   | ........................................................................ [ 12%]
+[Release/build]   | ........................................................................ [ 18%]
+[Release/build]   | ...xx................................................................... [ 24%]
+[Release/build]   | ........................................................................ [ 31%]
+[Release/build]   | ........................................................................ [ 37%]
+[Release/build]   | ........................................................................ [ 43%]
+[Release/build]   | ........................................................................ [ 49%]
+[Release/build]   | ........................................................................ [ 55%]
+[Release/build]   | ........................................................................ [ 62%]
+[Release/build]   | ........................................................................ [ 68%]
+[Release/build]   | ........................................................................ [ 74%]
+[Release/build]   | ........................................................................ [ 80%]
+[Release/build]   | ........................................................................ [ 86%]
+[Release/build]   | ........................................................................ [ 93%]
+[Release/build]   | ........................................................................ [ 99%]
+[Release/build]   | .........                                                                [100%]
+[Release/build]   | 1159 passed, 5 deselected, 2 xfailed in 90.78s (0:01:30)
+[Release/build]   ✅  Success - Main Quality gate (format, lint, types, unit tests; offline) [1m38.301043301s]
+[Release/build] ⭐ Run Main Clean-environment install check (sdist and wheel, fresh venvs, offline)
+[Release/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/5] user= workdir=
+[Release/build]   | bash scripts/check_install.sh
+[Release/build]   | augur install check: 2026-11-23T06:47:18Z, uv 0.13.9 (x86_64-unknown-linux-gnu)
+[Release/build]   | commit: unknown
+[Release/build]   | --- build sdist and wheel
+[Release/build]   | $ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv build <repo> --out-dir <tmp>/dist
+[Release/build]   | Building source distribution...
+[Release/build]   | Building wheel from source distribution...
+[Release/build]   | Successfully built <tmp>/dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   | Successfully built <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl
+[Release/build]   | PASS  build sdist and wheel
+[Release/build]   | augur_forecast-0.1.0-py3-none-any.whl           291626 bytes
+[Release/build]   | augur_forecast-0.1.0.tar.gz                     560007 bytes
+[Release/build]   | --- wheel carries the runtime data files
+[Release/build]   | $ python3 -c import sys, zipfile
+[Release/build]   | names = set(zipfile.ZipFile(sys.argv[1]).namelist())
+[Release/build]   | need = ["augur/py.typed", "augur/live_calibrator.json", "augur/llm/openrouter_models.json",
+[Release/build]   |         "augur/migrations/0001_initial.sql"]
+[Release/build]   | missing = [n for n in need if n not in names]
+[Release/build]   | samples = sorted(n for n in names if n.startswith("augur/samples/minibench/post_"))
+[Release/build]   | print("\n".join(need + samples))
+[Release/build]   | sys.exit(1 if missing or not samples else 0) <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl
+[Release/build]   | augur/py.typed
+[Release/build]   | augur/live_calibrator.json
+[Release/build]   | augur/llm/openrouter_models.json
+[Release/build]   | augur/migrations/0001_initial.sql
+[Release/build]   | augur/samples/minibench/post_43327.json
+[Release/build]   | PASS  wheel carries the runtime data files
+[Release/build]   | --- sdist leaves out the ledgers, runs and CI
+[Release/build]   | $ python3 -c import sys, tarfile
+[Release/build]   | names = tarfile.open(sys.argv[1]).getnames()
+[Release/build]   | bad = [n for n in names if "/data/ledgers/" in n or "/data/runs/" in n or "/.github/" in n]
+[Release/build]   | print("sdist members:", len(names), "unwanted:", bad)
+[Release/build]   | sys.exit(1 if bad else 0) <tmp>/dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   | sdist members: 167 unwanted: []
+[Release/build]   | PASS  sdist leaves out the ledgers, runs and CI
+[Release/build]   | --- twine check
+[Release/build]   | $ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv tool run twine check <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl <tmp>/dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   | Downloading cryptography (4.5MiB)
+[Release/build]   |  Downloaded cryptography
+[Release/build]   | Installed 27 packages in 46ms
+[Release/build]   | Checking 
+[Release/build]   | <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl: PASSED
+[Release/build]   | Checking <tmp>/dist/augur_forecast-0.1.0.tar.gz: PASSED
+[Release/build]   | PASS  twine check
+[Release/build]   | --- fresh Python 3.12 venv (wheel)
+[Release/build]   | $ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv venv --python 3.12 <tmp>/wheel-venv
+[Release/build]   | Using CPython 3.12.16
+[Release/build]   | Creating virtual environment at: <tmp>/wheel-venv
+[Release/build]   | Activate with: source <tmp>/wheel-venv/bin/activate
+[Release/build]   | PASS  fresh Python 3.12 venv (wheel)
+[Release/build]   | --- install the wheel
+[Release/build]   | $ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv pip install --python <tmp>/wheel-venv/bin/python <tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl
+[Release/build]   | Using Python 3.12.16 environment at: <tmp>/wheel-venv
+[Release/build]   | Resolved 13 packages in 273ms
+[Release/build]   | Downloading pydantic-core (2.2MiB)
+[Release/build]   |  Downloaded pydantic-core
+[Release/build]   | Prepared 3 packages in 51ms
+[Release/build]   | Installed 13 packages in 17ms
+[Release/build]   |  + annotated-types==0.8.0
+[Release/build]   |  + anyio==4.16.0
+[Release/build]   |  + augur-forecast==0.1.0 (from file://<tmp>/dist/augur_forecast-0.1.0-py3-none-any.whl)
+[Release/build]   |  + certifi==2026.11.20
+[Release/build]   |  + h11==0.16.0
+[Release/build]   |  + httpcore==1.0.9
+[Release/build]   |  + httpx==0.28.1
+[Release/build]   |  + idna==3.20
+[Release/build]   |  + pydantic==2.14.4
+[Release/build]   |  + pydantic-core==2.50.5
+[Release/build]   |  + structlog==26.1.0
+[Release/build]   |  + typing-extensions==4.16.0
+[Release/build]   |  + typing-inspection==0.4.5
+[Release/build]   | PASS  install the wheel
+[Release/build]   | --- augur imports from the venv, not the checkout
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/python -c import augur; print(augur.__version__, augur.__file__)
+[Release/build]   | 0.1.0 <tmp>/wheel-venv/lib/python3.12/site-packages/augur/__init__.py
+[Release/build]   | PASS  augur imports from the venv, not the checkout
+[Release/build]   | --- augur --help
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/augur --help
+[Release/build]   |     models              the model chains: list, probe, measure limits
+[Release/build]   |     backtest            forecast resolved questions with the clock pinned
+[Release/build]   |     judge               rate each source a backtest arm showed its forecasters
+[Release/build]   |                         for leakage (0 to 4)
+[Release/build]   |     resolve             append resolutions (and references Metaculus exposes)
+[Release/build]   |                         to a ledger
+[Release/build]   |     score               score resolved forecasts in one or more ledgers, with
+[Release/build]   |                         paired intervals
+[Release/build]   |     report              re-render RESULTS.md's generated blocks from the
+[Release/build]   |                         committed ledgers
+[Release/build]   |     power               the M7 power simulation: questions needed to detect a
+[Release/build]   |                         planted improvement
+[Release/build]   |     calibrate           Q4: raw against fixed extremizing, Platt and isotonic,
+[Release/build]   |                         fitted only on history that resolved before each
+[Release/build]   |                         question opened
+[Release/build]   |     q6                  Q6: does disagreement among the fleet's forecasts
+[Release/build]   |                         predict its errors?
+[Release/build]   |     standings           Augur's rank in a MiniBench round beside rank 1, the
+[Release/build]   |                         template, the community
+[Release/build]   |     baseline            run Metaculus's template bot unpublished on questions
+[Release/build]   |                         Augur forecast
+[Release/build]   |     ledger              inspect a ledger
+[Release/build]   | 
+[Release/build]   | options:
+[Release/build]   |   -h, --help            show this help message and exit
+[Release/build]   | PASS  augur --help
+[Release/build]   | --- augur models list (offline, bundled snapshot)
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/augur models list
+[Release/build]   | {"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:47:23.099400Z"}
+[Release/build]   | model list: snapshot, 478 models, fetched 2026-11-18 11:05 UTC; floor tier frontier-2026-11b
+[Release/build]   |   ollama:qwen2.5:7b                                effort -       $0/$0 per M  listed 2024-09-19 (release announcement)  below tier  [forecast+research]
+[Release/build]   | PASS  augur models list (offline, bundled snapshot)
+[Release/build]   | --- dry run lists the bundled sample questions (no model call)
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/augur forecast --tournament minibench --max-questions 0 --no-markets
+[Release/build]   | {"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:47:23.527782Z"}
+[Release/build]   | METACULUS_TOKEN is not set: dry run on the committed sample questions.
+[Release/build]   | run run_40fdf295dd464116b4a2 (dry_run) on samples:<tmp>/wheel-venv/lib/python3.12/site-packages/augur/samples/minibench
+[Release/build]   | models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+[Release/build]   | fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+[Release/build]   | coverage: 1 listed; 0 forecast in time (0 submitted), 0 missed, 1 skipped, 0 failed; estimated cost $0.0000
+[Release/build]   |   skipped: https://www.metaculus.com/questions/43327/ over the cap of 0 questions per run
+[Release/build]   | ledger: <tmp>/run/augur.db (run run_40fdf295dd464116b4a2)
+[Release/build]   | PASS  dry run lists the bundled sample questions (no model call)
+[Release/build]   | --- ledger written by the run passes the leakage scan
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/augur ledger check <tmp>/run/augur.db
+[Release/build]   | <tmp>/run/augur.db: 0 violation(s)
+[Release/build]   | PASS  ledger written by the run passes the leakage scan
+[Release/build]   | --- ledger check on a committed backtest ledger
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/augur ledger check <tmp>/run/m4.sqlite
+[Release/build]   | <tmp>/run/m4.sqlite: 0 violation(s)
+[Release/build]   | PASS  ledger check on a committed backtest ledger
+[Release/build]   | --- score the committed backtest
+[Release/build]   | $ offline_env <tmp>/wheel-venv/bin/augur score <tmp>/run/m4.sqlite --mode backtest
+[Release/build]   | 139 scored questions (binary 139); 0 without a resolution, 0 annulled; intervals: 95% bootstrap over question clusters (139), 10000 resamples, seed 20261119
+[Release/build]   |   baseline score -7.9 [-30.9, 12.9]  (MDE 31.7)
+[Release/build]   |   log score      -0.748 [-0.908, -0.604]
+[Release/build]   |   Brier          0.2395 [0.1929, 0.2895]  (binary, n = 139)
+[Release/build]   |   vs market (n = 139): head-to-head -34.2 [-50.9, -19.0] MDE 22.8; Brier 0.2395 vs 0.1311, difference 0.1084 [0.0582, 0.1612] MDE 0.0740
+[Release/build]   |   vs always 50% (n = 139): head-to-head -5.5 [-21.4, 9.0] MDE 22.0; Brier 0.2395 vs 0.2500, difference -0.0105 [-0.0571, 0.0395] MDE 0.0691
+[Release/build]   |   vs base rate (40%) (n = 139): head-to-head -7.4 [-22.0, 5.8] MDE 20.2; Brier 0.2395 vs 0.2406, difference -0.0011 [-0.0432, 0.0427] MDE 0.0614
+[Release/build]   | PASS  score the committed backtest
+[Release/build]   | --- ledger export, import, and the rebuilt ledger scores the same
+[Release/build]   | $ offline_env bash -c "$1" ledger export "$2/m4.sqlite" "$2/m4.jsonl" &&
+[Release/build]   |         "$1" ledger import "$2/m4.jsonl" --out "$2/rebuilt.sqlite" &&
+[Release/build]   |         "$1" ledger check "$2/rebuilt.sqlite" &&
+[Release/build]   |         "$1" score "$2/m4.sqlite" --mode backtest >"$2/a.txt" &&
+[Release/build]   |         "$1" score "$2/rebuilt.sqlite" --mode backtest >"$2/b.txt" &&
+[Release/build]   |         diff "$2/a.txt" "$2/b.txt" && echo "scores identical" _ <tmp>/wheel-venv/bin/augur <tmp>/run
+[Release/build]   | <tmp>/run/m4.jsonl: 979 rows from 16 tables
+[Release/build]   | <tmp>/run/rebuilt.sqlite: 974 rows from 1 exports (0 already present)
+[Release/build]   | <tmp>/run/rebuilt.sqlite: 0 violation(s)
+[Release/build]   | scores identical
+[Release/build]   | PASS  ledger export, import, and the rebuilt ledger scores the same
+[Release/build]   | SKIP  dry run with a local model (AUGUR_INSTALL_CHECK_MODEL=0)
+[Release/build]   | --- fresh Python 3.12 venv (sdist)
+[Release/build]   | $ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv venv --python 3.12 <tmp>/sdist-venv
+[Release/build]   | Using CPython 3.12.16
+[Release/build]   | Creating virtual environment at: <tmp>/sdist-venv
+[Release/build]   | Activate with: source <tmp>/sdist-venv/bin/activate
+[Release/build]   | PASS  fresh Python 3.12 venv (sdist)
+[Release/build]   | --- install the sdist
+[Release/build]   | $ clean_env /opt/hostedtoolcache/uv/0.13.9/x86_64/uv pip install --python <tmp>/sdist-venv/bin/python <tmp>/dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   | Using Python 3.12.16 environment at: <tmp>/sdist-venv
+[Release/build]   | Resolved 13 packages in 32ms
+[Release/build]   |    Building augur-forecast @ file://<tmp>/dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   |       Built augur-forecast @ file://<tmp>/dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   | Prepared 1 package in 374ms
+[Release/build]   | Installed 13 packages in 18ms
+[Release/build]   |  + annotated-types==0.8.0
+[Release/build]   |  + anyio==4.16.0
+[Release/build]   |  + augur-forecast==0.1.0 (from file://<tmp>/dist/augur_forecast-0.1.0.tar.gz)
+[Release/build]   |  + certifi==2026.11.20
+[Release/build]   |  + h11==0.16.0
+[Release/build]   |  + httpcore==1.0.9
+[Release/build]   |  + httpx==0.28.1
+[Release/build]   |  + idna==3.20
+[Release/build]   |  + pydantic==2.14.4
+[Release/build]   |  + pydantic-core==2.50.5
+[Release/build]   |  + structlog==26.1.0
+[Release/build]   |  + typing-extensions==4.16.0
+[Release/build]   |  + typing-inspection==0.4.5
+[Release/build]   | PASS  install the sdist
+[Release/build]   | --- augur --help (from the sdist)
+[Release/build]   | $ offline_env <tmp>/sdist-venv/bin/augur --help
+[Release/build]   |     models              the model chains: list, probe, measure limits
+[Release/build]   |     backtest            forecast resolved questions with the clock pinned
+[Release/build]   |     judge               rate each source a backtest arm showed its forecasters
+[Release/build]   |                         for leakage (0 to 4)
+[Release/build]   |     resolve             append resolutions (and references Metaculus exposes)
+[Release/build]   |                         to a ledger
+[Release/build]   |     score               score resolved forecasts in one or more ledgers, with
+[Release/build]   |                         paired intervals
+[Release/build]   |     report              re-render RESULTS.md's generated blocks from the
+[Release/build]   |                         committed ledgers
+[Release/build]   |     power               the M7 power simulation: questions needed to detect a
+[Release/build]   |                         planted improvement
+[Release/build]   |     calibrate           Q4: raw against fixed extremizing, Platt and isotonic,
+[Release/build]   |                         fitted only on history that resolved before each
+[Release/build]   |                         question opened
+[Release/build]   |     q6                  Q6: does disagreement among the fleet's forecasts
+[Release/build]   |                         predict its errors?
+[Release/build]   |     standings           Augur's rank in a MiniBench round beside rank 1, the
+[Release/build]   |                         template, the community
+[Release/build]   |     baseline            run Metaculus's template bot unpublished on questions
+[Release/build]   |                         Augur forecast
+[Release/build]   |     ledger              inspect a ledger
+[Release/build]   | 
+[Release/build]   | options:
+[Release/build]   |   -h, --help            show this help message and exit
+[Release/build]   | PASS  augur --help (from the sdist)
+[Release/build]   | --- dry run lists the sample questions (from the sdist)
+[Release/build]   | $ offline_env <tmp>/sdist-venv/bin/augur forecast --tournament minibench --max-questions 0 --no-markets
+[Release/build]   | {"error": "ConnectError", "event": "model list unavailable; using the committed snapshot", "level": "warning", "snapshot": "openrouter_models.json", "timestamp": "2026-11-23T06:47:38.173820Z"}
+[Release/build]   | METACULUS_TOKEN is not set: dry run on the committed sample questions.
+[Release/build]   | run run_b6a18bb32d734fad88c6 (dry_run) on samples:<tmp>/sdist-venv/lib/python3.12/site-packages/augur/samples/minibench
+[Release/build]   | models: forecast: ollama:qwen2.5:7b; research: ollama:qwen2.5:7b
+[Release/build]   | fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+[Release/build]   | coverage: 1 listed; 0 forecast in time (0 submitted), 0 missed, 1 skipped, 0 failed; estimated cost $0.0000
+[Release/build]   |   skipped: https://www.metaculus.com/questions/43327/ over the cap of 0 questions per run
+[Release/build]   | ledger: <tmp>/run/augur.db (run run_b6a18bb32d734fad88c6)
+[Release/build]   | PASS  dry run lists the sample questions (from the sdist)
+[Release/build]   | 
+[Release/build]   | install check: PASS (18 checks)
+[Release/build]   ✅  Success - Main Clean-environment install check (sdist and wheel, fresh venvs, offline) [20.214444183s]
+[Release/build] ⭐ Run Main Build the distributions
+[Release/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/6] user= workdir=
+[Release/build]   | Building source distribution...
+[Release/build]   | Building wheel from source distribution...
+[Release/build]   | Successfully built dist/augur_forecast-0.1.0.tar.gz
+[Release/build]   | Successfully built dist/augur_forecast-0.1.0-py3-none-any.whl
+[Release/build]   ✅  Success - Main Build the distributions [1.214943086s]
+[Release/build] ⭐ Run Main Check the distributions' metadata
+[Release/build]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/7] user= workdir=
+[Release/build]   | Checking dist/augur_forecast-0.1.0-py3-none-any.whl: [32mPASSED[0m
+[Release/build]   | Checking dist/augur_forecast-0.1.0.tar.gz: [32mPASSED[0m
+[Release/build]   ✅  Success - Main Check the distributions' metadata [441.301341ms]
+[Release/build] ⭐ Run Main actions/upload-artifact@v4
+[Release/build]   🐳  docker cp src=~/.cache/act/actions-upload-artifact@v4/ dst=/var/run/act/actions/actions-upload-artifact@v4/
+[Release/build]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/actions-upload-artifact@v4/dist/upload/index.js] user= workdir=
+[Release/build]   | (node:614) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+[Release/build]   | (Use `node --trace-deprecation ...` to show where the warning was created)
+[Release/build]   | With the provided path, there will be 2 files uploaded
+[Release/build]   | Artifact name is valid!
+[Release/build]   | Root directory input is valid!
+[Release/build]   | Beginning upload of artifact content to blob storage
+[Release/build]   | (node:614) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+[Release/build]   | Uploaded bytes 845153
+[Release/build]   | Finished uploading artifact content to blob storage!
+[Release/build]   | SHA256 digest of uploaded artifact zip is 3f96b23463d70130986ebd706dceab3f4a399846bb47cafaa62162648bd9de25
+[Release/build]   | Finalizing artifact upload
+[Release/build]   | Artifact dist.zip successfully finalized. Artifact ID 1281379241
+[Release/build]   | Artifact dist has been successfully uploaded! Final size is 845153 bytes. Artifact ID is 1281379241
+[Release/build]   | Artifact download URL: https://github.com/TheAsianFish/augur/actions/runs/1/artifacts/1281379241
+[Release/build]   ✅  Success - Main actions/upload-artifact@v4 [868.921966ms]
+[Release/build]   ⚙  ::set-output:: artifact-id=1281379241
+[Release/build]   ⚙  ::set-output:: artifact-digest=3f96b23463d70130986ebd706dceab3f4a399846bb47cafaa62162648bd9de25
+[Release/build]   ⚙  ::set-output:: artifact-url=https://github.com/TheAsianFish/augur/actions/runs/1/artifacts/1281379241
+[Release/build] ⭐ Run Post astral-sh/setup-uv@v10.3.0
+[Release/build]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/save-cache/index.cjs] user= workdir=
+[Release/build]   | UV_CACHE_DIR is already set to /root/.cache/uv
+[Release/build]   | UV_PYTHON_INSTALL_DIR is already set to /root/.local/share/uv/python
+[Release/build]   | Including uv cache path: /root/.cache/uv
+[Release/build]   | [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C <repo> --files-from manifest.txt --use-compress-program zstdmt
+[Release/build]   | Cache Size: ~46 MB (47920415 B)
+[Release/build]   | Cache saved successfully
+[Release/build]   | uv cache saved with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Release/build]   ✅  Success - Post astral-sh/setup-uv@v10.3.0 [2.008561309s]
+[Release/build] ⭐ Run Complete job
+[Release/build] Cleaning up container for job build
+[Release/build]   ✅  Success - Complete job
+[Release/build] 🏁  Job succeeded
+act exit: 0
+
+# The tag check step's shell, run locally (act -n only plans it): a matching and a mismatched tag
+$ TAG=v0.1.0 <step script>
+tag v0.1.0 matches version 0.1.0
+exit 0
+$ TAG=v0.1.1 <step script>
+::error::tag v0.1.1 does not match pyproject.toml version 0.1.0 (expected v0.1.0)
+exit 1
