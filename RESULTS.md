@@ -38,6 +38,166 @@ interval on the sum divided by the same count.
 | MiniBench (`minibench`, project 33169) | open, 2026-11-23 | 0 | 0 | none | none | none | none | no entry | 0 of 60 |
 <!-- augur:end season -->
 
+### The ForecastBench same-question row
+
+**Method.** ForecastBench publishes every entrant's forecasts for each
+question set (its processed forecast sets, CC BY-SA 4.0, Forecasting
+Research Institute); the archive was fetched on 2026-11-23 and
+`scripts/extract_forecast_sets.py` cut it to the question instances
+Augur's committed backtests forecast (`data/forecastbench/forecast-sets/`,
+values unchanged, with the archive's URL, size, SHA-256 and date). An
+instance is a (set, source, id) triple, matched to exactly the instances
+each arm scored (C1, C2, O and C4, with the forecast and the outcome
+RESULTS.md scores them with), and every entrant's Brier is paired with
+Augur's on that entrant's own questions; an entrant's imputed forecasts
+are left out and its n is shown. On C4 an entrant is one (organization,
+model) pair pooled over the sets it entered, so ForecastBench's own runs,
+renamed from 2026-07-05, count as different entrants before and after.
+The predictions P30 to P33 and the reading rule were committed to PLAN.md
+(`2c3b87d`) before any comparison was computed. The comparison is not
+fair, and is not meant to be: the entrants forecast live, many with
+frontier models and their own tools (some of ForecastBench's own runs
+search the web), while Augur's arms are backtests of one free model (C1:
+a small local one), all but O without retrieval. This is a backtest row,
+never a place on ForecastBench's leaderboard.
+
+<!-- augur:begin fbcompare -->
+Source: ForecastBench's processed forecast sets (https://www.forecastbench.org/assets/data/processed-forecast-sets/processed_forecast_sets.tar.gz, 141,253,184 bytes, SHA-256 `3b3b9630f2ccf4da401e703266a116cdc7de535eabb4cb44c9a10d1c01315b0f`, last modified Tue, 17 Nov 2026 08:27:21 GMT, fetched 2026-11-23; CC BY-SA 4.0, Forecasting Research Institute), cut to Augur's instances in `data/forecastbench/forecast-sets/` by `scripts/extract_forecast_sets.py`; snapshot `data/forecastbench/m10-same-question.json` (`augur fbcompare`). A positive Augur − entrant means the entrant beat Augur on the same questions. Intervals: paired bootstrap over markets, 10,000 resamples, seeded. Each entrant is compared only on its non-imputed forecasts (n per row). Best and worst are by Augur − entrant, among the group's entrants compared on at least half its median n; the external rows are the 5 with the largest Augur − entrant under the same floor. Counts, ranks and medians use every entrant; full per-entrant numbers are in the snapshot.
+
+**C1**: ForecastBench 2026-05-24, no retrieval, one draw (M4), `qwen2.5:7b`; 139 instances (139 markets, 2026-05-24), base rate 40.3%. Augur's Brier 0.2395 [0.1922, 0.2893]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 139 | 0.111 | 0.239 | +0.129 [+0.077, +0.181] |
+| market | freeze value (question set) | 139 | 0.131 | 0.239 | +0.108 [+0.059, +0.160] |
+| ForecastBench zero-shot LLMs, no freeze value: best | GPT-5.5-2026-04-23 (zero shot) (1 imputed excluded) | 138 | 0.205 | 0.241 | +0.036 [-0.020, +0.090] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 21 | — | 138 (median) | 0.243 | — | -0.001 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot) | 139 | 0.358 | 0.239 | -0.118 [-0.179, -0.060] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | GPT-5.5-2026-04-23 (zero shot with freeze values) (1 imputed excluded) | 138 | 0.128 | 0.241 | +0.114 [+0.062, +0.167] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 21 | — | 139 (median) | 0.139 | — | +0.103 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot with freeze values) | 139 | 0.257 | 0.239 | -0.018 [-0.076, +0.040] |
+| external entries: best | Anonymous 8 / ensemble (nocritique-1-99) | 139 | 0.108 | 0.239 | +0.132 [+0.079, +0.186] |
+| external entries: median of 14 | — | 139 (median) | 0.115 | — | +0.124 |
+| external entries: worst | LightningRodLabs / foresight-v3-05-2026 | 139 | 0.185 | 0.239 | +0.054 [+0.015, +0.095] |
+| ForecastBench baselines: best | Imputed Forecaster | 139 | 0.111 | 0.239 | +0.129 [+0.077, +0.181] |
+| ForecastBench baselines: median of 6 | — | 139 (median) | 0.314 | — | -0.075 |
+| ForecastBench baselines: worst | Always 1 | 139 | 0.597 | 0.239 | -0.358 [-0.470, -0.245] |
+| external #1 | Anonymous 8 / ensemble (nocritique-1-99) | 139 | 0.108 | 0.239 | +0.132 [+0.079, +0.186] |
+| external #2 | Anonymous 8 / ensemble (critique-1-99) | 139 | 0.110 | 0.239 | +0.130 [+0.077, +0.183] |
+| external #3 | Anonymous 8 / ensemble (critique-5-95) | 139 | 0.110 | 0.239 | +0.129 [+0.077, +0.183] |
+| external #4 | Artificial Judgement / aj-v1 | 139 | 0.110 | 0.239 | +0.129 [+0.077, +0.182] |
+| external #5 | Anonymous 4 / excited-seal | 139 | 0.112 | 0.239 | +0.128 [+0.073, +0.183] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 21 | 10 | 1 | 2 | 11 of 22 | -0.001 | 0.243 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 21 | 19 | 18 | 0 | 20 of 22 | +0.103 | 0.139 |
+| external entries | 14 | 14 | 14 | 0 | 15 of 15 | +0.124 | 0.115 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.075 | 0.314 |
+
+**C2**: ForecastBench 2026-06-21, no retrieval, median of three draws (M5's arm (b)), `nvidia/nemotron-3-ultra-550b-a55b:free`; 138 instances (138 markets, 2026-06-21), base rate 40.6%. Augur's Brier 0.2176 [0.1663, 0.2708]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 138 | 0.096 | 0.218 | +0.121 [+0.072, +0.173] |
+| market | freeze value (question set) | 138 | 0.108 | 0.218 | +0.110 [+0.061, +0.160] |
+| ForecastBench zero-shot LLMs, no freeze value: best | Grok-4.3 (zero shot) | 138 | 0.186 | 0.218 | +0.032 [+0.007, +0.056] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 22 | — | 138 (median) | 0.219 | — | +0.002 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot) | 138 | 0.258 | 0.218 | -0.040 [-0.098, +0.016] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | Claude-Sonnet-4-6 (zero shot with freeze values) | 138 | 0.101 | 0.218 | +0.117 [+0.069, +0.167] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 22 | — | 138 (median) | 0.119 | — | +0.098 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot with freeze values) | 138 | 0.207 | 0.218 | +0.011 [-0.049, +0.070] |
+| external entries: best | Artificial Judgement / aj-v1 | 138 | 0.088 | 0.218 | +0.129 [+0.081, +0.180] |
+| external entries: median of 16 | — | 138 (median) | 0.104 | — | +0.113 |
+| external entries: worst | Anonymous 10 / alice | 138 | 0.142 | 0.218 | +0.076 [+0.032, +0.122] |
+| ForecastBench baselines: best | Naive Forecaster | 138 | 0.096 | 0.218 | +0.122 [+0.073, +0.173] |
+| ForecastBench baselines: median of 6 | — | 138 (median) | 0.280 | — | -0.063 |
+| ForecastBench baselines: worst | Always 1 | 138 | 0.594 | 0.218 | -0.377 [-0.495, -0.258] |
+| external #1 | Artificial Judgement / aj-v1 | 138 | 0.088 | 0.218 | +0.129 [+0.081, +0.180] |
+| external #2 | Google DeepMind / Gemini | 138 | 0.095 | 0.218 | +0.123 [+0.080, +0.168] |
+| external #3 | haoxin1998 / CLOUD_01 | 138 | 0.096 | 0.218 | +0.121 [+0.073, +0.171] |
+| external #4 | haoxin1998 / CLOUD_03 | 138 | 0.096 | 0.218 | +0.121 [+0.071, +0.173] |
+| external #5 | Anonymous 4 / excited-seal | 138 | 0.099 | 0.218 | +0.118 [+0.068, +0.171] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 22 | 12 | 1 | 0 | 13 of 23 | +0.002 | 0.219 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 22 | 22 | 17 | 0 | 23 of 23 | +0.098 | 0.119 |
+| external entries | 16 | 16 | 16 | 0 | 17 of 17 | +0.113 | 0.104 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.063 | 0.280 |
+
+**O**: ForecastBench 2026-06-21, the first 64 questions by id, one research pass as of open, median of three draws (M6), `nvidia/nemotron-3-ultra-550b-a55b:free`; 64 instances (64 markets, 2026-06-21), base rate 35.9%. Augur's Brier 0.1887 [0.1173, 0.2642]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 64 | 0.097 | 0.189 | +0.091 [+0.029, +0.157] |
+| market | freeze value (question set) | 64 | 0.106 | 0.189 | +0.082 [+0.019, +0.149] |
+| ForecastBench zero-shot LLMs, no freeze value: best | Grok-4.3 (zero shot) | 64 | 0.175 | 0.189 | +0.013 [-0.028, +0.054] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 22 | — | 64 (median) | 0.199 | — | -0.009 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot) | 64 | 0.249 | 0.189 | -0.060 [-0.141, +0.020] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | DeepSeek-V4-Pro (zero shot with freeze values) | 64 | 0.097 | 0.189 | +0.091 [+0.037, +0.151] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 22 | — | 64 (median) | 0.113 | — | +0.074 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | Grok-4.20-0309-Non-Reasoning (zero shot with freeze values) | 64 | 0.183 | 0.189 | +0.006 [-0.071, +0.083] |
+| external entries: best | Artificial Judgement / aj-v1 | 64 | 0.084 | 0.189 | +0.105 [+0.044, +0.170] |
+| external entries: median of 16 | — | 64 (median) | 0.105 | — | +0.083 |
+| external entries: worst | Anonymous 10 / alice | 64 | 0.128 | 0.189 | +0.061 [+0.010, +0.117] |
+| ForecastBench baselines: best | Imputed Forecaster | 64 | 0.097 | 0.189 | +0.091 [+0.029, +0.157] |
+| ForecastBench baselines: median of 6 | — | 64 (median) | 0.281 | — | -0.093 |
+| ForecastBench baselines: worst | Always 1 | 64 | 0.641 | 0.189 | -0.452 [-0.618, -0.281] |
+| external #1 | Artificial Judgement / aj-v1 | 64 | 0.084 | 0.189 | +0.105 [+0.044, +0.170] |
+| external #2 | haoxin1998 / CLOUD_01 | 64 | 0.096 | 0.189 | +0.093 [+0.029, +0.160] |
+| external #3 | haoxin1998 / CLOUD_03 | 64 | 0.096 | 0.189 | +0.093 [+0.026, +0.162] |
+| external #4 | hliu763 / CAIR_01 | 64 | 0.098 | 0.189 | +0.090 [+0.026, +0.157] |
+| external #5 | hliu763 / CAIR_02 | 64 | 0.098 | 0.189 | +0.090 [+0.026, +0.157] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 22 | 7 | 0 | 0 | 8 of 23 | -0.009 | 0.199 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 22 | 22 | 15 | 0 | 23 of 23 | +0.074 | 0.113 |
+| external entries | 16 | 16 | 16 | 0 | 17 of 17 | +0.083 | 0.105 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.093 | 0.281 |
+
+**C4**: ForecastBench 2026-06-21 to 2026-10-11 (nine sets), no retrieval, one draw (M8), `nvidia/nemotron-3-ultra-550b-a55b:free`; 926 instances (541 markets, 2026-06-21 to 2026-10-11), base rate 34.9%. Augur's Brier 0.2248 [0.1956, 0.2539]. ForecastBench's processed files resolve every instance as Augur was scored.
+
+| Row | Entrant | n | Entrant's Brier | Augur's Brier, same n | Augur − entrant [95% interval] |
+|---|---|---|---|---|---|
+| market | market value on the due date | 926 | 0.105 | 0.225 | +0.119 [+0.092, +0.147] |
+| market | freeze value (question set) | 926 | 0.121 | 0.225 | +0.104 [+0.078, +0.131] |
+| ForecastBench zero-shot LLMs, no freeze value: best | claude-opus-5-5-high-web-search-128k (web search) | 130 | 0.122 | 0.268 | +0.146 [+0.092, +0.203] |
+| ForecastBench zero-shot LLMs, no freeze value: median of 77 | — | 206 (median) | 0.203 | — | +0.017 |
+| ForecastBench zero-shot LLMs, no freeze value: worst | grok-4.20-0309-non-reasoning | 659 | 0.302 | 0.213 | -0.088 [-0.123, -0.056] |
+| ForecastBench zero-shot LLMs, shown the freeze value: best | claude-opus-5-5-high-web-search-128k-zero-shot-with-freeze-values (web search) | 130 | 0.117 | 0.268 | +0.151 [+0.096, +0.207] |
+| ForecastBench zero-shot LLMs, shown the freeze value: median of 77 | — | 210 (median) | 0.121 | — | +0.102 |
+| ForecastBench zero-shot LLMs, shown the freeze value: worst | grok-4.20-0309-non-reasoning-zero-shot-with-freeze-values | 659 | 0.227 | 0.213 | -0.013 [-0.046, +0.019] |
+| external entries: best | Anonymous 24 / golden-jaguar | 85 | 0.094 | 0.285 | +0.191 [+0.115, +0.269] |
+| external entries: median of 309 | — | 85 (median) | 0.124 | — | +0.107 |
+| external entries: worst | Anonymous 18 / blind-36b1beb99820+platt209 (1 imputed excluded) | 183 | 0.223 | 0.185 | -0.038 [-0.071, -0.004] |
+| ForecastBench baselines: best | Imputed Forecaster | 926 | 0.105 | 0.225 | +0.119 [+0.092, +0.147] |
+| ForecastBench baselines: median of 6 | — | 926 (median) | 0.289 | — | -0.064 |
+| ForecastBench baselines: worst | Always 1 | 926 | 0.651 | 0.225 | -0.426 [-0.494, -0.358] |
+| external #1 | Anonymous 24 / golden-jaguar | 85 | 0.094 | 0.285 | +0.191 [+0.115, +0.269] |
+| external #2 | NeuroFusion / hybrid ensemble 1 | 85 | 0.094 | 0.285 | +0.191 [+0.115, +0.269] |
+| external #3 | Anonymous 39 / stat-v1 (calibrated market anchor + dataset base rates) | 85 | 0.107 | 0.285 | +0.178 [+0.105, +0.253] |
+| external #4 | yarrow / Yarrow Liang Pi | 85 | 0.108 | 0.285 | +0.177 [+0.103, +0.254] |
+| external #5 | yarrow / Yarrow Mixian | 85 | 0.108 | 0.285 | +0.177 [+0.103, +0.254] |
+
+| Group | Entrants | Beat Augur (point) | Beat Augur (interval above 0) | Augur beats (interval below 0) | Augur's rank | Median Augur − entrant | Median entrant Brier |
+|---|---|---|---|---|---|---|---|
+| ForecastBench zero-shot LLMs, no freeze value | 77 | 58 | 29 | 5 | 59 of 78 | +0.017 | 0.203 |
+| ForecastBench zero-shot LLMs, shown the freeze value | 77 | 76 | 71 | 0 | 77 of 78 | +0.102 | 0.121 |
+| external entries | 309 | 302 | 292 | 2 | 303 of 310 | +0.107 | 0.124 |
+| ForecastBench baselines | 6 | 2 | 2 | 3 | 3 of 7 | -0.064 | 0.289 |
+
+Not compared (every forecast imputed): gemini-3.5-flash-high-web-search (125 imputed excluded).
+
+Predictions stated in PLAN.md before the comparison:
+
+- P30 (On C2 and on C4, Augur's no-retrieval arm is worse than the median zero-shot LLM entrant shown no freeze value (point estimate), and ranks in that group's bottom quarter.): **failed**. C2: median Augur − entrant +0.0024 over 22 entrants (worse than the median); Augur ranks 13 of 23 (12 beat it), not in the bottom quarter (rank above 17.25); C4: median Augur − entrant +0.0171 over 77 entrants (worse than the median); Augur ranks 59 of 78 (58 beat it), in the bottom quarter (rank above 58.5). Read as: the median entrant is the median of Augur − entrant over the group's entrants, each on its own non-imputed questions; the group is every ForecastBench zero-shot file without freeze values, including runs that name web search and entrants left with few questions after imputed ones are excluded; bottom quarter: Augur's rank above 0.75 × the number ranked (the group and Augur).
+- P31 (On C2, at least 90% of the zero-shot entrants shown the freeze value beat Augur's no-retrieval arm with an interval of Augur − entrant wholly above 0.): **failed**. C2: 17 of 22 entrants shown the freeze value (77%) beat Augur with an interval of Augur − entrant wholly above 0 (needed: at least 90%). Read as: share = entrants with the interval wholly above 0 / entrants in the group.
+- P32 (Researched as of open (O, 64 questions), Augur is still worse than the median external entry on the same questions (point estimate).): **held**. O: median Augur − entrant over 16 external entries +0.0834 on the same questions (median n 64); 16 of 16 beat Augur (point estimate). Read as: the median of Augur − entrant over the external entries, on O's 64 questions.
+- P33 (No Augur arm beats any external entry with an interval wholly below 0.): **failed**. external entries with an interval of Augur − entrant wholly below 0: 2 (C1 14, C2 16, O 16, C4 309 entries compared): C4: Anonymous 18 / blind-36b1beb99820 -0.0351 [-0.0667, -0.0041]; C4: Anonymous 18 / blind-36b1beb99820+platt209 -0.0379 [-0.0709, -0.0038]. Read as: every external entry on C1, C2, O and C4; an entry compared on one market has no interval and cannot count.
+<!-- augur:end fbcompare -->
+
 ## M9: does the fleet know when it does not know? (2026-11-22)
 
 **Question.** Does disagreement among the fleet's forecasts predict its
