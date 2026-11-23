@@ -1,4 +1,4 @@
-"""Every measured number in the README must be one that RESULTS.md states.
+"""Every measured number in the README (and the postmortem) must be one RESULTS.md states.
 
 RESULTS.md is where each number has its command, model, date, cost and raw
 output; the README only repeats. A measured number here is a decimal, a
@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -53,11 +55,12 @@ def test_the_pattern_finds_measurements_and_skips_names() -> None:
     assert found == {"0.142", "-0.016", "0.017", "47%", "2 of 59"}
 
 
-def test_every_number_in_the_readme_is_in_results() -> None:
-    readme = numbers(_prose((ROOT / "README.md").read_text(encoding="utf-8")))
+@pytest.mark.parametrize("document", ["README.md", "docs/postmortem-fall-2026.md"])
+def test_every_number_in_the_document_is_in_results(document: str) -> None:
+    stated = numbers(_prose((ROOT / document).read_text(encoding="utf-8")))
     results = numbers((ROOT / "RESULTS.md").read_text(encoding="utf-8"))
-    missing = sorted(readme - results)
+    missing = sorted(stated - results)
     assert not missing, (
-        f"README.md states {missing}, which RESULTS.md does not; quote RESULTS.md as written "
+        f"{document} states {missing}, which RESULTS.md does not; quote RESULTS.md as written "
         "or add the measurement there with its command"
     )

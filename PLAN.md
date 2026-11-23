@@ -667,6 +667,24 @@ mostly without retrieval, so a gap measures tools and model together. The
 row is labelled a backtest and never ranked on ForecastBench's own
 leaderboard.
 
+**M10's same-question results (2026-11-23; RESULTS.md, P30 to P33 above
+unedited).** Augur's arms reproduce their committed Brier exactly, and
+ForecastBench's files resolve every instance as Augur was scored. P30
+failed: on C2 the no-retrieval arm is level with the median zero-shot LLM
+shown no freeze value (+0.002) and ranks 13 of 23, not in the bottom
+quarter; on C4 it is worse (+0.017) and in the bottom quarter (59 of 78).
+P31 failed: 17 of 22 entrants shown the freeze value (77%, not 90%) beat it
+with an interval above 0. P32 held: researched as of open, all 16 external
+entries beat it, by a median of +0.083 Brier. P33 failed: on C4 it beats two
+blind entries of one anonymous team (−0.035 [−0.067, −0.004] and −0.038
+[−0.071, −0.004]). Readings fixed while building and stated in RESULTS.md:
+"median" is the median of the paired differences; an entrant compared on
+one market has no interval. Found while building: the files'
+`market_value_on_due_date` is a price about ten days after the freeze, not
+the freeze value, so both appear as rows. The placing in one line: without
+retrieval the free model is an ordinary zero-shot LLM; every external entry
+on C1, C2 and O, and most models shown the price, beat it.
+
 **Proposed submit floor, re-based on the latest round (2026-11-20; for
 the maintainer to approve, not applied in code).** The tier
 `frontier-2026-11b` is argued from the Spring 2026 survey, and the
