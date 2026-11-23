@@ -302,6 +302,13 @@ def render_standings(root: Path) -> str:
     return "\n\n".join(parts) + "\n" if parts else "No standings snapshot committed.\n"
 
 
+def render_season(root: Path) -> str:
+    """Q5 across the season: one row per committed round snapshot, Augur's row beside the field."""
+    rounds = [standings.load_snapshot(p) for p in sorted((root / STANDINGS).glob("*.json"))]
+    outcomes = standings.read_outcomes(_ledgers(root))
+    return standings.season_markdown(rounds, outcomes)
+
+
 TEMPLATES_SNAPSHOT = STANDINGS / "minibench-2026-11-02.json"
 
 
@@ -1722,6 +1729,7 @@ BLOCKS: dict[str, Block] = {
         Block("ledgers", render_ledgers),
         Block("standings", render_standings),
         Block("templates", render_templates),
+        Block("season", render_season),
         Block("replay", render_replay),
         Block("leakage", render_leakage),
         Block("fleet", render_fleet),

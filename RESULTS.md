@@ -18,6 +18,26 @@ against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
 
+## M10: release, and the season's standing (2026-11-23)
+
+### The season so far (Q5)
+
+Every leaderboard snapshot committed under `data/standings/`, one row per
+round (`augur standings --round SLUG --out data/standings/...`; from M10 the
+`Standings` workflow re-reads the current MiniBench round, the two before it
+and the FutureEval season every day and keeps each reading on the `ledger`
+branch). Averages are spot peer points a question covered, with Metaculus's
+interval on the sum divided by the same count.
+
+<!-- augur:begin season -->
+| Round | Status, as read | Entries | Questions scored | Rank 1 | Best template bot | `metac-nemotron-3-ultra+asknews` (Augur's free model) | Community (unweighted) | Augur | Questions Augur submitted |
+|---|---|---|---|---|---|---|---|---|---|
+| Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`, project 33121) | open, 2026-11-23 | 596 | 38 | Panshul42 20.86 [9.69, 31.66], rank 1 | metac-claude-fable-5-1-high+asknews 13.49 [4.52, 23.27], rank 44 | -15.55 [-29.52, -2.01], rank 449 | 14.71 [11.48, 18.27], rank 36 | no entry | 0 of 173 |
+| MiniBench - 2026-10-19 (`minibench-2026-10-19`, project 33132) | finalized, 2026-11-23 | 410 | 59 | notatrollBotV1 14.47 [7.33, 22.22], rank 1 | metac-claude-opus-5-5-high+asknews 3.10 [-4.97, 10.01], rank 106 | -2.55 [-9.12, 3.53], rank 222 | 7.58 [5.31, 10.44], rank 37 | no entry | 0 of 60 |
+| MiniBench - 2026-11-02 (`minibench-2026-11-02`, project 33135) | finalized, 2026-11-20 | 435 | 59 | takeoff.watch 22.77 [17.36, 29.05], rank 1 | metac-claude-opus-5-5-high+asknews 3.66 [-0.97, 7.94], rank 107 | -7.66 [-14.51, -0.73], rank 295 | 5.06 [4.08, 6.12], rank 80 | no entry | 0 of 60 |
+| MiniBench (`minibench`, project 33169) | open, 2026-11-23 | 0 | 0 | none | none | none | none | no entry | 0 of 60 |
+<!-- augur:end season -->
+
 ## M9: does the fleet know when it does not know? (2026-11-22)
 
 **Question.** Does disagreement among the fleet's forecasts predict its
@@ -1106,6 +1126,48 @@ needs about 300 resolved questions to be detected four times in five; Fall
 (`data/standings/*.json`); `augur report` renders from the snapshots.
 
 <!-- augur:begin standings -->
+#### Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`)
+
+Finalized: no. Leaderboard entries: 596. Most questions any entry covers: 38. Score type: spot_peer_tournament. Fetched 2026-11-23T06:21:07.399355Z from https://www.metaculus.com/api/leaderboards/project/33121/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
+| Best template bot | 44 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 38 | 13.49 [4.52, 23.27] | 512.8 |
+| Best Metaculus house bot (not the template) | 27 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 38 | 15.83 [7.83, 24.67] | 601.7 |
+| Best listed open-source bot | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
+| Community prediction | 36 | community prediction (unweighted) | community prediction | 38 | 14.71 [11.48, 18.27] | 559.1 |
+| Community prediction | 56 | community prediction (recency_weighted) | community prediction | 38 | 12.06 [9.14, 15.26] | 458.1 |
+| Community prediction | 46 | community prediction (reputation_weighted) | community prediction | 38 | 13.36 [9.72, 17.12] | 507.5 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+Median bot by summed score (the line Q5 predicts Augur clears): 34.1 over 5 questions, 6.82 a question (rank 249; the middle of 592 bot entries, many of which covered only part of the round, which a summed score punishes).
+
+Questions in the round: 173; forecast and submitted by Augur: 0; not forecast: 173 no run saw it (from the committed ledgers; `augur standings --from data/standings/fall-futureeval-2026.json --ledger ...` lists each one).
+
+#### MiniBench - 2026-10-19 (`minibench-2026-10-19`)
+
+Finalized: yes. Leaderboard entries: 410. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:57.410455Z from https://www.metaculus.com/api/leaderboards/project/33132/.
+
+| Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
+|---|---|---|---|---|---|---|
+| Rank 1 | 1 | notatrollBotV1 | bot | 58 | 14.47 [7.33, 22.22] | 839.3 |
+| Best template bot | 106 | metac-claude-opus-5-5-high+asknews | Metaculus template bot | 58 | 3.10 [-4.97, 10.01] | 179.6 |
+| Best Metaculus house bot (not the template) | 2 | metac-autocast-experimental | Metaculus house bot (not the template) | 58 | 13.46 [7.18, 20.02] | 780.8 |
+| Community prediction | 37 | community prediction (unweighted) | community prediction | 58 | 7.58 [5.31, 10.44] | 439.6 |
+| Community prediction | 34 | community prediction (recency_weighted) | community prediction | 58 | 7.89 [5.08, 11.45] | 457.6 |
+| Community prediction | 32 | community prediction (reputation_weighted) | community prediction | 58 | 8.21 [5.65, 11.43] | 476.4 |
+
+- Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
+- Best listed open-source bot: no listed open-source bot in this round.
+- Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
+
+Median bot by summed score (the line Q5 predicts Augur clears): 18.7 over 7 questions, 2.67 a question (rank 164; the middle of 407 bot entries, many of which covered only part of the round, which a summed score punishes).
+
+Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 60 no run saw it (from the committed ledgers; `augur standings --from data/standings/minibench-2026-10-19.json --ledger ...` lists each one).
+
 #### MiniBench - 2026-11-02 (`minibench-2026-11-02`)
 
 Finalized: yes. Leaderboard entries: 435. Most questions any entry covers: 59. Score type: spot_peer_tournament. Fetched 2026-11-20T04:36:14.128494Z from https://www.metaculus.com/api/leaderboards/project/33135/.
@@ -1129,7 +1191,7 @@ Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 60
 
 #### MiniBench (`minibench`)
 
-Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-19T05:00:08.935168Z from https://www.metaculus.com/api/leaderboards/project/33169/.
+Finalized: no. Leaderboard entries: 0. Most questions any entry covers: 0. Score type: spot_peer_tournament. Fetched 2026-11-23T06:20:41.230931Z from https://www.metaculus.com/api/leaderboards/project/33169/.
 
 The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 2026-12-04T00:00:00Z); there is nothing to compare.
 
