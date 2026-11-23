@@ -951,7 +951,7 @@ its cutoff, and the price arms here use Augur's own as-of reads instead
 
 **Beside the frontier, not against it.** AIA Forecaster's ablation on
 ForecastBench (arXiv 2511.07678, self-reported) runs the same experiment
-on a frontier model with agentic search (FB-Market, n = 76, Table 4): the
+on a frontier model with agentic search (FB-Market, Table 4; the table states no n): the
 market price alone 0.096, the model shown the price without search 0.103,
 no search 0.116, search 0.085, both 0.075. Its shown-the-price row is the
 outside twin of arm (d): a frontier model shown the price without search
