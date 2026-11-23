@@ -1,8 +1,10 @@
 # Augur
 
-**Status: in progress.** M9 of 10 (does disagreement among the fleet's
-forecasts predict its errors, tested against controls for plain
-overconfidence; not resolvable at this n); see [PLAN.md](PLAN.md).
+**Status: 0.1.0, release candidate (M10 of 10).** Every milestone in
+[PLAN.md](PLAN.md) is built. Fall 2026 was the shakedown season: the bot
+posted no scored forecast, because no model in the frontier tier was
+available to it, and the [postmortem](docs/postmortem-fall-2026.md) says
+what the backtests found instead. Spring 2027 is the season to place in.
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -49,15 +51,34 @@ A real run on free OpenRouter models (trimmed; the full output is
 the practice area, soonest-closing first, each CDF and option set built to
 Metaculus's validity rules and accepted. These models are below the
 frontier tier, so the same command against MiniBench refuses before any
-model call. To capture a GIF: `vhs` or `asciinema rec` around the command.
+model call.
+
+To record the demo as a GIF (no GIF is committed yet): install
+[`vhs`](https://github.com/charmbracelet/vhs) and run `vhs docs/demo.tape`,
+which types the quickstart's dry run below and writes `docs/demo.gif`; or
+`asciinema rec docs/demo.cast -c "uv run augur forecast --tournament minibench"`.
 
 ## Quickstart
 
+A dry run on a local model, no account and no key needed (checked from a
+fresh clone with an empty environment: `data/runs/m10-fresh-clone-quickstart.txt`,
+about 14 minutes on a 4-core CPU):
+
 ```sh
-uv sync
+git clone https://github.com/TheAsianFish/augur && cd augur
+uv sync                                                  # Python 3.12, from uv.lock
 ollama pull qwen2.5:7b
-uv run augur forecast --tournament minibench            # dry run on a local model; prints what it would post
+uv run augur forecast --tournament minibench            # the committed sample question; prints what it would post
 uv run augur ledger check augur.db                      # leakage and floor scan; exit 1 on a violation
+```
+
+Without the repository: `pip install augur-forecast` (once 0.1.0 is
+published; RELEASE.md), or the container, which keeps its ledger on a
+volume and takes secrets only at `docker run`:
+
+```sh
+make docker                                              # builds augur-forecast:0.1.0
+docker run --rm --network host -v augur-data:/data augur-forecast:0.1.0 forecast --tournament minibench
 ```
 
 Hosted models are configuration: an ordered chain per role, `endpoint:model`.
@@ -146,7 +167,10 @@ flowchart LR
 | `augur/forecastbench.py`, `augur/resolved.py`, `augur/backtest.py` | Resolved questions (ForecastBench sets; past Metaculus tournaments where the token sees resolutions) with eligibility filters, and the bot's own researcher and forecaster run with the clock pinned to each question's open instant, every route's release date checked at call time; Q2's leaky arm as an `unrestricted` run. |
 | `augur/judge.py`, `augur/q2.py` | The leakage judge (El Lahib et al.'s 0 to 4 rubric; its check against hand labels is under To measure) and Q2's scoring: arms, paired differences, edge over the price. |
 | `augur/report.py`, `augur/importer.py` | RESULTS.md's generated blocks (a test fails on drift); one ledger rebuilt from the `ledger` branch's exports. |
+| `augur/fbcompare.py` | The ForecastBench same-question row: every entrant's published forecasts on exactly the instances Augur's backtests scored, paired differences on one seeded resample sequence (`paired_many`), ranks per group. |
 | `augur/runner.py`, `augur/cli.py` | `augur forecast` (soonest-closing first, a deadline per question, a coverage report), `augur models list|probe|snapshot`, `augur ledger check|export`. |
+| `.github/workflows/standings.yml`, `scripts/push_standings.sh` | Every day, the current MiniBench round, the two before it and the FutureEval season re-read and kept on the `ledger` branch, so each round's final standing is recorded after it finalizes. |
+| `.github/workflows/release.yml`, `scripts/check_install.sh`, `Dockerfile` | Release: `make check` and an install of the built wheel and sdist into fresh venvs outside the repository on every run; PyPI by trusted publishing only from a `v*` tag; the container for running the bot outside Actions. |
 | `.github/workflows/tournament.yml`, `scripts/` | The schedule: `poll.py` (standard library) decides whether to install anything; the forecast job posts from `main` only and `push_ledger.sh` commits each run's export to the `ledger` branch. `question_windows.py`, `cron_delay.py` and `cadence.py` measured how often it must run. |
 
 ### The hard part
@@ -238,6 +262,8 @@ way, every apparent gain disappeared into its control.
 | Judging a disagreement policy | Against constant shrinkage, the source-aware map and (for skip) random skipping, all fitted leave-one-out on the same questions | Against raw | Raw is overconfident everywhere, so any shrink beats it: a constant shrink did (−0.007 [−0.014, −0.000]), and skipping the most-disagreed quarter gained +7.3 points against raw scoring but +0.8 [−3.0, +5.1] against random skips. |
 | Calibration | A Platt map fitted on the free model's resolved backtest history, applied only when every member answered from that model, before the exact-price blend, and withheld from Metaculus questions until a map is shown to be no worse than raw there | One map for every model; isotonic; no calibration; a per-source map | Calibration belongs to a forecaster: the free model's log-odds are worth about a third of what it states (slope 0.32), which says nothing about a frontier model. Platt and isotonic both passed the rule on 671 walk-forward questions; Platt by more, with two parameters instead of a step per block. |
 | Changing a default | Only if the paired interval against the default lies below 0, or a cheaper variant's upper bound is under +0.01 Brier (fixed before M7's run) | Adopting whatever scores best on the backtest | At 40 questions most differences are noise; a rule written first keeps a lucky draw out of the live bot. |
+| Release | PyPI by trusted publishing from a `v*` tag, behind a `pypi` environment; the publish job is the only one with `id-token: write` and never runs on a manual dispatch | An API token in a repository secret | No long-lived credential to leak; a dry run (`workflow_dispatch`) exercises every step but the upload. |
+| README numbers | A test fails if the README or the postmortem states a number RESULTS.md does not | Trusting the copy | The README is what an interviewer reads; six of its numbers had drifted from RESULTS.md before the test existed. |
 | RESULTS.md | Prose plus blocks rendered from the committed ledgers; a test fails if the file differs from a fresh render | Hand-copied tables | A number in the report cannot drift from the data it came from. |
 
 ## Results
@@ -246,6 +272,8 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M10, the season so far (Q5): every MiniBench and FutureEval leaderboard read 2026-11-23 | Augur has no entry in any round (0 scored forecasts; the floor refused the free models). The template on Augur's free model, `metac-nemotron-3-ultra+asknews`, averaged −7.66 [−14.51, −0.73] in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −15.55 so far in Fall FutureEval, where rank 1 (Panshul42) averages 20.86 on 38 scored questions. Final ranks are re-read daily by the `Standings` workflow |
+| M10, ForecastBench same-question row: Augur's backtest arms against every entrant's published forecasts on the same question instances (C1, C2, O, C4; $0, no model call) | Without retrieval the free model is an ordinary zero-shot LLM: on C2 it ranks 13 of 23 among ForecastBench's zero-shot runs shown no price (median difference +0.002 Brier), on 926 C4 instances 59 of 78. Shown the price, 17 of 22 of those models beat it with an interval above 0. Researched as of open (64 questions), every one of the 16 external entries beats it, by a median of +0.083. A backtest placing, not a leaderboard rank |
 | M9, does the fleet know when it does not know (Q6): draws already in the ledgers, 135 and 39 ForecastBench market questions, `nemotron-3-ultra:free` (and `nemotron-3-nano:free` for the model gap); every policy against constant shrinkage and the source-aware calibrator, fitted leave-one-out ($0) | No disagreement measure predicts a large error: draw spread AUROC 0.507 [0.405, 0.608] on 135 questions; research passes 0.53, the two-model gap 0.33 on 39. A plain constant shrink beats raw (−0.007 [−0.014, −0.000]); scaling it by disagreement adds −0.005, inside the interval. Skipping the most-disagreed quarter gains +7.3 points against forecasting everything but +0.8 [−3.0, +5.1] against skipping at random. Not resolvable at this n (an AUROC of 0.6 needs about 250 questions); the pre-registered label proved to mark hedged forecasts; the live test is registered by question-id parity and has 0 resolutions |
 | M8, calibration learned from resolved history (Q4): 926 ForecastBench market questions over nine sets, `nemotron-3-ultra:free`, no retrieval; each question calibrated only on questions resolved before it opened ($0, 802 free calls) | By source first: the gain is all on Polymarket and Manifold (−0.041 and −0.051 Brier against raw); on the 190 Metaculus questions, the nearest to what the bot forecasts live, pooled Platt is 0.035 *worse* than raw [0.013, 0.054]. Source-aware maps (per-source, or partially pooled with a shrunk per-source intercept) cut that to +0.014 and +0.019 but are not shown to be no worse than raw (upper bounds +0.032, +0.043), so the live map is withheld from Metaculus questions and live forecasts go out raw. Overall, on 671 walk-forward questions, Platt is 0.022 better than raw [0.007, 0.037] and cuts calibration error 0.152 → 0.069; extremizing by 1.5 hurts (+0.015). Outcomes are dated by the markets' own APIs (ForecastBench's dates were close dates for 239 of the 536 markets) |
 | M7, what carries the score (Q3): the first 40 of the same sample, `nemotron-3-ultra:free`, one factor at a time against the default, paired on the same questions ($0) | A second research pass on sub-questions: −0.0003 Brier [−0.025, +0.022] for 1.8 more calls a question. One, three, five or nine forecasters: within 0.002 of each other. Trimmed mean and mean of log-odds: within 0.0014 of the median. A smaller second model mixed in: +0.006 [−0.015, +0.026]. Extremizing by 1.5: 0.027 worse [0.009, 0.048], the only resolved effect. The live default is unchanged |
@@ -268,7 +296,9 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 Q1 (does Augur beat the same-model template?) is not yet resolvable: no
 live question with both forecasts has resolved. Q5 (where it stands) has no
-reading: Augur has no scored forecast in any round yet. The decision rule is
+reading for Fall 2026: Augur has no scored forecast in any round, so it has
+no rank and no prize; the [postmortem](docs/postmortem-fall-2026.md) says
+why and what the season's backtests found. The decision rule is
 committed in PLAN.md; at an assumed per-question spread of 32 points (from
 the Spring 2026 winner's interval, not yet measured on Augur) a 5-point
 difference needs about 300 resolved questions.
@@ -312,6 +342,12 @@ difference needs about 300 resolved questions.
   answers, and not on Metaculus questions, where no map has yet been shown
   to be no worse than raw; a frontier model's forecasts stay raw until it
   has resolved history (the release gate keeps it off C4's earlier sets).
+- Spring 2027's FutureEval project id is not known yet; the schedule polls
+  Fall 2026 (`33121`) until `AUGUR_FUTUREEVAL` is set.
+- The ForecastBench same-question row compares a backtest with live
+  entries: the entrants forecast in real time with their own tools, so it
+  places the model and harness, it does not rank Augur on ForecastBench.
+- No demo GIF is committed; `docs/demo.tape` records one with `vhs`.
 - Q6's backtest is 39 to 135 questions of one free model on market
   questions; it cannot resolve an AUROC below about 0.68 (n = 39) or 0.60
   (n = 135) from chance. Its live half waits on resolved shadow-round or
@@ -319,13 +355,22 @@ difference needs about 300 resolved questions.
 
 ## Roadmap
 
-M2 (done) one OpenAI-compatible provider with probed model chains, and the
+Spring 2027: the maintainer approves a floor route (the proposed rule and
+the cost of a round on each admitted model are in RESULTS.md), sets
+`AUGUR_FUTUREEVAL` to the Spring project and makes the repository public so
+the dispatch chain runs; the shadow template runs beside every round, and
+Q1, Q5 and Q6's live half are read from the ledger branch as rounds resolve.
+The first experiment on a frontier model is the agentic research loop,
+the largest outside effect Augur has not shown on its own questions.
+
+Milestones: M1 (done) one question end to end; M2 (done) one OpenAI-compatible provider with probed model chains, and the
 repository public at its merge; M3 (done) every question type, a deadline
 per question, the scheduled workflow and the durable ledger; M4 (done) scoring checked against Metaculus's code, the shadow template, standings and the
 first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
 backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9 (done)
-"does it know when it does not know", against controls for overconfidence; M10 release and a season postmortem. Details in
+"does it know when it does not know", against controls for overconfidence; M10 (done) release (package, container, release workflow), the
+season's standing, the ForecastBench same-question row and the postmortem. Details in
 [PLAN.md](PLAN.md).
 
 ## Development
