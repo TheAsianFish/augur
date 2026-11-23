@@ -65,6 +65,19 @@ search the web), while Augur's arms are backtests of one free model (C1:
 a small local one), all but O without retrieval. This is a backtest row,
 never a place on ForecastBench's leaderboard.
 
+**Sensitivity (checked at review, from the snapshot).** Two readings in
+the verdicts below are fragile. P30's C4 half counts ForecastBench's
+web-search runs as zero-shot LLMs, as the reading rule says; they are 25 of
+the 77 and the strongest of them. Without them Augur ranks 34 of 53 on C4
+(median difference +0.0087), not in the bottom quarter; keeping only
+entrants compared on at least 50 instances it ranks 54 of 72, also not.
+P30 fails on C2 either way, so its verdict does not move. P33's failure
+rests on two entries of one team, Anonymous 18's raw forecasts and their
+Platt-calibrated version, on the same 183 instances, each with an upper
+bound of -0.004, among 309 external comparisons with no correction for
+multiplicity: in effect one marginal result, about what chance alone
+could produce.
+
 <!-- augur:begin fbcompare -->
 Source: ForecastBench's processed forecast sets (https://www.forecastbench.org/assets/data/processed-forecast-sets/processed_forecast_sets.tar.gz, 141,253,184 bytes, SHA-256 `3b3b9630f2ccf4da401e703266a116cdc7de535eabb4cb44c9a10d1c01315b0f`, last modified Tue, 17 Nov 2026 08:27:21 GMT, fetched 2026-11-23; CC BY-SA 4.0, Forecasting Research Institute), cut to Augur's instances in `data/forecastbench/forecast-sets/` by `scripts/extract_forecast_sets.py`; snapshot `data/forecastbench/m10-same-question.json` (`augur fbcompare`). A positive Augur − entrant means the entrant beat Augur on the same questions. Intervals: paired bootstrap over markets, 10,000 resamples, seeded. Each entrant is compared only on its non-imputed forecasts (n per row). Best and worst are by Augur − entrant, among the group's entrants compared on at least half its median n; the external rows are the 5 with the largest Augur − entrant under the same floor. Counts, ranks and medians use every entrant; full per-entrant numbers are in the snapshot.
 

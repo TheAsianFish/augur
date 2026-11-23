@@ -672,7 +672,9 @@ unedited).** Augur's arms reproduce their committed Brier exactly, and
 ForecastBench's files resolve every instance as Augur was scored. P30
 failed: on C2 the no-retrieval arm is level with the median zero-shot LLM
 shown no freeze value (+0.002) and ranks 13 of 23, not in the bottom
-quarter; on C4 it is worse (+0.017) and in the bottom quarter (59 of 78).
+quarter; on C4 it is worse (+0.017) and in the bottom quarter (59 of 78), but only
+because the group includes ForecastBench's web-search runs (34 of 53
+without them; noted at review, RESULTS.md).
 P31 failed: 17 of 22 entrants shown the freeze value (77%, not 90%) beat it
 with an interval above 0. P32 held: researched as of open, all 16 external
 entries beat it, by a median of +0.083 Brier. P33 failed: on C4 it beats two

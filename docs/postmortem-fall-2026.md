@@ -2,8 +2,7 @@
 
 Written 2026-11-23, at the release, as promised on Metaculus's credits form:
 what carried the score and what leakage was worth. The season is not over
-(Fall FutureEval runs to the new year; MiniBench has rounds from about
-2026-11-30 and 2026-12-14), so the final standings will be the `Standings`
+(Fall FutureEval and the last MiniBench rounds are still open), so the final standings will be the `Standings`
 workflow's last readings on the `ledger` branch. Every number below is in
 [RESULTS.md](../RESULTS.md) with its command, model, date and cost; a test
 fails the build if this file states one that RESULTS.md does not.
@@ -42,8 +41,9 @@ On resolved questions, in order of size:
    ordinary zero-shot LLM: level with ForecastBench's median zero-shot run
    on the same 138 questions (Augur ranks 13 of 23). Researched as of each
    question's open date, it still trails every one of the 16 external entries,
-   by a median of +0.0834 Brier. On MiniBench, Metaculus's agentic house bots beat their own
-   template on the same model by 7.7 to 16.2 points a question. Augur's research
+   by a median of +0.0834 Brier. On MiniBench, Metaculus's agentic house bots on frontier models
+   with live search beat their own template on the same model by 7.7 to
+   16.2 points a question. Augur's research
    is template-shaped (one plan, one brief), and the bounded loop I tried on
    the free model was 0.026 Brier worse than one pass [−0.005, +0.060].
 3. **Calibration, by source.** A Platt map fitted only on outcomes known
@@ -51,9 +51,12 @@ On resolved questions, in order of size:
    671 questions, all of it on Polymarket and Manifold. On the 190 Metaculus
    questions, the kind the bot forecasts live, the same map was 0.035
    worse than raw, so it is withheld there and live forecasts go out raw.
-4. **Fleet settings: nothing.** Two research passes, one to nine
-   forecasters, trimmed or log-odds means and a second model all sat within
-   noise of the default; extremizing by 1.5 cost 0.027 [0.009, 0.048]. Does
+4. **Fleet settings: little.** On M7's 40 questions, two research passes,
+   one to nine forecasters, trimmed or log-odds means and a second model
+   all sat within noise of the default; extremizing by 1.5 cost 0.027
+   [0.009, 0.048]. On C2's 138 questions, one draw was worse than the
+   median of three (+0.0223 [+0.0040, +0.0440]), so a few draws matter
+   and more than three did not measurably help. Does
    the fleet's disagreement predict its errors? Not at this n: the draws'
    spread scored an AUROC of 0.507 [0.405, 0.608].
 
@@ -63,8 +66,9 @@ The same forecaster, the same 64 questions and the same planned searches,
 read once as the pages stood when each question opened and once as they
 stand today: Brier 0.189 against 0.063, a difference (today minus open)
 of −0.1259 [−0.1930, −0.0652] from reading the future. Against no retrieval at all (0.205), today's pages
-are worth 0.142 [0.074, 0.217], about what El Lahib et al. published for
-the same comparison on Google results (0.136). Read as of open, research was worth nothing measurable
+are worth 0.142 [0.074, 0.217], close to the gap El Lahib et al. published
+on Google results (0.136), under a different protocol (their leaky arm
+keeps only documents a judge rated as leaking). Read as of open, research was worth nothing measurable
 over no retrieval (−0.016 [−0.050, +0.017]); read as of today, the bot
 appears to draw level with the market (−0.046 [−0.117, +0.022]) when as
 of open it trailed by 0.093 [0.013, 0.176]. A judge reading every source

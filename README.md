@@ -2,8 +2,8 @@
 
 **Status: 0.1.0, release candidate (M10 of 10).** Every milestone in
 [PLAN.md](PLAN.md) is built. Fall 2026 was the shakedown season: the bot
-posted no scored forecast, because no model in the frontier tier was
-available to it, and the [postmortem](docs/postmortem-fall-2026.md) says
+posted no scored forecast, because the submit floor admits only frontier-tier models and
+no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. Spring 2027 is the season to place in.
 
 A forecast about a real event is scored only after the event happens, often
@@ -273,7 +273,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 | Run | Outcome |
 |-----|---------|
 | M10, the season so far (Q5): every MiniBench and FutureEval leaderboard read 2026-11-23 | Augur has no entry in any round (0 scored forecasts; the floor refused the free models). The template on Augur's free model, `metac-nemotron-3-ultra+asknews`, averaged −7.66 [−14.51, −0.73] in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −15.55 so far in Fall FutureEval, where rank 1 (Panshul42) averages 20.86 on 38 scored questions. Final ranks are re-read daily by the `Standings` workflow |
-| M10, ForecastBench same-question row: Augur's backtest arms against every entrant's published forecasts on the same question instances (C1, C2, O, C4; $0, no model call) | Without retrieval the free model is an ordinary zero-shot LLM: on C2 it ranks 13 of 23 among ForecastBench's zero-shot runs shown no price (median difference +0.002 Brier), on C4 59 of 78 (each entrant on only the sets it entered, and ForecastBench's runs renamed in July count as two entrants). Shown the price, 17 of 22 of those models beat it with an interval above 0. Researched as of open (64 questions), every one of the 16 external entries beats it, by a median of +0.083. A backtest placing, not a leaderboard rank |
+| M10, ForecastBench same-question row: Augur's backtest arms against every entrant's published forecasts on the same question instances (C1, C2, O, C4; $0, no model call) | Without retrieval the free model is an ordinary zero-shot LLM: on C2 it ranks 13 of 23 among ForecastBench's zero-shot runs shown no price (median difference +0.002 Brier), on C4 59 of 78, or 34 of 53 without ForecastBench's web-search runs (each entrant on only the sets it entered, and ForecastBench's runs renamed in July count as two entrants). Shown the price, 17 of 22 of those models beat it with an interval above 0. Researched as of open (64 questions), every one of the 16 external entries beats it, by a median of +0.083. A backtest placing, not a leaderboard rank |
 | M9, does the fleet know when it does not know (Q6): draws already in the ledgers, 135 and 39 ForecastBench market questions, `nemotron-3-ultra:free` (and `nemotron-3-nano:free` for the model gap); every policy against constant shrinkage and the source-aware calibrator, fitted leave-one-out ($0) | No disagreement measure predicts a large error: draw spread AUROC 0.507 [0.405, 0.608] on 135 questions; research passes 0.53, the two-model gap 0.33 on 39. A plain constant shrink beats raw (−0.007 [−0.014, −0.000]); scaling it by disagreement adds −0.005, inside the interval. Skipping the most-disagreed quarter gains +7.3 points against forecasting everything but +0.8 [−3.0, +5.1] against skipping at random. Not resolvable at this n (an AUROC of 0.6 needs about 250 questions); the pre-registered label proved to mark hedged forecasts; the live test is registered by question-id parity and has 0 resolutions |
 | M8, calibration learned from resolved history (Q4): 926 ForecastBench market questions over nine sets, `nemotron-3-ultra:free`, no retrieval; each question calibrated only on questions resolved before it opened ($0, 802 free calls) | By source first: the gain is all on Polymarket and Manifold (−0.041 and −0.051 Brier against raw); on the 190 Metaculus questions, the nearest to what the bot forecasts live, pooled Platt is 0.035 *worse* than raw [0.013, 0.054]. Source-aware maps (per-source, or partially pooled with a shrunk per-source intercept) cut that to +0.014 and +0.019 but are not shown to be no worse than raw (upper bounds +0.032, +0.043), so the live map is withheld from Metaculus questions and live forecasts go out raw. Overall, on 671 walk-forward questions, Platt is 0.022 better than raw [0.007, 0.037] and cuts calibration error 0.152 → 0.069; extremizing by 1.5 hurts (+0.015). Outcomes are dated by the markets' own APIs (ForecastBench's dates were close dates for 239 of the 536 markets) |
 | M7, what carries the score (Q3): the first 40 of the same sample, `nemotron-3-ultra:free`, one factor at a time against the default, paired on the same questions ($0) | A second research pass on sub-questions: −0.0003 Brier [−0.025, +0.022] for 1.8 more calls a question. One, three, five or nine forecasters: within 0.002 of each other. Trimmed mean and mean of log-odds: within 0.0014 of the median. A smaller second model mixed in: +0.006 [−0.015, +0.026]. Extremizing by 1.5: 0.027 worse [0.009, 0.048], the only resolved effect. The live default is unchanged |
@@ -287,7 +287,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 | M4, what a bot token sees of resolved questions | 0 of 80 resolved posts (two MiniBench rounds, Fall and Spring 2026) show a resolution, an aggregate or a score |
 | M4, MiniBench 2026-11-02 standings (435 entries, 59 questions) | Rank 1 averaged 22.77 spot peer points a question, the best template bot 3.66, the community aggregates (of the bots themselves in MiniBench) 5.06 to 7.56, the median bot 50.0 summed over 19 questions; Augur has no entry (the floor has kept it out until a frontier model answers) |
 | M4, shadow template on 3 bot-testing-area questions (same free model as Augur, unpublished, $0) | All three recorded; close to Augur's own forecasts on each; none resolved yet |
-| M3, every question type in the bot-testing-area (free OpenRouter models, $0) | 11 of 11 forecasts accepted by the live API (2 numeric, 2 discrete, 1 multiple choice, 1 binary; HTTP 201 each), each with a private comment |
+| M3, every question type in the bot-testing-area (free OpenRouter models, $0) | 11 of 11 forecasts accepted by the live API over two runs on the practice area's six questions (2 numeric, 2 discrete, 1 multiple choice, 1 binary; HTTP 201 each), each with a private comment |
 | M3, MiniBench windows over 16 rounds | 954 questions, 47% not binary; every window since June exactly 3.00 h; median 0.67 h between opens |
 | M3, GitHub's cron on 55 public bot repositories (2,813 scheduled runs) | Crons every 20 min or less ran on 5.0% of ticks (median 5.5 h between runs); the two on-time workflows: delay p50 9 min, p99 108 min |
 | M3, cadence simulated on the measured windows and delays | Every 90 min catches 99.25% of 3-hour windows for about 979 billed min a month while private; throttled as most forks are, no cron catches over 43%, hence the dispatch-chain fallback |
@@ -352,8 +352,7 @@ difference needs about 300 resolved questions.
   places the model and harness, it does not rank Augur on ForecastBench.
 - No demo GIF is committed; `docs/demo.tape` records one with `vhs`.
 - Q6's backtest is 39 to 135 questions of one free model on market
-  questions; it cannot resolve an AUROC below about 0.68 (n = 39) or 0.60
-  (n = 135) from chance. Its live half waits on resolved shadow-round or
+  questions; an AUROC of 0.6 needs about 250 questions to clear 0.5. Its live half waits on resolved shadow-round or
   scored questions.
 
 ## Roadmap
