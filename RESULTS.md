@@ -4,7 +4,11 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M9 asks whether disagreement
+committed file differs from a fresh render. M10 records the season's
+standing (Augur has no scored forecast), places Augur's backtest arms
+beside every ForecastBench entrant on the same questions, and checks the
+release (a fresh clone, the built package, the release workflow and the
+container). M9 asks whether disagreement
 among the fleet's forecasts predicts its errors (Q6), against controls for
 plain overconfidence, and pre-registers the live test; it also makes the
 calibrator source-aware, which withholds M8's map from Metaculus questions.
@@ -197,6 +201,17 @@ Predictions stated in PLAN.md before the comparison:
 - P32 (Researched as of open (O, 64 questions), Augur is still worse than the median external entry on the same questions (point estimate).): **held**. O: median Augur − entrant over 16 external entries +0.0834 on the same questions (median n 64); 16 of 16 beat Augur (point estimate). Read as: the median of Augur − entrant over the external entries, on O's 64 questions.
 - P33 (No Augur arm beats any external entry with an interval wholly below 0.): **failed**. external entries with an interval of Augur − entrant wholly below 0: 2 (C1 14, C2 16, O 16, C4 309 entries compared): C4: Anonymous 18 / blind-36b1beb99820 -0.0351 [-0.0667, -0.0041]; C4: Anonymous 18 / blind-36b1beb99820+platt209 -0.0379 [-0.0709, -0.0038]. Read as: every external entry on C1, C2, O and C4; an entry compared on one market has no interval and cannot count.
 <!-- augur:end fbcompare -->
+
+### Release readiness (2026-11-23, $0)
+
+| Check | Command | Result | Raw output |
+|---|---|---|---|
+| A fresh clone runs the README quickstart | `git clone` of this branch into an empty directory, then the quickstart under `env -i PATH HOME` (no token, no key): `uv sync`, `ollama pull qwen2.5:7b`, `augur forecast --tournament minibench`, `augur ledger check augur.db` | The committed sample question forecast in a dry run (5 draws, 5 Wikipedia revisions admitted, 0 rejected), the comment it would post printed, 13 min 50 s on a 4-core CPU shared with other jobs; ledger scan 0 violations | `data/runs/m10-fresh-clone-quickstart.txt` |
+| The built package works outside the repository | `make install-check` | Wheel 291,626 bytes, sdist 558,884 bytes (ledgers, runs and CI left out); `twine check` passed both; each installed into a fresh Python 3.12 venv run from an empty directory with no network: `--help`, `models list` from the bundled snapshot, a dry run on the sample bundled in the wheel, the leakage scan, scoring a committed backtest ledger (Brier 0.2395, as in M4) and an export, import and re-score that matches; with Ollama, a full dry run from the wheel. PASS (19 checks; 18 without the local model, re-run at review) | `data/runs/m10-install-check.txt` |
+| The release workflow dry-runs | `act workflow_dispatch -W .github/workflows/release.yml --input dry_run=true -j build` (act 0.2.98) and `act -n` for a dispatch and for a pushed `v0.1.0` tag | The build job ran in a container and succeeded (`make check` 1 min 38 s, the install check, `uv build`, `twine check`, the artifact upload). A dispatch never plans the publish job; a tag plans the tag-against-version check and the trusted-publishing upload. The tag check run alone: `v0.1.0` passes, `v0.1.1` exits 1. Nothing was published | `data/runs/m10-release-dry-run.txt` |
+| The bot runs outside Actions | `make docker`, then `docker run` with `--network none` (help, model list, the sample listing) and with the host's Ollama (a dry run) | Image `augur-forecast:0.1.0`, 202 MB on disk, runs as a non-root user (uid 10001), ledger on the `/data` volume; the dry run forecast the sample question and its ledger scanned clean (0 violations) | `data/runs/m10-docker.txt` |
+| A ledger survives the round trip | `augur ledger export` then `augur ledger import` of `m4-forecastbench-qwen.sqlite` | Every data table has the same row count (979 rows exported, 974 imported: the 5 old `schema_migrations` rows are not copied, the new ledger records its own 7) | this table |
+| README and postmortem numbers trace to this file | `tests/test_readme_claims.py` in `make check` | Every decimal, percentage and "N of M" count in README.md and `docs/postmortem-fall-2026.md` appears in RESULTS.md as written; at its first run six README numbers did not and were corrected | `make check` |
 
 ## M9: does the fleet know when it does not know? (2026-11-22)
 
@@ -1859,6 +1874,10 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| The season's final ranks and any prize (Q5) | Fall FutureEval and the last MiniBench rounds are still open on 2026-11-23, and Augur has no scored forecast in any of them | Nothing to run by hand: the `Standings` workflow re-reads them daily onto the `ledger` branch; to render one here, `augur standings --round SLUG --out data/standings/SLUG.json && make results` |
+| Publishing 0.1.0 to PyPI and the first real run of the publish job | Publishing is the maintainer's step (trusted publisher, `pypi` environment) | RELEASE.md, "Releasing 0.1.0": `gh workflow run release.yml -f dry_run=true`, then `git tag v0.1.0 && git push origin v0.1.0` |
+| The release and standings workflows on GitHub itself | No GitHub credentials here; both ran under `act` or step by step locally (`data/runs/m10-standings-step.txt`) | `gh workflow run release.yml -f dry_run=true`; `gh workflow run standings.yml` and check `standings/` on the `ledger` branch |
+| The demo GIF | Needs `vhs` and a terminal recording | `vhs docs/demo.tape` |
 | Q6's live half, as pre-registered (M9) | 0 units in the committed ledgers (only runs from the registration on count); the analysis is due when the odd-id half has 60 resolved binary questions or on 2027-03-31 | After each shadow or scored round: commit its ledger to `data/ledgers/`, then `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` where the bot token is blind) and `augur q6 && make results`; the block reports the paired comparisons once due |
 | Q6 at an n that can resolve it, on the wrong-side label | An AUROC of 0.6 needs about 250 questions; the policies need 95 to 1,063 for 0.01 Brier. C2 has 138 eligible questions, and C4 has one draw each | Three to five draws per question on C4's later sets (`AUGUR_FORECASTERS=3 augur backtest forecastbench --questions ... --ledger data/ledgers/m9-c4-draws.sqlite` per set; about 2,400 free calls over three days), a new pre-registration with the wrong-side label, then the same analysis |
 | The $0 shadow round: Augur and the real template, same free model, unpublished, on MiniBench 2026-11-30 (Q1, direction of 2026-11-22) | The round opens about 2026-11-30, after this milestone | During the round: `AUGUR_FORECAST_MODELS=openrouter:nvidia/nemotron-3-ultra-550b-a55b:free AUGUR_LEDGER=data/ledgers/m10-shadow-minibench.sqlite augur forecast --tournament minibench --coverage cov.json` (no `--submit`) each window, and `uv sync --extra baseline && augur baseline --ledger data/ledgers/m10-shadow-minibench.sqlite`; commit the ledger before resolution; after it, `augur resolve --ledger L` and `augur score L --mode live --cluster week`, labelled an unsubmitted shadow comparison on a below-floor model |
