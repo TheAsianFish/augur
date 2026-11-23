@@ -41,7 +41,7 @@ def test_only_a_pushed_tag_reaches_the_publish_job() -> None:
     assert f"    {TAG_GUARD}\n" in publish, "the job-level guard is missing"
     assert "needs: build" in publish
     assert "environment:\n      name: pypi" in publish
-    assert "pypa/gh-action-pypi-publish@release/v1" in publish
+    assert re.search(r"pypa/gh-action-pypi-publish@[0-9a-f]{40}\b", publish)  # pinned to a commit
 
 
 def test_id_token_write_is_granted_to_the_publish_job_alone() -> None:
@@ -69,3 +69,9 @@ def test_the_build_job_runs_the_gates_and_checks_the_tag() -> None:
         assert step in build, step
     assert TAG_GUARD in build, "the tag-equals-version step must run on tags"
     assert "v$version" in build
+
+
+def test_a_tag_publishes_only_from_a_commit_on_main() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+    assert 'git merge-base --is-ancestor "$GITHUB_SHA" origin/main' in text
+    assert "fetch-depth: 0" in text

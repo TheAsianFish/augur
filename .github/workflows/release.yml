@@ -29,6 +29,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # the tag check below needs main's history
       - uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
@@ -48,6 +50,13 @@ jobs:
             exit 1
           fi
           echo "tag $TAG matches version $version"
+          # A release comes only from a commit that is on main (which passed CI).
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::tag $TAG points at a commit that is not on main"
+            exit 1
+          fi
+          echo "tag $TAG is on main"
       - name: Clean-environment install check (sdist and wheel, fresh venvs, offline)
         run: make install-check
       - name: Build the distributions
@@ -78,4 +87,4 @@ jobs:
           name: dist
           path: dist/
       - name: Publish to PyPI (trusted publishing, no token)
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1, pinned 2026-11-23
