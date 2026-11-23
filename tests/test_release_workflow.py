@@ -75,3 +75,19 @@ def test_a_tag_publishes_only_from_a_commit_on_main() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
     assert 'git merge-base --is-ancestor "$GITHUB_SHA" origin/main' in text
     assert "fetch-depth: 0" in text
+
+
+def test_every_action_that_touches_the_distributions_is_pinned_to_a_commit() -> None:
+    jobs = _jobs()
+    for name, pattern in (
+        ("build", r"actions/upload-artifact@(\S+)"),
+        ("publish", r"actions/download-artifact@(\S+)"),
+        ("publish", r"pypa/gh-action-pypi-publish@(\S+)"),
+    ):
+        ref = re.search(pattern, jobs[name])
+        assert ref, (name, pattern)
+        assert re.fullmatch(r"[0-9a-f]{40}", ref.group(1)), (name, pattern)
+
+
+def test_the_release_build_restores_no_shared_cache() -> None:
+    assert "enable-cache: false" in _jobs()["build"]
