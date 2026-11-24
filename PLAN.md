@@ -1253,6 +1253,85 @@ candidate's head-to-head against Augur has an interval that includes 0.
 The numeric rule has no backtest (every committed corpus is binary); its
 live coverage and score are reported, and that limit is stated.
 
+**M12's registration, committed 2026-11-24 before any M12 code or run.**
+This is the exact text; RESULTS.md carries it byte for byte (rendered from
+this block). Nothing on C4 has been computed with the arm or either blend
+when it is committed.
+
+<!-- m12-registration:begin -->
+**M12's statistical arm, its blends and its predictions, registered
+2026-11-24, before the arm is built or run on anything.**
+
+1. *The arm* (`augur/statarm.py`, no model call). Binary: the question's
+   own price where the markets searcher reads an exact one (a `match =
+   exact` quote dated at or before the cutoff); otherwise the base rate of
+   the question's source, the Laplace-smoothed frequency (yes + 1) / (n +
+   2) of that source's outcomes public before the question opened, or of
+   every source's if that source has fewer than 20. Numeric and discrete:
+   the series rule below. Multiple choice, and anything the rules do not
+   reach: the arm abstains, and says why.
+2. *The series rule.* A question is about a quoted series only if its
+   title names a ticker in parentheses or one of the fixed aliases in
+   `augur/research/series.py` (named stock indices, Bitcoin, Ether,
+   currency pairs, gold, WTI and Brent), asks for a close, closing price
+   or level, and names the day; the value is that series' daily close on
+   that day. The series comes from one free keyless source verified before
+   this registration (Yahoo Finance's chart endpoint; FRED and Stooq
+   answer this environment with a browser challenge). Each observation of
+   trading day D is dated 00:00 UTC of D + 1, is admitted only if that is
+   at or before the cutoff, and the series is written to the ledger as one
+   dated source before the arm uses it, so the leakage gate covers it. The
+   forecast is the last admitted close times exp(c), c drawn from the
+   empirical distribution of the series' own log changes over h
+   observations in its last two years of daily closes, h the number of
+   observations the series averaged over the last 365 days for the
+   calendar days from the last close to the target day (at least 1); the
+   levels 1, 5, 10, 20, ..., 90, 95 and 99% go through
+   `cdf_from_percentiles`. It abstains with fewer than 100 such changes, or
+   when the last close lies outside the question's range (a unit
+   mismatch).
+3. *The primary candidate*, the one combination the floor may admit:
+   one-third Augur and two-thirds arm, in log-odds for binary (both
+   clipped to [0.01, 0.99]) and as a mixture of CDFs for numeric and
+   discrete, **only where the arm has a price or a series**; everywhere
+   else it is Augur's forecast unchanged. The weight is M5's
+   `BLEND_WEIGHT`, fixed before M5's first run.
+4. *Reported, never a candidate:* the arm alone; the base-rate blend (the
+   same one-third weight wherever the arm has any value, base rates
+   included); Augur alone.
+5. *The floor, amended for the 2026-11-30 round.* If this registration is
+   on `main` before that round's first question opens, the candidate in
+   item 1 of M11's floor rule is the primary candidate above, read from
+   the ledger's `blend` reference rows (`augur floor --candidate blend`);
+   items 2 to 8 are unchanged, with the template as the opponent. If it is
+   not on `main` by then, M11's item 1 stands as written. The shadow job
+   records `stat` and `blend` rows before each question closes; Augur's
+   own aggregate is scored beside it and is not a candidate.
+6. *C4, no model call.* M8's walk-forward instances W (each instance's
+   base rate fitted only on outcomes public before it opened), Augur =
+   the raw no-retrieval forecast, priced = Polymarket and Manifold
+   instances with a freeze price (Metaculus and INFER prices are hidden
+   from the bot). Brier differences paired by instance, 95% bootstrap
+   intervals resampling markets (10,000 resamples, seeded), reported
+   overall and by source by `augur statarm`, re-checked by `make eval`.
+
+| # | Prediction |
+|---|------------|
+| P34 | On W's priced instances, Brier(primary candidate) − Brier(Augur) has its interval below 0: M5's gain on C2 replicates on C4 (a replication, not a new finding). |
+| P35 | On W's priced instances, Brier(primary candidate) − Brier(price alone) is above 0 (point estimate): the price alone stays at least as good, as on C2 (0.129 against 0.106). |
+| P36 | On W's Metaculus instances, Brier(base-rate blend) − Brier(Augur) is between +0.01 and +0.04 (point estimate). |
+| P37 | On all of W, Brier(arm alone) − Brier(Augur) has its interval below 0. |
+| P38 | The series rule matches fewer than 12 of the 60 questions of the 2026-11-16 round's list, and fewer than 12 of the 2026-11-30 round's. |
+| P39 | On the 2026-11-30 round, the primary candidate's mean head-to-head against Augur alone has a 90% interval that includes 0. |
+| P40 | The floor's verdict on the primary candidate for the 2026-11-30 round is *not admitted*. |
+
+**Reading rule.** A prediction is marked held or failed as written,
+never edited. Nothing goes live from C4: the candidate reaches a
+submission only through the floor rule. The series rule has no backtest
+(every committed corpus is binary), so its live coverage and scores are
+reported with that limit stated.
+<!-- m12-registration:end -->
+
 ### M13: is the limit the evidence or the model?
 
 **Question.** Does dated news move the as-of-open arm on M6's fixed 64

@@ -1735,6 +1735,22 @@ def render_floor_rule(root: Path) -> str:
     return m.group("body")
 
 
+# -- M12: the statistical arm's registration ----------------------------------------
+
+M12_REGISTRATION = re.compile(
+    r"<!-- m12-registration:begin -->\n(?P<body>.*?)<!-- m12-registration:end -->", re.S
+)
+
+
+def render_m12_registration(root: Path) -> str:
+    """M12's registration exactly as PLAN.md committed it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = M12_REGISTRATION.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no m12-registration block")
+    return m.group("body")
+
+
 # -- M10: the ForecastBench same-question row -------------------------------------
 
 FBCOMPARE_TOP = 5
@@ -1876,6 +1892,7 @@ BLOCKS: dict[str, Block] = {
         Block("q6-preregistration", render_q6_preregistration),
         Block("fbcompare", render_fbcompare),
         Block("floor-rule", render_floor_rule),
+        Block("m12-registration", render_m12_registration),
     )
 }
 
