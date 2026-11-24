@@ -25,6 +25,7 @@ from augur import (
     scorecard,
     shadow,
     standings,
+    stateval,
 )
 from augur.backtest import (
     PLAN_SUFFIX,
@@ -388,6 +389,21 @@ def _parser() -> argparse.ArgumentParser:
     )
     cal.add_argument("--out", type=Path, default=q4.SNAPSHOT)
     cal.add_argument(
+        "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
+    )
+
+    sa = sub.add_parser(
+        "statarm",
+        help="M12: the statistical arm and its blends on C4, with no model call",
+        description=(
+            "Score the model-free arm (price where readable, else the source's base rate) "
+            "and the registered blends against Augur's raw forecast in M8's walk-forward "
+            "harness on corpus C4, by source, and write the snapshot RESULTS.md renders "
+            "from and the base rates the live arm uses. Offline, free, deterministic."
+        ),
+    )
+    sa.add_argument("--out", type=Path, default=stateval.SNAPSHOT)
+    sa.add_argument(
         "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
     )
 
@@ -951,6 +967,22 @@ def _fbcompare(args: argparse.Namespace) -> int:
     return 0
 
 
+def _statarm(args: argparse.Namespace) -> int:
+    written = stateval.files(Path.cwd(), args.out)
+    if args.check:
+        stale = [p for p, text in written.items() if not p.exists() or p.read_text("utf-8") != text]
+        for p in stale:
+            print(f"{p} differs from a fresh run; run augur statarm")
+        if not stale:
+            print(f"{args.out} and the live base rates match a fresh run")
+        return 1 if stale else 0
+    for p, text in written.items():
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        print(f"wrote {p}")
+    return 0
+
+
 def _calibrate(args: argparse.Namespace) -> int:
     out: Path = args.out
     snap = q4.snapshot(Path.cwd())
@@ -1041,6 +1073,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _power(args)
         if args.command == "calibrate":
             return _calibrate(args)
+        if args.command == "statarm":
+            return _statarm(args)
         if args.command == "q6":
             return _q6(args)
         if args.command == "fbcompare":

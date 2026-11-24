@@ -102,6 +102,48 @@ submission only through the floor rule. The series rule has no backtest
 reported with that limit stated.
 <!-- augur:end m12-registration -->
 
+### The arm and both blends on C4 (2026-11-24, no model call, $0)
+
+`augur statarm` (re-checked by `make eval`); snapshot
+`data/statarm/m12-c4.json`. On C4 the arm is the freeze price where the bot
+could read it live (Polymarket, Manifold) and the source's walk-forward base
+rate elsewhere; there is no numeric question in any committed corpus, so the
+series rule is not in this table.
+
+<!-- augur:begin statarm -->
+Corpus C4, `nvidia/nemotron-3-ultra-550b-a55b:free`, no retrieval, one draw; M8's walk-forward set W: 671 of 926 instances, 425 markets. No model call, $0. Brier score (lower is better); differences are paired by instance with a 95% bootstrap interval resampling markets (10,000 resamples, seeded).
+
+| Group | n (markets) | Base rate | Arm used | Augur | Arm alone | Primary candidate | Base-rate blend | Price alone |
+|---|---|---|---|---|---|---|---|---|
+| All of W | 671 (425) | 0.334 | base-rate 191, price 480 | 0.2240 | 0.1466 | 0.1455 | 0.1494 | hidden |
+| Priced (Polymarket, Manifold) | 480 (344) | 0.398 | price 480 | 0.2682 | 0.1353 | 0.1584 | 0.1584 | 0.1353 |
+| Unpriced (Metaculus, INFER) | 191 (81) | 0.173 | base-rate 191 | 0.1129 | 0.1753 | 0.1129 | 0.1267 | hidden |
+| Polymarket | 341 (272) | 0.399 | price 341 | 0.2556 | 0.1433 | 0.1589 | 0.1589 | 0.1433 |
+| Manifold | 139 (72) | 0.396 | price 139 | 0.2989 | 0.1154 | 0.1574 | 0.1574 | 0.1154 |
+| Metaculus | 190 (80) | 0.168 | base-rate 190 | 0.1115 | 0.1741 | 0.1115 | 0.1253 | hidden |
+| INFER | 1 (1) | 1.000 | base-rate 1 | 0.3844 | 0.3933 | 0.3844 | 0.3904 | hidden |
+
+Each arm minus Augur (negative: the arm is better than the model's raw forecast), and on priced instances each minus the price alone:
+
+| Group | Arm alone − Augur | Primary candidate − Augur | Base-rate blend − Augur | Primary candidate − price |
+|---|---|---|---|---|
+| All of W | -0.077 [-0.110, -0.046] | -0.079 [-0.099, -0.060] | -0.075 [-0.097, -0.054] | — |
+| Priced (Polymarket, Manifold) | -0.133 [-0.172, -0.095] | -0.110 [-0.137, -0.084] | -0.110 [-0.137, -0.084] | +0.023 [+0.008, +0.038] |
+| Unpriced (Metaculus, INFER) | +0.062 [+0.017, +0.107] | 0 (Augur unchanged) | +0.014 [-0.015, +0.039] | — |
+| Polymarket | -0.112 [-0.156, -0.069] | -0.097 [-0.127, -0.069] | -0.097 [-0.127, -0.069] | +0.015 [-0.002, +0.033] |
+| Manifold | -0.184 [-0.271, -0.104] | -0.141 [-0.206, -0.086] | -0.141 [-0.206, -0.086] | +0.042 [+0.016, +0.072] |
+| Metaculus | +0.063 [+0.017, +0.107] | 0 (Augur unchanged) | +0.014 [-0.015, +0.039] | — |
+| INFER | +0.009 (n = 1, no interval) | 0 (Augur unchanged) | +0.006 (n = 1, no interval) | — |
+
+| # | Statistic | Estimate | Registered rule | Verdict |
+|---|---|---|---|---|
+| P34 | priced: Brier(candidate) - Brier(Augur) | -0.110 [-0.137, -0.084] | interval below 0 | **held** |
+| P35 | priced: Brier(candidate) - Brier(price) | +0.023 [+0.008, +0.038] | point estimate above 0 | **held** |
+| P36 | Metaculus: Brier(base-rate blend) - Brier(Augur) | +0.014 [-0.015, +0.039] | point estimate between +0.01 and +0.04 | **held** |
+| P37 | all of W: Brier(arm) - Brier(Augur) | -0.077 [-0.110, -0.046] | interval below 0 | **held** |
+<!-- augur:end statarm -->
+
+
 ## M11: the shadow round and the rule that decides the floor (Q1)
 
 The rule below was committed before the 2026-11-30 MiniBench round opened

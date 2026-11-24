@@ -1751,6 +1751,90 @@ def render_m12_registration(root: Path) -> str:
     return m.group("body")
 
 
+# -- M12: the statistical arm on C4 ---------------------------------------------------
+
+STATARM_PATH = Path("data/statarm/m12-c4.json")
+STATARM_GROUPS = {
+    "all": "All of W",
+    "priced": "Priced (Polymarket, Manifold)",
+    "unpriced": "Unpriced (Metaculus, INFER)",
+    "polymarket": "Polymarket",
+    "manifold": "Manifold",
+    "metaculus": "Metaculus",
+    "infer": "INFER",
+}
+STATARM_ARMS = {
+    "arm": "arm alone",
+    "candidate": "primary candidate",
+    "base-rate-blend": "base-rate blend",
+}
+
+
+def _stat_diff(e: dict[str, Any]) -> str:
+    if e["n"] < 2 or e["clusters"] < 2:
+        return f"{e['mean']:+.3f} (n = {e['n']}, no interval)"
+    return f"{e['mean']:+.3f} [{e['low']:+.3f}, {e['high']:+.3f}]"
+
+
+def render_statarm(root: Path) -> str:
+    path = root / STATARM_PATH
+    if not path.exists():
+        return "M12's C4 comparison has not been run (`augur statarm`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    c = snap["corpus"]
+    out = [
+        f"Corpus C4, `{c['model']}`, no retrieval, one draw; M8's walk-forward set W: "
+        f"{c['w_instances']} of {c['instances']} instances, {c['w_markets']} markets. No model "
+        "call, $0. Brier score (lower is better); differences are paired by instance with "
+        "a 95% bootstrap interval resampling markets (10,000 resamples, seeded).",
+        "",
+        "| Group | n (markets) | Base rate | Arm used | Augur | Arm alone | Primary "
+        "candidate | Base-rate blend | Price alone |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for g in snap["groups"]:
+        b = g["brier"]
+        kinds = ", ".join(f"{k} {n}" for k, n in g["arm_kinds"].items())
+        price = f"{b['price']:.4f}" if "price" in b else "hidden"
+        out.append(
+            f"| {STATARM_GROUPS[g['group']]} | {g['n']} ({g['markets']}) | {g['base_rate']:.3f} "
+            f"| {kinds} | {b['augur']:.4f} | {b['arm']:.4f} | {b['candidate']:.4f} "
+            f"| {b['base-rate-blend']:.4f} | {price} |"
+        )
+    out += [
+        "",
+        "Each arm minus Augur (negative: the arm is better than the model's raw forecast), "
+        "and on priced instances each minus the price alone:",
+        "",
+        "| Group | Arm alone − Augur | Primary candidate − Augur | Base-rate blend − Augur "
+        "| Primary candidate − price |",
+        "|---|---|---|---|---|",
+    ]
+    for g in snap["groups"]:
+        va, vp = g["vs_augur"], g["vs_price"]
+        cand = (
+            "0 (Augur unchanged)"
+            if all(k == "base-rate" for k in g["arm_kinds"])
+            else _stat_diff(va["candidate"])
+        )
+        vs_price = _stat_diff(vp["candidate"]) if vp else "—"
+        out.append(
+            f"| {STATARM_GROUPS[g['group']]} | {_stat_diff(va['arm'])} | {cand} "
+            f"| {_stat_diff(va['base-rate-blend'])} | {vs_price} |"
+        )
+    out += [
+        "",
+        "| # | Statistic | Estimate | Registered rule | Verdict |",
+        "|---|---|---|---|---|",
+    ]
+    for h in snap["hypotheses"]:
+        out.append(
+            f"| {h['id']} | {h['statistic']} | {_stat_diff(h['estimate'])} | {h['rule']} "
+            f"| **{h['verdict']}** |"
+        )
+    return "\n".join(out) + "\n"
+
+
 # -- M10: the ForecastBench same-question row -------------------------------------
 
 FBCOMPARE_TOP = 5
@@ -1893,6 +1977,7 @@ BLOCKS: dict[str, Block] = {
         Block("fbcompare", render_fbcompare),
         Block("floor-rule", render_floor_rule),
         Block("m12-registration", render_m12_registration),
+        Block("statarm", render_statarm),
     )
 }
 

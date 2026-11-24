@@ -84,7 +84,8 @@ done
 check "wheel carries the runtime data files" "augur/samples/minibench/post_" \
     python3 -c 'import sys, zipfile
 names = set(zipfile.ZipFile(sys.argv[1]).namelist())
-need = ["augur/py.typed", "augur/live_calibrator.json", "augur/llm/openrouter_models.json",
+need = ["augur/py.typed", "augur/live_calibrator.json", "augur/stat_base_rates.json",
+        "augur/llm/openrouter_models.json",
         "augur/migrations/0001_initial.sql"]
 missing = [n for n in need if n not in names]
 samples = sorted(n for n in names if n.startswith("augur/samples/minibench/post_"))
