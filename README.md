@@ -1,12 +1,14 @@
 # Augur
 
-**Status: 0.1.0, release candidate; M11 of 13 built.** Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M12 of 13 built.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. The 2026-11-30 MiniBench round runs as
 an unattended shadow round against Metaculus's template bot on the same free
 model, under a rule registered before it opened that decides whether the
-free model may submit. Spring 2027 is the season to place in.
+free model may submit; the candidate it judges is one blend registered in
+advance, one-third Augur and two-thirds a forecast with no model in it.
+Spring 2027 is the season to place in.
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -127,6 +129,27 @@ uv run augur floor --round ROUND --ledger shadow.sqlite  # admitted, not admitte
 round opened (RESULTS.md carries it verbatim): the free model may submit
 to MiniBench only if the 90% interval of its head-to-head against the
 shadow template, and of the peer score that implies, both sit above 0.
+
+### A forecast with no model in it (M12)
+
+On the questions where the free model is worst, something simpler already
+knows more: a market price, or for a stock or index close, the series'
+own history. The statistical arm (`augur/statarm.py`) makes no model call.
+On a binary question it is the question's own price where the markets
+searcher reads one, otherwise the base rate of its source. On a numeric
+question about a quoted series it is the last close times the empirical
+distribution of the series' past changes over the same horizon. Each close
+comes from Yahoo Finance's keyless chart endpoint, is dated 00:00 UTC of the
+next day and is written to the ledger as a dated source, so the leakage gate
+covers it. Anywhere else the arm abstains and says why. Every shadow tick
+writes the arm (`stat`) and the registered candidate (`blend`: one-third
+Augur, two-thirds arm, only where the arm has a price or a series) beside
+Augur's own forecast, and `augur floor --candidate blend` scores the blend.
+
+```sh
+uv run augur statarm                    # the arm and both blends on C4, no model call
+uv run augur floor --round ROUND --ledger shadow.sqlite --candidate blend
+```
 
 Presets: `openrouter`, `groq`, `gemini`, `github` (each reads its own key
 variable) and `ollama`; any other OpenAI-compatible host is
@@ -298,6 +321,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M12, the statistical arm and the registered blend on C4 (671 walk-forward instances, $0, no model call); all four predictions held | Where the bot could read a price (480 instances), the primary candidate beats the model's raw forecast by −0.110 [−0.137, −0.084] Brier, and the price alone is still better than the blend (+0.023 [+0.008, +0.038]). On the 190 Metaculus-written instances, where there is no price, the base rate alone is worse than the raw model (+0.063 [+0.017, +0.107]), so the candidate leaves Augur's forecast unchanged there. On the 2026-11-16 round's 60 questions the series rule reaches 7 and forecasts 5; the live comparison is the 2026-11-30 round (To measure) |
 | M10, the season so far (Q5): every MiniBench and FutureEval leaderboard read 2026-11-23 | Augur has no entry in any round (0 scored forecasts; the floor refused the free models). The template on Augur's free model, `metac-nemotron-3-ultra+asknews`, averaged −7.66 [−14.51, −0.73] in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −15.55 so far in Fall FutureEval, where rank 1 (Panshul42) averages 20.86 on 38 scored questions. Final ranks are re-read daily by the `Standings` workflow |
 | M10, ForecastBench same-question row: Augur's backtest arms against every entrant's published forecasts on the same question instances (C1, C2, O, C4; $0, no model call) | Without retrieval the free model is an ordinary zero-shot LLM: on C2 it ranks 13 of 23 among ForecastBench's zero-shot runs shown no price (median difference +0.002 Brier), on C4 59 of 78, or 34 of 53 without ForecastBench's web-search runs (each entrant on only the sets it entered, and ForecastBench's runs renamed in July count as two entrants). Shown the price, 17 of 22 of those models beat it with an interval above 0. Researched as of open (64 questions), every one of the 16 external entries beats it, by a median of +0.083. A backtest placing, not a leaderboard rank |
 | M9, does the fleet know when it does not know (Q6): draws already in the ledgers, 135 and 39 ForecastBench market questions, `nemotron-3-ultra:free` (and `nemotron-3-nano:free` for the model gap); every policy against constant shrinkage and the source-aware calibrator, fitted leave-one-out ($0) | No disagreement measure predicts a large error: draw spread AUROC 0.507 [0.405, 0.608] on 135 questions; research passes 0.53, the two-model gap 0.33 on 39. A plain constant shrink beats raw (−0.007 [−0.014, −0.000]); scaling it by disagreement adds −0.005, inside the interval. Skipping the most-disagreed quarter gains +7.3 points against forecasting everything but +0.8 [−3.0, +5.1] against skipping at random. Not resolvable at this n (an AUROC of 0.6 needs about 250 questions); the pre-registered label proved to mark hedged forecasts; the live test is registered by question-id parity and has 0 resolutions |
@@ -400,7 +424,7 @@ backtest, what leakage is worth, and a first research loop; M7 (done) the fleet 
 "does it know when it does not know", against controls for overconfidence; M10 (done) release (package, container, release workflow), the
 season's standing, the ForecastBench same-question row and the postmortem; M11 (done) an unattended
 shadow round against the same-model template, and the rule that decides whether the free model may
-be submitted; M12 a forecast with no model in it and one registered blend; M13 dated news in the
+be submitted; M12 (done) a forecast with no model in it and one registered blend; M13 dated news in the
 backtest, and the same-model agent-against-template pairs in FutureEval. Details in
 [PLAN.md](PLAN.md).
 
