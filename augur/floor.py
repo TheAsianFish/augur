@@ -109,6 +109,11 @@ class FloorResult:
     reason: str
     after_decision_day: bool
     scored: tuple[Scored, ...]
+    vs_augur_n: int = 0
+    """With the blend as candidate: questions scored for P39 (blend against Augur alone)."""
+    vs_augur_mean: float | None = None
+    vs_augur_low: float | None = None
+    vs_augur_high: float | None = None
 
     def lines(self) -> list[str]:
         def num(x: float | None, digits: int = 2) -> str:
@@ -140,6 +145,13 @@ class FloorResult:
             BIASES,
             f"verdict: {self.verdict} ({self.reason})",
         ]
+        if self.candidate == BLEND:
+            out.append(
+                f"reported (P39), the blend against Augur's aggregate alone: n = "
+                f"{self.vs_augur_n}, mean head-to-head "
+                f"{interval(self.vs_augur_mean, self.vs_augur_low, self.vs_augur_high)} "
+                f"(same bootstrap); not part of the verdict"
+            )
         if self.after_decision_day:
             out.append(
                 f"note: this snapshot was fetched after {DECISION_DAY.isoformat()} (UTC), so the "
@@ -253,7 +265,16 @@ def decide(
     }
 
     scored: list[Scored] = []
+    vs_augur: list[tuple[int, float]] = []
     for s in scorecard.load(ledger_paths).scored:
+        if (
+            candidate == BLEND
+            and s.question_id in in_round(pooled.blend)
+            and BLEND in s.references
+            and s.resolution
+        ):
+            p_blend, p_augur = s.p(s.references[BLEND]), s.p(s.augur)
+            vs_augur.append((s.post_id, head_to_head(s.question_type, p_blend, p_augur)))
         if s.question_id not in resolved_both or TEMPLATE not in s.references:
             continue
         mine = s.augur if candidate == AUGUR else s.references.get(BLEND)
@@ -311,9 +332,16 @@ def decide(
         else:
             verdict, reason = NOT_ADMITTED, ends
 
+    vs = [h for _, h in sorted(vs_augur)]
+    vs_est = clustered_bootstrap(vs, level=LEVEL, resamples=RESAMPLES, seed=SEED) if vs else None
+
     return FloorResult(
         round=snapshot.round.slug,
         candidate=candidate,
+        vs_augur_n=len(vs),
+        vs_augur_mean=None if vs_est is None else vs_est.mean,
+        vs_augur_low=None if vs_est is None else vs_est.low,
+        vs_augur_high=None if vs_est is None else vs_est.high,
         fetched_at=to_iso(snapshot.fetched_at),
         finalized=board.finalized,
         round_posts=len(posts),

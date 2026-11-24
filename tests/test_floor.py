@@ -332,6 +332,13 @@ def test_the_blend_candidate_is_scored_from_its_own_rows(tmp_path: Path) -> None
     want = sum(_h(0.9 if q.post_id % 2 else 0.8, 0.6) for q in qs) / len(qs)
     assert blended.mean_h == pytest.approx(want)
     assert "blend" in blended.lines()[1]
+    # P39, reported: here Augur equals the template, so the blend's edge over each is the same.
+    assert blended.vs_augur_n == 20
+    assert blended.vs_augur_mean == pytest.approx(want)
+    assert blended.vs_augur_low is not None
+    assert blended.vs_augur_low > 0
+    assert "P39" in blended.lines()[-1]
+    assert plain.vs_augur_n == 0
 
 
 def test_a_question_without_a_blend_row_is_uncovered_for_the_blend(tmp_path: Path) -> None:
