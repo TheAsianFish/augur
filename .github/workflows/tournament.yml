@@ -11,7 +11,8 @@ name: Tournament
 # AUGUR_FUTUREEVAL (the FutureEval project id; default 33121, Fall 2026),
 # AUGUR_SHADOW ('true': scheduled ticks run the shadow job below instead of the
 # forecast job), AUGUR_SHADOW_MODELS (the shadow route; default the free nemotron),
-# AUGUR_SHADOW_DAILY_CALLS (the free calls a day the poll budgets; default 1000).
+# AUGUR_SHADOW_DAILY_CALLS (the free calls a day the poll budgets; default 1000),
+# AUGUR_SHADOW_MAX_QUESTIONS (questions a shadow tick takes; default 4).
 #
 # Shadow mode (M11): Augur and Metaculus's template bot forecast the same open
 # questions on the same free model, and nothing is posted: no step of the shadow
@@ -95,7 +96,7 @@ jobs:
         env:
           AUGUR_SHADOW_LEDGER: shadow-ledger/shadow
           AUGUR_SHADOW_DAILY_CALLS: ${{ vars.AUGUR_SHADOW_DAILY_CALLS }}
-          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
+          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || (env.AUGUR_SHADOW == 'true' && (vars.AUGUR_SHADOW_MAX_QUESTIONS || '4')) || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
           # Scheduled runs obey the variable (unset or 'off' is the kill switch);
           # a manual run polls the tournament it was asked for.
@@ -184,13 +185,15 @@ jobs:
 
   # M11's shadow tick. Nothing here can post: no step passes --submit, the
   # SUBMIT switch is not read, and augur forecast refuses --submit with
-  # --shadow-ledger. Time: install about 2 minutes, Augur's forecasts at most
-  # 18, the first push, the template at most 10, the second push.
+  # --shadow-ledger. Measured on the bot-testing-area (RESULTS.md M11): about 2
+  # minutes and 7 calls a question for Augur, 2 minutes and 15 calls for the
+  # template, so a tick takes 4 questions by default; Augur's step stops starting
+  # questions at 14 minutes, the template's at 11.
   shadow:
     needs: poll
     if: needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     permissions:
       contents: write # the ledger branch push
     env:
@@ -199,9 +202,9 @@ jobs:
       # The free route both contestants use; a repository variable may name another.
       AUGUR_FORECAST_MODELS: ${{ vars.AUGUR_SHADOW_MODELS || 'openrouter:nvidia/nemotron-3-ultra-550b-a55b:free' }}
       AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_SHADOW_MODELS || 'openrouter:nvidia/nemotron-3-ultra-550b-a55b:free' }}
-      AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
+      AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_SHADOW_MAX_QUESTIONS || '4' }}
       AUGUR_MAX_COST_PER_RUN: '0.00'
-      RUN_MINUTES: '15'
+      RUN_MINUTES: '14'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v10.3.0
@@ -223,7 +226,7 @@ jobs:
       - name: Forecast (shadow, never submitted)
         id: forecast
         continue-on-error: true
-        timeout-minutes: 18
+        timeout-minutes: 17
         env:
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -252,7 +255,7 @@ jobs:
         id: template
         if: always()
         continue-on-error: true
-        timeout-minutes: 10
+        timeout-minutes: 14
         env:
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -263,7 +266,7 @@ jobs:
           if [ ! -f run.sqlite ]; then echo "no run ledger: nothing for the template" | tee -a run.txt; exit 0; fi
           echo "== augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite" | tee -a run.txt
           uv run --no-sync augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite \
-            --max-minutes 8 2>&1 | tee -a run.txt
+            --max-minutes 11 2>&1 | tee -a run.txt
       - name: Push the template's forecasts to the ledger branch
         if: always()
         run: bash scripts/push_shadow.sh run.sqlite run.txt "$SHADOW_NAME"

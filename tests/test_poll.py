@@ -317,6 +317,7 @@ def test_shadow_futureeval_is_not_polled_past_the_daily_allowance(tmp_path: Path
         tmp_path,
         AUGUR_SCHEDULE="all",
         AUGUR_SHADOW_DAILY_CALLS="80",
+        AUGUR_SHADOW_TEMPLATE_CALLS="10",
         AUGUR_MAX_QUESTIONS_PER_RUN="6",
     )
     _, tournaments, lines = poll_script.poll(env, _futureeval_api(), lambda _s: None, NOW)

@@ -44,11 +44,13 @@ SCHEDULES = ("minibench", "all")
 FUTUREEVAL_DEFAULT = "33121"  # Fall 2026 FutureEval
 PAUSE_SECONDS = 1.0
 DAILY_CALLS_DEFAULT = 1000
-# Calls a question costs before the exports show any: Augur's (planner, brief,
-# five draws, with a retry each) and the template's (five predictions, each
-# with its parse). The poll uses the exports' own average once they have one.
-AUGUR_CALLS_DEFAULT = 9
-TEMPLATE_CALLS_DEFAULT = 10
+# Calls a question costs before the exports show any, as measured on the
+# bot-testing-area on 2026-11-24 (RESULTS.md M11): Augur 7 (planner, brief, five
+# draws) plus a probe a run, the template 15 (forecasting-tools 0.3.7, five
+# predictions with their parsing). The poll uses the exports' own Augur average
+# once they have one; the template's calls are never in the ledger.
+AUGUR_CALLS_DEFAULT = 8
+TEMPLATE_CALLS_DEFAULT = 15
 MAX_QUESTIONS_DEFAULT = 6
 
 Fetch = Callable[[str, Mapping[str, str]], Any]
