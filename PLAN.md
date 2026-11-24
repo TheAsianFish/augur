@@ -1370,6 +1370,19 @@ round (RESULTS.md, To measure).
   `--stat-arm` beside `--submit` is refused.
 - *P39 is printed by `augur floor --candidate blend`* (the floor's 90%
   bootstrap), because `augur score` reports 95% intervals.
+- *Fixed on review, before any live use.* A bar's trading day is now read
+  in the exchange's own time zone at that bar's date, and never dated
+  before the day after its UTC date: with today's fixed offset, a summer
+  futures bar fetched in winter was labelled a day early and admitted
+  before its settle. "Crude oil" is no longer an alias (it sent Brent
+  titles to WTI); BTC, ETH and SOL in parentheses mean the coins, not the
+  funds a symbol search finds; and the live arm no longer falls back to the
+  scheduled resolve date when a title names no day, as item 2 requires.
+- *P39's "Augur alone"* is the shipped aggregate. Where research found
+  the question's own community price, that aggregate already is the
+  candidate, so the head-to-head there is 0 by construction; the bot token
+  sees no community price on MiniBench, so on the 2026-11-30 round the two
+  can differ only where the series rule answers. This is read with P39.
 - *Yahoo Finance's chart endpoint* is unofficial and keyless; FRED and
   Stooq answered this environment with a browser challenge, so neither is
   a fallback here.
