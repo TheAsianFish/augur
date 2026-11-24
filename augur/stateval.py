@@ -26,11 +26,13 @@ from __future__ import annotations
 
 import json
 import statistics
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from augur.clock import to_iso
+from augur.metaculus import MetaculusClient
 from augur.predictions import BinaryPrediction
 from augur.q4 import (
     MODEL,
@@ -45,18 +47,30 @@ from augur.q4 import (
     history,
     load_corpus,
 )
+from augur.questions import CONTINUOUS_TYPES
 from augur.replay import clip
+from augur.research.series import SeriesFetcher, match_series
 from augur.score import paired
+from augur.standings import RoundStandings
 from augur.statarm import (
     BASE_RATES_PATH,
+    Abstain,
     ArmForecast,
     BaseRates,
     base_rate_blend,
     binary_arm,
     primary,
+    series_arm,
 )
 
 SNAPSHOT = Path("data/statarm/m12-c4.json")
+COVERAGE = {
+    "minibench-2026-11-16": (
+        Path("data/standings/minibench.json"),
+        Path("data/statarm/m12-coverage-minibench-2026-11-16.json"),
+    ),
+}
+"""Rounds whose question list the series rule was run on: snapshot and coverage file."""
 ARMS: tuple[str, ...] = ("augur", "arm", "candidate", "base-rate-blend", "price")
 """``price`` exists only on priced instances; the others on every instance of W."""
 
@@ -252,3 +266,88 @@ def files(root: Path, out: Path = SNAPSHOT) -> dict[Path, str]:
         root / out: dumps(snapshot(root, corpus)),
         BASE_RATES_PATH: dumps(live_base_rates(corpus).to_json()),
     }
+
+
+# -- the series rule's coverage on a real round's question list --------------------------
+
+
+def title_matches(titles: Mapping[int, tuple[str, str]]) -> dict[int, str]:
+    """``post_id -> query`` for the numeric and discrete titles the series rule reaches.
+
+    Offline and deterministic: ``augur statarm --check`` re-derives it from the
+    standings snapshot and compares it with the committed coverage file.
+    """
+    out: dict[int, str] = {}
+    for post_id, (qtype, title) in sorted(titles.items()):
+        if qtype not in CONTINUOUS_TYPES:
+            continue
+        m = match_series(title)
+        if m is not None:
+            out[post_id] = m.query
+    return out
+
+
+async def round_coverage(
+    snapshot: RoundStandings, client: MetaculusClient, fetcher: SeriesFetcher
+) -> dict[str, Any]:
+    """What the series rule does on every question of a round, as of each one's open.
+
+    Each post is read from the API for its scaling and open time; a question
+    the rule reaches has its series resolved and fetched as of its open
+    (the earliest instant a shadow tick could forecast it), and the arm is
+    built or abstains with its reason. Nothing is forecast or written.
+    """
+    rows: list[dict[str, Any]] = []
+    for rq in sorted(snapshot.questions, key=lambda r: r.post_id):
+        row: dict[str, Any] = {"post_id": rq.post_id, "type": rq.type, "title": rq.title}
+        rows.append(row)
+        if rq.type not in CONTINUOUS_TYPES:
+            row["outcome"] = "not numeric or discrete"
+            continue
+        q, _ = await client.get_question(rq.post_id)
+        fallback = q.scheduled_resolve_time.date() if q.scheduled_resolve_time else None
+        m = match_series(q.title, fallback=fallback)
+        if m is None:
+            row["outcome"] = "no series in the title"
+            continue
+        row.update(query=m.query, how=m.how, target=m.target.isoformat())
+        row["as_of"] = to_iso(q.open_time)
+        symbol = await fetcher.resolve(m)
+        if symbol is None:
+            row["outcome"] = "abstains: no symbol found"
+            continue
+        series = await fetcher.fetch(symbol, q.open_time)
+        row.update(symbol=symbol, closes=len(series.observations), refused=series.refused)
+        if q.scaling is None:
+            row["outcome"] = "abstains: no usable scaling"
+            continue
+        row["range"] = [q.scaling.range_min, q.scaling.range_max]
+        closes = [(o.day, o.close) for o in series.observations]
+        arm = series_arm(closes, m.target, q.scaling, f"{series.name} ({symbol})")
+        if isinstance(arm, Abstain):
+            row["outcome"] = f"abstains: {arm.reason}"
+            continue
+        row["outcome"] = "forecast"
+        row["last_close"] = closes[-1][1]
+        row["last_day"] = closes[-1][0].isoformat()
+        row["percentiles"] = [[lv, round(v, 4)] for lv, v in arm.percentiles]
+    reached = [r for r in rows if "query" in r]
+    return {
+        "round": snapshot.round.slug,
+        "project": snapshot.round.id,
+        "questions": len(rows),
+        "numeric_or_discrete": sum(1 for r in rows if r["type"] in CONTINUOUS_TYPES),
+        "reached": len(reached),
+        "forecast": sum(1 for r in rows if r.get("outcome") == "forecast"),
+        "rows": rows,
+    }
+
+
+def check_coverage(path: Path, snapshot: RoundStandings) -> list[str]:
+    """Differences between a committed coverage file and the rule re-run on the titles."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    committed = {int(r["post_id"]): str(r["query"]) for r in data["rows"] if "query" in r}
+    fresh = title_matches({q.post_id: (q.type or "", q.title) for q in snapshot.questions})
+    if committed == fresh:
+        return []
+    return [f"{path}: the series rule now reaches {fresh}, the file says {committed}"]

@@ -6,6 +6,7 @@ import json
 import math
 from dataclasses import replace
 from datetime import date, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -258,3 +259,29 @@ def test_committed_snapshot_matches_a_fresh_run() -> None:
     assert groups["priced"]["n"] + groups["unpriced"]["n"] == groups["all"]["n"]
     assert set(groups["metaculus"]["arm_kinds"]) == {"base-rate"}
 
+
+# -- the series rule's coverage on a real round ---------------------------------------
+
+
+def test_the_rule_reaches_seven_titles_of_the_2026_11_16_round() -> None:
+    from augur.standings import load_snapshot
+
+    snap_path, cov = stateval.COVERAGE["minibench-2026-11-16"]
+    snap = load_snapshot(REPO / snap_path)
+    reached = stateval.title_matches({q.post_id: (q.type or "", q.title) for q in snap.questions})
+    assert sorted(reached.values()) == sorted(
+        ["MGLU3", "BHIA3", "ibovespa", "^IXIC", "SPCX", "NVDA", "ANT"]
+    )
+    assert stateval.check_coverage(REPO / cov, snap) == []
+
+
+def test_a_coverage_file_that_disagrees_with_the_titles_is_reported(tmp_path: Path) -> None:
+    from augur.standings import load_snapshot
+
+    snap_path, cov = stateval.COVERAGE["minibench-2026-11-16"]
+    data = json.loads((REPO / cov).read_text(encoding="utf-8"))
+    data["rows"] = [r for r in data["rows"] if r.get("query") != "NVDA"]
+    bad = tmp_path / "coverage.json"
+    bad.write_text(json.dumps(data), encoding="utf-8")
+    (problem,) = stateval.check_coverage(bad, load_snapshot(REPO / snap_path))
+    assert "NVDA" in problem

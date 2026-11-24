@@ -415,6 +415,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     sa.add_argument("--out", type=Path, default=stateval.SNAPSHOT)
     sa.add_argument(
+        "--coverage",
+        choices=sorted(stateval.COVERAGE),
+        metavar="ROUND",
+        help="instead, run the series rule on a round's question list (posts read from the "
+        "API with METACULUS_TOKEN, closes from the series source as of each question's "
+        f"open) and write its coverage file; one of {', '.join(sorted(stateval.COVERAGE))}",
+    )
+    sa.add_argument(
         "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
     )
 
@@ -993,12 +1001,41 @@ def _fbcompare(args: argparse.Namespace) -> int:
     return 0
 
 
-def _statarm(args: argparse.Namespace) -> int:
+async def _statarm_coverage(label: str, settings: Settings) -> int:
+    if not settings.has_metaculus_token:
+        raise MissingCredentialsError("augur statarm --coverage", ("METACULUS_TOKEN",))
+    snap_path, out = stateval.COVERAGE[label]
+    snap = standings.load_snapshot(snap_path)
+    async with default_http_client() as http:
+        client = MetaculusClient.from_settings(settings, http)
+        data = await stateval.round_coverage(snap, client, SeriesFetcher(http, SystemClock()))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(stateval.dumps(data), encoding="utf-8")
+    print(
+        f"{label}: {data['questions']} questions, {data['numeric_or_discrete']} numeric or "
+        f"discrete, the series rule reaches {data['reached']} and forecasts {data['forecast']}"
+    )
+    for row in data["rows"]:
+        if "query" in row:
+            print(f"  {row['post_id']} {row['query']}: {row['outcome']}")
+    print(f"wrote {out}")
+    return 0
+
+
+def _statarm(args: argparse.Namespace, settings: Settings) -> int:
+    if args.coverage:
+        return asyncio.run(_statarm_coverage(args.coverage, settings))
     written = stateval.files(Path.cwd(), args.out)
     if args.check:
         stale = [p for p, text in written.items() if not p.exists() or p.read_text("utf-8") != text]
         for p in stale:
             print(f"{p} differs from a fresh run; run augur statarm")
+        for snap_path, cov in stateval.COVERAGE.values():
+            if cov.exists():
+                problems = stateval.check_coverage(cov, standings.load_snapshot(snap_path))
+                stale += [cov] if problems else []
+                for line in problems:
+                    print(line)
         if not stale:
             print(f"{args.out} and the live base rates match a fresh run")
         return 1 if stale else 0
@@ -1100,7 +1137,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "calibrate":
             return _calibrate(args)
         if args.command == "statarm":
-            return _statarm(args)
+            return _statarm(args, settings)
         if args.command == "q6":
             return _q6(args)
         if args.command == "fbcompare":

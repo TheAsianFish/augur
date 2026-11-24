@@ -143,6 +143,31 @@ Each arm minus Augur (negative: the arm is better than the model's raw forecast)
 | P37 | all of W: Brier(arm) - Brier(Augur) | -0.077 [-0.110, -0.046] | interval below 0 | **held** |
 <!-- augur:end statarm -->
 
+### The series rule on a real round's question list (2026-11-24, $0)
+
+`augur statarm --coverage minibench-2026-11-16` (needs `METACULUS_TOKEN`
+for the posts' ranges and open times; closes from Yahoo Finance's keyless
+chart endpoint, read as of each question's open, so every close of a day
+the question had not yet seen is refused). Raw output:
+`data/statarm/m12-coverage-minibench-2026-11-16.json`; `make eval`
+re-derives which titles the rule reaches from the standings snapshot and
+fails if the file disagrees.
+
+<!-- augur:begin statarm-coverage -->
+Round `minibench` (project 33169): 60 questions, 31 numeric or discrete; the series rule reaches **7** and forecasts **5**. Every other question gets no series (multiple choice, binary, or a numeric title naming no quoted series).
+
+| Post | Title | Series | Closes admitted (refused) | Last close | Outcome | 10% / 40% / 80% |
+|---|---|---|---|---|---|---|
+| 46563 | What will Magazine Luiza (MGLU3) close at on Friday, November 27, 2026? | MGLU3.SA | 491 (6) | 7.81 (2026-11-13) | forecast | 6.55 / 7.453 / 8.834 |
+| 46564 | What will be Grupo Casas Bahia's (BHIA3) closing share price on 27 November 2026? | BHIA3.SA | 491 (6) | 0.68 (2026-11-13) | forecast | 0.5226 / 0.6246 / 0.7239 |
+| 46567 | What will the Ibovespa close at on 26 November 2026? | ^BVSP | 491 (6) | 172,458 (2026-11-13) | forecast | 165,417 / 172,327 / 178,437 |
+| 46576 | What will the Nasdaq Composite (^IXIC) close at on Friday, November 27, 2026? | ^IXIC | 494 (7) | 25,136 (2026-11-13) | forecast | 24,116 / 25,066 / 25,960 |
+| 46595 | What will SpaceX's (SPCX) closing share price be on Friday, November 27, 2026? | SPCX | 108 (7) | — | abstains: Space Exploration Technologies Corp. (SPCX): 98 past 10-observation changes, fewer than 100 | — |
+| 46602 | What will Nvidia's (NVDA) closing share price be on Friday, November 27, 2026? | NVDA | 495 (6) | 156.1 (2026-11-16) | forecast | 144.1 / 154.9 / 165.9 |
+| 46607 | What will Anthropic (ANT) close at on Friday, November 27, 2026? | ANT | 0 (4) | — | abstains: Anthropic, PBC Class A Common Stock (ANT): no close dated at or before the cutoff | — |
+<!-- augur:end statarm-coverage -->
+
+
 
 ## M11: the shadow round and the rule that decides the floor (Q1)
 
