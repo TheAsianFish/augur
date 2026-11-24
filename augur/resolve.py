@@ -16,14 +16,19 @@ Three sources, each a new ``resolutions`` row (never an edit):
   and the market's price at the freeze date as a ``market`` reference row
   (the forecaster never saw it).
 - **Manual**: a resolution read off the question page by a person, with the
-  evidence named (``--manual POST VALUE --evidence URL``).
+  evidence named (``--manual POST VALUE --evidence URL``), or a round's worth
+  from a ``post_id,value,evidence`` CSV (``--manual-file F --standings S``),
+  written only if it leaves none of the round's forecast questions in the
+  ledger without a resolution (PLAN.md's floor rule, item 8).
 """
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 import sqlite3
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time
 from pathlib import Path
@@ -329,10 +334,20 @@ def resolve_forecastbench(ledger: Ledger, resolution_set: Path) -> ResolveReport
     return report
 
 
-def resolve_manual(
-    ledger: Ledger, *, post_id: int, value: str, evidence: str
-) -> tuple[str, str | None]:
-    """Record a resolution read by a person; the question must be in the ledger."""
+@dataclass(frozen=True)
+class ManualResolution:
+    """One checked resolution read by a person, ready to write."""
+
+    question_id: int
+    post_id: int
+    question_type: str
+    status: str
+    value: str | None
+    evidence: str
+
+
+def check_manual(ledger: Ledger, *, post_id: int, value: str, evidence: str) -> ManualResolution:
+    """Check one resolution read by a person; nothing is written."""
     row = ledger.connection.execute(
         "SELECT question_id, type, payload_json FROM questions WHERE post_id = ? "
         "ORDER BY recorded_at DESC LIMIT 1",
@@ -352,14 +367,180 @@ def resolve_manual(
     found = resolution_value(q, value)
     if found is None:
         raise AugurError("give the value the question resolved to, or 'annulled'")
-    ledger.record_resolution(
+    return ManualResolution(
         question_id=int(row[0]),
         post_id=post_id,
         question_type=str(row[1]),
         status=found[0],
         value=found[1],
-        resolved_at=None,
-        source="manual",
         evidence=evidence,
     )
-    return found
+
+
+def _write_manual(ledger: Ledger, checked: Sequence[ManualResolution]) -> None:
+    """Every row or none: one transaction."""
+    conn = ledger.connection
+    conn.execute("BEGIN")
+    try:
+        for m in checked:
+            ledger.record_resolution(
+                question_id=m.question_id,
+                post_id=m.post_id,
+                question_type=m.question_type,
+                status=m.status,
+                value=m.value,
+                resolved_at=None,
+                source="manual",
+                evidence=m.evidence,
+            )
+        conn.execute("COMMIT")
+    except BaseException:
+        conn.execute("ROLLBACK")
+        raise
+
+
+def resolve_manual(
+    ledger: Ledger, *, post_id: int, value: str, evidence: str
+) -> tuple[str, str | None]:
+    """Record a resolution read by a person; the question must be in the ledger."""
+    checked = check_manual(ledger, post_id=post_id, value=value, evidence=evidence)
+    _write_manual(ledger, [checked])
+    return checked.status, checked.value
+
+
+MANUAL_HEADER = ("post_id", "value", "evidence")
+
+
+@dataclass(frozen=True)
+class ManualFileReport:
+    written: list[ManualResolution]
+    round_questions: int
+    already_resolved: int
+
+    def line(self, path: Path) -> str:
+        return (
+            f"{len(self.written)} resolution(s) written from {path}; the round has "
+            f"{self.round_questions} forecast question(s) in this ledger, "
+            f"{self.already_resolved} of them resolved before this file"
+        )
+
+
+def read_manual_file(path: Path) -> list[tuple[int, int, str, str]]:
+    """``(line, post_id, value, evidence)`` per line of a ``post_id,value,evidence`` CSV."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise AugurError(f"cannot read {path} ({exc}); give a post_id,value,evidence CSV") from None
+    reader = csv.reader(io.StringIO(text))
+    header = next(reader, None)
+    if header is None or tuple(h.strip() for h in header) != MANUAL_HEADER:
+        raise AugurError(
+            f"{path}: the first line must be the header {','.join(MANUAL_HEADER)}; "
+            "nothing was written"
+        )
+    lines: list[tuple[int, int, str, str]] = []
+    for cells in reader:
+        where = f"{path} line {reader.line_num}"
+        if not any(c.strip() for c in cells):
+            continue
+        if len(cells) != len(MANUAL_HEADER):
+            raise AugurError(
+                f"{where}: {len(cells)} fields, expected post_id,value,evidence (quote a value "
+                "that holds a comma); nothing was written"
+            )
+        post, value, evidence = (c.strip() for c in cells)
+        try:
+            post_id = int(post)
+        except ValueError:
+            raise AugurError(
+                f"{where}: post_id {post!r} is not a number; nothing was written"
+            ) from None
+        if not evidence.startswith(("https://", "http://")):
+            raise AugurError(
+                f"{where}: post {post_id} needs an evidence URL (the page the resolution was "
+                "read from); nothing was written"
+            )
+        lines.append((reader.line_num, post_id, value, evidence))
+    return lines
+
+
+def round_ledger_questions(ledger: Ledger, post_ids: Iterable[int]) -> dict[int, int]:
+    """``{post_id: question_id}`` for the posts the ledger holds with an Augur aggregate
+    forecast (any run mode but ``unrestricted``, as ``augur score`` reads) or a template
+    reference forecast."""
+    wanted = set(post_ids)
+    conn = ledger.connection
+    held: dict[int, int] = {}
+    for qid, post_id in conn.execute(
+        "SELECT DISTINCT q.question_id, q.post_id FROM forecasts f "
+        "JOIN questions q ON q.run_id = f.run_id AND q.question_id = f.question_id "
+        "JOIN runs r ON r.run_id = f.run_id "
+        "WHERE f.kind = 'aggregate' AND r.mode != 'unrestricted'"
+    ):
+        if int(post_id) in wanted:
+            held[int(post_id)] = int(qid)
+    posts_of = {
+        int(qid): int(post_id)
+        for qid, post_id in conn.execute("SELECT DISTINCT question_id, post_id FROM questions")
+    }
+    for qid, ref_post in conn.execute(
+        "SELECT DISTINCT question_id, post_id FROM reference_forecasts "
+        "WHERE forecaster = 'template'"
+    ):
+        post_id = posts_of.get(int(qid), int(ref_post))
+        if post_id in wanted:
+            held.setdefault(post_id, int(qid))
+    return held
+
+
+def resolve_manual_file(ledger: Ledger, path: Path, round_posts: Iterable[int]) -> ManualFileReport:
+    """All of the round's forecast questions resolved, or nothing written.
+
+    Every line is checked first (the post is in the ledger and in the round, the
+    value parses, the evidence is a URL, no post appears twice). Then every
+    question of the round the ledger holds an Augur aggregate or a template
+    forecast for must have a resolution, in the ledger already or in the file.
+    Only then is every row written, in one transaction.
+    """
+    posts = set(round_posts)
+    checked: list[ManualResolution] = []
+    seen: dict[int, int] = {}
+    for line, post_id, value, evidence in read_manual_file(path):
+        where = f"{path} line {line}"
+        if post_id in seen:
+            raise AugurError(
+                f"{where}: post {post_id} is already on line {seen[post_id]}; keep one line "
+                "per post; nothing was written"
+            )
+        seen[post_id] = line
+        if post_id not in posts:
+            raise AugurError(
+                f"{where}: post {post_id} is not in the round's standings snapshot; remove the "
+                "line or give the round's snapshot as --standings; nothing was written"
+            )
+        try:
+            checked.append(check_manual(ledger, post_id=post_id, value=value, evidence=evidence))
+        except AugurError as exc:
+            raise AugurError(f"{where}: {exc}; nothing was written") from None
+    round_questions = round_ledger_questions(ledger, posts)
+    resolved = {
+        int(qid) for (qid,) in ledger.connection.execute("SELECT question_id FROM resolutions")
+    }
+    in_file = {m.post_id for m in checked}
+    missing = sorted(
+        post_id
+        for post_id, qid in round_questions.items()
+        if qid not in resolved and post_id not in in_file
+    )
+    if missing:
+        raise AugurError(
+            f"{path} would leave {len(missing)} of the round's {len(round_questions)} forecast "
+            f"question(s) without a resolution: post(s) {', '.join(map(str, missing))}; add a "
+            "line for each (all of the round's questions or none); nothing was written"
+        )
+    _write_manual(ledger, checked)
+    return ManualFileReport(
+        written=checked,
+        round_questions=len(round_questions),
+        already_resolved=sum(1 for qid in round_questions.values() if qid in resolved),
+    )

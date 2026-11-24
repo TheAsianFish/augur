@@ -1,10 +1,12 @@
 # Augur
 
-**Status: 0.1.0, release candidate (M10 of 10).** Every milestone in
-[PLAN.md](PLAN.md) is built. Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M11 of 13 built.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
-what the backtests found instead. Spring 2027 is the season to place in.
+what the backtests found instead. The 2026-11-30 MiniBench round runs as
+an unattended shadow round against Metaculus's template bot on the same free
+model, under a rule registered before it opened that decides whether the
+free model may submit. Spring 2027 is the season to place in.
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -101,6 +103,30 @@ uv run augur score augur.db --cluster week               # scores, and paired in
 uv run augur standings --round minibench                 # the round's leaderboard beside Augur
 make eval                                                # offline: re-score the committed backtest, check RESULTS.md
 ```
+
+### The shadow round (M11)
+
+Whether Augur's pipeline adds anything over Metaculus's template bot on the
+same free model can be measured without posting anything. A shadow tick
+forecasts every open question unpublished, runs the real template bot on
+the same questions with the same route, and pushes the tick's ledger to
+the `ledger` branch after each; the next tick skips what that branch
+already holds. `AUGUR_SHADOW=true` puts the scheduled workflow in this mode,
+and no path in it can pass `--submit`.
+
+```sh
+uv sync --extra baseline                                 # the template bot (forecasting-tools)
+uv run augur forecast --tournament minibench --shadow-ledger shadow.sqlite --ledger run.sqlite
+uv run augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite
+uv run augur ledger import ledger-branch/shadow --out shadow.sqlite        # every tick, pooled
+uv run augur resolve --ledger shadow.sqlite --manual-file round.csv --standings data/standings/ROUND.json
+uv run augur floor --round ROUND --ledger shadow.sqlite  # admitted, not admitted or not yet decidable
+```
+
+`augur floor` applies the rule registered in PLAN.md before the 2026-11-30
+round opened (RESULTS.md carries it verbatim): the free model may submit
+to MiniBench only if the 90% interval of its head-to-head against the
+shadow template, and of the peer score that implies, both sit above 0.
 
 Presets: `openrouter`, `groq`, `gemini`, `github` (each reads its own key
 variable) and `ollama`; any other OpenAI-compatible host is
@@ -372,7 +398,7 @@ first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
 backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9 (done)
 "does it know when it does not know", against controls for overconfidence; M10 (done) release (package, container, release workflow), the
-season's standing, the ForecastBench same-question row and the postmortem; M11 (next) an unattended
+season's standing, the ForecastBench same-question row and the postmortem; M11 (done) an unattended
 shadow round against the same-model template, and the rule that decides whether the free model may
 be submitted; M12 a forecast with no model in it and one registered blend; M13 dated news in the
 backtest, and the same-model agent-against-template pairs in FutureEval. Details in

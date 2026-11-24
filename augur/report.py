@@ -1721,6 +1721,20 @@ def render_q6_preregistration(root: Path) -> str:
     return m.group("body")
 
 
+# -- M11: the floor rule --------------------------------------------------------
+
+FLOOR_RULE = re.compile(r"<!-- floor-rule:begin -->\n(?P<body>.*?)<!-- floor-rule:end -->", re.S)
+
+
+def render_floor_rule(root: Path) -> str:
+    """M11's floor rule exactly as PLAN.md registered it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = FLOOR_RULE.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no floor-rule block")
+    return m.group("body")
+
+
 # -- M10: the ForecastBench same-question row -------------------------------------
 
 FBCOMPARE_TOP = 5
@@ -1861,6 +1875,7 @@ BLOCKS: dict[str, Block] = {
         Block("q6", render_q6),
         Block("q6-preregistration", render_q6_preregistration),
         Block("fbcompare", render_fbcompare),
+        Block("floor-rule", render_floor_rule),
     )
 }
 

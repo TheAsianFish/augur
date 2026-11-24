@@ -1,0 +1,338 @@
+time="2026-11-24T14:54:32Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Tournament/poll] ⭐ Run Set up job
+[Tournament/poll] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/poll]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/poll]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/poll]   ✅  Success - Set up job
+[Tournament/poll] ⭐ Run Main actions/checkout@v4
+[Tournament/poll]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/. dst=/home/runner/work/job-finder/job-finder/work
+[Tournament/poll]   ✅  Success - Main actions/checkout@v4 [217.495929ms]
+[Tournament/poll] ⭐ Run Main Read the shadow ledger from the ledger branch
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/1] user= workdir=
+[Tournament/poll]   | shadow ledger: 2 export(s) in shadow-ledger/shadow
+[Tournament/poll]   ✅  Success - Main Read the shadow ledger from the ledger branch [114.590582ms]
+[Tournament/poll] ⭐ Run Main Poll for open questions not yet forecast
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/poll] user= workdir=
+[Tournament/poll]   | shadow ledger: 2 export(s), 4 question(s) held, 4 with a template forecast; today about 88 of 1000 free calls used (22.0 a question)
+[Tournament/poll]   | bot-testing-area: 6 open, 2 not in the shadow ledger, closes soonest 2028-10-01T03:59Z
+[Tournament/poll]   | has_work=true tournaments=bot-testing-area
+[Tournament/poll]   ✅  Success - Main Poll for open questions not yet forecast [409.06256ms]
+[Tournament/poll]   ⚙  ::set-output:: tournaments=bot-testing-area
+[Tournament/poll]   ⚙  ::set-output:: has_work=true
+[Tournament/poll] ⭐ Run Complete job
+[Tournament/poll] Cleaning up container for job poll
+[Tournament/poll]   ✅  Success - Complete job
+[Tournament/poll] 🏁  Job succeeded
+[Tournament/shadow  ] ⭐ Run Set up job
+[Tournament/shadow  ] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/shadow  ]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=false
+[Tournament/shadow  ]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/shadow  ]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/shadow  ]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/shadow  ]   ✅  Success - Set up job
+[Tournament/shadow  ]   ☁  git clone 'https://github.com/astral-sh/setup-uv' # ref=v10.3.0
+[Tournament/shadow  ] ⭐ Run Main actions/checkout@v4
+[Tournament/shadow  ]   🐳  docker cp src=/home/runner/work/job-finder/job-finder/work/. dst=/home/runner/work/job-finder/job-finder/work
+[Tournament/shadow  ]   ✅  Success - Main actions/checkout@v4 [214.683967ms]
+[Tournament/shadow  ] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+[Tournament/shadow  ]   🐳  docker cp src=/home/runner/.cache/act/astral-sh-setup-uv@v10.3.0/ dst=/var/run/act/actions/astral-sh-setup-uv@v10.3.0/
+[Tournament/shadow  ]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/setup/index.cjs] user= workdir=
+[Tournament/shadow  ]   | Trying to find version for uv in: /home/runner/work/job-finder/job-finder/work/uv.toml
+[Tournament/shadow  ]   | Could not find file: /home/runner/work/job-finder/job-finder/work/uv.toml
+[Tournament/shadow  ]   | Trying to find version for uv in: /home/runner/work/job-finder/job-finder/work/pyproject.toml
+[Tournament/shadow  ]   | Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+[Tournament/shadow  ]   | Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+[Tournament/shadow  ]   | Found uv in tool-cache for 0.13.9
+[Tournament/shadow  ]   | Added /root/.local/bin to the path
+[Tournament/shadow  ]   | Added /opt/hostedtoolcache/uv/0.13.9/x86_64 to the path
+[Tournament/shadow  ]   | Set UV_PYTHON_INSTALL_DIR to /root/.local/share/uv/python
+[Tournament/shadow  ]   | Added /root/.local/share/uv/python to the path
+[Tournament/shadow  ]   ❓ add-matcher /run/act/actions/astral-sh-setup-uv@v10.3.0/.github/python.json
+[Tournament/shadow  ]   | Set UV_CACHE_DIR to /root/.cache/uv
+[Tournament/shadow  ]   | Successfully installed uv version 0.13.9
+[Tournament/shadow  ]   | Searching files using cache dependency glob: /home/runner/work/job-finder/job-finder/work/uv.lock
+[Tournament/shadow  ]   | /home/runner/work/job-finder/job-finder/work/uv.lock
+[Tournament/shadow  ]   | Found 1 files to hash.
+[Tournament/shadow  ]   | Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   ⚙  ***
+[Tournament/shadow  ]   | Cache Size: ~102 MB (106747369 B)
+[Tournament/shadow  ]   | [command]/usr/bin/tar -xf /tmp/c6dcaf3c-239e-46bd-8a68-c9feb2ac82ef/cache.tzst -P -C /home/runner/work/job-finder/job-finder/work --use-compress-program unzstd
+[Tournament/shadow  ]   | Cache restored successfully
+[Tournament/shadow  ]   | cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   ✅  Success - Main astral-sh/setup-uv@v10.3.0 [2.869148303s]
+[Tournament/shadow  ]   ⚙  ::set-env:: UV_PYTHON_INSTALL_DIR=/root/.local/share/uv/python
+[Tournament/shadow  ]   ⚙  ::set-env:: UV_CACHE_DIR=/root/.cache/uv
+[Tournament/shadow  ]   ⚙  ::set-output:: python-cache-hit=false
+[Tournament/shadow  ]   ⚙  ::set-output:: uv-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uv
+[Tournament/shadow  ]   ⚙  ::set-output:: uvx-path=/opt/hostedtoolcache/uv/0.13.9/x86_64/uvx
+[Tournament/shadow  ]   ⚙  ::set-output:: uv-version=0.13.9
+[Tournament/shadow  ]   ⚙  ::set-output:: python-version=unknown
+[Tournament/shadow  ]   ⚙  ::set-output:: python-runtime-id=
+[Tournament/shadow  ]   ⚙  ::set-output:: cache-key=setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   ⚙  ::set-output:: cache-hit=true
+[Tournament/shadow  ]   ⚙  ::add-path:: /root/.local/bin
+[Tournament/shadow  ]   ⚙  ::add-path:: /opt/hostedtoolcache/uv/0.13.9/x86_64
+[Tournament/shadow  ]   ⚙  ::add-path:: /root/.local/share/uv/python
+[Tournament/shadow  ] ⭐ Run Main Install, with the template bot
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Tournament/shadow  ]   | Downloading cpython-3.12.16-linux-x86_64-gnu (download) (33.1MiB)
+[Tournament/shadow  ]   |  Downloaded cpython-3.12.16-linux-x86_64-gnu (download)
+[Tournament/shadow  ]   | Using CPython 3.12.16
+[Tournament/shadow  ]   | Creating virtual environment at: .venv
+[Tournament/shadow  ]   | Resolved 99 packages in 0.94ms
+[Tournament/shadow  ]   |    Building augur-forecast @ file:///home/runner/work/job-finder/job-finder/work
+[Tournament/shadow  ]   |       Built augur-forecast @ file:///home/runner/work/job-finder/job-finder/work
+[Tournament/shadow  ]   | Prepared 1 package in 720ms
+[Tournament/shadow  ]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Tournament/shadow  ]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Tournament/shadow  ]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Tournament/shadow  ]   | Installed 84 packages in 1.05s
+[Tournament/shadow  ]   |  + aiofiles==25.1.0
+[Tournament/shadow  ]   |  + aiohappyeyeballs==2.7.1
+[Tournament/shadow  ]   |  + aiohttp==3.14.5
+[Tournament/shadow  ]   |  + aiolimiter==1.3.0
+[Tournament/shadow  ]   |  + aiosignal==1.4.0
+[Tournament/shadow  ]   |  + annotated-types==0.8.0
+[Tournament/shadow  ]   |  + anyio==4.16.0
+[Tournament/shadow  ]   |  + asgiref==3.13.0
+[Tournament/shadow  ]   |  + asknews==0.14.10
+[Tournament/shadow  ]   |  + asyncio==4.0.0
+[Tournament/shadow  ]   |  + attrs==26.1.0
+[Tournament/shadow  ]   |  + augur-forecast==0.1.0 (from file:///home/runner/work/job-finder/job-finder/work)
+[Tournament/shadow  ]   |  + boto3==1.44.6
+[Tournament/shadow  ]   |  + botocore==1.44.6
+[Tournament/shadow  ]   |  + certifi==2026.10.23
+[Tournament/shadow  ]   |  + cffi==2.1.1
+[Tournament/shadow  ]   |  + charset-normalizer==3.5.2
+[Tournament/shadow  ]   |  + click==8.5.1
+[Tournament/shadow  ]   |  + crontab==1.0.5
+[Tournament/shadow  ]   |  + cryptography==49.0.0
+[Tournament/shadow  ]   |  + dnspython==2.9.2
+[Tournament/shadow  ]   |  + email-validator==2.4.0
+[Tournament/shadow  ]   |  + exceptiongroup==1.3.1
+[Tournament/shadow  ]   |  + fastuuid==0.14.0
+[Tournament/shadow  ]   |  + filelock==4.2.12
+[Tournament/shadow  ]   |  + forecasting-tools==0.3.7
+[Tournament/shadow  ]   |  + frozenlist==1.8.0
+[Tournament/shadow  ]   |  + fsspec==2026.9.0
+[Tournament/shadow  ]   |  + h11==0.16.0
+[Tournament/shadow  ]   |  + h2==4.4.1
+[Tournament/shadow  ]   |  + hf-xet==1.8.0
+[Tournament/shadow  ]   |  + hpack==4.2.0
+[Tournament/shadow  ]   |  + httpcore==1.0.9
+[Tournament/shadow  ]   |  + httpcore2==2.16.2
+[Tournament/shadow  ]   |  + httpx==0.28.1
+[Tournament/shadow  ]   |  + httpx2==2.16.2
+[Tournament/shadow  ]   |  + huggingface-hub==2.4.0
+[Tournament/shadow  ]   |  + hyperframe==6.1.0
+[Tournament/shadow  ]   |  + idna==3.20
+[Tournament/shadow  ]   |  + importlib-metadata==8.9.0
+[Tournament/shadow  ]   |  + jinja2==3.1.6
+[Tournament/shadow  ]   |  + jiter==0.19.0
+[Tournament/shadow  ]   |  + jmespath==1.1.0
+[Tournament/shadow  ]   |  + jsonschema==4.26.0
+[Tournament/shadow  ]   |  + jsonschema-specifications==2025.9.1
+[Tournament/shadow  ]   |  + litellm==1.110.1
+[Tournament/shadow  ]   |  + markupsafe==3.0.4
+[Tournament/shadow  ]   |  + multidict==7.2.1
+[Tournament/shadow  ]   |  + nest-asyncio==1.6.0
+[Tournament/shadow  ]   |  + numpy==2.5.5
+[Tournament/shadow  ]   |  + openai==3.55.1
+[Tournament/shadow  ]   |  + orjson==3.13.0
+[Tournament/shadow  ]   |  + packaging==26.3
+[Tournament/shadow  ]   |  + pendulum==3.3.0
+[Tournament/shadow  ]   |  + pillow==13.0.0
+[Tournament/shadow  ]   |  + propcache==0.5.4
+[Tournament/shadow  ]   |  + pycparser==3.12
+[Tournament/shadow  ]   |  + pydantic==2.14.3
+[Tournament/shadow  ]   |  + pydantic-core==2.50.4
+[Tournament/shadow  ]   |  + pydantic-settings==2.16.3
+[Tournament/shadow  ]   |  + python-dateutil==2.9.0.post0
+[Tournament/shadow  ]   |  + python-dotenv==1.2.4
+[Tournament/shadow  ]   |  + pyyaml==6.0.3
+[Tournament/shadow  ]   |  + referencing==0.37.0
+[Tournament/shadow  ]   |  + regex==2026.11.19
+[Tournament/shadow  ]   |  + requests==2.34.2
+[Tournament/shadow  ]   |  + rpds-py==2026.9.1
+[Tournament/shadow  ]   |  + s3transfer==0.19.3
+[Tournament/shadow  ]   |  + six==1.17.0
+[Tournament/shadow  ]   |  + sniffio==1.3.1
+[Tournament/shadow  ]   |  + structlog==26.1.0
+[Tournament/shadow  ]   |  + tenacity==9.2.1
+[Tournament/shadow  ]   |  + tiktoken==0.14.0
+[Tournament/shadow  ]   |  + tokenizers==0.23.3
+[Tournament/shadow  ]   |  + tqdm==4.70.1
+[Tournament/shadow  ]   |  + truststore==0.10.5
+[Tournament/shadow  ]   |  + typeguard==4.6.0
+[Tournament/shadow  ]   |  + typing-extensions==4.16.0
+[Tournament/shadow  ]   |  + typing-inspection==0.4.5
+[Tournament/shadow  ]   |  + tzdata==2026.6
+[Tournament/shadow  ]   |  + unidecode==1.4.0
+[Tournament/shadow  ]   |  + urllib3==2.8.0
+[Tournament/shadow  ]   |  + yarl==1.25.1
+[Tournament/shadow  ]   |  + zipp==4.1.2
+[Tournament/shadow  ]   ✅  Success - Main Install, with the template bot [3.174946804s]
+[Tournament/shadow  ] ⭐ Run Main Name this tick
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[Tournament/shadow  ]   ✅  Success - Main Name this tick [84.911757ms]
+[Tournament/shadow  ]   ⚙  ::set-env:: SHADOW_NAME=20261124T145441Z-1-1
+[Tournament/shadow  ] ⭐ Run Main Rebuild the shadow ledger from the ledger branch
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[Tournament/shadow  ]   | shadow ledger: 2 export(s) in shadow-ledger/shadow
+[Tournament/shadow  ]   | shadow.sqlite: 203 rows from 2 exports (1 already present)
+[Tournament/shadow  ]   ✅  Success - Main Rebuild the shadow ledger from the ledger branch [1.086559106s]
+[Tournament/shadow  ] ⭐ Run Main Forecast (shadow, never submitted)
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/forecast] user= workdir=
+[Tournament/shadow  ]   | == augur forecast --tournament bot-testing-area --shadow-ledger shadow.sqlite
+[Tournament/shadow  ]   | {"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-24T14:54:42.905041Z"}
+[Tournament/shadow  ]   | {"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_c8a12174ded14787a4fc", "source": "metaculus:bot-testing-area", "timestamp": "2026-11-24T14:54:43.088791Z"}
+[Tournament/shadow  ]   | shadow tick: 4 question(s) already held in shadow.sqlite
+[Tournament/shadow  ]   | run run_c8a12174ded14787a4fc (dry_run) on metaculus:bot-testing-area
+[Tournament/shadow  ]   | models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free; research: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+[Tournament/shadow  ]   | fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 43325, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.287913Z"}
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 43332, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288068Z"}
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 43322, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288160Z"}
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 45708, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288233Z"}
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 46450, "reason": "over the cap of 1 questions per run", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288319Z"}
+[Tournament/shadow  ]   | {"event": "probe: route answered", "latency_ms": 1641, "level": "info", "route": "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:49.929592Z"}
+[Tournament/shadow  ]   | probe:
+[Tournament/shadow  ]   |   openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered       1641 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+[Tournament/shadow  ]   | estimated worst case $0.0000 a question, $0.0000 for 1 (caps $0.50 a question, $0.00 a run)
+[Tournament/shadow  ]   | 
+[Tournament/shadow  ]   | == What will net outlays by the US government be in millions of dollars in FY 2028?
+[Tournament/shadow  ]   |    https://www.metaculus.com/questions/46224/ (numeric)
+[Tournament/shadow  ]   |    sources: 3 admitted, 0 rejected; members: median 8,196,086 (80% between 7,200,000 and 9,400,000) | median 8,045,016 (80% between 6,500,000 and 9,800,000) | median 8,245,499 (80% between 6,800,000 and 9,800,000) | median 7,497,866 (80% between 6,200,000 and 9,200,000) | median 8,195,945 (80% between 7,300,000 and 9,300,000)
+[Tournament/shadow  ]   |    combined: median 8,075,507 (80% between 6,680,639 and 9,502,719)
+[Tournament/shadow  ]   |    would POST /api/questions/forecast/ (dry run, not sent):
+[Tournament/shadow  ]   |    [{"question": 46451, "source": "api", "probability_yes": null, "probability_yes_per_category": null, "continuous_cdf": [0.001, 0.00105251, 0.00110502, 0.00115753, 0.00121004, 0.00126255, 0.00131506, 0.00137261, 0.0014376584, 0.0015034821, 0.001570129, 0.0016376502, 0.0017071251, 0.0017920476, 0.001879223, 0.0019688099, 0.0020609783, 0.0021609504, 0.00227138, 0.0023857528, 0.0025043407, 0.002627434 …
+[Tournament/shadow  ]   |    would POST /api/comments/create/ as a private comment (dry run):
+[Tournament/shadow  ]   |    | **Forecast: median 8,075,507 (80% between 6,680,639 and 9,502,719)**, the average of the CDFs of 5 independent forecasts by nvidia/nemotron-3-ultra-550b-a55b:free.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Research** (only sources dated at or before 2026-11-24 14:54 UTC):
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | The Congressional Budget Office (CBO) projected in February 2026 that under current law, federal mandatory spending would rise from 14.2% of GDP in 2026 to 15.4% by 2041, while discretionary spending would fall from 5.6% to 2.4% over the same period. Net interest outlays were projected to increase from 3.3% of GDP in 2026 to 6.9% by 2056. Revenues from individual income taxes were expected to rise from 8.6% to 9.4% of GDP by 2041, with corporate tax receipts remaining near 1.3% of GDP. Federal debt held by the public was projected to climb from 101% of GDP in 2026 to 120% in 2036. These projections assume no legislative changes and provide a baseline for FY 2028 net outlays. The sources do not contain specific FY 2028 outlay estimates. The other sources discuss the first Trump administration’s economic policy [S2] and the state of California [S3], which are not directly relevant to FY 2028 federal outlays. [S1]
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Each forecaster's reasoning**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | 1. (median 8,196,086 (80% between 7,200,000 and 9,400,000)) (a) Time left: 677 days until the question closes (2028-10-01), roughly 1.85 years. FY 2028 ends Sep 30, 2028, so preliminary outlay data should be available near the close date. (b) Current trends: FY 2024 net outlays were 6,751,552 million. CBO’s Feb 2026 baseline projects mandatory spending and net interest rising as shares of GDP, discretionary falling. Assuming nominal GDP growth ~4.5%/yr, FY 2028 GDP ~$34.3T. With outlays ~23.5–24% of GDP, baseline outlays ≈ $8.0–8.2T. (c) Experts: CBO baseline is the standard reference; no specific FY 2028 figure provided, but the trajectory points to ~8.1T. Markets price in continued deficits; no direct forecast. (d) Low scenario: Aggressive DOGE …
+[Tournament/shadow  ]   |    | 2. (median 8,045,016 (80% between 6,500,000 and 9,800,000)) The forecast requires estimating FY 2028 federal net outlays (October 2027–September 2028), about 22 months out. FY 2024 actual was $6,751,552 million. CBO's February 2026 baseline projects rising mandatory spending (14.2%→15.4% of GDP by 2041) and net interest (3.3%→6.9% by 2056), with discretionary falling (5.6%→2.4%). Nominal GDP ~$34.6T by FY 2028 implies baseline outlays ~$8.3–8.7T (24–25% of GDP). However, the Republican Congress is pursuing reconciliation with ~$1.5T in 10-year cuts, and DOGE targets $2T annual savings (only $130B realized). Political constraints make deep cuts to Social Security/Medicare unlikely; defense may rise. Interest costs are locked in by existing debt. …
+[Tournament/shadow  ]   |    | 3. (median 8,245,499 (80% between 6,800,000 and 9,800,000)) The forecast spans 677 days until resolution. FY 2024 net outlays were $6,751,552M. CBO’s February 2026 baseline projects rising mandatory spending and net interest (3.3%→6.9% of GDP by 2056), with debt climbing from 101% to 120% of GDP by 2036. Nominal outlays have grown ~5-6% annually pre-COVID; FY 2023→2024 jumped 10%. Extrapolating 5% annual growth from FY 2024 gives ~$8.2T for FY 2028. Policy uncertainties: DOGE targets $2T savings but shows only $130B so far; realistic cuts may be $200-500B/yr. Republican reconciliation likely extends TCJA (revenue loss, modest outlay effects) and may raise defense spending. Tariffs and immigration policy could affect GDP and automatic stabilizers. A …
+[Tournament/shadow  ]   |    | 4. (median 7,497,866 (80% between 6,200,000 and 9,200,000)) The question asks for FY 2028 federal net outlays (Oct 2027–Sep 2028), 677 days out. FY 2024 actual was $6,751,552M. CBO’s February 2026 baseline projects rising mandatory spending (Social Security, Medicare), sharply higher net interest (from 3.3% to ~4.5% of GDP by 2028), and declining discretionary share. Nominal GDP in FY 2028 likely ~$31T; outlays at 24–25% of GDP imply $7.4–7.8T baseline. Upside risks: sustained high rates, debt-service spiral, TCJA extension without offsets, defense build-up. Downside: DOGE cuts materializing (currently $130B vs $2T goal), recession lowering rates, discretionary caps biting. Republican reconciliation could swing either way. Wide intervals reflect …
+[Tournament/shadow  ]   |    | 5. (median 8,195,945 (80% between 7,300,000 and 9,300,000)) The FY 2028 net outlays will be driven by CBO baseline trends (mandatory spending growth, rising net interest, discretionary decline) modified by Trump administration policies. FY 2024 actual was $6.75T. CBO's February 2026 baseline implies ~$8.2-8.5T for FY 2028 under current law (nominal GDP ~$35T, outlays ~23.5-24% of GDP). Policy adjustments: DOGE savings claims ($130B to date vs $2T target) are highly uncertain; realistic aggressive cuts might reach $300-500B/year by 2028 but face legal/congressional hurdles. Republican reconciliation likely yields modest net spending reductions ($100-300B/year) via mandatory program reforms, partially offset by defense/border increases. Tariff and …
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Sources**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | - [S1] [United States federal budget](https://en.wikipedia.org/w/index.php?oldid=1387460284) (wikipedia, revision of 2026-11-24)
+[Tournament/shadow  ]   |    | - [S2] [Economic policy of the first Trump administration](https://en.wikipedia.org/w/index.php?oldid=1386112602) (wikipedia, revision of 2026-11-17)
+[Tournament/shadow  ]   |    | - [S3] [California](https://en.wikipedia.org/w/index.php?oldid=1387557828) (wikipedia, revision of 2026-11-24)
+[Tournament/shadow  ]   | {"cost_usd": 0.0, "event": "run finished", "failed": 0, "forecast": 1, "level": "info", "missed": 0, "run_id": "run_c8a12174ded14787a4fc", "skipped": 5, "timestamp": "2026-11-24T14:57:12.174053Z"}
+[Tournament/shadow  ]   | coverage: 6 listed; 1 forecast in time (0 submitted), 0 missed, 5 skipped, 0 failed; estimated cost $0.0000
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/43323/ already in the shadow ledger
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/43327/ already in the shadow ledger
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/43321/ already in the shadow ledger
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/45517/ already in the shadow ledger
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/46223/ over the cap of 1 questions per run
+[Tournament/shadow  ]   | ledger: run.sqlite (run run_c8a12174ded14787a4fc)
+[Tournament/shadow  ]   ✅  Success - Main Forecast (shadow, never submitted) [2m29.961295005s]
+[Tournament/shadow  ] ⭐ Run Main Push Augur's forecasts to the ledger branch
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/6] user= workdir=
+[Tournament/shadow  ]   | exported 55 rows to /tmp/tmp.9fx5uU6UHG/ledger/shadow/2026-11-24/20261124T145441Z-1-1.jsonl (runs 1, questions 1, sources 3, source_uses 3, llm_calls 7, call_sources 18, forecasts 6, submissions 2, model_probes 1, question_outcomes 6, schema_migrations 7)
+[Tournament/shadow  ]   | pushed shadow/2026-11-24/20261124T145441Z-1-1.jsonl to the ledger branch
+[Tournament/shadow  ]   ✅  Success - Main Push Augur's forecasts to the ledger branch [340.519911ms]
+[Tournament/shadow  ] ⭐ Run Main Template bot on the same questions (unpublished)
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/template] user= workdir=
+[Tournament/shadow  ]   | == augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite
+[Tournament/shadow  ]   | Warning: Model openrouter/anthropic/claude-haiku-5.5 does not support cost tracking.
+[Tournament/shadow  ]   | Warning: Model openrouter/nvidia/nemotron-3-ultra-550b-a55b:free does not support cost tracking.
+[Tournament/shadow  ]   | Warning: Model openrouter/anthropic/claude-opus-5.5 does not support cost tracking.
+[Tournament/shadow  ]   | Warning: Model openrouter/perplexity/sonar-pro does not support cost tracking.
+[Tournament/shadow  ]   | {"event": "baseline_recorded", "level": "info", "post_id": 46224, "question_id": 46451, "question_type": "numeric", "timestamp": "2026-11-24T14:59:15.637629Z"}
+[Tournament/shadow  ]   | shadow template on 1 question(s)
+[Tournament/shadow  ]   | post 46224 (numeric): template CDF of 201 points; p10=6.155e+06, p20=6.964e+06, p40=7.78e+06, p60=8.298e+06, p80=8.909e+06, p90=9.514e+06
+[Tournament/shadow  ]   | ledger: run.sqlite: 1 recorded, 0 skipped, 0 failed
+[Tournament/shadow  ]   ✅  Success - Main Template bot on the same questions (unpublished) [2m3.907095704s]
+[Tournament/shadow  ] ⭐ Run Main Push the template's forecasts to the ledger branch
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/8] user= workdir=
+[Tournament/shadow  ]   | exported 56 rows to /tmp/tmp.emri2qE3vg/ledger/shadow/2026-11-24/20261124T145441Z-1-1.jsonl (runs 1, questions 1, sources 3, source_uses 3, llm_calls 7, call_sources 18, forecasts 6, submissions 2, model_probes 1, question_outcomes 6, reference_forecasts 1, schema_migrations 7)
+[Tournament/shadow  ]   | pushed shadow/2026-11-24/20261124T145441Z-1-1.jsonl to the ledger branch
+[Tournament/shadow  ]   ✅  Success - Main Push the template's forecasts to the ledger branch [351.419295ms]
+[Tournament/shadow  ] ⭐ Run Main Summary
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/9] user= workdir=
+[Tournament/shadow  ]   ✅  Success - Main Summary [87.66058ms]
+[Tournament/shadow  ]   ⚙  Summary - ### Shadow tick (workflow_dispatch, forecast success, template success)
+```
+== augur forecast --tournament bot-testing-area --shadow-ledger shadow.sqlite
+{"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-24T14:54:42.905041Z"}
+{"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_c8a12174ded14787a4fc", "source": "metaculus:bot-testing-area", "timestamp": "2026-11-24T14:54:43.088791Z"}
+shadow tick: 4 question(s) already held in shadow.sqlite
+run run_c8a12174ded14787a4fc (dry_run) on metaculus:bot-testing-area
+models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free; research: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+{"event": "question skipped", "level": "info", "question_id": 43325, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.287913Z"}
+{"event": "question skipped", "level": "info", "question_id": 43332, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288068Z"}
+{"event": "question skipped", "level": "info", "question_id": 43322, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288160Z"}
+{"event": "question skipped", "level": "info", "question_id": 45708, "reason": "already in the shadow ledger", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288233Z"}
+{"event": "question skipped", "level": "info", "question_id": 46450, "reason": "over the cap of 1 questions per run", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:48.288319Z"}
+{"event": "probe: route answered", "latency_ms": 1641, "level": "info", "route": "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free", "run_id": "run_c8a12174ded14787a4fc", "timestamp": "2026-11-24T14:54:49.929592Z"}
+probe:
+  openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered       1641 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+estimated worst case $0.0000 a question, $0.0000 for 1 (caps $0.50 a question, $0.00 a run)
+
+== What will net outlays by the US government be in millions of dollars in FY 2028?
+   https://www.metaculus.com/questions/46224/ (numeric)
+   sources: 3 admitted, 0 rejected; members: median 8,196,086 (80% between 7,200,000 and 9,400,000) | median 8,045,016 (80% between 6,500,000 and 9,800,000) | median 8,245,499 (80% between 6,800,000 and 9,800,000) | median 7,497,866 (80% between 6,200,000 and 9,200,000) | median 8,195,945 (80% between 7,300,000 and 9,300,000)
+   combined: median 8,075,507 (80% between 6,680,639 and 9,502,719)
+   would POST /api/questions/forecast/ (dry run, not sent):
+   [{"question": 46451, "source": "api", "probability_yes": null, "probability_yes_per_category": null, "continuous_cdf": [0.001, 0.00105251, 0.00110502, 0.00115753, 0.00121004, 0.00126255, 0.00131506, 0.00137261, 0.0014376584, 0.0015034821, 0.001570129, 0.0016376502, 0.0017071251, 0.0017920476, 0.001879223, 0.0019688099, 0.0020609783, 0.0021609504, 0.00227138, 0.0023857528, 0.0025043407, 0.002627434 …
+   would POST /api/comments/create/ as a private comment (dry run):
+   | **Forecast: median 8,075,507 (80% between 6,680,639 and 9,502,719)**, the average of the CDFs of 5 independent forecasts by nvidia/nemotron-3-ultra-550b-a55b:free.
+   | 
+   | **Research** (only sources dated at or before 2026-11-24 14:54 UTC):
+   | 
+   | The Congressional Budget Office (CBO) projected in February 2026 that under current law, federal mandatory spending would rise from 14.2% of GDP in 2026 to 15.4% by 2041, while discretionary spending would fall from 5.6% to 2.4% over the same period. Net interest outlays were projected to increase from 3.3% of GDP in 2026 to 6.9% by 2056. Revenues from individual income taxes were expected to rise from 8.6% to 9.4% of GDP by 2041, with corporate tax receipts remaining near 1.3% of GDP. Federal debt held by the public was projected to climb from 101% of GDP in 2026 to 120% in 2036. These projections assume no legislative changes and provide a baseline for FY 2028 net outlays. The sources do not contain specific FY 2028 outlay estimates. The other sources discuss the first Trump administration’s economic policy [S2] and the state of California [S3], which are not directly relevant to FY 2028 federal outlays. [S1]
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (median 8,196,086 (80% between 7,200,000 and 9,400,000)) (a) Time left: 677 days until the question closes (2028-10-01), roughly 1.85 years. FY 2028 ends Sep 30, 2028, so preliminary outlay data should be available near the close date. (b) Current trends: FY 2024 net outlays were 6,751,552 million. CBO’s Feb 2026 baseline projects mandatory spending and net interest rising as shares of GDP, discretionary falling. Assuming nominal GDP growth ~4.5%/yr, FY 2028 GDP ~$34.3T. With outlays ~23.5–24% of GDP, baseline outlays ≈ $8.0–8.2T. (c) Experts: CBO baseline is the standard reference; no specific FY 2028 figure provided, but the trajectory points to ~8.1T. Markets price in continued deficits; no direct forecast. (d) Low scenario: Aggressive DOGE …
+   | 2. (median 8,045,016 (80% between 6,500,000 and 9,800,000)) The forecast requires estimating FY 2028 federal net outlays (October 2027–September 2028), about 22 months out. FY 2024 actual was $6,751,552 million. CBO's February 2026 baseline projects rising mandatory spending (14.2%→15.4% of GDP by 2041) and net interest (3.3%→6.9% by 2056), with discretionary falling (5.6%→2.4%). Nominal GDP ~$34.6T by FY 2028 implies baseline outlays ~$8.3–8.7T (24–25% of GDP). However, the Republican Congress is pursuing reconciliation with ~$1.5T in 10-year cuts, and DOGE targets $2T annual savings (only $130B realized). Political constraints make deep cuts to Social Security/Medicare unlikely; defense may rise. Interest costs are locked in by existing debt. …
+   | 3. (median 8,245,499 (80% between 6,800,000 and 9,800,000)) The forecast spans 677 days until resolution. FY 2024 net outlays were $6,751,552M. CBO’s February 2026 baseline projects rising mandatory spending and net interest (3.3%→6.9% of GDP by 2056), with debt climbing from 101% to 120% of GDP by 2036. Nominal outlays have grown ~5-6% annually pre-COVID; FY 2023→2024 jumped 10%. Extrapolating 5% annual growth from FY 2024 gives ~$8.2T for FY 2028. Policy uncertainties: DOGE targets $2T savings but shows only $130B so far; realistic cuts may be $200-500B/yr. Republican reconciliation likely extends TCJA (revenue loss, modest outlay effects) and may raise defense spending. Tariffs and immigration policy could affect GDP and automatic stabilizers. A …
+   | 4. (median 7,497,866 (80% between 6,200,000 and 9,200,000)) The question asks for FY 2028 federal net outlays (Oct 2027–Sep 2028), 677 days out. FY 2024 actual was $6,751,552M. CBO’s February 2026 baseline projects rising mandatory spending (Social Security, Medicare), sharply higher net interest (from 3.3% to ~4.5% of GDP by 2028), and declining discretionary share. Nominal GDP in FY 2028 likely ~$31T; outlays at 24–25% of GDP imply $7.4–7.8T baseline. Upside risks: sustained high rates, debt-service spiral, TCJA extension without offsets, defense build-up. Downside: DOGE cuts materializing (currently $130B vs $2T goal), recession lowering rates, discretionary caps biting. Republican reconciliation could swing either way. Wide intervals reflect …
+   | 5. (median 8,195,945 (80% between 7,300,000 and 9,300,000)) The FY 2028 net outlays will be driven by CBO baseline trends (mandatory spending growth, rising net interest, discretionary decline) modified by Trump administration policies. FY 2024 actual was $6.75T. CBO's February 2026 baseline implies ~$8.2-8.5T for FY 2028 under current law (nominal GDP ~$35T, outlays ~23.5-24% of GDP). Policy adjustments: DOGE savings claims ($130B to date vs $2T target) are highly uncertain; realistic aggressive cuts might reach $300-500B/year by 2028 but face legal/congressional hurdles. Republican reconciliation likely yields modest net spending reductions ($100-300B/year) via mandatory program reforms, partially offset by defense/border increases. Tariff and …
+   | 
+   | **Sources**
+   | 
+   | - [S1] [United States federal budget](https://en.wikipedia.org/w/index.php?oldid=1387460284) (wikipedia, revision of 2026-11-24)
+   | - [S2] [Economic policy of the first Trump administration](https://en.wikipedia.org/w/index.php?oldid=1386112602) (wikipedia, revision of 2026-11-17)
+   | - [S3] [California](https://en.wikipedia.org/w/index.php?oldid=1387557828) (wikipedia, revision of 2026-11-24)
+{"cost_usd": 0.0, "event": "run finished", "failed": 0, "forecast": 1, "level": "info", "missed": 0, "run_id": "run_c8a12174ded14787a4fc", "skipped": 5, "timestamp": "2026-11-24T14:57:12.174053Z"}
+coverage: 6 listed; 1 forecast in time (0 submitted), 0 missed, 5 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/43323/ already in the shadow ledger
+  skipped: https://www.metaculus.com/questions/43327/ already in the shadow ledger
+  skipped: https://www.metaculus.com/questions/43321/ already in the shadow ledger
+  skipped: https://www.metaculus.com/questions/45517/ already in the shadow ledger
+  skipped: https://www.metaculus.com/questions/46223/ over the cap of 1 questions per run
+ledger: run.sqlite (run run_c8a12174ded14787a4fc)
+== augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite
+Warning: Model openrouter/anthropic/claude-haiku-5.5 does not support cost tracking.
+Warning: Model openrouter/nvidia/nemotron-3-ultra-550b-a55b:free does not support cost tracking.
+Warning: Model openrouter/anthropic/claude-opus-5.5 does not support cost tracking.
+Warning: Model openrouter/perplexity/sonar-pro does not support cost tracking.
+{"event": "baseline_recorded", "level": "info", "post_id": 46224, "question_id": 46451, "question_type": "numeric", "timestamp": "2026-11-24T14:59:15.637629Z"}
+shadow template on 1 question(s)
+post 46224 (numeric): template CDF of 201 points; p10=6.155e+06, p20=6.964e+06, p40=7.78e+06, p60=8.298e+06, p80=8.909e+06, p90=9.514e+06
+ledger: run.sqlite: 1 recorded, 0 skipped, 0 failed
+```
+[Tournament/shadow  ] ⭐ Run Post astral-sh/setup-uv@v10.3.0
+[Tournament/shadow  ]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/save-cache/index.cjs] user= workdir=
+[Tournament/shadow  ]   | UV_CACHE_DIR is already set to /root/.cache/uv
+[Tournament/shadow  ]   | UV_PYTHON_INSTALL_DIR is already set to /root/.local/share/uv/python
+[Tournament/shadow  ]   | Cache hit occurred on key setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053, not saving cache.
+[Tournament/shadow  ]   ✅  Success - Post astral-sh/setup-uv@v10.3.0 [284.477524ms]
+[Tournament/shadow  ] ⭐ Run Complete job
+[Tournament/shadow  ] Cleaning up container for job shadow
+[Tournament/shadow  ]   ✅  Success - Complete job
+[Tournament/shadow  ] 🏁  Job succeeded
+act exit 0 in 288 s

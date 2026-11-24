@@ -13,7 +13,19 @@ from pathlib import Path
 
 import httpx
 
-from augur import baseline, diagram, fbcompare, livecal, q4, q6, report, scorecard, standings
+from augur import (
+    baseline,
+    diagram,
+    fbcompare,
+    floor,
+    livecal,
+    q4,
+    q6,
+    report,
+    scorecard,
+    shadow,
+    standings,
+)
 from augur.backtest import (
     PLAN_SUFFIX,
     PinnedClock,
@@ -71,7 +83,12 @@ from augur.research.markets import MarketsSearcher
 from augur.research.source import Searcher
 from augur.research.wayback import WaybackSearcher
 from augur.research.wikipedia import WikipediaSearcher
-from augur.resolve import resolve_forecastbench, resolve_manual, resolve_metaculus
+from augur.resolve import (
+    resolve_forecastbench,
+    resolve_manual,
+    resolve_manual_file,
+    resolve_metaculus,
+)
 from augur.runner import TOURNAMENTS, ForecastRun, code_version, format_probe
 
 log = get_logger("augur.cli")
@@ -96,7 +113,17 @@ def _parser() -> argparse.ArgumentParser:
         default="minibench",
         help=f"slug or id; aliases: {', '.join(TOURNAMENTS)} (default minibench)",
     )
-    fc.add_argument("--submit", action="store_true", help="post forecasts and private comments")
+    posting = fc.add_mutually_exclusive_group()
+    posting.add_argument(
+        "--submit", action="store_true", help="post forecasts and private comments"
+    )
+    posting.add_argument(
+        "--shadow-ledger",
+        type=Path,
+        metavar="PATH",
+        help="a shadow tick (M11): skip every question this ledger already holds an Augur "
+        "forecast for, before any model call; never submits (excludes --submit)",
+    )
     fc.add_argument("--samples", type=Path, help="forecast sample posts from this directory")
     fc.add_argument("--max-questions", type=int, help="override AUGUR_MAX_QUESTIONS_PER_RUN")
     fc.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
@@ -287,15 +314,31 @@ def _parser() -> argparse.ArgumentParser:
             "Read each live or dry-run question in the ledger from Metaculus and append its "
             "resolution, the community aggregate and Metaculus's own scores where the API "
             "shows them; or resolve a backtest from a ForecastBench resolution set; or "
-            "record one resolution read by hand."
+            "record one resolution read by hand; or a round's resolutions from a CSV file, "
+            "all of the round's forecast questions or none."
         ),
     )
     res.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
-    res.add_argument("--forecastbench", type=Path, help="a ForecastBench resolution set JSON")
-    res.add_argument(
+    how = res.add_mutually_exclusive_group()
+    how.add_argument("--forecastbench", type=Path, help="a ForecastBench resolution set JSON")
+    how.add_argument(
         "--manual", nargs=2, metavar=("POST_ID", "VALUE"), help="record one resolution by hand"
     )
+    how.add_argument(
+        "--manual-file",
+        type=Path,
+        metavar="F",
+        help="a CSV with the header post_id,value,evidence (an evidence URL on every line); "
+        "written only if no question of the --standings round that the ledger forecast is "
+        "left without a resolution",
+    )
     res.add_argument("--evidence", default="", help="where a --manual resolution was read")
+    res.add_argument(
+        "--standings",
+        type=Path,
+        metavar="S",
+        help="the round's standings snapshot (augur standings --out); needed by --manual-file",
+    )
 
     sc = sub.add_parser(
         "score",
@@ -383,6 +426,7 @@ def _parser() -> argparse.ArgumentParser:
 
     standings.add_parser(sub)
     baseline.add_parser(sub)
+    floor.add_parser(sub)
 
     led = sub.add_parser("ledger", help="inspect a ledger")
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
@@ -402,6 +446,20 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _shadow_held(shadow_ledger: Path | None, ledger_path: Path) -> frozenset[int] | None:
+    """A shadow tick's held question ids, or ``None`` for an ordinary run."""
+    if shadow_ledger is None:
+        return None
+    if shadow_ledger.resolve() == ledger_path.resolve():
+        raise AugurError(
+            "--shadow-ledger must not be the run's own ledger; write the run to a fresh "
+            "file and pass the ledger rebuilt from the shadow exports"
+        )
+    held = shadow.held_questions(shadow_ledger)
+    print(f"shadow tick: {len(held)} question(s) already held in {shadow_ledger}")
+    return held
+
+
 async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     clock = SystemClock()
     ledger_path: Path = args.ledger or settings.ledger_path
@@ -410,6 +468,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     )
     if args.submit and not settings.has_metaculus_token:
         raise MissingCredentialsError("--submit", ("METACULUS_TOKEN",))
+    held = _shadow_held(args.shadow_ledger, ledger_path)
     async with default_http_client() as http:
         # A replay must not depend on the network, prices included.
         catalog = load_snapshot() if settings.is_replay else await fetch_catalog(http, clock.now())
@@ -451,6 +510,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                     samples=args.samples,
                     max_questions=max_questions,
                     reforecast=args.reforecast,
+                    shadow=held,
                 )
             finally:
                 await router.aclose()
@@ -802,6 +862,15 @@ async def _resolve(args: argparse.Namespace, settings: Settings) -> int:
             )
             print(f"post {post}: {status} {recorded or ''}".rstrip())
             return 0
+        if args.manual_file is not None:
+            snapshot = standings.load_snapshot(args.standings)
+            filed = resolve_manual_file(
+                ledger, args.manual_file, [q.post_id for q in snapshot.questions]
+            )
+            for m in filed.written:
+                print(f"post {m.post_id}: {m.status} {m.value or ''}".rstrip())
+            print(filed.line(args.manual_file))
+            return 0
         if args.forecastbench is not None:
             report = resolve_forecastbench(ledger, args.forecastbench)
             print(report.line())
@@ -941,7 +1010,10 @@ def _ledger_check(paths: Sequence[Path]) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.command == "resolve" and (args.manual_file is None) != (args.standings is None):
+        parser.error("augur resolve: --manual-file and --standings go together")
     try:
         settings = Settings.from_env(os.environ)
         configure_logging(settings.log_level)
@@ -957,6 +1029,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_judge(args, settings))
         if args.command == "baseline":
             return asyncio.run(baseline.main(args, settings))
+        if args.command == "floor":
+            return floor.main(args)
         if args.command == "resolve":
             return asyncio.run(_resolve(args, settings))
         if args.command == "score":
