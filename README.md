@@ -375,7 +375,7 @@ backtest, what leakage is worth, and a first research loop; M7 (done) the fleet 
 season's standing, the ForecastBench same-question row and the postmortem; M11 (next) an unattended
 shadow round against the same-model template, and the rule that decides whether the free model may
 be submitted; M12 a forecast with no model in it and one registered blend; M13 dated news in the
-backtest. Details in
+backtest, and the same-model agent-against-template pairs in FutureEval. Details in
 [PLAN.md](PLAN.md).
 
 ## Development
