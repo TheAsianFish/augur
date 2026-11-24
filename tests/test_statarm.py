@@ -107,6 +107,9 @@ def test_horizon_follows_the_series_own_rate() -> None:
     daily = [(date(2025, 1, 1) + timedelta(days=k), 1.0) for k in range(400)]
     assert horizon(daily, daily[-1][0] + timedelta(days=7)) == 7
     assert horizon(daily, daily[-1][0] + timedelta(days=0)) == 1
+    # A recent listing: 100 weekdays of history still trade five days a week.
+    young = weekdays[-100:]
+    assert horizon(young, young[-1][0] + timedelta(days=14)) == 10
 
 
 def test_changes_are_overlapping_log_ratios() -> None:
@@ -254,3 +257,4 @@ def test_committed_snapshot_matches_a_fresh_run() -> None:
     groups = {g["group"]: g for g in snap["groups"]}
     assert groups["priced"]["n"] + groups["unpriced"]["n"] == groups["all"]["n"]
     assert set(groups["metaculus"]["arm_kinds"]) == {"base-rate"}
+

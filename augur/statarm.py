@@ -171,11 +171,14 @@ def horizon(closes: Sequence[tuple[date, float]], target: date) -> int:
 
     The series' own observation rate over the last :data:`RATE_WINDOW_DAYS`
     (about 252 a year for a stock, 365 for a coin) times the calendar days to
-    ``target``, rounded, and at least 1.
+    ``target``, rounded, and at least 1. The rate is taken over the days the
+    window actually spans, so a series younger than the window (a recent
+    listing) is not read as one that trades less often.
     """
     last = closes[-1][0]
     window = [d for d, _ in closes if (last - d).days < RATE_WINDOW_DAYS]
-    per_day = len(window) / RATE_WINDOW_DAYS
+    span = (last - window[0]).days
+    per_day = (len(window) - 1) / span if span > 0 else 1.0
     return max(1, round((target - last).days * per_day))
 
 
