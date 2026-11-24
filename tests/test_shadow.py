@@ -195,6 +195,35 @@ async def test_a_template_cut_off_by_the_timeout_is_caught_up_next_tick(tmp_path
     assert sorted(template.calls) == [500, 520]
 
 
+async def test_a_shadow_tick_ignores_what_the_account_posted(tmp_path: Path) -> None:
+    server = _server()
+    async with server.client() as http:
+        client = _client(http)
+        # The account posted on question 501 outside the shadow round.
+        await client.submit_forecast(
+            [
+                {
+                    "question": 501,
+                    "source": "api",
+                    "probability_yes": 0.5,
+                    "probability_yes_per_category": None,
+                    "continuous_cdf": None,
+                }
+            ]
+        )
+        report, _ = await _tick(
+            tmp_path / "tick",
+            http,
+            ScriptedProvider(),
+            tmp_path / "none.sqlite",
+            CountingTemplate(),
+        )
+    assert sorted(r.question.question_id for r in report.reports if r.status == "forecast") == [
+        501,
+        521,
+    ]
+
+
 def test_a_closed_question_is_not_caught_up(tmp_path: Path) -> None:
     assert questions_missing_template(tmp_path / "missing.sqlite", T0) == []
 

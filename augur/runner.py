@@ -238,6 +238,7 @@ class ForecastRun:
         self._probe_providers = probe_providers
         self._reforecast = False
         self._held: frozenset[int] = frozenset()
+        self._shadow = False
         self._scored = False
         self._searchers = list(searchers)
         self._run_deadline = clock.now() + timedelta(minutes=settings.run_deadline_minutes)
@@ -262,6 +263,7 @@ class ForecastRun:
         if shadow is not None and reforecast:
             raise AugurError("a shadow run skips what its ledger holds; drop --reforecast")
         self._held = shadow or frozenset()
+        self._shadow = shadow is not None
         if submit and (self._client is None or not self._client.has_token):
             raise AugurError("--submit needs METACULUS_TOKEN; without it run a dry run")
         if submit and samples is not None:
@@ -511,6 +513,10 @@ class ForecastRun:
             return "skipped", "not open now"
         if q.question_id in self._held:
             return "skipped", "already in the shadow ledger"
+        # A shadow tick is its own contestant: what the account posted does not
+        # count, only what the shadow ledger holds (the poll reads it the same way).
+        if self._shadow:
+            return "forecast", None
         if live_listing and q.already_forecast(now) and not self._reforecast:
             return "skipped", "already forecast by this account"
         return "forecast", None
