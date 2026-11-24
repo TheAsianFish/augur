@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
@@ -205,3 +206,132 @@ def test_http_errors_name_the_path_but_not_the_headers(monkeypatch: pytest.Monke
         )
     assert str(caught.value) == "GET /api/posts/1/ returned HTTP 401"
     assert caught.value.__cause__ is None
+
+
+# -- shadow mode (M11) -------------------------------------------------------------
+
+
+def _export(directory: Path, name: str, rows: list[tuple[str, dict[str, Any]]]) -> None:
+    path = directory / "shadow" / "2026-11-18" / f"{name}.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        for table, row in rows:
+            fh.write(json.dumps({"table": table, "row": row}, sort_keys=True) + "\n")
+
+
+def _aggregate(qid: int) -> tuple[str, dict[str, Any]]:
+    return "forecasts", {"forecast_id": f"f{qid}", "question_id": qid, "kind": "aggregate"}
+
+
+def _member(qid: int) -> tuple[str, dict[str, Any]]:
+    return "forecasts", {"forecast_id": f"m{qid}", "question_id": qid, "kind": "member"}
+
+
+def _call(cid: str, qid: int, day: str = "2026-11-18") -> tuple[str, dict[str, Any]]:
+    return "llm_calls", {"call_id": cid, "question_id": qid, "started_at": f"{day}T10:00:00Z"}
+
+
+def _template(qid: int, day: str = "2026-11-18") -> tuple[str, dict[str, Any]]:
+    return "reference_forecasts", {
+        "reference_id": f"r{qid}",
+        "question_id": qid,
+        "forecaster": "template",
+        "recorded_at": f"{day}T10:05:00Z",
+    }
+
+
+def _shadow_env(directory: Path, **extra: str) -> dict[str, str]:
+    base = {"AUGUR_SCHEDULE": "minibench", "AUGUR_SHADOW": "true"}
+    return _env(**(base | {"AUGUR_SHADOW_LEDGER": str(directory / "shadow")} | extra))
+
+
+def test_shadow_work_is_what_the_shadow_ledger_does_not_hold(tmp_path: Path) -> None:
+    # Questions are 2..6 (post id + 1); the ledger holds 2 and 4, and 3 only as a member row.
+    _export(tmp_path, "tick1", [_aggregate(2), _aggregate(4), _member(3), _call("c1", 2)])
+    api = _api()
+    has_work, tournaments, lines = poll_script.poll(
+        _shadow_env(tmp_path), api, lambda _s: None, NOW
+    )
+    assert has_work is True
+    assert tournaments == ["minibench"]
+    assert "minibench: 5 open, 3 not in the shadow ledger" in lines[-1]
+    assert len(api.urls) == 1, "a shadow poll reads the listing alone"
+
+
+def test_shadow_everything_held_is_no_work_however_my_forecasts_reads(tmp_path: Path) -> None:
+    _export(tmp_path, "tick1", [_aggregate(q) for q in (2, 3, 4)])
+    _export(tmp_path, "tick2", [_aggregate(q) for q in (5, 6)])
+    has_work, _, lines = poll_script.poll(_shadow_env(tmp_path), _api(), lambda _s: None, NOW)
+    assert has_work is False
+    assert "minibench: 5 open, 0 not in the shadow ledger" in lines[-1]
+
+
+def test_shadow_with_no_exports_yet_everything_is_work(tmp_path: Path) -> None:
+    has_work, _, lines = poll_script.poll(_shadow_env(tmp_path), _api(), lambda _s: None, NOW)
+    assert has_work is True
+    assert lines[0].startswith("shadow ledger: 0 export(s), 0 question(s) held")
+
+
+def test_an_unreadable_shadow_export_stops_the_tick(tmp_path: Path) -> None:
+    bad = tmp_path / "shadow" / "x.jsonl"
+    bad.parent.mkdir(parents=True)
+    bad.write_text("not json\n", encoding="utf-8")
+    api = _api()
+    has_work, _, lines = poll_script.poll(_shadow_env(tmp_path), api, lambda _s: None, NOW)
+    assert has_work is False
+    assert "shadow ledger unreadable" in lines[-1]
+    assert api.urls == []
+
+
+def _futureeval_api() -> FakeApi:
+    api = _api()
+    api.listings["33121"] = [_post(90, None, NOW + timedelta(days=3))]
+    return api
+
+
+def test_shadow_futureeval_waits_while_minibench_has_work(tmp_path: Path) -> None:
+    api = _futureeval_api()
+    _, tournaments, lines = poll_script.poll(
+        _shadow_env(tmp_path, AUGUR_SCHEDULE="all"), api, lambda _s: None, NOW
+    )
+    assert tournaments == ["minibench"]
+    assert "33121: not polled, minibench comes first this tick" in lines
+    assert all("tournaments=33121" not in u for u in api.urls)
+
+
+def test_shadow_futureeval_gets_what_the_day_has_left(tmp_path: Path) -> None:
+    _export(tmp_path, "tick1", [_aggregate(q) for q in (2, 3, 4, 5, 6)])
+    _, tournaments, _ = poll_script.poll(
+        _shadow_env(tmp_path, AUGUR_SCHEDULE="all"), _futureeval_api(), lambda _s: None, NOW
+    )
+    assert tournaments == ["33121"]
+
+
+def test_shadow_futureeval_is_not_polled_past_the_daily_allowance(tmp_path: Path) -> None:
+    # 2 calls today on held question 2, 1 template today (10 calls), 1 call yesterday.
+    rows = [_aggregate(q) for q in (2, 3, 4, 5, 6)]
+    rows += [_call("a", 2), _call("b", 2), _call("old", 3, day="2026-11-17"), _template(2)]
+    rows += [_call("a", 2)]  # the same call again, as a tick's second push repeats its first
+    _export(tmp_path, "tick1", rows)
+    env = _shadow_env(
+        tmp_path,
+        AUGUR_SCHEDULE="all",
+        AUGUR_SHADOW_DAILY_CALLS="80",
+        AUGUR_MAX_QUESTIONS_PER_RUN="6",
+    )
+    _, tournaments, lines = poll_script.poll(env, _futureeval_api(), lambda _s: None, NOW)
+    # Today: 2 Augur calls + 1 template x 10 = 12; a run: 6 x (1.5 + 10) = 69; 81 > 80.
+    assert "today about 12 of 80 free calls used (11.5 a question)" in lines[0]
+    assert tournaments == []
+    assert any("33121: not polled, a run of 6 would pass" in line for line in lines)
+    env["AUGUR_SHADOW_DAILY_CALLS"] = "81"
+    _, tournaments, _ = poll_script.poll(env, _futureeval_api(), lambda _s: None, NOW)
+    assert tournaments == ["33121"]
+
+
+def test_shadow_override_polls_exactly_what_was_asked(tmp_path: Path) -> None:
+    api = _futureeval_api()
+    _, tournaments, _ = poll_script.poll(
+        _shadow_env(tmp_path, AUGUR_POLL_TOURNAMENTS="33121"), api, lambda _s: None, NOW
+    )
+    assert tournaments == ["33121"]
