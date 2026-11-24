@@ -1386,6 +1386,15 @@ round (RESULTS.md, To measure).
 - *Yahoo Finance's chart endpoint* is unofficial and keyless; FRED and
   Stooq answered this environment with a browser challenge, so neither is
   a fallback here.
+- *Held to the registered rule (2026-11-24, before merge).* The first
+  matcher also took a bare "price" or "settle" and aliased silver, natural
+  gas and Solana, none of which item 2 names; it now takes only a close,
+  closing price or level and the registered aliases (a ticker in
+  parentheses, such as SOL, still counts). None of the 2026-11-16 round's
+  seven reached titles changes. The ledger scan also accepts a close dated
+  by its later UTC day (an evening bar west of UTC), which the fetcher
+  produces and the excerpt does not show; a date earlier than the excerpt
+  backs is still a violation.
 
 
 ### M13: is the limit the evidence or the model?
