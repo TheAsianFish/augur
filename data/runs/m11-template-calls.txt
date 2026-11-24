@@ -1,0 +1,8 @@
+shadow template on 3 question(s)
+post 43323 (numeric): template CDF of 201 points; p10=-32.08, p20=-26.14, p40=-20.03, p60=-13.99, p80=-6.941, p90=-1.976
+post 43327 (binary): template 1.0%
+post 43321 (discrete): template CDF of 17 points; p10=-0.1613, p20=0.1773, p40=0.7663, p60=1.275, p80=2.252, p90=4.492
+ledger: /tmp/m11/count.sqlite: 3 recorded, 0 skipped, 0 failed
+template model calls: 45 succeeded, 0 failed; 335 s; exit 0
+
+# counted with: python -I count_template.py baseline --ledger scratch.sqlite --post 43323 --post 43327 --post 43321 (forecasting-tools 0.3.7; acompletion wrapped to count requests)

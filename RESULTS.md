@@ -24,9 +24,56 @@ the first live score waits on a scored round (see Q1 and Q5 below).
 
 ## M11: the shadow round and the rule that decides the floor (Q1)
 
-The rule below was committed before the 2026-11-30 MiniBench round opened,
+The rule below was committed before the 2026-11-30 MiniBench round opened
+(commit "Register M11's floor rule before the 2026-11-30 round", 2026-11-24),
 and is rendered here from PLAN.md, so a later edit to either copy fails the
-build. The round's numbers are recorded once they exist.
+build. The round itself has not opened yet: its numbers, its resolution and
+the verdict are under To measure with the exact commands.
+
+### What a shadow tick costs (2026-11-24, bot-testing-area, $0)
+
+Route `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free` for both
+contestants; no AskNews keys here, so neither had news (the scheduled job
+passes them when the repository has them). Raw output:
+`data/runs/m11-shadow-tick-bot-testing-area.txt`,
+`data/runs/m11-template-calls.txt`, `data/runs/m11-act-tick-1.txt`,
+`data/runs/m11-act-tick-2.txt`, `data/runs/m11-poll-after-two-ticks.txt`.
+
+| What | Measured |
+|------|----------|
+| Augur, model calls a question | 7 (planner, brief, five draws), plus one probe a tick; the same in all three runs (3, 2 and 2 questions) |
+| Augur, time a question | 90 to 139 s locally (3 questions, 363 s with listing and probe); 3 min 56 s and 6 min 37 s for the two questions of each `act` tick |
+| Template (`forecasting-tools` 0.3.7 `TemplateBot`), model calls a question | 15 (45 for 3 questions, every request to `acompletion` counted) |
+| Template, time a question | 335 s for 3 questions; 3 min 19 s and 3 min 17 s for each `act` tick's two |
+| Free calls a question, both contestants | 22 |
+| The key's free allowance | 1,000 requests a day (`augur models probe`, `free_model_daily_requests`); $0 used, limit $1 |
+| A tick under `act`, poll to last push | 480 s (tick 1) and 608 s (tick 2), two questions each |
+
+A 60-question MiniBench round is about 1,320 free calls, more than one
+day's allowance; the 2026-11-16 round opened its questions over three days
+(PLAN.md), about 440 calls a day. The poll budgets the day from the shadow
+exports and polls FutureEval only when MiniBench has nothing to do and a
+whole tick still fits. At the default of 4 questions a tick, a round is
+about 15 ticks of roughly 15 minutes, about 225 runner minutes, plus a
+few seconds for every empty poll. The repository is public, so these
+minutes are not billed; on a private repository they would be about 11%
+of GitHub's 2,000-minute monthly free allowance per round.
+
+**Two consecutive ticks under `act`** (`act` 0.2.98, image
+`catthehacker/ubuntu:act-latest`, `workflow_dispatch` with `shadow=true`,
+`tournament=bot-testing-area`, `max_questions=2`, the `ledger` branch on a
+local bare repository through `AUGUR_LEDGER_REMOTE`): the first tick's poll
+found 6 open questions and 0 held; Augur forecast 2 (the other 4 over the
+cap), the first push wrote `shadow/2026-11-24/<tick>.jsonl`, the template
+recorded 2, and the second push replaced the file with the superset. The
+second tick skipped both of those as "already in the shadow ledger",
+forecast the next two, and the template ran only on those. Rebuilt from
+the branch (`augur ledger import`), the shadow ledger holds 4 questions,
+each with Augur's aggregate and a template forecast, and 0 submissions;
+the poll then reports 2 of 6 left. Both jobs finished well inside their
+timeouts. The fake-server test (`tests/test_shadow.py`) proves the
+stricter claim: a tick whose every question is held makes no model call,
+not even the probe.
 
 <!-- augur:begin floor-rule -->
 **The floor rule for the free model, registered 2026-11-24, before the
@@ -1955,6 +2002,8 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; the schedule runs it once the maintainer sets the repository variables (PR M11) | Unattended: `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30`. After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur standings --round ROUND --out data/standings/ROUND.json`; `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
+| The same two-tick check on GitHub itself | No GitHub credentials in the build environment; `act` ran it locally against a bare repository | `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2`, twice in a row; the second run's summary lists the first run's questions as "already in the shadow ledger" |
 | The season's final ranks and any prize (Q5) | Fall FutureEval and the last MiniBench rounds are still open on 2026-11-23, and Augur has no scored forecast in any of them | Nothing to run by hand: the `Standings` workflow re-reads them daily onto the `ledger` branch; to render one here, `augur standings --round SLUG --out data/standings/SLUG.json && make results` |
 | Publishing 0.1.0 to PyPI and the first real run of the publish job | Publishing is the maintainer's step (trusted publisher, `pypi` environment) | RELEASE.md, "Releasing 0.1.0": `gh workflow run release.yml -f dry_run=true`, then `git tag v0.1.0 && git push origin v0.1.0` |
 | The release and standings workflows on GitHub itself | No GitHub credentials here; both ran under `act` or step by step locally (`data/runs/m10-standings-step.txt`) | `gh workflow run release.yml -f dry_run=true`; `gh workflow run standings.yml` and check `standings/` on the `ledger` branch |
