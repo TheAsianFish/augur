@@ -15,8 +15,10 @@ An API error counts as work, so the forecast job runs and reports it.
 Shadow mode (M11, ``AUGUR_SHADOW=true``): nothing is ever posted, so
 ``my_forecasts`` stays empty and cannot say what was done. A question counts
 as done when the shadow exports in ``AUGUR_SHADOW_LEDGER`` (the ``shadow/``
-tree of the ``ledger`` branch: JSONL, one file per tick) hold an Augur
-aggregate forecast for it; the listing alone is read, no post detail. The
+tree of the ``ledger`` branch: JSONL, one file per tick) hold both an Augur
+aggregate forecast and a template forecast for it (held without a template
+is work for the tick's template step); the listing alone is read, no post
+detail. The
 ``all`` schedule polls MiniBench first and the FutureEval project only when
 MiniBench has nothing to do and the day's free calls allow a full run:
 ``AUGUR_SHADOW_DAILY_CALLS`` (default 1000, OpenRouter's daily allowance for
@@ -214,24 +216,34 @@ def read_shadow(directory: str, today: str) -> ShadowLedger:
 
 
 def shadow_listing(
-    tournament: str, fetch: Fetch, headers: Mapping[str, str], held: set[int]
-) -> tuple[int, int, datetime | None]:
-    """``(open, not yet in the shadow ledger, soonest close among those)``, from the
-    listing alone (a shadow tick needs no ``my_forecasts``)."""
+    tournament: str,
+    fetch: Fetch,
+    headers: Mapping[str, str],
+    held: set[int],
+    templated: set[int],
+) -> tuple[int, int, int, datetime | None]:
+    """``(open, not yet in the shadow ledger, held but with no template forecast,
+    soonest close among those two)``, from the listing alone (a shadow tick needs no
+    ``my_forecasts``). A held question without a template forecast is work too: the
+    tick's template step catches it up (``augur baseline --shadow-ledger``), so a
+    template step cut off by its timeout is not lost while the question is open."""
     results = _listing(tournament, fetch, headers)
-    opened, todo, soonest = 0, 0, None
+    opened, new, late, soonest = 0, 0, 0, None
     for post in results:
         question = post.get("question") if isinstance(post, dict) else None
         if not isinstance(question, dict) or not isinstance(question.get("id"), int):
             continue
         opened += 1
-        if question["id"] in held:
+        if question["id"] not in held:
+            new += 1
+        elif question["id"] not in templated:
+            late += 1
+        else:
             continue
-        todo += 1
         close = _time(question.get("scheduled_close_time"))
         if close is not None and (soonest is None or close < soonest):
             soonest = close
-    return opened, todo, soonest
+    return opened, new, late, soonest
 
 
 def _int_env(env: Mapping[str, str], name: str, default: int, lines: list[str]) -> int:
@@ -348,17 +360,21 @@ def _poll_shadow(
         if index:
             sleep(PAUSE_SECONDS)
         try:
-            opened, todo, soonest = shadow_listing(tournament, fetch, headers, shadow.held)
+            opened, todo, late, soonest = shadow_listing(
+                tournament, fetch, headers, shadow.held, shadow.templated
+            )
         except (PollError, AttributeError, TypeError) as exc:
             message = str(exc) if isinstance(exc, PollError) else "unexpected response shape"
             lines.append(f"warning: {tournament}: {message}; the shadow job will run and report")
             with_work.append(tournament)
             continue
         line = f"{tournament}: {opened} open, {todo} not in the shadow ledger"
+        if late:
+            line += f", {late} held without a template forecast"
         if soonest is not None:
             line += f", closes soonest {_stamp(soonest)}"
         lines.append(line)
-        if todo:
+        if todo or late:
             with_work.append(tournament)
     return bool(with_work), with_work, lines
 

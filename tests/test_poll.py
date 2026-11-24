@@ -259,11 +259,24 @@ def test_shadow_work_is_what_the_shadow_ledger_does_not_hold(tmp_path: Path) -> 
 
 
 def test_shadow_everything_held_is_no_work_however_my_forecasts_reads(tmp_path: Path) -> None:
-    _export(tmp_path, "tick1", [_aggregate(q) for q in (2, 3, 4)])
-    _export(tmp_path, "tick2", [_aggregate(q) for q in (5, 6)])
+    _export(tmp_path, "tick1", [r for q in (2, 3, 4) for r in (_aggregate(q), _template(q))])
+    _export(tmp_path, "tick2", [r for q in (5, 6) for r in (_aggregate(q), _template(q))])
     has_work, _, lines = poll_script.poll(_shadow_env(tmp_path), _api(), lambda _s: None, NOW)
     assert has_work is False
-    assert "minibench: 5 open, 0 not in the shadow ledger" in lines[-1]
+    assert lines[-1] == "minibench: 5 open, 0 not in the shadow ledger"
+
+
+def test_shadow_a_held_question_the_template_missed_is_work(tmp_path: Path) -> None:
+    # Every question is held, but the template step (cut off by its timeout) never
+    # recorded 5 and 6: the tick runs so `augur baseline --shadow-ledger` catches up.
+    _export(tmp_path, "tick1", [r for q in (2, 3, 4) for r in (_aggregate(q), _template(q))])
+    _export(tmp_path, "tick2", [_aggregate(5), _aggregate(6)])
+    has_work, tournaments, lines = poll_script.poll(
+        _shadow_env(tmp_path), _api(), lambda _s: None, NOW
+    )
+    assert has_work is True
+    assert tournaments == ["minibench"]
+    assert "minibench: 5 open, 0 not in the shadow ledger, 2 held without a template" in lines[-1]
 
 
 def test_shadow_with_no_exports_yet_everything_is_work(tmp_path: Path) -> None:
@@ -300,7 +313,7 @@ def test_shadow_futureeval_waits_while_minibench_has_work(tmp_path: Path) -> Non
 
 
 def test_shadow_futureeval_gets_what_the_day_has_left(tmp_path: Path) -> None:
-    _export(tmp_path, "tick1", [_aggregate(q) for q in (2, 3, 4, 5, 6)])
+    _export(tmp_path, "tick1", [r for q in (2, 3, 4, 5, 6) for r in (_aggregate(q), _template(q))])
     _, tournaments, _ = poll_script.poll(
         _shadow_env(tmp_path, AUGUR_SCHEDULE="all"), _futureeval_api(), lambda _s: None, NOW
     )
@@ -310,6 +323,7 @@ def test_shadow_futureeval_gets_what_the_day_has_left(tmp_path: Path) -> None:
 def test_shadow_futureeval_is_not_polled_past_the_daily_allowance(tmp_path: Path) -> None:
     # 2 calls today on held question 2, 1 template today (10 calls), 1 call yesterday.
     rows = [_aggregate(q) for q in (2, 3, 4, 5, 6)]
+    rows += [_template(q, day="2026-11-17") for q in (3, 4, 5, 6)]
     rows += [_call("a", 2), _call("b", 2), _call("old", 3, day="2026-11-17"), _template(2)]
     rows += [_call("a", 2)]  # the same call again, as a tick's second push repeats its first
     _export(tmp_path, "tick1", rows)
