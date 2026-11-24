@@ -296,3 +296,48 @@ def test_cli_refuses_a_snapshot_of_another_round(
     )
     assert code == 2
     assert "not minibench-2026-12-14" in capsys.readouterr().err
+
+
+def _with_blends(path: Path, blends: dict[int, float]) -> Path:
+    """Add ``blend`` reference rows (M12's primary candidate) to a shadow ledger."""
+    with Ledger.open(path, FixedClock(T0)) as ledger:
+        for post_id, p in blends.items():
+            q = question_from_post(binary_post(post_id, post_id + 1000, opened=OPENED))
+            ledger.record_reference(
+                question_id=q.question_id,
+                post_id=q.post_id,
+                question_type=q.type,
+                forecaster=floor.BLEND,
+                detail="one-third Augur, two-thirds price",
+                values={"probability": p},
+                as_of=T0,
+                source="augur statarm (M12)",
+            )
+    return path
+
+
+def test_the_blend_candidate_is_scored_from_its_own_rows(tmp_path: Path) -> None:
+    # Augur level with the template; the blend clearly ahead on every question.
+    qs = [Q(i, 0.6, 0.6) for i in range(1, 21)]
+    ledger = _with_blends(
+        _ledger(tmp_path / "l.sqlite", qs), {q.post_id: 0.9 if q.post_id % 2 else 0.8 for q in qs}
+    )
+    plain = floor.decide(_snapshot(qs), [ledger])
+    assert plain.candidate == floor.AUGUR
+    assert plain.verdict == floor.NOT_ADMITTED
+    assert plain.mean_h == pytest.approx(0.0)
+    blended = floor.decide(_snapshot(qs), [ledger], floor.BLEND)
+    assert blended.candidate == floor.BLEND
+    assert blended.verdict == floor.ADMITTED
+    want = sum(_h(0.9 if q.post_id % 2 else 0.8, 0.6) for q in qs) / len(qs)
+    assert blended.mean_h == pytest.approx(want)
+    assert "blend" in blended.lines()[1]
+
+
+def test_a_question_without_a_blend_row_is_uncovered_for_the_blend(tmp_path: Path) -> None:
+    qs = _strong(1, 21)
+    ledger = _with_blends(_ledger(tmp_path / "l.sqlite", qs), {q.post_id: 0.8 for q in qs[:-1]})
+    result = floor.decide(_snapshot(qs), [ledger], floor.BLEND)
+    assert (result.augur, result.both, result.n, result.uncovered) == (20, 20, 20, 1)
+    with pytest.raises(AugurError, match="unknown candidate"):
+        floor.decide(_snapshot(qs), [ledger], "stat")

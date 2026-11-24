@@ -49,10 +49,21 @@ DECISION_DAY = date(2026, 12, 13)
 DECIDED_ROUND = "2026-12-14"
 PEER = SAME_MODEL_TEMPLATE
 TEMPLATE = "template"
+AUGUR = "augur"
+BLEND = "blend"
+CANDIDATES: tuple[str, ...] = (AUGUR, BLEND)
+"""``augur``: Augur's aggregate (M11's item 1). ``blend``: the ``blend`` reference rows,
+M12's registered primary candidate (PLAN.md, ``m12-registration`` item 5)."""
 
 ADMITTED = "admitted"
 NOT_ADMITTED = "not admitted"
 UNDECIDABLE = "not yet decidable"
+
+CANDIDATE_NAMES = {
+    AUGUR: "Augur's aggregate",
+    BLEND: "the blend (M12's primary candidate: one-third Augur, two-thirds the statistical "
+    "arm where it has a price or a series, Augur elsewhere)",
+}
 
 BIASES = (
     "proxy biases: the shadow template is another run of the same code, not the public "
@@ -72,6 +83,7 @@ class Scored:
 @dataclass(frozen=True)
 class FloorResult:
     round: str
+    candidate: str
     fetched_at: str
     finalized: bool
     round_posts: int
@@ -109,6 +121,7 @@ class FloorResult:
 
         out = [
             f"round: {self.round}",
+            f"candidate: {CANDIDATE_NAMES[self.candidate]}",
             f"snapshot: fetched {self.fetched_at}, "
             f"{'finalized' if self.finalized else 'not finalized'}, "
             f"max_coverage {self.max_coverage:g} of {self.round_posts} posts",
@@ -154,6 +167,7 @@ class _Pooled:
 
     post_of: dict[int, int]
     augur: set[int]
+    blend: set[int]
     template: set[int]
     resolution: dict[int, tuple[str, str]]  # question id -> (recorded_at, status)
 
@@ -166,7 +180,7 @@ def _has_table(conn: sqlite3.Connection, name: str) -> bool:
 
 
 def _pool(paths: Sequence[Path]) -> _Pooled:
-    pooled = _Pooled(post_of={}, augur=set(), template=set(), resolution={})
+    pooled = _Pooled(post_of={}, augur=set(), blend=set(), template=set(), resolution={})
     for path in paths:
         with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
             if _has_table(conn, "questions"):
@@ -182,12 +196,12 @@ def _pool(paths: Sequence[Path]) -> _Pooled:
                 ):
                     pooled.augur.add(int(qid))
             if _has_table(conn, "reference_forecasts"):
-                for qid, post_id in conn.execute(
-                    "SELECT DISTINCT question_id, post_id FROM reference_forecasts "
-                    "WHERE forecaster = ?",
-                    (TEMPLATE,),
+                for qid, post_id, who in conn.execute(
+                    "SELECT DISTINCT question_id, post_id, forecaster FROM reference_forecasts "
+                    "WHERE forecaster IN (?, ?)",
+                    (TEMPLATE, BLEND),
                 ):
-                    pooled.template.add(int(qid))
+                    (pooled.template if who == TEMPLATE else pooled.blend).add(int(qid))
                     pooled.post_of.setdefault(int(qid), int(post_id))
             if _has_table(conn, "resolutions"):
                 for qid, at, status in conn.execute(
@@ -207,8 +221,18 @@ def _peer_average(snapshot: RoundStandings) -> float | None:
     return None
 
 
-def decide(snapshot: RoundStandings, ledger_paths: Sequence[Path]) -> FloorResult:
-    """Apply the floor rule to one round's snapshot and the ledgers holding its forecasts."""
+def decide(
+    snapshot: RoundStandings, ledger_paths: Sequence[Path], candidate: str = AUGUR
+) -> FloorResult:
+    """Apply the floor rule to one round's snapshot and the ledgers holding its forecasts.
+
+    ``candidate`` names whose forecast is scored against the template: Augur's
+    aggregate, or the ``blend`` rows M12 registered as the primary candidate.
+    A blend row exists only beside an aggregate, so the two cover the same
+    questions when the statistical arm ran on every one.
+    """
+    if candidate not in CANDIDATES:
+        raise AugurError(f"unknown candidate {candidate!r}; use one of {', '.join(CANDIDATES)}")
     for path in ledger_paths:
         if not path.exists():
             raise AugurError(f"no ledger at {path}; give the shadow ledger with --ledger")
@@ -218,7 +242,7 @@ def decide(snapshot: RoundStandings, ledger_paths: Sequence[Path]) -> FloorResul
     def in_round(qids: set[int]) -> set[int]:
         return {q for q in qids if pooled.post_of.get(q) in posts}
 
-    augur = in_round(pooled.augur)
+    augur = in_round(pooled.augur if candidate == AUGUR else pooled.augur & pooled.blend)
     template = in_round(pooled.template)
     both = augur & template
     either = augur | template
@@ -232,7 +256,10 @@ def decide(snapshot: RoundStandings, ledger_paths: Sequence[Path]) -> FloorResul
     for s in scorecard.load(ledger_paths).scored:
         if s.question_id not in resolved_both or TEMPLATE not in s.references:
             continue
-        h = head_to_head(s.question_type, s.p(s.augur), s.p(s.references[TEMPLATE]))
+        mine = s.augur if candidate == AUGUR else s.references.get(BLEND)
+        if mine is None:
+            continue
+        h = head_to_head(s.question_type, s.p(mine), s.p(s.references[TEMPLATE]))
         scored.append(Scored(s.post_id, s.question_id, s.question_type, h))
     scored.sort(key=lambda x: x.post_id)
     hs = [x.h for x in scored]
@@ -286,6 +313,7 @@ def decide(snapshot: RoundStandings, ledger_paths: Sequence[Path]) -> FloorResul
 
     return FloorResult(
         round=snapshot.round.slug,
+        candidate=candidate,
         fetched_at=to_iso(snapshot.fetched_at),
         finalized=board.finalized,
         round_posts=len(posts),
@@ -341,6 +369,13 @@ def add_parser(subparsers: Any) -> None:
         metavar="S",
         help="the round's standings snapshot (default data/standings/SLUG.json)",
     )
+    p.add_argument(
+        "--candidate",
+        choices=CANDIDATES,
+        default=AUGUR,
+        help="whose forecast faces the template: Augur's aggregate (M11's item 1, the "
+        "default) or blend, M12's registered primary candidate (the ledger's blend rows)",
+    )
     p.add_argument("--json", type=Path, metavar="OUT", help="also write the numbers as JSON")
 
 
@@ -352,7 +387,7 @@ def main(args: argparse.Namespace) -> int:
             f"{path} is the snapshot of {snapshot.round.slug}, not {args.round}; give the "
             "round's own snapshot with --standings"
         )
-    result = decide(snapshot, args.ledger)
+    result = decide(snapshot, args.ledger, args.candidate)
     for line in result.lines():
         print(line)
     if args.json is not None:
