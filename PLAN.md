@@ -1146,6 +1146,72 @@ points of a peer score, 60 questions pass the rule about 5% of the time
 at a true implied score of 0, 30% at +5 and 75% at +10; the paired spread
 on non-binary questions may be wider, and M11 reports the measured one.
 
+**M11's rule, committed 2026-11-24 before the 2026-11-30 round opens.**
+This is the exact text; RESULTS.md carries it byte for byte (rendered
+from this block), and `augur floor` applies it.
+
+<!-- floor-rule:begin -->
+**The floor rule for the free model, registered 2026-11-24, before the
+2026-11-30 MiniBench round opens.** `augur floor --round SLUG --ledger L
+--standings S` applies it from the shadow ledger and a standings snapshot;
+nothing in it is decided by hand.
+
+1. *Contestants.* The candidate is Augur's aggregate forecast as the
+   schedule's shadow mode records it: the shipped pipeline (the median of
+   the forecaster draws, the live calibrator withheld on Metaculus
+   sources, the exact-price blend) on the free route
+   `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free`, nothing
+   submitted. M12's blend is not registered before the round, so it is
+   not the candidate. Against it: the shadow template, Metaculus's
+   `TemplateBot` from `forecasting-tools`, run unpublished by `augur
+   baseline` on the same route in the same job.
+2. *Questions.* The round's questions are the posts in its standings
+   snapshot. A question is scored when the ledger holds both Augur's
+   aggregate and a template forecast for it and its latest resolution is
+   `resolved`. Annulled and ambiguous questions are dropped and counted; a
+   question with only one of the two forecasts is counted as uncovered and
+   never scored.
+3. *Score per question.* The head-to-head h = 100 × ln(p_A / p_T), p the
+   probability each forecast gave the outcome, halved on numeric and
+   discrete questions (`augur.score.head_to_head`), with binary and option
+   probabilities held to [0.001, 0.999]. Where the ledger holds more than
+   one forecast from one side for a question, the latest counts, as in
+   `augur score`.
+4. *Proxy for the peer score.* The implied peer score is S + mean(h), S
+   being the average spot peer score (`score / coverage`) of
+   `metac-nemotron-3-ultra+asknews` on the round's primary leaderboard in
+   the snapshot. It is wrong in known ways, stated beside every number:
+   the shadow template is another run of the same code, not the public
+   bot's forecasts; S enters as a constant, so the interval is too narrow;
+   and the two can cover different questions.
+5. *Intervals.* A 90% percentile bootstrap of mean(h) over questions,
+   10,000 resamples, seed 20261119; the implied peer score's interval is S
+   plus that interval. Printed with them: n, the standard deviation of h
+   (the measured paired spread), and the uncovered and annulled counts.
+6. *Verdict.* **Not yet decidable** while any of the round's questions in
+   the ledger with an Augur or template forecast has no resolution, while
+   the snapshot's leaderboard has scored fewer than half of the round's
+   questions (`max_coverage` below half the snapshot's posts), or while
+   the snapshot has no `metac-nemotron-3-ultra+asknews` entry. Otherwise
+   **not admitted** if n is below 20. Otherwise **admitted** if and only
+   if the lower end of the head-to-head interval is above 0 and the lower
+   end of the implied peer score's interval is above 0; anything else is
+   **not admitted**.
+7. *Which snapshot, and what admission means.* For the 2026-12-14 round
+   the snapshot is the last one fetched on or before 2026-12-13 (UTC); a
+   verdict from a snapshot fetched later decides nothing for 2026-12-14
+   and is recorded for the season only. Admitted lets the free route
+   submit to MiniBench only, from 2026-12-14; FutureEval and every other
+   tournament keep the frontier-tier floor. Not admitted: the floor stays
+   and Fall 2026 is the shakedown. Either way the verdict and every number
+   above go in RESULTS.md and the postmortem.
+8. *Resolutions.* All of the round's forecast questions or none: from
+   `augur resolve`, or where the bot token is blind from `augur resolve
+   --manual-file F` (post, value and evidence URL on each line), which
+   refuses a file that would leave any of the round's ledger questions
+   without a resolution.
+<!-- floor-rule:end -->
+
 ### M12: is a forecast with no model in it the better anchor?
 
 **Question.** Does blending Augur's forecast with a model-free
