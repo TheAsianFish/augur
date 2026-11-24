@@ -289,9 +289,11 @@ _SERIES_LINE = re.compile(r"^(\d{4}-\d{2}-\d{2}) \S+$", re.M)
 def _scan_series(conn: sqlite3.Connection) -> list[Violation]:
     """A series source (M12) is backed by its own excerpt, one close per line.
 
-    Its date must be 00:00 UTC of the day after its last close, and at or
-    before the instant it was asked for: a close dated after the cutoff, or a
-    date the excerpt does not back, is a violation.
+    Its date must be 00:00 UTC of the day after its last close (or of the
+    day after that, when the bar's UTC date fell after its exchange day, which
+    the excerpt does not show), and at or before the instant it was asked for:
+    a close dated after the cutoff, or a date the excerpt does not back, is a
+    violation.
     """
     found = []
     for sid, excerpt, published, as_of in conn.execute(
@@ -301,10 +303,10 @@ def _scan_series(conn: sqlite3.Connection) -> list[Violation]:
         if not days:
             found.append(Violation("late_price", "", 0, f"series source {sid} lists no close"))
             continue
-        backed = to_iso(
-            datetime.combine(date.fromisoformat(max(days)), time(), tzinfo=UTC) + timedelta(days=1)
-        )
-        if published != backed or str(published) > str(as_of):
+        next_day = datetime.combine(date.fromisoformat(max(days)), time(), tzinfo=UTC)
+        backed = to_iso(next_day + timedelta(days=1))
+        utc_later = to_iso(next_day + timedelta(days=2))
+        if published not in (backed, utc_later) or str(published) > str(as_of):
             found.append(
                 Violation(
                     "late_price",

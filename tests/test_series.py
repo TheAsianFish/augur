@@ -380,6 +380,33 @@ async def test_a_series_value_dated_after_the_cutoff_is_refused(tmp_path: Path) 
     assert "src_forged" in violation.detail
 
 
+async def test_the_scan_accepts_a_close_dated_by_its_later_utc_day(tmp_path: Path) -> None:
+    # An evening bar west of UTC falls on the next UTC day, so the fetcher dates
+    # it a day later than its exchange day alone would; that is later, never
+    # earlier, and an honest source. A date before the excerpt's backing still fails.
+    points: list[tuple[date, float | None]] = [(date(2026, 11, 13), 101.0)]
+    f, http = fetcher(serve(chart_body(points)))
+    async with http:
+        series = await f.fetch("NVDA", T0)
+    src = to_source(series, "NVDA")
+    assert src.published_at is not None
+    later = src.model_copy(
+        update={"source_id": "src_utc_later", "published_at": src.published_at + timedelta(days=1)}
+    )
+    early = src.model_copy(
+        update={"source_id": "src_early", "published_at": src.published_at - timedelta(days=1)}
+    )
+    ledger, _, _ = _ledger_with_question(tmp_path)
+    ledger.record_source(later)
+    ledger.close()
+    assert scan_ledger(tmp_path / "series.sqlite") == []
+    ledger = Ledger.open(tmp_path / "series.sqlite", FixedClock(T0))
+    ledger.record_source(early)
+    ledger.close()
+    (violation,) = scan_ledger(tmp_path / "series.sqlite")
+    assert "src_early" in violation.detail
+
+
 def test_the_source_shows_the_last_closes_and_the_dating_rule() -> None:
     days = [date(2026, 10, 1) + timedelta(days=i) for i in range(40)]
     series = Series(
