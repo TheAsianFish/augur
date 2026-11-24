@@ -102,6 +102,30 @@ uv run augur standings --round minibench                 # the round's leaderboa
 make eval                                                # offline: re-score the committed backtest, check RESULTS.md
 ```
 
+### The shadow round (M11)
+
+Whether Augur's pipeline adds anything over Metaculus's template bot on the
+same free model can be measured without posting anything. A shadow tick
+forecasts every open question unpublished, runs the real template bot on
+the same questions with the same route, and pushes the tick's ledger to
+the `ledger` branch after each; the next tick skips what that branch
+already holds. `AUGUR_SHADOW=true` puts the scheduled workflow in this mode,
+and no path in it can pass `--submit`.
+
+```sh
+uv sync --extra baseline                                 # the template bot (forecasting-tools)
+uv run augur forecast --tournament minibench --shadow-ledger shadow.sqlite --ledger run.sqlite
+uv run augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite
+uv run augur ledger import ledger-branch/shadow --out shadow.sqlite        # every tick, pooled
+uv run augur resolve --ledger shadow.sqlite --manual-file round.csv --standings data/standings/ROUND.json
+uv run augur floor --round ROUND --ledger shadow.sqlite  # admitted, not admitted or not yet decidable
+```
+
+`augur floor` applies the rule registered in PLAN.md before the 2026-11-30
+round opened (RESULTS.md carries it verbatim): the free model may submit
+to MiniBench only if the 90% interval of its head-to-head against the
+shadow template, and of the peer score that implies, both sit above 0.
+
 Presets: `openrouter`, `groq`, `gemini`, `github` (each reads its own key
 variable) and `ollama`; any other OpenAI-compatible host is
 `AUGUR_ENDPOINT_<NAME>_URL` plus `_KEY_ENV`. `--submit` to MiniBench or
