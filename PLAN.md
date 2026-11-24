@@ -1057,6 +1057,168 @@ documented ones.
 | Wayback and Wikipedia rate limits | Slow backtests, blocked requests | One request at a time with backoff, a descriptive user agent, and every response cached in the ledger so a source is fetched once. |
 | A bad deploy posts wrong forecasts | Real score damage | Dry run by default, a bot-testing-area check for each question type before the first live run, validity checks on every payload, and a kill switch (`AUGUR_SCHEDULE=off`). |
 
+## Evolution round 1
+
+Written 2026-11-24, after M10. Nothing here is implemented yet; each
+milestone commits its numbered predictions and decision rule before its
+first run, as every milestone before it did.
+
+### Where v1 stands (commands run on 2026-11-24)
+
+| Command | Result |
+|---------|--------|
+| `make check` | 1192 passed, 2 xfailed, 5 deselected; 43 s |
+| `make eval` | green, 0 ledger violations, every snapshot and RESULTS.md equal to a fresh run; 1 min 19 s |
+| `python3 scripts/resolution_visibility.py minibench-2026-11-02` | 20 resolved posts: resolution shown on 0, community aggregate on 0, this account's score on 0 |
+| `curl` on GDELT's DOC 2.0 `artlist` endpoint, twice, about three minutes apart | HTTP 429 both times ("one request every 5 seconds") from this shared address; the endpoint is up and needs no key |
+
+What the ten milestones add up to:
+
+- **No scored forecast.** The ledgers hold 0 resolved live forecasts, so
+  Q1 and Q5 have no reading. The template on Augur's free model scored
+  −7.66 [−14.51, −0.73] on MiniBench 2026-11-02 (RESULTS.md, season
+  table); nothing yet says whether Augur's pipeline adds to that.
+- **A shadow round cannot run unattended.** `tournament.yml` forecasts on
+  a schedule only when `AUGUR_SUBMIT` is true, and `scripts/poll.py`
+  decides `has_work` from `my_forecasts`, which a dry run never fills. A
+  MiniBench question is open for about three hours, so a person would
+  have to dispatch a run in every window.
+- **The bot token cannot score a round.** It sees no resolution, aggregate
+  or score on scored tournaments, and the leaderboard API publishes sums
+  per entry, not per question. Any rule about a shadow round's score needs
+  a proxy named in advance and a way for resolutions to reach the ledger.
+- **Leak-free retrieval is worth little here, and has no news in it.**
+  As of open against no retrieval: −0.016 Brier [−0.050, +0.017] on 64
+  questions (M6); 87% of admitted sources are Wikipedia revisions. On
+  ForecastBench's same questions all 16 external entries beat the
+  researched arm (M10).
+- **A model-free anchor beats the model where one exists.** The market
+  price scores 0.106 against Augur's 0.240 on C2, and M5's committed
+  one-third blend 0.129. Where no price is readable the picture reverses:
+  on C4's Metaculus instances every fitted map is worse than raw (M9), so
+  the live calibrator is withheld there.
+
+### M11: does the pipeline add anything over the template, at $0?
+
+**Question.** On a live MiniBench round, forecast unpublished by Augur
+and by the real template on the same free model, is Augur's head-to-head
+score against the template above 0, and is its implied peer score above
+0?
+
+**Why now.** It is Q1, it needs no submission, and the round opening
+about 2026-11-30 is one of the last two of the season. The maintainer has
+decided that the free model may be submitted on 2026-12-14 only if this
+round earns it, under a rule committed before the round opens and applied
+by code.
+
+**The rule's shape (the exact text is M11's first commit).**
+
+- *Candidate.* One named forecast per question: Augur's shipped
+  aggregate, unless M12's registration lands before the round opens.
+- *Proxy for the peer score.* Metaculus's peer score is a mean of
+  head-to-head scores against every other forecaster, so two entries'
+  peer scores on one question differ by their head-to-head score. The
+  proxy is: the published round average of
+  `metac-nemotron-3-ultra+asknews` from `augur standings`, plus the mean
+  head-to-head of the candidate against the shadow template on the
+  round's resolved questions. It is wrong in known ways, stated beside
+  every number: the shadow template is another run of the same code, not
+  the public bot's forecasts; the published average enters as a constant,
+  so the interval is too narrow; and coverage can differ.
+- *Admitted* for MiniBench only if the 90% paired-bootstrap interval
+  (questions resampled) of the head-to-head lies above 0 **and** that of
+  the implied peer score lies above 0. Anything else is not admitted, the
+  floor stays, and Fall is the shakedown.
+- *Which average.* The round's own, read on a fixed day before
+  2026-12-14 and only if the leaderboard has scored at least half the
+  round by then; otherwise no admission for 12-14 and the rule is applied
+  when the round is finalized.
+- *Resolutions.* All of the round's forecast questions or none: a partial
+  hand-picked set cannot be scored. They come from `augur resolve`, or
+  from a file of post, value and evidence URL where the token is blind.
+
+**Hypothesis.** The head-to-head mean is between 0 and +10 points with an
+interval that includes 0, so the verdict is *not admitted*. With the
+template near −8, admission needs about +15 over the template, the top of
+what Metaculus's own agent harness gained over its template in the
+2026-11-02 round (7.7 to 16.2). If the paired spread is near the 32
+points of a peer score, 60 questions pass the rule about 5% of the time
+at a true implied score of 0, 30% at +5 and 75% at +10; the paired spread
+on non-binary questions may be wider, and M11 reports the measured one.
+
+### M12: is a forecast with no model in it the better anchor?
+
+**Question.** Does blending Augur's forecast with a model-free
+statistical arm beat Augur alone, and on which questions?
+
+**Design.** The arm is: the market price where one is readable; on
+binary questions without one, the walk-forward base rate of the
+question's source; on numeric and discrete questions about a quoted
+series, the last value plus the empirical distribution of that series'
+own past changes over the same horizon, through the existing CDF
+builder; and it abstains everywhere else. The single primary candidate
+for the floor is fixed before any run: one-third Augur and two-thirds
+arm in log-odds (a mixture of CDFs for numeric), **only where the arm
+has a price or a series**, and Augur unchanged elsewhere. The weight is
+M5's committed one (`BLEND_WEIGHT`), and it agrees with M8's fitted slope
+of 0.32. The base-rate blend is reported, not a candidate, because the
+repository's own numbers predict it hurts on Metaculus-written questions.
+
+**Hypotheses.** On C4's walk-forward instances (no model calls): the
+primary candidate reproduces M5's gain on priced instances (a
+replication, stated as one), and the base-rate blend on the 191
+Metaculus instances is +0.01 to +0.04 Brier worse than raw. Live: the
+series rule covers fewer than 12 of a round's 60 questions, and the
+candidate's head-to-head against Augur has an interval that includes 0.
+The numeric rule has no backtest (every committed corpus is binary); its
+live coverage and score are reported, and that limit is stated.
+
+### M13: is the limit the evidence or the model?
+
+**Question.** Does dated news move the as-of-open arm on M6's fixed 64
+questions?
+
+**Design.** A news searcher for backtests: discovery through GDELT's DOC
+2.0 API bounded at the cutoff, text only from a Wayback capture at or
+before the cutoff, every response cached in the ledger, so each source
+passes the leakage gate with its date evidence. Arm G re-runs arm O with
+the shared query plan, the same free model and three draws. Run from a
+laptop, never in CI (one request every 5 seconds).
+
+**Hypotheses.** The first number is whether the experiment happened at
+all: the share of questions that gain at least one news source dated in
+the 30 days before open. I expect under 60%, because Wayback captures of
+news articles are sparse. G minus O lies between El Lahib et al.'s
+−0.002 and Hindcast's −0.055 with an interval that includes 0; at n = 64
+the detectable effect is about 0.027 to 0.048, so the expected verdict is
+*unresolved*, and "retrieval breadth is not the limit" is claimed only if
+the interval's lower end is above −0.055. The judge flags fewer than 5%
+of the new sources at 3 or 4.
+
+### Considered and not chosen
+
+- *FutureEval agent-against-template pairs in `augur standings`, and the
+  Frontier table's corrections.* Directed and still owed; about an hour of
+  work on an existing function (`agent_vs_template`). Deferred to the next
+  round only because three milestones is the limit and the first two are
+  tied to the calendar.
+- *A second reader model on arm G's briefs (evidence × reader), and a
+  split by source age.* Good designs, cut from M13 to keep it one pull
+  request; worth a milestone only if G's coverage check passes.
+- *Scoring past rounds' price-close questions from public data*, a
+  numeric corpus the token cannot hide. Same-day closes are correlated,
+  so the effective n may be a handful of dates. Revisit after M12 shows
+  the series rule's live coverage.
+- *A Murphy decomposition of the raw forecast by source.* Descriptive;
+  it would not change a forecasting decision.
+- *The baseline score (100 × (1 + log2 p)) as the floor's gate.* It needs
+  only resolutions, but its zero is "beats 50%", not "beats the field";
+  printed as a secondary.
+- *Two template draws per question to measure the proxy's draw noise.*
+  It doubles the template's calls inside a 1,000-a-day allowance; the bias
+  is stated instead.
+- *Anything on a frontier model.* Paid; stays under To measure.
+
 ## Milestones
 
 **Plan changes, 2026-11-23 (M10, decided while building it).**
@@ -1094,6 +1256,9 @@ documented ones.
 - [x] M8: Calibration learned from resolved history (Q4) — the calibrator interface, contract tests and reference oracle; a time-ordered harness in which each test question is calibrated only with questions that resolved before it opened (a test fails otherwise); reliability diagrams, calibration error and sharpness; raw against fixed extremizing, Platt and isotonic on the backtest and on the live ledger's resolved questions. Done when RESULTS.md holds the diagram and the table with intervals, the prediction about data size is answered with a learning curve (score against number of resolutions used to fit), and the live calibrator is chosen under the same replacement rule as M7.
 - [x] M9: Does the fleet know when it does not know? (Q6) — disagreement measures (spread of log-odds across forecasters, across models, across research passes); AUROC of each against the final forecast's error on the backtest; shrink-toward-prior and skip policies simulated in tournament units; then the live test, pre-registered here before it starts: questions split by question id parity, the policy applied to one half, analysed after a fixed number of resolutions. Done when RESULTS.md holds the AUROC table, the simulated and live score changes with intervals, the pre-registered block byte for byte, and the verdict (adopted, rejected, or not resolvable at this n with the count needed).
 - [x] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
+- [ ] M11: The unattended shadow round and the rule that decides the floor (Q1) — the rule's exact text, its proxy and its candidate committed in this file before the 2026-11-30 round opens; a shadow mode on the schedule behind its own repository variable (`AUGUR_SHADOW`), separate from `AUGUR_SUBMIT`: no `--submit` on any path, the free nemotron route, `scripts/poll.py` deciding `has_work` against the posts the shadow ledger on the `ledger` branch already holds (standard library only), `augur baseline` on the same model in the same job with the `baseline` extra installed, the ledger pushed after Augur's forecasts and again after the template's so a timeout loses neither, MiniBench first and the FutureEval project with whatever of the day's free calls remain; `augur floor --round SLUG --ledger L`, which applies the rule from the ledger and a standings snapshot and prints admitted, not admitted or not yet decidable with the head-to-head, the implied peer score, both intervals, n and the measured paired spread; `augur resolve --manual-file F` (post, value, evidence URL), refusing a partial round. Done when a fake-server test proves a second tick skips every question the shadow ledger holds with no model call and that shadow mode can never produce `--submit`; the workflow runs two consecutive ticks under `act` (the first leaves Augur and template rows, the second skips them) inside the job's timeout, with the same check on GitHub against the bot-testing-area listed for the maintainer if no credentials are present; the calls per question and the minutes per run are measured and stated beside the free allowance; RESULTS.md carries the rule byte for byte as this file has it; and the round itself, its resolution and the verdict are recorded when they exist, or under To measure with the exact commands until then.
+- [ ] M12: A forecast with no model in it, and one registered blend — predictions and the single primary candidate committed first; the statistical arm (`augur/statarm.py`): the price as of the cutoff where the markets searcher reads one, the walk-forward per-source base rate on other binary questions, and for numeric and discrete questions about a quoted series the last value plus the empirical distribution of the series' own past same-horizon changes through `augur/distributions.py`, from a free keyless dated source verified first (each value written to the ledger as a dated source, so the leakage gate covers it), abstaining wherever no series is found; the primary candidate (one-third Augur, two-thirds arm, only where the arm has a price or a series) and the base-rate blend as a reported arm; the arm and both blends in M8's walk-forward harness on C4 with no model call, by source, with paired intervals, re-checked by `make eval`; `stat` and `blend` reference rows written by the shadow job before each question closes, and `augur floor --candidate blend`. Done when RESULTS.md holds the C4 table with each hypothesis marked held or failed, the series rule's coverage on a real round's question list, and the live comparison (or its To measure entry with the command), and a fake-server test proves a series value dated after the cutoff is refused.
+- [ ] M13: Dated news in the backtest: is the limit the evidence or the model? (Q2, Q3) — predictions committed first, with Hindcast added to the Frontier table at its source; a `gdelt` searcher for backtests (DOC 2.0 `artlist` with `enddatetime` at the cutoff, one request every 5 seconds with backoff, every response cached, no assumption about how far back it searches) whose article text comes only from a Wayback capture at or before the cutoff; arm G on M6's fixed 64 questions with the shared query plan, the same free model and three draws, through `make backtest-q2`; the leakage judge on the new sources. Done when RESULTS.md holds, from `make eval`, the share of questions that gained a news source dated in the 30 days before open, sources admitted per question before and after, G minus O and G minus N (paired Brier, interval, detectable effect) split into priced and unpriced questions, the judge's rate on news sources, and the result beside Hindcast, AIA and El Lahib et al. with the verdict (moved, not the limit, or unresolved with the n needed from M7's power curve); `tests/test_leakage.py` passes on the new ledger and a fake-server test proves an article seen or captured after the cutoff is refused.
 
 **Plan changes, 2026-11-22 (M8, decided while building it).**
 

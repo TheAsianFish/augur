@@ -372,7 +372,10 @@ first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
 backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9 (done)
 "does it know when it does not know", against controls for overconfidence; M10 (done) release (package, container, release workflow), the
-season's standing, the ForecastBench same-question row and the postmortem. Details in
+season's standing, the ForecastBench same-question row and the postmortem; M11 (next) an unattended
+shadow round against the same-model template, and the rule that decides whether the free model may
+be submitted; M12 a forecast with no model in it and one registered blend; M13 dated news in the
+backtest. Details in
 [PLAN.md](PLAN.md).
 
 ## Development
