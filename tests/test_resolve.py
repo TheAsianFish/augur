@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from pydantic import SecretStr
 
+from augur.cli import main
 from augur.clock import FixedClock
 from augur.errors import AugurError
 from augur.leakage import RunMode
@@ -24,8 +25,10 @@ from augur.resolve import (
     resolution_value,
     resolve_forecastbench,
     resolve_manual,
+    resolve_manual_file,
     resolve_metaculus,
 )
+from augur.standings import snapshot_text
 
 from .conftest import T0
 from .fakes.forecastbench import raw_resolution, run_backtest, small_set
@@ -37,6 +40,7 @@ from .fakes.metaculus import (
     binary_post,
     load_fixture,
 )
+from .helpers import record_aggregate, record_template, round_snapshot
 
 
 def _q(name: str | None = None) -> Question:
@@ -599,3 +603,148 @@ async def test_manual_resolution_of_a_forecastbench_question_is_a_clear_error(
         # (the CLI turns those into exit code 2), not a bare ValueError traceback.
         with pytest.raises(AugurError):
             resolve_manual(ledger, post_id=post_id, value="yes", evidence="x")
+
+
+# -- resolve_manual_file -------------------------------------------------------
+
+ROUND = [11, 12, 13, 14]
+"""The round's posts: Augur and the template forecast 11 and 12, the template alone 13;
+14 is in the round but was never forecast; 15 is in the ledger but not in the round."""
+URL = "https://www.metaculus.com/questions/{}/"
+
+
+def _round_ledger(live: Ledger) -> None:
+    run_id = _run(live, RunMode.DRY_RUN)
+    for post_id in (11, 12, 13, 14, 15):
+        post = binary_post(post_id, post_id + 1000)
+        q = question_from_post(post)
+        live.record_question(run_id, q, T0, post)
+        if post_id in (11, 12, 15):
+            record_aggregate(live, run_id, q, {"probability": 0.6})
+        if post_id in (11, 12, 13):
+            record_template(live, q, {"probability": 0.5})
+
+
+def _csv(tmp_path: Path, *lines: str) -> Path:
+    path = tmp_path / "resolutions.csv"
+    path.write_text("\n".join(["post_id,value,evidence", *lines]) + "\n", encoding="utf-8")
+    return path
+
+
+def test_a_complete_file_writes_every_row(live: Ledger, tmp_path: Path) -> None:
+    _round_ledger(live)
+    path = _csv(
+        tmp_path, f"11,yes,{URL.format(11)}", f"12,No,{URL.format(12)}", f"13,annulled,{URL}"
+    )
+    report = resolve_manual_file(live, path, ROUND)
+    assert [(m.post_id, m.status, m.value) for m in report.written] == [
+        (11, "resolved", "yes"),
+        (12, "resolved", "no"),
+        (13, "annulled", None),
+    ]
+    assert (report.round_questions, report.already_resolved) == (3, 0)
+    rows = live.connection.execute(
+        "SELECT post_id, status, value, source, evidence FROM resolutions ORDER BY post_id"
+    ).fetchall()
+    assert [tuple(r) for r in rows] == [
+        (11, "resolved", "yes", "manual", URL.format(11)),
+        (12, "resolved", "no", "manual", URL.format(12)),
+        (13, "annulled", None, "manual", URL),
+    ]
+
+
+def test_a_partial_file_writes_nothing_and_names_the_missing_posts(
+    live: Ledger, tmp_path: Path
+) -> None:
+    _round_ledger(live)
+    path = _csv(tmp_path, f"12,yes,{URL}")
+    with pytest.raises(AugurError, match=r"post\(s\) 11, 13; add a line for each"):
+        resolve_manual_file(live, path, ROUND)
+    assert _count(live, "resolutions") == 0
+
+
+def test_a_bad_value_on_line_3_writes_nothing(live: Ledger, tmp_path: Path) -> None:
+    _round_ledger(live)
+    path = _csv(tmp_path, f"11,yes,{URL}", f"12,maybe,{URL}", f"13,no,{URL}")
+    with pytest.raises(AugurError, match=r"line 3: .*resolved to 'maybe'.*nothing was written"):
+        resolve_manual_file(live, path, ROUND)
+    assert _count(live, "resolutions") == 0
+
+
+@pytest.mark.parametrize("evidence", ["", "  ", "read it on the page"])
+def test_a_line_without_an_evidence_url_is_refused(
+    live: Ledger, tmp_path: Path, evidence: str
+) -> None:
+    _round_ledger(live)
+    path = _csv(tmp_path, f"11,yes,{URL}", f"12,yes,{evidence}", f"13,no,{URL}")
+    with pytest.raises(AugurError, match="line 3: post 12 needs an evidence URL"):
+        resolve_manual_file(live, path, ROUND)
+    assert _count(live, "resolutions") == 0
+
+
+def test_a_post_already_resolved_need_not_be_in_the_file(live: Ledger, tmp_path: Path) -> None:
+    _round_ledger(live)
+    resolve_manual(live, post_id=11, value="yes", evidence=URL)
+    path = _csv(tmp_path, f"12,no,{URL}", f"13,no,{URL}")
+    report = resolve_manual_file(live, path, ROUND)
+    assert (len(report.written), report.round_questions, report.already_resolved) == (2, 3, 1)
+    assert _count(live, "resolutions") == 3
+
+
+def test_a_post_twice_is_refused(live: Ledger, tmp_path: Path) -> None:
+    _round_ledger(live)
+    path = _csv(tmp_path, f"11,yes,{URL}", f"12,no,{URL}", f"13,no,{URL}", f"11,no,{URL}")
+    with pytest.raises(AugurError, match="line 5: post 11 is already on line 2"):
+        resolve_manual_file(live, path, ROUND)
+    assert _count(live, "resolutions") == 0
+
+
+def test_a_post_outside_the_round_or_the_ledger_is_refused(live: Ledger, tmp_path: Path) -> None:
+    _round_ledger(live)
+    full = [f"11,yes,{URL}", f"12,no,{URL}", f"13,no,{URL}"]
+    with pytest.raises(AugurError, match="post 15 is not in the round's standings snapshot"):
+        resolve_manual_file(live, _csv(tmp_path, *full, f"15,no,{URL}"), ROUND)
+    with pytest.raises(AugurError, match="post 99 is not in this ledger"):
+        resolve_manual_file(live, _csv(tmp_path, *full, f"99,no,{URL}"), [*ROUND, 99])
+    assert _count(live, "resolutions") == 0
+
+
+def test_a_file_without_the_header_is_refused(live: Ledger, tmp_path: Path) -> None:
+    _round_ledger(live)
+    path = tmp_path / "bad.csv"
+    path.write_text(f"11,yes,{URL}\n", encoding="utf-8")
+    with pytest.raises(AugurError, match="header post_id,value,evidence"):
+        resolve_manual_file(live, path, ROUND)
+
+
+def test_cli_manual_file_needs_standings_and_excludes_manual(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = _csv(tmp_path, f"11,yes,{URL}")
+    with pytest.raises(SystemExit):
+        main(["resolve", "--manual-file", str(path)])
+    assert "--manual-file and --standings go together" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        main(["resolve", "--manual-file", str(path), "--manual", "11", "yes"])
+    assert "not allowed with argument" in capsys.readouterr().err
+
+
+def test_cli_manual_file_writes_the_round(
+    tmp_path: Path, clock: FixedClock, capsys: pytest.CaptureFixture[str]
+) -> None:
+    db = tmp_path / "shadow.sqlite"
+    with Ledger.open(db, clock) as ledger:
+        _round_ledger(ledger)
+    snapshot = tmp_path / "round.json"
+    snapshot.write_text(snapshot_text(round_snapshot(ROUND)), encoding="utf-8")
+    partial = _csv(tmp_path, f"11,yes,{URL}")
+    args = ["resolve", "--ledger", str(db), "--standings", str(snapshot), "--manual-file"]
+    assert main([*args, str(partial)]) == 2
+    assert "post(s) 12, 13" in capsys.readouterr().err
+    full = _csv(tmp_path, f"11,yes,{URL}", f"12,no,{URL}", f"13,annulled,{URL}")
+    assert main([*args, str(full)]) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert out[:3] == ["post 11: resolved yes", "post 12: resolved no", "post 13: annulled"]
+    assert out[3].startswith("3 resolution(s) written from ")
+    with Ledger.open(db, clock) as ledger:
+        assert _count(ledger, "resolutions") == 3
