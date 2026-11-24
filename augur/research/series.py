@@ -68,12 +68,9 @@ ALIASES: dict[str, tuple[str, str]] = {
     "bitcoin": ("BTC-USD", "Bitcoin (USD)"),
     "ether": ("ETH-USD", "Ether (USD)"),
     "ethereum": ("ETH-USD", "Ether (USD)"),
-    "solana": ("SOL-USD", "Solana (USD)"),
     "gold": ("GC=F", "Gold futures"),
-    "silver": ("SI=F", "Silver futures"),
     "wti": ("CL=F", "WTI crude oil futures"),
     "brent": ("BZ=F", "Brent crude oil futures"),
-    "natural gas": ("NG=F", "Natural gas futures"),
     "eur/usd": ("EURUSD=X", "EUR/USD"),
     "usd/jpy": ("JPY=X", "USD/JPY"),
     "gbp/usd": ("GBPUSD=X", "GBP/USD"),
@@ -115,9 +112,7 @@ _ALIAS_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
     (phrase, re.compile(rf"(?<![A-Za-z0-9]){re.escape(phrase)}(?![A-Za-z0-9])", re.IGNORECASE))
     for phrase in sorted(ALIASES, key=lambda p: (-len(p), p))
 )
-_ASKS_CLOSE = re.compile(
-    r"\b(close|closes|closing|settle|settles|settlement|level|price)\b", re.IGNORECASE
-)
+_ASKS_CLOSE = re.compile(r"\b(close|closes|closing|level)\b", re.IGNORECASE)
 _REJECT = re.compile(
     r"\b(outperform\w*|underperform\w*|revenue|earnings|volume|market cap\w*"
     r"|percentage change|returns?|between|reference rate|bonds?|percentage of par"
@@ -257,7 +252,7 @@ def match_series(title: str, *, fallback: date | None = None) -> SeriesMatch | N
     """The series and day a question title asks the close of, or ``None``.
 
     A match needs all of: a ticker in parentheses or an alias (the ticker
-    wins), a word asking for a close, closing price, level, settle or price,
+    wins), a word asking for a close, closing price or level (registration item 2),
     and one day (from the title, else ``fallback``). A title naming two
     different days, or using any phrase in the reject list (relative changes,
     fundamentals, fixings, bonds, extremes), is not a match. Pure and offline.

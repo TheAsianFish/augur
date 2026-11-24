@@ -92,7 +92,7 @@ NY = -5 * 3600  # gmtoffset of a New York listing in November
             "ticker",
         ),
         (
-            "What will Bitcoin's price (USD) be on Nov 27, 2026?",
+            "What will Bitcoin (USD) close at on Nov 27, 2026?",
             "bitcoin",
             "BTC-USD",
             date(2026, 11, 27),
@@ -133,6 +133,13 @@ def test_titles_the_rule_reaches(
         "What will Nvidia's (NVDA) % change be on November 27, 2026?",
         "Will Ether be mentioned on November 27, 2026?",
         "What will gold close at on November 26, 2026 and on November 27, 2026?",
+        # Outside the registered rule: a bare "price" or "settle" is not a close,
+        # and silver, natural gas and Solana are not among the registered aliases.
+        "What will Bitcoin's price (USD) be on Nov 27, 2026?",
+        "What will WTI crude oil futures settle at on 2026-11-27?",
+        "What will silver close at on November 27, 2026?",
+        "What will natural gas close at on November 27, 2026?",
+        "What will Solana close at on November 27, 2026?",
     ],
 )
 def test_titles_the_rule_does_not_reach(title: str) -> None:
@@ -556,10 +563,10 @@ async def test_a_bar_is_never_dated_before_the_day_after_its_utc_date() -> None:
 
 
 def test_brent_is_not_read_as_wti_and_coin_tickers_are_coins() -> None:
-    brent = match_series("What will the Brent crude oil price be on December 1, 2026?")
+    brent = match_series("What will Brent crude oil close at on December 1, 2026?")
     assert brent is not None
     assert brent.symbol == "BZ=F"
-    assert match_series("What will the crude oil price be on December 1, 2026?") is None
+    assert match_series("What will crude oil close at on December 1, 2026?") is None
     btc = match_series("What will Bitcoin (BTC) close at on December 1, 2026?")
     assert btc is not None
     assert btc.symbol == "BTC-USD"
