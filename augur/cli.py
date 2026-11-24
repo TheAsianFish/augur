@@ -17,6 +17,7 @@ from augur import (
     baseline,
     diagram,
     fbcompare,
+    floor,
     livecal,
     q4,
     q6,
@@ -425,6 +426,7 @@ def _parser() -> argparse.ArgumentParser:
 
     standings.add_parser(sub)
     baseline.add_parser(sub)
+    floor.add_parser(sub)
 
     led = sub.add_parser("ledger", help="inspect a ledger")
     led_sub = led.add_subparsers(dest="ledger_command", required=True)
@@ -1027,6 +1029,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_judge(args, settings))
         if args.command == "baseline":
             return asyncio.run(baseline.main(args, settings))
+        if args.command == "floor":
+            return floor.main(args)
         if args.command == "resolve":
             return asyncio.run(_resolve(args, settings))
         if args.command == "score":
