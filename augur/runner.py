@@ -69,6 +69,7 @@ from augur.predictions import (
 from augur.questions import Question, question_from_post
 from augur.replay import blend, exact_price
 from augur.research.source import Searcher
+from augur.statlive import LiveStatArm
 
 log = get_logger(__name__)
 
@@ -220,8 +221,12 @@ class ForecastRun:
         probe_providers: Mapping[str, Provider] | None = None,
         blend_exact_price: bool = False,
         calibrator: LiveCalibrator | None = None,
+        stat_arm: LiveStatArm | None = None,
     ) -> None:
         self._settings = settings
+        # M12's statistical arm: the ``stat`` and ``blend`` reference rows, written
+        # after the aggregate and before delivery (every shadow tick).
+        self._stat_arm = stat_arm
         # M8's calibrator: applied to a binary aggregate only when every member
         # answered from the model it was fitted on, before the blend.
         self._calibrator = calibrator
@@ -616,6 +621,7 @@ class ForecastRun:
             prediction = BinaryPrediction(cal(raw, LIVE_SOURCE))
             method = f"{cal.name} calibration of the {method} ({raw:.3f})"
             calibrated = Calibration(cal.name, raw, prediction.probability, cal.fitted_on)
+        before_price = prediction
         own_price = exact_price(research) if self._blend_exact_price else None
         if not isinstance(prediction, BinaryPrediction):
             own_price = None
@@ -640,6 +646,22 @@ class ForecastRun:
             question_type=q.type,
             values=values_json(prediction),
         )
+        stat_line = ""
+        if self._stat_arm is not None:
+            try:
+                outcome = await self._stat_arm.record(
+                    ledger=self._ledger,
+                    run_id=run_id,
+                    q=q,
+                    cutoff=cutoff,
+                    mode=mode,
+                    research=research,
+                    augur=before_price,
+                )
+                stat_line = outcome.line()
+            except Exception as exc:  # the arm degrades the question's extras, never the question
+                log.warning("statistical arm failed", question_id=q.question_id, error=str(exc))
+                stat_line = f"stat arm failed ({type(exc).__name__}: {exc}); no blend row"
         comment = render_comment(
             q=q,
             prediction=prediction,
@@ -653,6 +675,8 @@ class ForecastRun:
         report = QuestionReport(q, "forecast", prediction=prediction, members=members)
         report.comment = comment
         await self._deliver(run_id, mode, q, report, research)
+        if stat_line:
+            self._print(f"   {stat_line}")
         return report
 
     async def _deliver(

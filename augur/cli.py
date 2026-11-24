@@ -81,6 +81,7 @@ from augur.replay import (
 )
 from augur.research.asknews import AskNewsSearcher
 from augur.research.markets import MarketsSearcher
+from augur.research.series import SeriesFetcher
 from augur.research.source import Searcher
 from augur.research.wayback import WaybackSearcher
 from augur.research.wikipedia import WikipediaSearcher
@@ -91,6 +92,8 @@ from augur.resolve import (
     resolve_metaculus,
 )
 from augur.runner import TOURNAMENTS, ForecastRun, code_version, format_probe
+from augur.statarm import load_base_rates
+from augur.statlive import LiveStatArm
 
 log = get_logger("augur.cli")
 
@@ -151,6 +154,14 @@ def _parser() -> argparse.ArgumentParser:
         help="apply the live calibrator (augur/live_calibrator.json) to binary forecasts from "
         "the model it was fitted on; other models' forecasts stay raw (M8), and so do "
         "questions from sources it is withheld from (Metaculus, so every live question)",
+    )
+    fc.add_argument(
+        "--stat-arm",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="write M12's statistical arm and its registered blend as the stat and blend "
+        "reference rows of each question, before it closes (on by default in a shadow tick, "
+        "off otherwise; nothing it writes is posted)",
     )
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
@@ -485,6 +496,12 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     if args.submit and not settings.has_metaculus_token:
         raise MissingCredentialsError("--submit", ("METACULUS_TOKEN",))
     held = _shadow_held(args.shadow_ledger, ledger_path)
+    stat_on = args.stat_arm if args.stat_arm is not None else held is not None
+    if stat_on and args.submit:
+        raise AugurError(
+            "--stat-arm runs only on unposted runs (shadow ticks and dry runs): nothing it "
+            "writes may delay a submission; drop --stat-arm or --submit"
+        )
     async with default_http_client() as http:
         # A replay must not depend on the network, prices included.
         catalog = load_snapshot() if settings.is_replay else await fetch_catalog(http, clock.now())
@@ -506,6 +523,14 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
             searchers.append(MarketsSearcher(http, clock, metaculus=client))
         if client is None:
             print("METACULUS_TOKEN is not set: dry run on the committed sample questions.")
+        stat_arm = (
+            LiveStatArm(
+                rates=load_base_rates(),
+                fetcher=None if settings.is_replay else SeriesFetcher(http, clock),
+            )
+            if stat_on
+            else None
+        )
         with Ledger.open(ledger_path, clock) as ledger:
             run = ForecastRun(
                 settings=settings,
@@ -518,6 +543,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                 probe_providers=probe_providers,
                 blend_exact_price=bool(args.markets and args.blend),
                 calibrator=livecal.load_live() if args.calibrate else None,
+                stat_arm=stat_arm,
             )
             try:
                 report = await run.run(
