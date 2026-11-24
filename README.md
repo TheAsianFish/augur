@@ -1,10 +1,12 @@
 # Augur
 
-**Status: 0.1.0, release candidate (M10 of 10).** Every milestone in
-[PLAN.md](PLAN.md) is built. Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M11 of 13 built.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
-what the backtests found instead. Spring 2027 is the season to place in.
+what the backtests found instead. The 2026-11-30 MiniBench round runs as
+an unattended shadow round against Metaculus's template bot on the same free
+model, under a rule registered before it opened that decides whether the
+free model may submit. Spring 2027 is the season to place in.
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -396,7 +398,7 @@ first scored number; M5 (done) market
 prices as of the cutoff and the replay evaluation against the price; M6 (done) the leakage-proof
 backtest, what leakage is worth, and a first research loop; M7 (done) the fleet and its ablation, with the power curve; M8 (done) calibration from resolved history; M9 (done)
 "does it know when it does not know", against controls for overconfidence; M10 (done) release (package, container, release workflow), the
-season's standing, the ForecastBench same-question row and the postmortem; M11 (next) an unattended
+season's standing, the ForecastBench same-question row and the postmortem; M11 (done) an unattended
 shadow round against the same-model template, and the rule that decides whether the free model may
 be submitted; M12 a forecast with no model in it and one registered blend; M13 dated news in the
 backtest, and the same-model agent-against-template pairs in FutureEval. Details in
