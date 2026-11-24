@@ -1,6 +1,9 @@
 # Sourced by push_ledger.sh and push_standings.sh: check out the `ledger`
 # branch (or start it) in a temporary worktree, then commit and push with
 # retries. Every caller adds new files only, so concurrent pushes rebase cleanly.
+# AUGUR_LEDGER_REMOTE names another remote (a local bare repository under act).
+
+LEDGER_REMOTE="${AUGUR_LEDGER_REMOTE:-origin}"
 
 git_bot() {
   git -C "$LEDGER_TREE" -c user.name='github-actions[bot]' \
@@ -12,9 +15,9 @@ git_bot() {
 ledger_branch_checkout() {
   LEDGER_TREE="$(mktemp -d)/ledger"
   local found=0
-  git ls-remote --exit-code --heads origin ledger > /dev/null || found=$?
+  git ls-remote --exit-code --heads "$LEDGER_REMOTE" ledger > /dev/null || found=$?
   if [ "$found" -eq 0 ]; then
-    git fetch --quiet --depth=1 origin ledger
+    git fetch --quiet --depth=1 "$LEDGER_REMOTE" ledger
     git worktree add --quiet --detach "$LEDGER_TREE" FETCH_HEAD
   elif [ "$found" -ne 2 ]; then
     echo "cannot reach origin to look for the ledger branch (git exit $found)" >&2
@@ -40,14 +43,14 @@ ledger_branch_push() {
   git_bot commit --quiet -m "$message"
   local attempt
   for attempt in 1 2 3 4; do
-    if git -C "$LEDGER_TREE" push --quiet origin HEAD:refs/heads/ledger; then
+    if git -C "$LEDGER_TREE" push --quiet "$LEDGER_REMOTE" HEAD:refs/heads/ledger; then
       echo "pushed $what to the ledger branch"
       return 0
     fi
     if [ "$attempt" -eq 4 ]; then break; fi
     echo "push refused (attempt $attempt); rebasing on the ledger branch and retrying"
     sleep $((attempt * ${LEDGER_RETRY_SECONDS:-5}))
-    git -C "$LEDGER_TREE" fetch --quiet --depth=50 origin ledger
+    git -C "$LEDGER_TREE" fetch --quiet --depth=50 "$LEDGER_REMOTE" ledger
     git_bot rebase --quiet FETCH_HEAD
   done
   echo "could not push after 3 retries; $LEDGER_TREE holds the commit" >&2

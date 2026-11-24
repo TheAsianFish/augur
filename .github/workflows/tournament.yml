@@ -8,7 +8,18 @@ name: Tournament
 # tick would forecast the same questions again; dry runs are manual dispatches),
 # AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS, AUGUR_MAX_QUESTIONS_PER_RUN,
 # AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the fallback trigger below; unset = off),
-# AUGUR_FUTUREEVAL (the FutureEval project id; default 33121, Fall 2026).
+# AUGUR_FUTUREEVAL (the FutureEval project id; default 33121, Fall 2026),
+# AUGUR_SHADOW ('true': scheduled ticks run the shadow job below instead of the
+# forecast job), AUGUR_SHADOW_MODELS (the shadow route; default the free nemotron),
+# AUGUR_SHADOW_DAILY_CALLS (the free calls a day the poll budgets; default 1000).
+#
+# Shadow mode (M11): Augur and Metaculus's template bot forecast the same open
+# questions on the same free model, and nothing is posted: no step of the shadow
+# job can pass --submit, and augur forecast refuses --submit with --shadow-ledger.
+# A tick's work is decided against the shadow tree of the ledger branch (the
+# questions it already holds), not against Metaculus, since a dry run leaves no
+# forecast there. Each tick pushes its export after Augur's forecasts and again
+# after the template's, so a timeout loses neither.
 #
 # Cadence (RESULTS.md M3): every 90 minutes on two offset lines, which caught
 # 99.25% of 3-hour MiniBench windows in simulation against the measured delays,
@@ -46,6 +57,10 @@ on:
         description: Dispatched by the previous run (behaves like a scheduled run)
         type: boolean
         default: false
+      shadow:
+        description: A shadow tick (Augur and the template, unpublished; never submits)
+        type: boolean
+        default: false
 
 concurrency:
   group: tournament
@@ -61,14 +76,26 @@ jobs:
     outputs:
       has_work: ${{ steps.poll.outputs.has_work }}
       tournaments: ${{ steps.poll.outputs.tournaments }}
+      shadow: ${{ env.AUGUR_SHADOW }}
+    env:
+      # A manual run is a shadow tick when asked; scheduled and chained runs follow the variable.
+      AUGUR_SHADOW: ${{ ((github.event_name == 'workflow_dispatch' && !inputs.chained) && inputs.shadow || (!(github.event_name == 'workflow_dispatch' && !inputs.chained) && vars.AUGUR_SHADOW == 'true')) && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/poll.py
+          sparse-checkout: |
+            scripts/poll.py
+            scripts/shadow_fetch.sh
           sparse-checkout-cone-mode: false
+      - name: Read the shadow ledger from the ledger branch
+        if: env.AUGUR_SHADOW == 'true'
+        run: bash scripts/shadow_fetch.sh shadow-ledger
       - name: Poll for open questions not yet forecast
         id: poll
         env:
+          AUGUR_SHADOW_LEDGER: shadow-ledger/shadow
+          AUGUR_SHADOW_DAILY_CALLS: ${{ vars.AUGUR_SHADOW_DAILY_CALLS }}
+          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
           # Scheduled runs obey the variable (unset or 'off' is the kill switch);
           # a manual run polls the tournament it was asked for.
@@ -84,7 +111,7 @@ jobs:
     # poll would find the same questions on every tick and bill a forecast job
     # each time: scheduled and chained runs forecast only when they post.
     if: >-
-      needs.poll.outputs.has_work == 'true' &&
+      needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow != 'true' &&
       ((github.event_name == 'workflow_dispatch' && !inputs.chained) || vars.AUGUR_SUBMIT == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -155,12 +182,112 @@ jobs:
           echo "the forecast step failed; its output is in the step summary"
           exit 1
 
+  # M11's shadow tick. Nothing here can post: no step passes --submit, the
+  # SUBMIT switch is not read, and augur forecast refuses --submit with
+  # --shadow-ledger. Time: install about 2 minutes, Augur's forecasts at most
+  # 18, the first push, the template at most 10, the second push.
+  shadow:
+    needs: poll
+    if: needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write # the ledger branch push
+    env:
+      AUGUR_LEDGER: run.sqlite
+      AUGUR_LOG_LEVEL: INFO
+      # The free route both contestants use; a repository variable may name another.
+      AUGUR_FORECAST_MODELS: ${{ vars.AUGUR_SHADOW_MODELS || 'openrouter:nvidia/nemotron-3-ultra-550b-a55b:free' }}
+      AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_SHADOW_MODELS || 'openrouter:nvidia/nemotron-3-ultra-550b-a55b:free' }}
+      AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
+      AUGUR_MAX_COST_PER_RUN: '0.00'
+      RUN_MINUTES: '15'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install, with the template bot
+        run: uv sync --locked --no-dev --extra baseline
+      - name: Name this tick
+        run: echo "SHADOW_NAME=$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+      - name: Rebuild the shadow ledger from the ledger branch
+        run: |
+          bash scripts/shadow_fetch.sh shadow-ledger
+          if [ -n "$(find shadow-ledger -name '*.jsonl' -print -quit)" ]; then
+            uv run --no-sync augur ledger import shadow-ledger/shadow --out shadow.sqlite
+          else
+            echo "no shadow exports yet: nothing is held"
+          fi
+      - name: Forecast (shadow, never submitted)
+        id: forecast
+        continue-on-error: true
+        timeout-minutes: 18
+        env:
+          METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ASKNEWS_CLIENT_ID: ${{ secrets.ASKNEWS_CLIENT_ID }}
+          ASKNEWS_CLIENT_SECRET: ${{ secrets.ASKNEWS_CLIENT_SECRET }}
+          TOURNAMENTS: ${{ needs.poll.outputs.tournaments }}
+        run: |
+          set -o pipefail
+          status=0
+          : > run.txt
+          IFS=',' read -ra tournaments <<< "$TOURNAMENTS"
+          export AUGUR_RUN_DEADLINE_MINUTES=$(( RUN_MINUTES / (${#tournaments[@]} > 0 ? ${#tournaments[@]} : 1) ))
+          for t in "${tournaments[@]}"; do
+            case "$t" in
+              ''|*[!a-z0-9-]*) echo "refusing tournament name '$t'" | tee -a run.txt; status=1; continue ;;
+            esac
+            echo "== augur forecast --tournament $t --shadow-ledger shadow.sqlite" | tee -a run.txt
+            uv run --no-sync augur forecast --tournament "$t" --shadow-ledger shadow.sqlite \
+              --coverage "coverage-$t.json" 2>&1 | tee -a run.txt || status=1
+          done
+          exit "$status"
+      - name: Push Augur's forecasts to the ledger branch
+        if: always()
+        run: bash scripts/push_shadow.sh run.sqlite run.txt "$SHADOW_NAME"
+      - name: Template bot on the same questions (unpublished)
+        id: template
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ASKNEWS_CLIENT_ID: ${{ secrets.ASKNEWS_CLIENT_ID }}
+          ASKNEWS_CLIENT_SECRET: ${{ secrets.ASKNEWS_CLIENT_SECRET }}
+        run: |
+          set -o pipefail
+          if [ ! -f run.sqlite ]; then echo "no run ledger: nothing for the template" | tee -a run.txt; exit 0; fi
+          echo "== augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite" | tee -a run.txt
+          uv run --no-sync augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite \
+            --max-minutes 8 2>&1 | tee -a run.txt
+      - name: Push the template's forecasts to the ledger branch
+        if: always()
+        run: bash scripts/push_shadow.sh run.sqlite run.txt "$SHADOW_NAME"
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Shadow tick (${{ github.event_name }}, forecast ${{ steps.forecast.outcome }}, template ${{ steps.template.outcome }})"
+            echo '```'
+            if [ -f run.txt ]; then tail -n 60 run.txt; else echo "no output"; fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Fail if a step failed
+        if: steps.forecast.outcome == 'failure' || steps.template.outcome == 'failure'
+        run: |
+          echo "the forecast or template step failed; its output is in the step summary"
+          exit 1
+
   # The fallback trigger: GitHub's scheduler drops most ticks (RESULTS.md M3),
   # but a workflow_dispatch sent with the job's own token always starts a run.
   # At most one chain: nothing is dispatched while another run is queued.
   # Never on a private repository, where the wait would bill all day.
   chain:
-    needs: [poll, forecast]
+    needs: [poll, forecast, shadow]
     if: >-
       always() && vars.AUGUR_CHAIN_MINUTES != '' &&
       github.event.repository.private == false &&
