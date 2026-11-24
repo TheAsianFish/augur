@@ -73,7 +73,9 @@ each with Augur's aggregate and a template forecast, and 0 submissions;
 the poll then reports 2 of 6 left. Both jobs finished well inside their
 timeouts. The fake-server test (`tests/test_shadow.py`) proves the
 stricter claim: a tick whose every question is held makes no model call,
-not even the probe.
+not even the probe. A third tick after the review's workflow fixes
+(`data/runs/m11-act-tick-3.txt`, `max_questions=1`, 288 s) skipped the 4
+held questions, forecast 1, and the ordinary forecast job did not start.
 
 <!-- augur:begin floor-rule -->
 **The floor rule for the free model, registered 2026-11-24, before the

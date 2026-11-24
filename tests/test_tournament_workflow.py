@@ -34,7 +34,9 @@ def test_the_shadow_job_never_passes_submit_or_reads_the_submit_switch() -> None
 
 def test_shadow_and_forecast_jobs_never_both_run() -> None:
     jobs = _jobs()
-    assert "needs.poll.outputs.shadow != 'true'" in jobs["forecast"]
+    assert "needs.poll.outputs.shadow == 'false'" in jobs["forecast"]
+    assert "vars.AUGUR_SHADOW != 'true'" in jobs["forecast"]
+    assert "!inputs.shadow" in jobs["forecast"]
     assert "needs.poll.outputs.shadow == 'true'" in jobs["shadow"]
 
 
@@ -76,3 +78,10 @@ def test_the_poll_reads_the_shadow_ledger_only_in_shadow_mode() -> None:
 def test_every_job_has_a_timeout() -> None:
     for name, body in _jobs().items():
         assert re.search(r"^    timeout-minutes: \d+", body, re.M), name
+
+
+def test_a_chained_shadow_tick_takes_the_shadow_cap_not_the_dispatch_default() -> None:
+    shadow = _jobs()["shadow"]
+    line = next(x for x in shadow.splitlines() if "AUGUR_MAX_QUESTIONS_PER_RUN:" in x)
+    assert "!inputs.chained && inputs.max_questions" in line
+    assert "vars.AUGUR_SHADOW_MAX_QUESTIONS || '4'" in line

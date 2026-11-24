@@ -96,7 +96,7 @@ jobs:
         env:
           AUGUR_SHADOW_LEDGER: shadow-ledger/shadow
           AUGUR_SHADOW_DAILY_CALLS: ${{ vars.AUGUR_SHADOW_DAILY_CALLS }}
-          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || (env.AUGUR_SHADOW == 'true' && (vars.AUGUR_SHADOW_MAX_QUESTIONS || '4')) || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
+          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained && inputs.max_questions) || (env.AUGUR_SHADOW == 'true' && (vars.AUGUR_SHADOW_MAX_QUESTIONS || '4')) || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
           # Scheduled runs obey the variable (unset or 'off' is the kill switch);
           # a manual run polls the tournament it was asked for.
@@ -111,9 +111,12 @@ jobs:
     # A scheduled dry run would never leave a forecast on Metaculus, so the
     # poll would find the same questions on every tick and bill a forecast job
     # each time: scheduled and chained runs forecast only when they post.
+    # Shadow mode is checked twice: the poll's output, and for scheduled and chained
+    # runs the variable itself, so an empty output can never fall through to posting.
     if: >-
-      needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow != 'true' &&
-      ((github.event_name == 'workflow_dispatch' && !inputs.chained) || vars.AUGUR_SUBMIT == 'true')
+      needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow == 'false' &&
+      ((github.event_name == 'workflow_dispatch' && !inputs.chained && !inputs.shadow) ||
+       (vars.AUGUR_SUBMIT == 'true' && vars.AUGUR_SHADOW != 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
@@ -202,7 +205,8 @@ jobs:
       # The free route both contestants use; a repository variable may name another.
       AUGUR_FORECAST_MODELS: ${{ vars.AUGUR_SHADOW_MODELS || 'openrouter:nvidia/nemotron-3-ultra-550b-a55b:free' }}
       AUGUR_RESEARCH_MODELS: ${{ vars.AUGUR_SHADOW_MODELS || 'openrouter:nvidia/nemotron-3-ultra-550b-a55b:free' }}
-      AUGUR_MAX_QUESTIONS_PER_RUN: ${{ inputs.max_questions || vars.AUGUR_SHADOW_MAX_QUESTIONS || '4' }}
+      # A chained dispatch carries max_questions' default; only a person's dispatch sets it.
+      AUGUR_MAX_QUESTIONS_PER_RUN: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained && inputs.max_questions) || vars.AUGUR_SHADOW_MAX_QUESTIONS || '4' }}
       AUGUR_MAX_COST_PER_RUN: '0.00'
       RUN_MINUTES: '14'
     steps:
