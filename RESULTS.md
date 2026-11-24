@@ -4,7 +4,11 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M10 records the season's
+committed file differs from a fresh render. M12 builds a forecast with no
+model in it (a readable price, a base rate, or a quoted series' own
+history), scores it and one registered blend on C4 with no model call, and
+writes both beside Augur on every shadow tick. M11 registers the rule that
+decides whether the free model may submit. M10 records the season's
 standing (Augur has no scored forecast), places Augur's backtest arms
 beside every ForecastBench entrant on the same questions, and checks the
 release (a fresh clone, the built package, the release workflow and the
@@ -166,6 +170,20 @@ Round `minibench` (project 33169): 60 questions, 31 numeric or discrete; the ser
 | 46602 | What will Nvidia's (NVDA) closing share price be on Friday, November 27, 2026? | NVDA | 495 (6) | 156.1 (2026-11-16) | forecast | 144.1 / 154.9 / 165.9 |
 | 46607 | What will Anthropic (ANT) close at on Friday, November 27, 2026? | ANT | 0 (4) | — | abstains: Anthropic, PBC Class A Common Stock (ANT): no close dated at or before the cutoff | — |
 <!-- augur:end statarm-coverage -->
+
+**A shadow tick with the arm, on the real APIs** (2026-11-24,
+bot-testing-area, route `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free`,
+`--max-questions 2`, $0; raw output
+`data/runs/m12-shadow-tick-bot-testing-area.txt`). On the binary question
+the arm gave the Metaculus base rate (51 of 255) and the `blend` row kept
+Augur's forecast, since a base rate is not an anchor the candidate blends
+with; on the numeric question (Trump's net approval) the series rule did
+not reach the title and the arm abstained, saying so. Both rows were
+written before delivery, nothing was submitted, and `augur ledger check`
+found 0 violations. No series question was open on the bot-testing-area,
+so the series path ran live only in the coverage run above and against the
+fake server in `tests/test_statlive.py`.
+
 
 
 
@@ -2151,6 +2169,8 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| M12's live comparison: the primary candidate (`blend`) and the arm (`stat`) against Augur and the template on the 2026-11-30 round, P38's second half, P39 and P40 | The round opens about 2026-11-30; every shadow tick from M12's merge writes the `stat` and `blend` rows (on by default with `--shadow-ledger`) | After the round resolves, with the round's ledger and snapshot built as in the M11 row below: `augur floor --round ROUND --ledger L --standings data/standings/ROUND.json --candidate blend` (the registered candidate, if M12 merged before the round's first question opened; otherwise without `--candidate`, as M11 registered); `augur floor ... --candidate augur` beside it (reported); the `--candidate blend` run also prints P39 (the blend against Augur alone, the same 90% bootstrap); `augur score L --mode dry_run --cluster week` prints Augur against `stat`, `blend` and `template` at 95%; P38's count: `sqlite3 L "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'stat' AND detail LIKE 'series:%'"` |
+| The series rule's five forecasts on the 2026-11-16 round, scored | Those questions resolve on 2026-11-26 and 2026-11-27; nothing was forecast or written for them (a coverage run, not a tick) | After 2026-11-27: read each close from the question page and score the committed percentiles in `data/statarm/m12-coverage-minibench-2026-11-16.json` (or re-run the arm in a dry-run ledger and `augur resolve --manual POST VALUE --evidence URL`); five questions, so a reading, not a test |
 | The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; the schedule runs it once the maintainer sets the repository variables (PR M11) | Unattended: `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30`. After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur standings --round ROUND --out data/standings/ROUND.json`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
 | The same two-tick check on GitHub itself | No GitHub credentials in the build environment; `act` ran it locally against a bare repository | `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2`, twice in a row; the second run's summary lists the first run's questions as "already in the shadow ledger" |
 | The season's final ranks and any prize (Q5) | Fall FutureEval and the last MiniBench rounds are still open on 2026-11-23, and Augur has no scored forecast in any of them | Nothing to run by hand: the `Standings` workflow re-reads them daily onto the `ledger` branch; to render one here, `augur standings --round SLUG --out data/standings/SLUG.json && make results` |
