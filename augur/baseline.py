@@ -27,6 +27,7 @@ import json
 import os
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
@@ -38,6 +39,7 @@ from augur.ledger import Ledger
 from augur.log import get_logger
 from augur.predictions import PERCENTILE_LEVELS
 from augur.questions import FORECAST_TYPES, Question, question_from_post
+from augur.shadow import questions_missing_template, templated_questions
 
 if TYPE_CHECKING:
     from augur.config import Settings
@@ -205,18 +207,27 @@ def questions_to_shadow(ledger: Ledger) -> list[Question]:
 
 
 async def run_shadow(
-    ledger: Ledger, runner: TemplateRunner, questions: Iterable[Question], clock: Clock
+    ledger: Ledger,
+    runner: TemplateRunner,
+    questions: Iterable[Question],
+    clock: Clock,
+    *,
+    deadline: datetime | None = None,
 ) -> ShadowResult:
     """Run the template on each question in turn and record its forecast.
 
     A question that already has a template row, or is of a type Augur does not
-    forecast, is skipped. One question's failure is logged and counted; the
-    batch continues.
+    forecast, is skipped, and so is every question once ``deadline`` has
+    passed. One question's failure is logged and counted; the batch continues.
     """
     recorded = skipped = failed = 0
     lines: list[str] = []
     for q in questions:
         bound = log.bind(question_id=q.question_id, post_id=q.post_id)
+        if deadline is not None and clock.now() >= deadline:
+            skipped += 1
+            lines.append(f"post {q.post_id}: skipped, past the run's deadline")
+            continue
         if has_template_row(ledger, q.question_id):
             skipped += 1
             lines.append(f"post {q.post_id}: skipped, a template forecast is already recorded")
@@ -395,6 +406,19 @@ def add_parser(subparsers: Any) -> None:
     )
     p.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
     p.add_argument(
+        "--shadow-ledger",
+        type=Path,
+        metavar="PATH",
+        help="also run on questions Augur forecast in this ledger (the shadow ledger) that "
+        "have no template row there or in --ledger and are still open (M11's catch-up)",
+    )
+    p.add_argument(
+        "--max-minutes",
+        type=float,
+        metavar="M",
+        help="start no question after this many minutes (the scheduled job's deadline)",
+    )
+    p.add_argument(
         "--post",
         type=int,
         action="append",
@@ -423,8 +447,18 @@ async def main(args: argparse.Namespace, settings: Settings) -> int:
             questions = await _fetch(settings, args.post)
         else:
             questions = questions_to_shadow(ledger)
+        if args.shadow_ledger is not None:
+            mine = {q.question_id for q in questions} | set(templated_questions(ledger_path))
+            questions += questions_missing_template(
+                args.shadow_ledger, clock.now(), also_templated=frozenset(mine)
+            )
+        deadline = (
+            clock.now() + timedelta(minutes=args.max_minutes)
+            if args.max_minutes is not None
+            else None
+        )
         print(f"shadow template on {len(questions)} question(s)")
-        result = await run_shadow(ledger, runner, questions, clock)
+        result = await run_shadow(ledger, runner, questions, clock, deadline=deadline)
     for line in result.lines:
         print(line)
     print(

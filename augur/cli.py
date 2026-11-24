@@ -13,7 +13,18 @@ from pathlib import Path
 
 import httpx
 
-from augur import baseline, diagram, fbcompare, livecal, q4, q6, report, scorecard, standings
+from augur import (
+    baseline,
+    diagram,
+    fbcompare,
+    livecal,
+    q4,
+    q6,
+    report,
+    scorecard,
+    shadow,
+    standings,
+)
 from augur.backtest import (
     PLAN_SUFFIX,
     PinnedClock,
@@ -96,7 +107,17 @@ def _parser() -> argparse.ArgumentParser:
         default="minibench",
         help=f"slug or id; aliases: {', '.join(TOURNAMENTS)} (default minibench)",
     )
-    fc.add_argument("--submit", action="store_true", help="post forecasts and private comments")
+    posting = fc.add_mutually_exclusive_group()
+    posting.add_argument(
+        "--submit", action="store_true", help="post forecasts and private comments"
+    )
+    posting.add_argument(
+        "--shadow-ledger",
+        type=Path,
+        metavar="PATH",
+        help="a shadow tick (M11): skip every question this ledger already holds an Augur "
+        "forecast for, before any model call; never submits (excludes --submit)",
+    )
     fc.add_argument("--samples", type=Path, help="forecast sample posts from this directory")
     fc.add_argument("--max-questions", type=int, help="override AUGUR_MAX_QUESTIONS_PER_RUN")
     fc.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
@@ -402,6 +423,20 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _shadow_held(shadow_ledger: Path | None, ledger_path: Path) -> frozenset[int] | None:
+    """A shadow tick's held question ids, or ``None`` for an ordinary run."""
+    if shadow_ledger is None:
+        return None
+    if shadow_ledger.resolve() == ledger_path.resolve():
+        raise AugurError(
+            "--shadow-ledger must not be the run's own ledger; write the run to a fresh "
+            "file and pass the ledger rebuilt from the shadow exports"
+        )
+    held = shadow.held_questions(shadow_ledger)
+    print(f"shadow tick: {len(held)} question(s) already held in {shadow_ledger}")
+    return held
+
+
 async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     clock = SystemClock()
     ledger_path: Path = args.ledger or settings.ledger_path
@@ -410,6 +445,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     )
     if args.submit and not settings.has_metaculus_token:
         raise MissingCredentialsError("--submit", ("METACULUS_TOKEN",))
+    held = _shadow_held(args.shadow_ledger, ledger_path)
     async with default_http_client() as http:
         # A replay must not depend on the network, prices included.
         catalog = load_snapshot() if settings.is_replay else await fetch_catalog(http, clock.now())
@@ -451,6 +487,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                     samples=args.samples,
                     max_questions=max_questions,
                     reforecast=args.reforecast,
+                    shadow=held,
                 )
             finally:
                 await router.aclose()

@@ -237,6 +237,7 @@ class ForecastRun:
         # Providers without retries for the opening probe; ``None`` skips it.
         self._probe_providers = probe_providers
         self._reforecast = False
+        self._held: frozenset[int] = frozenset()
         self._scored = False
         self._searchers = list(searchers)
         self._run_deadline = clock.now() + timedelta(minutes=settings.run_deadline_minutes)
@@ -251,8 +252,16 @@ class ForecastRun:
         samples: Path | None,
         max_questions: int,
         reforecast: bool = False,
+        shadow: frozenset[int] | None = None,
     ) -> RunReport:
+        """``shadow``: a shadow tick (M11), the question ids the shadow ledger already
+        holds; they are skipped before any model call, and nothing can be submitted."""
         slug = TOURNAMENTS.get(tournament, tournament)
+        if shadow is not None and submit:
+            raise AugurError("a shadow run never submits; drop --submit or --shadow-ledger")
+        if shadow is not None and reforecast:
+            raise AugurError("a shadow run skips what its ledger holds; drop --reforecast")
+        self._held = shadow or frozenset()
         if submit and (self._client is None or not self._client.has_token):
             raise AugurError("--submit needs METACULUS_TOKEN; without it run a dry run")
         if submit and samples is not None:
@@ -285,6 +294,7 @@ class ForecastRun:
                 "scored": scored,
                 "floor": FRONTIER_TIER_NAME if scored else None,
                 "reforecast": reforecast,
+                "shadow": shadow is not None,
                 "catalog": f"{catalog.origin} {catalog.fetched_at:%Y-%m-%d}",
             },
             code_version=code_version(),
@@ -302,16 +312,6 @@ class ForecastRun:
         calls = CallRecorder(self._router, self._ledger, self._clock, budget)
         if scored:
             self._router.set_floor("forecast", FRONTIER_TIER_NAME, in_frontier_tier)
-        if self._probe_providers is not None:
-            budget.charge_run(await self._probe(run_id))
-        no_model = ""
-        if not self._router.usable("forecast"):
-            no_model = (
-                f"no {FRONTIER_TIER_NAME} model answered the probe, so nothing is forecast"
-                if scored
-                else "no forecasting model answered the probe"
-            )
-
         run_started = self._clock.now()
         self._run_deadline = run_started + timedelta(minutes=self._settings.run_deadline_minutes)
         candidates = await self._candidates(slug, samples if use_samples else None, use_samples)
@@ -334,6 +334,17 @@ class ForecastRun:
                 log.info("question skipped", question_id=q.question_id, reason=skipped.reason)
             else:
                 chosen.append((q, post))
+        # The probe runs only when there is something to forecast, so a tick that
+        # finds every question held or already forecast makes no model call.
+        if chosen and self._probe_providers is not None:
+            budget.charge_run(await self._probe(run_id))
+        no_model = ""
+        if not self._router.usable("forecast"):
+            no_model = (
+                f"no {FRONTIER_TIER_NAME} model answered the probe, so nothing is forecast"
+                if scored
+                else "no forecasting model answered the probe"
+            )
         if chosen:
             each = self._estimate_question_cost(chosen[0][0])
             self._print(
@@ -498,6 +509,8 @@ class ForecastRun:
             if now >= q.scheduled_close_time:
                 return "missed", "closed before this run reached it"
             return "skipped", "not open now"
+        if q.question_id in self._held:
+            return "skipped", "already in the shadow ledger"
         if live_listing and q.already_forecast(now) and not self._reforecast:
             return "skipped", "already forecast by this account"
         return "forecast", None
