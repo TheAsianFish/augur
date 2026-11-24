@@ -9,14 +9,15 @@ ledger written by buggy code (or edited by hand) still fails the build.
 
 from __future__ import annotations
 
+import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime, time, timedelta
 from enum import StrEnum
 from pathlib import Path
 
-from augur.clock import ensure_utc
+from augur.clock import ensure_utc, to_iso
 from augur.research.source import DateEvidence, Source
 
 
@@ -273,11 +274,46 @@ def _scan_prices(conn: sqlite3.Connection) -> list[Violation]:
         SELECT s.source_id, s.date_evidence FROM sources s
         LEFT JOIN market_quotes m ON m.source_id = s.source_id
         WHERE s.date_evidence IN ('market_trade', 'price_history', 'aggregate_history')
-          AND m.source_id IS NULL
+          AND m.source_id IS NULL AND s.searcher != 'series'
         """
     )
     for sid, evidence in orphans:
         found.append(Violation("late_price", "", 0, f"{evidence} source {sid} has no price row"))
+    found.extend(_scan_series(conn))
+    return found
+
+
+_SERIES_LINE = re.compile(r"^(\d{4}-\d{2}-\d{2}) \S+$", re.M)
+
+
+def _scan_series(conn: sqlite3.Connection) -> list[Violation]:
+    """A series source (M12) is backed by its own excerpt, one close per line.
+
+    Its date must be 00:00 UTC of the day after its last close, and at or
+    before the instant it was asked for: a close dated after the cutoff, or a
+    date the excerpt does not back, is a violation.
+    """
+    found = []
+    for sid, excerpt, published, as_of in conn.execute(
+        "SELECT source_id, excerpt, published_at, as_of FROM sources WHERE searcher = 'series'"
+    ):
+        days = _SERIES_LINE.findall(str(excerpt))
+        if not days:
+            found.append(Violation("late_price", "", 0, f"series source {sid} lists no close"))
+            continue
+        backed = to_iso(
+            datetime.combine(date.fromisoformat(max(days)), time(), tzinfo=UTC) + timedelta(days=1)
+        )
+        if published != backed or str(published) > str(as_of):
+            found.append(
+                Violation(
+                    "late_price",
+                    "",
+                    0,
+                    f"series source {sid} dated {published}, its last close backs {backed}, "
+                    f"asked for as of {as_of}",
+                )
+            )
     return found
 
 
