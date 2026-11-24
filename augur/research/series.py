@@ -21,9 +21,10 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta, timezone, tzinfo
 from typing import Any, Literal
 from urllib.parse import quote
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 
@@ -71,7 +72,6 @@ ALIASES: dict[str, tuple[str, str]] = {
     "gold": ("GC=F", "Gold futures"),
     "silver": ("SI=F", "Silver futures"),
     "wti": ("CL=F", "WTI crude oil futures"),
-    "crude oil": ("CL=F", "WTI crude oil futures"),
     "brent": ("BZ=F", "Brent crude oil futures"),
     "natural gas": ("NG=F", "Natural gas futures"),
     "eur/usd": ("EURUSD=X", "EUR/USD"),
@@ -195,6 +195,19 @@ class Series:
     retrieved_at: datetime
 
 
+def _exchange_zone(meta: dict[str, Any]) -> tzinfo:
+    """The exchange's time zone by name; its current fixed offset only if the name is unknown."""
+    name = meta.get("exchangeTimezoneName")
+    if isinstance(name, str) and name:
+        try:
+            return ZoneInfo(name)
+        except (ZoneInfoNotFoundError, ValueError):
+            pass
+    offset = meta.get("gmtoffset")
+    seconds = int(offset) if isinstance(offset, int | float) else 0
+    return timezone(timedelta(seconds=seconds))
+
+
 def observation_dated_at(day: date) -> datetime:
     """When the close of trading day ``day`` is taken as public: 00:00 UTC of the next day."""
     return datetime.combine(day + timedelta(days=1), time(0, 0), tzinfo=UTC)
@@ -228,7 +241,13 @@ def _alias_in(title: str) -> str | None:
     return None
 
 
+_COIN_TICKERS = {"BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD"}
+"""Coin tickers as titles write them; a symbol search would find exchange-traded funds."""
+
+
 def _known_symbol(ticker: str) -> str | None:
+    if ticker in _COIN_TICKERS:
+        return _COIN_TICKERS[ticker]
     if ticker.startswith("^") or "=" in ticker or "-USD" in ticker:
         return ticker
     return None
@@ -347,8 +366,7 @@ class SeriesFetcher:
             raise SearchError(f"Yahoo chart for {symbol} has no result; retry later")
         raw_meta = result.get("meta")
         meta: dict[str, Any] = raw_meta if isinstance(raw_meta, dict) else {}
-        offset = meta.get("gmtoffset")
-        offset_s = int(offset) if isinstance(offset, int | float) else 0
+        zone = _exchange_zone(meta)
         stamps = result.get("timestamp")
         indicators = result.get("indicators")
         quotes = indicators.get("quote") if isinstance(indicators, dict) else None
@@ -363,8 +381,12 @@ class SeriesFetcher:
                 continue
             if not math.isfinite(stamp):
                 continue
-            day = datetime.fromtimestamp(stamp + offset_s, tz=UTC).date()
-            dated_at = observation_dated_at(day)
+            # The trading day in the exchange's own zone at that bar's date (the
+            # offset in ``meta`` is today's, wrong across a daylight-saving change),
+            # and never dated before the day after the bar's own UTC date.
+            day = datetime.fromtimestamp(stamp, tz=zone).date()
+            utc_day = datetime.fromtimestamp(stamp, tz=UTC).date()
+            dated_at = max(observation_dated_at(day), observation_dated_at(utc_day))
             if dated_at > as_of:
                 refused += 1  # never read past as_of, whatever the server sent
                 continue

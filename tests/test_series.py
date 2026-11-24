@@ -507,3 +507,59 @@ async def test_persistent_failure_says_what_to_do() -> None:
     async with http2:
         with pytest.raises(SearchError, match="HTTP 403"):
             await g.fetch("NVDA", NOW)
+
+
+# -- review fixes: daylight saving, aliases, coin tickers --------------------------------
+
+
+async def test_a_summer_bar_fetched_in_winter_keeps_its_own_day() -> None:
+    # A futures bar stamped at local midnight in July (04:00 UTC under EDT), fetched
+    # when the exchange's offset is EST (-18000): read with today's offset it would be
+    # labelled the 14th and dated the 15th 00:00, before that day's settle was known.
+    stamp = int(datetime(2026, 7, 15, 4, 0, tzinfo=UTC).timestamp())
+    body = {
+        "chart": {
+            "result": [
+                {
+                    "meta": {
+                        "symbol": "GC=F",
+                        "gmtoffset": -18000,
+                        "exchangeTimezoneName": "America/New_York",
+                    },
+                    "timestamp": [stamp],
+                    "indicators": {"quote": [{"close": [2400.0]}]},
+                }
+            ],
+            "error": None,
+        }
+    }
+    f, http = fetcher(serve(body))
+    async with http:
+        early = await f.fetch("GC=F", datetime(2026, 7, 15, 12, 0, tzinfo=UTC))
+        later = await f.fetch("GC=F", datetime(2026, 7, 16, 0, 0, tzinfo=UTC))
+    assert early.observations == ()
+    assert early.refused == 1
+    (obs,) = later.observations
+    assert obs.day == date(2026, 7, 15)
+
+
+async def test_a_bar_is_never_dated_before_the_day_after_its_utc_date() -> None:
+    # Without a zone name and with a wrong offset, the UTC date still bounds the dating.
+    stamp = int(datetime(2026, 7, 15, 4, 0, tzinfo=UTC).timestamp())
+    body = chart_body([(date(2026, 7, 15), 1.0)])
+    body["chart"]["result"][0]["timestamp"] = [stamp]
+    body["chart"]["result"][0]["meta"]["gmtoffset"] = -6 * 3600
+    f, http = fetcher(serve(body))
+    async with http:
+        series = await f.fetch("X", datetime(2026, 7, 15, 12, 0, tzinfo=UTC))
+    assert series.observations == ()
+
+
+def test_brent_is_not_read_as_wti_and_coin_tickers_are_coins() -> None:
+    brent = match_series("What will the Brent crude oil price be on December 1, 2026?")
+    assert brent is not None
+    assert brent.symbol == "BZ=F"
+    assert match_series("What will the crude oil price be on December 1, 2026?") is None
+    btc = match_series("What will Bitcoin (BTC) close at on December 1, 2026?")
+    assert btc is not None
+    assert btc.symbol == "BTC-USD"

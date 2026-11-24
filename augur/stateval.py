@@ -305,8 +305,7 @@ async def round_coverage(
             row["outcome"] = "not numeric or discrete"
             continue
         q, _ = await client.get_question(rq.post_id)
-        fallback = q.scheduled_resolve_time.date() if q.scheduled_resolve_time else None
-        m = match_series(q.title, fallback=fallback)
+        m = match_series(q.title)
         if m is None:
             row["outcome"] = "no series in the title"
             continue

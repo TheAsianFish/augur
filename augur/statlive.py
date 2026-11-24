@@ -101,8 +101,7 @@ class LiveStatArm:
             return binary_arm(None, LIVE_SOURCE, self._rates)
         if q.type not in CONTINUOUS_TYPES:
             return Abstain(f"the arm does not answer {q.type} questions")
-        fallback = q.scheduled_resolve_time.date() if q.scheduled_resolve_time else None
-        match = match_series(q.title, fallback=fallback)
+        match = match_series(q.title)
         if match is None:
             return Abstain("the series rule does not reach this title")
         if q.scaling is None:
