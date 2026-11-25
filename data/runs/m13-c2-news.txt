@@ -1,0 +1,109 @@
+# M13 arm G, 2026-11-25 (UTC). Model openrouter:nvidia/nemotron-3-ultra-550b-a55b:free, $0.
+# make backtest-q2-news, step by step:
+# 04:24-04:31 augur backtest gkg-index --start 2026-05-12T00:00:00Z --end 2026-06-11T00:00:00Z
+2880 GKG files, 0 missing from the master list, 3109386 articles with a title; wrote data/backtest/gdelt-gkg-index.tsv.gz and data/backtest/gdelt-gkg-manifest.json
+
+real	5m47.832s
+user	5m22.777s
+sys	0m19.950s
+
+# 04:40-06:18 augur backtest forecastbench ... --retrieval open --searchers gdelt --add-to data/ledgers/m6-c2-open.sqlite (first run)
+2026-06-21-llm.json: 138 questions
+  kept     138
+  sample    64 (first 64 by question id)
+64 planned question(s) in data/backtest/m6-c2-queries.json; 0 unplanned
+64 recorded research(es) of forecastbench:2026-06-21-llm.json+onepass-asof-open in data/ledgers/m6-c2-open.sqlite
+GKG index data/backtest/gdelt-gkg-index.tsv.gz: loaded for 481 query words
+[1/64] manifold:2sLApOCEll p=0.98 outcome=1 (594 s)
+[2/64] manifold:PucZntcA92 p=0.01 outcome=0 (39 s)
+[3/64] polymarket:0xef720745be0a15b63c392854dacae4227a9deafe11fdf6afe79bdf45754dd10a nothing added
+[4/64] polymarket:0x66bbf6d55e0296278858b3147689f3df9259374f158f9f028b608baa322a639c p=0.28 outcome=1 (59 s)
+[5/64] metaculus:38166 p=0.18 outcome=0 (74 s)
+[6/64] metaculus:43343 failed: only 1 of 3 draws parsed: member 0: no model in the forecast chain could answer: nvidia/nemotron-3-ultra-550b-a55b:free on openrouter returned no text (finish_reason 'length'); a reasoning model may need more max_tokens; add models to AUGUR_FORECAST_MODELS or retry later; member 2: no model in the forecast chain could answer: nvidia/nemotron-3-ultra-550b-a55b:free on openrouter returned no text (finish_reason 'length'); a reasoning model may need more max_tokens; add models to AUGUR_FORECAST_MODELS or retry later
+[7/64] polymarket:0x3f0bc2757babb8bb9971c9f782fe81f9db734c12d84822f1120a90681c991ff8 nothing added
+[8/64] polymarket:0xd73237bb27cdc455578e9a0788c358bd79609d394f43a270bde10cde4788105f p=0.60 outcome=0 (124 s)
+[9/64] metaculus:38940 nothing added
+[10/64] manifold:dSaVvMLpLbwaLLUGfGfK p=0.03 outcome=0 (140 s)
+[11/64] metaculus:43333 nothing added
+[12/64] polymarket:0x399b69600812f9997ee0dcac06c74c9351f230baa53765eacbc443a77bc520b9 p=0.93 outcome=0 (35 s)
+[13/64] manifold:YEdvVluF5xAGBq6lrvfD nothing added
+[14/64] polymarket:0x5187c6fefe08cf4513e08dd31a514b698aaebc18c259b9a98c8170cca2b7d6e8 p=0.02 outcome=0 (78 s)
+[15/64] metaculus:42151 p=0.03 outcome=0 (94 s)
+[16/64] manifold:RdhCc6L2dl nothing added
+[17/64] polymarket:0x280f534844278583edf4371c96e28dfe4c03bd93ba3cbfce9175ee3821dfa12f p=0.12 outcome=1 (115 s)
+[18/64] metaculus:39142 p=0.03 outcome=0 (66 s)
+[19/64] metaculus:43283 p=0.08 outcome=1 (85 s)
+[20/64] manifold:ZQvUHx5d2tphDz1tJSMM p=0.08 outcome=0 (126 s)
+[21/64] manifold:0PE59gu09y p=0.12 outcome=1 (97 s)
+[22/64] polymarket:0xa4d72632ac0ddadcac5247ffc586a193f1bc3bc839cf9ce993c2471e0d599cca p=0.15 outcome=1 (70 s)
+[23/64] manifold:hdNqANszg0 p=0.02 outcome=0 (69 s)
+[24/64] metaculus:40938 p=0.55 outcome=0 (64 s)
+[25/64] manifold:2lZdlsyUPh p=0.12 outcome=1 (178 s)
+[26/64] polymarket:0x672d648903d96946882cd200c78253414f3bebf5143dab64add5fc0d23077f96 p=0.02 outcome=0 (71 s)
+[27/64] polymarket:0xde6e8331eaaf0b212f688a04f6c4ff5f895ab633a467cb3e9f3da48fce7c6801 p=0.22 outcome=0 (59 s)
+[28/64] manifold:NqZNZgILEL p=0.01 outcome=0 (98 s)
+[29/64] manifold:n8ZROwk6GKcLyurigsf1 p=0.72 outcome=1 (117 s)
+[30/64] polymarket:0x0efcc493f7e7578cd5808b29e08c2535dee61c2a1fe841696e76e7892b29cca8 p=0.12 outcome=1 (67 s)
+[31/64] metaculus:43435 p=0.95 outcome=1 (67 s)
+[32/64] polymarket:0x174018cba2df7afe76f434e8ca93e55c76f2eb13015a5caf941ce6d270ba6264 p=0.82 outcome=1 (117 s)
+[33/64] polymarket:0x91b6939a95e9626fe3598483d37f2ad80fccac3d8a7a2ac8c9a4d9a4007661df p=0.03 outcome=0 (168 s)
+[34/64] polymarket:0x9777a1c22720f62ad2f4c6d9f8434d97ca898c53234f13b7b04072e5c29f1335 p=0.04 outcome=0 (100 s)
+[35/64] metaculus:43525 p=0.15 outcome=0 (57 s)
+[36/64] manifold:ZhSyLhtQ0Q p=0.99 outcome=1 (88 s)
+[37/64] metaculus:41090 p=0.18 outcome=0 (99 s)
+[38/64] polymarket:0xba8526e4bf87c26c043d7048d364508d066117c173a91f2c56a82128fdc9102c nothing added
+[39/64] polymarket:0x802b8daacb36b5ea95011670cd004bffe3df70bc9a774da929fbd99074411e91 p=0.13 outcome=0 (79 s)
+[40/64] manifold:RcNs5ch6qU p=0.15 outcome=0 (103 s)
+[41/64] metaculus:42827 p=0.45 outcome=1 (98 s)
+[42/64] polymarket:0x80b3af88cb991980e8da1ce86b9794a0957f96ec98c29319dd7ba65e9744d82b p=0.38 outcome=1 (126 s)
+[43/64] polymarket:0x00de24efbe083e61da20587be324b35e842b51f330c4f5c55942bf8681cd0857 nothing added
+[44/64] metaculus:43703 p=0.20 outcome=0 (76 s)
+[45/64] polymarket:0x4427ce55f5fc0cc00f2708f914c585442bce7eede689d5daec4671449dc25f8d p=0.20 outcome=0 (98 s)
+[46/64] manifold:Jc4rRAQpvCXE9tCEfa4n p=0.01 outcome=0 (112 s)
+[47/64] polymarket:0x538ad2df74cdacae4dd049e16c529921f3d09f10e89400b9f17d970ea4200099 p=0.17 outcome=1 (111 s)
+[48/64] polymarket:0xd4a3de1964b1f3fa1edeca40dbc3ef6663a56fda84e804066c23096b615904f9 p=0.38 outcome=1 (84 s)
+[49/64] polymarket:0x4168c55800f52740c0ca9c326569455ecd66075071e2825f4f4938bed2fafff4 p=0.02 outcome=0 (46 s)
+[50/64] polymarket:0x5bf2c54fb4ca9d63427816cd88ab8f7b5ede5b2b9166c366a940f1a0d6d0a290 p=0.05 outcome=0 (78 s)
+[51/64] manifold:HvTJLPAMNrSMoSORu3tm p=0.03 outcome=1 (60 s)
+[52/64] manifold:ECdCgusP8y p=0.95 outcome=1 (111 s)
+[53/64] infer:1653 p=0.05 outcome=0 (101 s)
+[54/64] manifold:5C022SpgR6 p=0.12 outcome=0 (97 s)
+[55/64] polymarket:0x98b595f40feccf49ded360d1eb15b9bb81041cc6006da00441a743dcef74f0e7 p=0.01 outcome=0 (91 s)
+[56/64] manifold:yTCCaTUbAtJWWFo1dGzD p=0.04 outcome=0 (123 s)
+[57/64] infer:1654 p=0.02 outcome=0 (33 s)
+[58/64] polymarket:0xe7d699841d03f695da20c8935f4cdf809057f3b27fa4f382e327ff731b8d75a7 p=0.02 outcome=0 (96 s)
+[59/64] metaculus:43707 nothing added
+[60/64] manifold:dP58EZ5ntQ p=0.01 outcome=0 (60 s)
+[61/64] metaculus:43496 p=0.15 outcome=0 (66 s)
+[62/64] polymarket:0xa34f2fb5664f2cc079ba616597ab300bbbe6dd91e3d597f5bc45693c6ea20082 p=0.33 outcome=1 (84 s)
+[63/64] manifold:UsyCqAyEpP p=0.12 outcome=0 (155 s)
+[64/64] polymarket:0x619165fe3568255c0a048d9350b5011c19f17bcec0474e867a1a983e6411ceff p=0.50 outcome=1 (132 s)
+ledger: data/ledgers/m13-c2-news.sqlite (run run_8fd4f359324a44dc89b4): 54 forecast, 0 done earlier, 9 skipped, 1 failed
+
+real	97m12.755s
+user	0m22.638s
+sys	0m1.480s
+# searcher events in the first run:
+      1 "event": "gdelt_api_refused_using_gkg_index"
+     22 "event": "gdelt_capture_failed"
+      6 "event": "gdelt_retry"
+      6 "event": "wayback_empty_capture"
+     81 "event": "wayback_no_capture"
+     92 "event": "wayback_transport_error"
+
+# 06:19-06:30 the same command, resumed (the one failed question)
+64 recorded research(es) of forecastbench:2026-06-21-llm.json+onepass-asof-open in data/ledgers/m6-c2-open.sqlite
+GKG index data/backtest/gdelt-gkg-index.tsv.gz: loaded for 481 query words
+[1/1] metaculus:43343 nothing added
+ledger: data/ledgers/m13-c2-news.sqlite (run run_5b8fe7eabe774ff58108): 0 forecast, 63 done earlier, 1 skipped, 0 failed
+failed|1
+forecast|54
+skipped|10
+
+
+# 06:38-07:18 augur judge ... --tournament forecastbench:2026-06-21-llm.json+onepass-asof-open+news
+judge run run_d39d0e955d9649839414: 54 judged, 0 done earlier, 0 failed of 54
+
+real	40m21.664s
+user	0m0.850s
+sys	0m0.189s

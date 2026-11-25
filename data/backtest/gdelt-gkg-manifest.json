@@ -1,0 +1,9 @@
+{
+ "articles": 3109386,
+ "end_inclusive": "2026-06-11T00:00:00+00:00",
+ "files": 2880,
+ "index_sha256": "285c6f7261641f6c6b1825586df8b4dce6a7e07b7ff0e331ac32281ca2033dfa",
+ "missing_from_master": [],
+ "source": "https://data.gdeltproject.org/gdeltv2/masterfilelist.txt",
+ "start_exclusive": "2026-05-12T00:00:00+00:00"
+}
