@@ -145,6 +145,16 @@ def done_questions(ledger: Ledger, tournament: str, mode: RunMode = RunMode.BACK
     return {int(r[0]) for r in rows}
 
 
+def nothing_added(ledger: Ledger, tournament: str) -> set[int]:
+    """Questions an earlier run of arm G settled with nothing added to the base arm."""
+    rows = ledger.connection.execute(
+        "SELECT o.question_id FROM question_outcomes o JOIN runs r ON r.run_id = o.run_id "
+        "WHERE r.tournament = ? AND o.status = 'skipped' AND o.reason = ?",
+        (tournament, NOTHING_ADDED),
+    ).fetchall()
+    return {int(q) for (q,) in rows}
+
+
 async def run_forecastbench(
     *,
     questions: Sequence[FBQuestion],
@@ -177,6 +187,10 @@ async def run_forecastbench(
     if mode is RunMode.UNRESTRICTED and wall_clock is None:
         raise AugurError("internal: the unrestricted arm needs the wall clock")
     done = done_questions(ledger, tournament, mode)
+    if retrieval is not None and retrieval.base is not None:
+        # A question that gained nothing is settled too: searching it again would draw
+        # a second sample of the archive's transient failures, not the same experiment.
+        done |= nothing_added(ledger, tournament)
     todo = [q for q in questions if q.question_id not in done]
     if not todo:
         out(f"all {len(questions)} questions already forecast in this ledger")

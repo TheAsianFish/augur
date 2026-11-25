@@ -171,6 +171,20 @@ async def test_nothing_added_skips_the_question_and_writes_no_forecast(tmp_path:
     assert provider.requests == []  # no brief, no draws
 
 
+async def test_a_resumed_arm_does_not_search_a_settled_question_again(tmp_path: Path) -> None:
+    *_, questions = small_set(tmp_path)
+    q = questions[0]
+    base = {q.question_id: [page("base 0", EARLY, CUTOFF)]}
+    router, _provider = router_and_provider()
+    db = tmp_path / "g.sqlite"
+    await _run(db, [q], Retrieval([NoNews()], queries={q.question_id: ["alpha"]}, base=base))
+    # A second run whose searcher would now find news: the question stays settled.
+    again = Retrieval([NewsSearcher()], queries={q.question_id: ["alpha"]}, base=base)
+    result = await _run(db, [q], again, router=router)
+    assert (result.forecast, result.resumed) == (0, 1)
+    assert _rows(db, "SELECT COUNT(*) FROM forecasts") == [(0,)]
+
+
 async def test_news_added_writes_a_brief_draws_and_the_aggregate(tmp_path: Path) -> None:
     *_, questions = small_set(tmp_path)
     q = questions[0]
