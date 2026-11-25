@@ -1491,6 +1491,27 @@ here and rendered into RESULTS.md byte for byte.
    addresses on 2026-11-23 and 2026-11-24 (HTTP 429 on a first request).
    If it refuses every address the run can use, G is recorded as not run,
    not as zero coverage, and the commands go under To measure.
+7. *Amendment, 2026-11-25 04:30 UTC, before any arm ran.* The DOC 2.0
+   API answered HTTP 429 to all six requests sent from the build machine
+   between 04:12 and 04:22 UTC (one every 75 seconds or more), while
+   GDELT's static files (`data.gdeltproject.org/gdeltv2/`) answered
+   at once. So discovery has a second route over the same index, used
+   only when the API refuses: GDELT's 15-minute GKG 2.1 files for the 30
+   days before the cutoff (every file stamped after 2026-05-12 00:00 and
+   at or before 2026-06-11 00:00 UTC, C2's single cutoff), each checked
+   against the MD5 GDELT's master list gives, reduced to a local index of
+   (batch time, URL, page title). The batch time plays the `seendate`'s
+   part and is checked against the cutoff the same way. A query's
+   keywords (item 1's rule) match an article when at least three of its
+   non-numeric keywords (all of them, if it has fewer) appear in the
+   title; matches are ordered by keywords matched, then newest first,
+   at most 10, and that list is cached and committed exactly as an API
+   answer would be. The window is 30 days rather than 90 to keep the
+   download near 15 GB; P41 counts the 30 days before open either way.
+   Item 2 (text only from a Wayback capture at or before the cutoff),
+   item 3, the predictions and the verdict are unchanged. Title matching
+   is narrower than the API's full-text search, which works against P41's
+   coverage, not for it.
 
 | # | Prediction |
 |---|------------|
