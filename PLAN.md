@@ -1711,6 +1711,104 @@ registration counts only if it is pushed to the public `origin` (a
 branch or the pull request) before the round's first question opens;
 GitHub's push time is the evidence, recorded in RESULTS.md.
 
+**M14's registration, committed 2026-11-25 before any M14 code or
+simulation, and before the 2026-11-30 round's first question.** This is
+the exact text; RESULTS.md carries it byte for byte (rendered from this
+block). No shadow question has been forecast when it is committed: the
+`ledger` branch does not exist on `origin`.
+
+<!-- m14-registration:begin -->
+**M14's pooled Q1 analysis, registered 2026-11-25, before the 2026-11-30
+MiniBench round's first question opens and before any of its code or its
+simulation exists.** The floor rule (the `floor-rule` block above) is not
+changed by anything here: it still reads one round, and only it can admit
+a route.
+
+1. *The rounds.* The two MiniBench rounds that open after
+   `minibench-2026-11-16` (about 2026-11-30 and 2026-12-14, under
+   whatever slugs `scripts/standings_rounds.py` reads for them), and the
+   Fall 2026 FutureEval project (`fall-futureeval-2026`, project 33121).
+   Questions from the bot-testing-area and any other project are not
+   included.
+2. *The questions (the selection).* A question is in the pooled sample
+   when it is a post in its round's standings snapshot and the shadow
+   ledger holds both Augur's aggregate and the shadow template's forecast
+   for it, from a shadow tick, with its latest resolution `resolved`. Which
+   questions get forecast is decided by the schedule alone: the poll's own
+   order, four questions a tick, within the day's free-call budget.
+   Nothing is added or dropped by hand, and a forecast question is never
+   removed. Annulled or ambiguous questions, questions only one side
+   forecast (uncovered) and questions with no resolution by the analysis
+   date are counted, per round, and printed as results.
+3. *The primary quantity.* One: the mean head-to-head
+   h = 100 × ln(p_A / p_T) of Augur's aggregate against the shadow
+   template over every pooled question, scored exactly as item 3 of the
+   floor rule scores it (halved on numeric and discrete questions,
+   probabilities held to [0.001, 0.999], the latest forecast of each side).
+   *Secondary* (reported, never the test): the same mean for the
+   registered blend (M12's primary candidate, the `blend` rows) against
+   the template, on the pooled questions that have a `blend` row.
+4. *The interval.* A 90% percentile bootstrap, 10,000 resamples, seed
+   20261119, resampling *opening days*: a question's cluster is the UTC
+   calendar day of its `open_time` in the ledger, and each resample draws
+   as many days as there are, with replacement, taking every pooled
+   question that opened on a drawn day. The number of clusters is printed
+   beside the interval. With fewer than eight clusters, the
+   question-level interval (each question its own cluster, same resamples
+   and seed) is printed as well, labelled the optimistic one; the
+   day-clustered interval stays the primary.
+5. *When.* Once, on **2027-01-11** (UTC), after the 2026-12-14 round's
+   last scheduled resolution: from the shadow ledger rebuilt from the
+   `ledger` branch's `shadow/` tree as it stands that day, each round's
+   latest standings snapshot fetched on or before that day, and the
+   resolutions recorded by then. A reading before that date is a progress
+   reading, labelled so, and is never the registered result. The date
+   does not move for any n.
+6. *Reading.* Above 0 if the interval's lower end is above 0; below 0 if
+   its upper end is below 0; otherwise *not resolvable this season*, with
+   the n needed (item 7) stated. Whatever the reading, it is an
+   unsubmitted shadow comparison on a below-floor model, decides nothing
+   about submission, and is labelled so wherever it is printed.
+7. *Sample size.* The questions needed for a true lead of δ points at 80%
+   power, read by the interval's lower end (one-sided 5%), treating
+   questions as independent (clustering only raises it):
+   n = ⌈((z_0.95 + z_0.80) σ / δ)²⌉. At the assumed paired spread
+   σ = 32: +5 needs 254 and +2 needs 1,583. It is recomputed once, on the
+   analysis date, with σ the measured SD of h over the pooled questions;
+   the date does not move.
+8. *What it is printed beside.* `augur floor --pooled` prints, per
+   round: forecast by each side, scored, annulled, uncovered and
+   unresolved; then the pooled mean, its day-clustered interval, n, the
+   cluster count, the measured spread and the item 7 table. It prints
+   no floor verdict and cannot: the per-round verdicts come only from
+   `augur floor --round R --candidate blend`, set beside it in RESULTS.md
+   with `augur score L --mode live --cluster week` on the pooled ledger,
+   the public `metac-nemotron-3-ultra+asknews` average of each round and
+   the outside agent-minus-template gaps from `augur standings`.
+9. *Re-reading the one-round rule (synthetic).* A seeded simulation,
+   labelled synthetic in every place it is printed: rounds of n
+   questions (n = 30 and 60), each h drawn from a normal with mean 0
+   (a candidate with no lead) and SD 32, S = 0 so the rule's two
+   conditions coincide; the rule's lower end read as mean − z_0.95 × SD /
+   √n (the normal approximation to its bootstrap); 20,000 simulated
+   seasons, seed 20261125. Reported: the share of seasons in which the
+   rule admits at least once within the first k = 1 to 4 rounds, (a)
+   applied after each round to all rounds so far (cumulative looks) and
+   (b) applied to each round alone. Re-checked by `make eval`.
+
+| # | Prediction |
+|---|------------|
+| P47 | On the analysis date, the pooled mean head-to-head of Augur's aggregate against the shadow template is between −2 and +8 points, and its day-clustered 90% interval includes 0 (the reading is *not resolvable this season*). |
+| P48 | Fewer than 90 questions are scored across the two MiniBench rounds together. |
+| P49 | Recomputed from the measured spread on the analysis date, +5 points needs more than 200 scored questions and +2 more than 1,000. |
+| P50 | In the synthetic table at n = 60, re-reading the rule on the cumulative data after each of four rounds admits a no-lead candidate in between 10% and 15% of seasons (nominal 5%). |
+| P51 | In the synthetic table at n = 60, applying the rule to each of four rounds alone admits a no-lead candidate in between 15% and 22% of seasons. |
+
+**Reading rule.** A prediction is marked held, failed or not yet
+readable as written, never edited. P47 to P49 are read on the analysis
+date and not before; P50 and P51 when the simulation first runs.
+<!-- m14-registration:end -->
+
 ### M15: how much of ForecastBench's dataset half is base-rate arithmetic?
 
 **Question.** On the dataset questions Augur has always dropped (will a
