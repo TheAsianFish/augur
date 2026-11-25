@@ -311,6 +311,23 @@ async def test_non_json_200_is_empty_not_an_error() -> None:
     assert web.wayback_requests() == []
 
 
+async def test_a_rate_limit_text_200_is_retried_and_never_cached(tmp_path: Path) -> None:
+    throttle = httpx.Response(
+        200, text="Please limit requests to one every 5 seconds or contact us for larger queries."
+    )
+    ok = httpx.Response(200, json={"articles": [article(GOOD)]})
+    web = FakeWeb(captures={GOOD: ["20241230093000"]}, gdelt_responses=[throttle, ok])
+    cache = ResponseCache(tmp_path / "cache")
+    searcher, http, t = make(web, cache=cache)
+    async with http:
+        sources = await searcher.search(QUERY, AS_OF, 5)
+    assert len(sources) == 1
+    assert len(web.gdelt_requests()) == 2
+    assert t.sleeps == [BACKOFF[0]]
+    (path,) = (tmp_path / "cache").glob("*.json")
+    assert "articles" in json.loads(path.read_text(encoding="utf-8"))["body"]
+
+
 async def test_market_hosts_are_excluded() -> None:
     market = "https://polymarket.com/event/rates"
     web = FakeWeb([article(market)], {market: ["20241230093000"]})

@@ -469,3 +469,32 @@ async def test_without_an_index_the_refusal_still_raises() -> None:
         with pytest.raises(SearchError):
             await searcher.search(QUERY, AS_OF, 5)
     assert not searcher.api_refused
+
+
+async def test_a_resumed_run_replays_the_index_answer_without_asking_the_api(
+    tmp_path: Path,
+) -> None:
+    cache = ResponseCache(tmp_path / "c")
+    first, http, _ = refused_searcher(fallback_index(), cache)
+    async with http:
+        recorded = await first.search(QUERY, AS_OF, 5)
+    index = fallback_index()
+    resumed, http, web = refused_searcher(index, cache)
+    assert not resumed.api_refused  # a new process starts by trusting the API
+    async with http:
+        replayed = await resumed.search(QUERY, AS_OF, 5)
+    assert [s.url for s in replayed] == [s.url for s in recorded]
+    assert web.gdelt_requests() == []  # no API request, no backoff
+    assert index.calls == 0
+
+
+async def test_the_index_cache_key_holds_the_cutoff(tmp_path: Path) -> None:
+    cache = ResponseCache(tmp_path / "c")
+    index = fallback_index()
+    searcher, http, _ = refused_searcher(index, cache)
+    async with http:
+        early = await searcher.search(QUERY, AS_OF, 5)
+        later = await searcher.search(QUERY, dt(2025, 1, 2), 5)
+    assert index.calls == 2  # the second cutoff is not served the first one's answer
+    assert all(LATE not in s.url for s in early)
+    assert len(later) == len(early) + 1  # the later cutoff sees the article GDELT saw after AS_OF

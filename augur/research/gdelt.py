@@ -165,6 +165,18 @@ def parse_articles(body: str) -> list[dict[str, Any]]:
     return [a for a in articles if isinstance(a, dict)] if isinstance(articles, list) else []
 
 
+def is_throttle(body: str) -> bool:
+    """Whether a 200 answer is GDELT's text rate-limit reply or an HTML error page.
+
+    Both are transient, unlike the one-line refusals of a query GDELT cannot
+    run, so they are retried like a 429 and never cached as an empty answer.
+    """
+    text = body.lstrip()[:500].lower()
+    if text.startswith("{"):
+        return False
+    return "limit requests" in text or text.startswith(("<!doctype html", "<html"))
+
+
 class GdeltSearcher:
     """News articles GDELT saw by ``as_of``, read from Wayback captures at or before it."""
 
@@ -276,7 +288,18 @@ class GdeltSearcher:
         )
 
     async def _artlist(self, keywords: str, as_of: datetime) -> str:
-        """The answer's body: the API's, or, once the API has refused, the local index's."""
+        """The answer's body: the API's, or, once the API has refused, the local index's.
+
+        A committed answer is replayed before anything is asked: the API's if
+        one is cached, else the index's, so a resumed or re-run arm sends
+        nothing twice and takes the route the recorded run took.
+        """
+        if self._cache is not None:
+            cached = self._cache.get(request_url(self._api_url, keywords, as_of))
+            if cached is None and self._index is not None:
+                cached = self._cache.get(self._index_key(keywords, as_of))
+            if cached is not None:
+                return cached
         if self._index is not None and self.api_refused:
             return self._index_artlist(keywords, as_of)
         try:
@@ -288,11 +311,17 @@ class GdeltSearcher:
             self.api_refused = True
             return self._index_artlist(keywords, as_of)
 
+    @staticmethod
+    def _index_key(keywords: str, as_of: datetime) -> str:
+        """The cache key of the index's answer: the keywords and both window ends."""
+        start = as_of - GKG_LOOKBACK
+        return f"gkg:{keywords}|{gdelt_stamp(start)}|{gdelt_stamp(as_of)}"
+
     def _index_artlist(self, keywords: str, as_of: datetime) -> str:
         """The local GKG index's answer, cached like an API answer (registration item 7)."""
         assert self._index is not None
         start = as_of - GKG_LOOKBACK
-        key = f"gkg:{keywords}|{gdelt_stamp(start)}|{gdelt_stamp(as_of)}"
+        key = self._index_key(keywords, as_of)
         if self._cache is not None:
             cached = self._cache.get(key)
             if cached is not None:
@@ -323,6 +352,10 @@ class GdeltSearcher:
                 except httpx.HTTPError as exc:
                     response = None
                     last_problem = f"{type(exc).__name__}: {exc}"
+            if response is not None and response.status_code == 200 and is_throttle(response.text):
+                # GDELT's older rate-limit reply comes as 200 and text: retry, never cache it.
+                last_problem = "HTTP 200 with a rate-limit message"
+                response = None
             if response is not None and response.status_code == 200:
                 if self._cache is not None:
                     self._cache.put(url, response.text, self._clock.now())
