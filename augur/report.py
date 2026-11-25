@@ -1876,7 +1876,7 @@ def render_news(root: Path) -> str:
         out += [
             "",
             f"The judge on the news sources (same model, El Lahib et al.'s 0 to 4 rubric): "
-            f"{s.judged} judged, scores 0/1/2/3/4 {sc}, at 3 or more "
+            f"{s.judged} question-source pairs judged, scores 0/1/2/3/4 {sc}, at 3 or more "
             f"{_pct(s.judged_major, s.judged)}.",
         ]
     else:

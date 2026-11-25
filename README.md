@@ -1,6 +1,6 @@
 # Augur
 
-**Status: 0.1.0, release candidate; M12 of 13 built.** Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; all 13 milestones built.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. The 2026-11-30 MiniBench round runs as
@@ -321,6 +321,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M13, dated news in the leak-free backtest (C2's 64 questions, the same free model, three draws, $0): arm O's sources plus at most three news sources a question (GDELT discovery bounded at the cutoff, text only from a Wayback capture at or before it) | 54 of 64 questions gained news seen in the 30 days before open, and the judge rated none of the 99 news uses as leaking. Adding it did not help: G − O +0.006 [−0.010, +0.022] Brier, which rules out a Hindcast-sized gain (−0.055), so the registered verdict is *not the limit*. Four of six predictions failed (coverage was far better, and the effect was not a small gain). Discovery ran on a GKG title index, because GDELT's API refused this machine |
 | M12, the statistical arm and the registered blend on C4 (671 walk-forward instances, $0, no model call); all four predictions held | Where the bot could read a price (480 instances), the primary candidate beats the model's raw forecast by −0.110 [−0.137, −0.084] Brier, and the price alone is still better than the blend (+0.023 [+0.008, +0.038]). On the 190 Metaculus-written instances, where there is no price, the base rate alone is worse than the raw model (+0.063 [+0.017, +0.107]), so the candidate leaves Augur's forecast unchanged there. On the 2026-11-16 round's 60 questions the series rule reaches 7 and forecasts 5; the live comparison is the 2026-11-30 round (To measure) |
 | M10, the season so far (Q5): every MiniBench leaderboard read 2026-11-23, Fall FutureEval re-read 2026-11-25 | Augur has no entry in any round (0 scored forecasts; the floor refused the free models). The template on Augur's free model, `metac-nemotron-3-ultra+asknews`, averaged −7.66 [−14.51, −0.73] in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −12.19 so far in Fall FutureEval, where rank 1 (Panshul42) averages 20.91 on 51 scored questions. Final ranks are re-read daily by the `Standings` workflow |
 | M10, ForecastBench same-question row: Augur's backtest arms against every entrant's published forecasts on the same question instances (C1, C2, O, C4; $0, no model call) | Without retrieval the free model is an ordinary zero-shot LLM: on C2 it ranks 13 of 23 among ForecastBench's zero-shot runs shown no price (median difference +0.002 Brier), on C4 59 of 78, or 34 of 53 without ForecastBench's web-search runs (each entrant on only the sets it entered, and ForecastBench's runs renamed in July count as two entrants). Shown the price, 17 of 22 of those models beat it with an interval above 0. Researched as of open (64 questions), every one of the 16 external entries beats it, by a median of +0.083. A backtest placing, not a leaderboard rank |
@@ -424,7 +425,7 @@ backtest, what leakage is worth, and a first research loop; M7 (done) the fleet 
 "does it know when it does not know", against controls for overconfidence; M10 (done) release (package, container, release workflow), the
 season's standing, the ForecastBench same-question row and the postmortem; M11 (done) an unattended
 shadow round against the same-model template, and the rule that decides whether the free model may
-be submitted; M12 (done) a forecast with no model in it and one registered blend; M13 dated news in the
+be submitted; M12 (done) a forecast with no model in it and one registered blend; M13 (done) dated news in the
 backtest, and the same-model agent-against-template pairs in FutureEval. Details in
 [PLAN.md](PLAN.md).
 

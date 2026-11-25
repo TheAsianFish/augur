@@ -131,8 +131,110 @@ by source age stay cut (Considered and not chosen).
 <!-- augur:end m13-registration -->
 
 <!-- augur:begin news -->
-Arm G has not run: its ledger `data/ledgers/m13-c2-news.sqlite` is not committed (To measure has the commands).
+C2's fixed sample, 64 questions, cutoff each question's open instant. Model `nvidia/nemotron-3-ultra-550b-a55b:free` in every role, 3 draws, median. Arm G is arm O's sources exactly as O's forecasters saw them plus at most three news sources (GDELT discovery, text from a Wayback capture at or before the cutoff); where none was admitted G's forecast is O's.
+
+- Questions that gained a news source: 54/64 (84%); with a news source GDELT saw in the 30 days before open: 54/64 (84%).
+- News sources admitted: 99 (1.55 a question). Sources a question was shown: O 5.06, G 6.61.
+- One AP wire-digest page (a GKG "title" thousands of characters long) matched 26 questions' queries and was the only news for 15 of them; the last row below leaves those out (exploratory, chosen after the run).
+- Most frequent news hosts: bostonherald.com 26, bleacherreport.com 6, wgme.com 3, fox29.com 2, nypost.com 2, abc.net.au 1, abc13.com 1, abcnews.com 1.
+
+| Arm | Brier [95% interval] | Log score | n |
+|---|---|---|---|
+| N: no retrieval | 0.2045 [0.1284, 0.2859] | -0.697 | 64 |
+| O: one pass, sources as of open | 0.1887 [0.1173, 0.2642] | -0.563 | 64 |
+| G: O's sources plus dated news | 0.1947 [0.1218, 0.2725] | -0.595 | 64 |
+
+| Paired difference | Brier [95% interval] (MDE) |
+|---|---|
+| G − O (what dated news adds) | +0.0060 [-0.0096, +0.0221] (0.0227) |
+| G − N (news and the rest of retrieval) | -0.0098 [-0.0486, +0.0291] (0.0556) |
+| O − N (M6, for reference) | -0.0158 [-0.0503, +0.0170] (0.0483) |
+| G − O (questions that gained news, n = 54) | +0.0072 [-0.0113, +0.0256] (0.0266) |
+| G − O (priced, n = 47) | +0.0120 [-0.0085, +0.0326] (0.0290) |
+| G − N (priced, n = 47) | -0.0101 [-0.0593, +0.0383] (0.0693) |
+| G − O (unpriced, n = 17) | -0.0105 [-0.0275, +0.0018] (0.0214) |
+| G − N (unpriced, n = 17) | -0.0089 [-0.0690, +0.0466] (0.0811) |
+| G − O (gained a real article, n = 39; exploratory) | +0.0098 [-0.0064, +0.0288] (0.0254) |
+
+Spread of the per-question G − O Brier difference: SD 0.0648; at 80% power (two-sided 5%) that needs 83 questions for 0.020, 11 questions for 0.055 (M7's research curve: 110 for 0.02).
+
+The judge on the news sources (same model, El Lahib et al.'s 0 to 4 rubric): 99 question-source pairs judged, scores 0/1/2/3/4 97/1/1/0/0, at 3 or more 0/99 (0%).
+
+Cost per question that gained news ($0: free model): 4.0 successful model calls (1.0 research), 4,214 output tokens, 101 s wall time.
+
+Beside outside results (not the same protocol): Hindcast (arXiv 2607.14051): dated retrieval from a frozen Reddit snapshot lowered Brier on 8 of 9 open-weight models over 216 Polymarket markets, Qwen3-32B 0.234 to 0.179 (−0.055); AIA Forecaster (arXiv 2511.07678): no search 0.1230, agentic search 0.1140 (−0.009) on FB-7-21 with a frontier model; El Lahib et al. (arXiv 2602.00758): no retrieval 0.244, leak-free documents 0.242 (−0.002), gpt-oss-120b, Google results.
+
+**Verdict (registration item 5): not the limit.**
+
+Predictions registered in PLAN.md before the run:
+
+- P41 (under 60% gain recent news): 84% **failed**.
+- P42 (under 1.5 news sources a question): 1.55 **failed**.
+- P43 (G − O between −0.055 and −0.002, interval includes 0): +0.0060 [-0.0096, +0.0221] **failed**.
+- P44 (verdict unresolved): not the limit **failed**.
+- P45 (G − N interval includes 0): [-0.0486, +0.0291] **held**.
+- P46 (judge under 5% at 3 or more): 0.0% **held**.
 <!-- augur:end news -->
+
+**What it shows.**
+
+- **The experiment happened, and coverage was not the problem.** I
+  predicted that fewer than 60% of questions would gain news, because
+  Wayback captures of news articles are sparse (P41). Instead 54 of 64 did
+  (84%), every one of them with an article GDELT saw in the 30 days before
+  open, at 1.55 news sources a question. So, unlike M6's arms, G's
+  evidence is no longer almost all Wikipedia. P41 and P42 failed.
+- **Dated news did not help this model.** G − O is +0.006 [−0.010,
+  +0.022]: if anything worse, and the interval's lower end (−0.010) rules
+  out a gain the size of Hindcast's 0.055, so the registered verdict is
+  *not the limit*, not the *unresolved* I predicted (P43 and P44 failed).
+  On the 47 priced questions it is +0.012 [−0.009, +0.033]. On the 17
+  unpriced (Metaculus and INFER) questions it is −0.011 [−0.028, +0.002],
+  the only split pointing the right way, and too small a sample to call.
+- **One page explains a quarter of the news, and removing it does not
+  change the answer.** The GKG "title" of one AP wire-digest page on
+  bostonherald.com is the whole feed, thousands of characters long, so it
+  matched three keywords for 26 questions and was the only news for 15 of
+  them. Leaving those 15 out (a cut chosen after the run, so exploratory),
+  G − O on the 39 questions that gained a real article is +0.010
+  [−0.006, +0.029]. The other matches are mixed. Some are on topic (Trump's
+  Taiwan remarks for a Taiwan question, a Donetsk strike for a front-line
+  question) and some only share words (Senegal's prime minister for a UK
+  prime-minister question).
+- **The gate held.** The judge rated 97 of the 99 news uses at 0, and
+  none at 3 or more (P46 held), and the ledger scan finds 0 violations.
+  The only score of 4 in G's ledger is M6's known Wikipedia revision,
+  carried over in O's evidence.
+- **What this says about the gap to the outside results.** Hindcast's
+  gain (−0.055 on Qwen3-32B) and AIA's (−0.009 with agentic search on a
+  frontier model) come from retrieval designed for the question. Here,
+  adding dated, leak-free news to the same free model's brief left it
+  where it was, as El Lahib et al. found with leak-free documents (−0.002).
+  On this model, more evidence of this kind is not what holds the
+  backtest back. Two things remain untested: better-targeted news (the
+  API's full-text search, To measure) and a stronger reader model (cut
+  from this milestone).
+
+**Unfair or missing comparisons, named.** GDELT's DOC 2.0 API refused the
+build machine (HTTP 429, timeouts, dropped connections) on almost every
+request. Three of the run's 193 discovery answers came from the API and
+190 from the registered fallback, a title index over GDELT's GKG files for
+the 30 days before the cutoff (2,880 files, 3,109,386 titled articles,
+built in 6 minutes; manifest `data/backtest/gdelt-gkg-manifest.json`).
+Matching three title words is cruder than the API's full-text relevance,
+so G tests "dated news found by keyword titles", not the best GDELT can
+do. Every news text is a Wayback capture, so pages the archive missed
+or refused are lost: the first run's log has 81 articles with no
+capture at or before the cutoff, 6 empty captures, 92 archive connection
+errors retried and 22 articles given up after the retries. One question (metaculus 43343) had news
+admitted on its first attempt but lost two of three draws to the model's
+length limit. On the retry the archive returned nothing, so it keeps O's
+forecast, as a question with no news does (each question is scored from
+its last run). One free model, 64 questions, one ForecastBench set; the
+bootstrap treats questions as independent. Cost $0. Run: 2026-11-25,
+04:24 to 07:18 UTC, `make backtest-q2-news` step by step; raw output
+`data/runs/m13-c2-news.txt`; ledger `data/ledgers/m13-c2-news.sqlite`;
+GDELT answers `data/backtest/gdelt-cache/`.
 
 ## M12: a forecast with no model in it, and one registered blend
 
@@ -1975,6 +2077,7 @@ missed, and why).
 |---|---|---|---|---|---|---|---|
 | `m1-dryrun-samples.sqlite` | 1 (dry_run 1) | 1 | 7 | 1 | 0 | 0 | 0 |
 | `m1-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 7 | 1 | 1 | 0 | 0 |
+| `m13-c2-news.sqlite` | 3 (backtest 3) | 64 | 274 | 54 | 0 | 0 | 0 |
 | `m2-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 16 | 2 | 2 | 0 | 0 |
 | `m2-probe.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 0 |
 | `m3-dryrun-minibench-2.sqlite` | 1 (dry_run 1) | 1 | 6 | 1 | 0 | 0 | 0 |
@@ -2341,6 +2444,7 @@ works against the real API; they say nothing yet about accuracy.
 | What | Why not yet | Command |
 |------|-------------|---------|
 | M12's live comparison: the primary candidate (`blend`) and the arm (`stat`) against Augur and the template on the 2026-11-30 round, P38's second half, P39 and P40 | The round opens about 2026-11-30; every shadow tick from M12's merge writes the `stat` and `blend` rows (on by default with `--shadow-ledger`) | After the round resolves, with the round's ledger and snapshot built as in the M11 row below: `augur floor --round ROUND --ledger L --standings data/standings/ROUND.json --candidate blend` (the registered candidate, if M12 merged before the round's first question opened; otherwise without `--candidate`, as M11 registered); `augur floor ... --candidate augur` beside it (reported); the `--candidate blend` run also prints P39 (the blend against Augur alone, the same 90% bootstrap); `augur score L --mode dry_run --cluster week` prints Augur against `stat`, `blend` and `template` at 95%; P38's count: `sqlite3 L "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'stat' AND detail LIKE 'series:%'"` |
+| Arm G through GDELT's DOC 2.0 API (full-text search, 90 days) rather than the local GKG title index | The API answered every request from the build machine with 429, a timeout or a dropped connection on 2026-11-23, -24 and -25 (one 200 in about 15 tries); the run used registration item 7's fallback | From an address GDELT does not refuse, with a fresh cache directory so no index answer is reused: `augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --sample 64 --retrieval open --searchers gdelt --add-to data/ledgers/m6-c2-open.sqlite --queries data/backtest/m6-c2-queries.json --gdelt-cache data/backtest/gdelt-cache-api --ledger data/ledgers/m13-c2-news-api.sqlite` (move the GKG index aside so the searcher cannot fall back), then the judge as in `make backtest-q2-news`; about 4 minutes of API pacing for 192 queries |
 | The series rule's five forecasts on the 2026-11-16 round, scored | Those questions resolve on 2026-11-26 and 2026-11-27; nothing was forecast or written for them (a coverage run, not a tick) | After 2026-11-27: read each close from the question page and score the committed percentiles in `data/statarm/m12-coverage-minibench-2026-11-16.json` (or re-run the arm in a dry-run ledger and `augur resolve --manual POST VALUE --evidence URL`); five questions, so a reading, not a test |
 | The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; the schedule runs it once the maintainer sets the repository variables (PR M11) | Unattended: `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30`. After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur standings --round ROUND --out data/standings/ROUND.json`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
 | The same two-tick check on GitHub itself | No GitHub credentials in the build environment; `act` ran it locally against a bare repository | `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2`, twice in a row; the second run's summary lists the first run's questions as "already in the shadow ledger" |
