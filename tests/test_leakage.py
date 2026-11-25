@@ -18,7 +18,7 @@ from augur.clock import FixedClock
 from augur.errors import LeakageError, LedgerError
 from augur.leakage import Admission, RunMode, admit_model, admit_source, scan_ledger
 from augur.ledger import Ledger
-from augur.research.source import DateEvidence
+from augur.research.source import DateEvidence, Source
 
 from .conftest import T0
 from .helpers import binary_question, source
@@ -377,3 +377,29 @@ def test_undated_sources_in_live_ledgers_are_not_violations(tmp_path: Path) -> N
 def test_committed_ledgers_hold_no_leakage(path: Path) -> None:
     violations = scan_ledger(path)
     assert violations == [], "\n".join(f"{v.kind}: {v.detail}" for v in violations)
+
+
+def _news(seen: str, text: str = "Captured text.") -> Source:
+    return Source.build(
+        searcher="gdelt",
+        query="test",
+        url="https://web.archive.org/web/20240101000000/https://news.example.com/a",
+        title="A story",
+        excerpt=text,
+        published_at=BEFORE,
+        retrieved_at=T0,
+        as_of=CUTOFF,
+        date_evidence=DateEvidence.ARCHIVE_CAPTURE,
+        evidence_detail=f"capture=20240101000000 original=https://news.example.com/a {seen}",
+    )
+
+
+def test_the_scan_refuses_news_gdelt_saw_after_the_cutoff(tmp_path: Path) -> None:
+    ledger, _run_id, _qid = _ledger_with_question(tmp_path, RunMode.BACKTEST)
+    seen_late = (CUTOFF + timedelta(hours=1)).strftime("%Y%m%dT%H%M%SZ")
+    ledger.record_source(_news("seendate=" + seen_late, "late"))
+    ledger.record_source(_news("seendate=" + BEFORE.strftime("%Y%m%dT%H%M%SZ"), "on time"))
+    ledger.record_source(_news("no date here", "undated"))
+    ledger.close()
+    kinds = sorted(v.kind for v in scan_ledger(tmp_path / "backtest.sqlite"))
+    assert kinds == ["late_source", "undated_source"]

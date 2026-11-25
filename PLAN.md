@@ -920,7 +920,14 @@ standing is #2 of 284. Every row was re-verified at its source on
 template count, AIA's Table 4 n, and where the "8 of 8" figure comes from)
 and added the Summer 2026 final board, the live Fall 2026 board, the Fall
 2025 payouts and the bots in the Summer Metaculus Cup. No organiser results
-post for Summer 2026 was found as of 2026-11-23.
+post for Summer 2026 was found as of 2026-11-23. Corrected again at the
+sources on 2026-11-25 (M13): the Fall FutureEval row from a fresh read of
+the leaderboard API; the agent-against-template row no longer generalises
+from one MiniBench round, now that FutureEval's same-model pairs are
+printed by `augur standings`; BLF's 73.3 is on two ForecastBench tranches,
+not the whole benchmark; Hindcast and Zhang and Stadie are added; the
+Copier Line, refused with HTTP 429 on 2026-11-22 and 2026-11-23, was
+re-read and its figures confirmed.
 
 | Result | Number | Protocol | Source, date |
 |--------|--------|----------|--------------|
@@ -930,18 +937,21 @@ post for Summer 2026 was found as of 2026-11-23.
 | Professional forecasters | Top-10 bot team minus pro team: −1.25 head-to-head points per question, 95% CI [−4.87, 2.37], 99 shared questions (not significant) | Head-to-head on shared questions | Same |
 | Professional forecasters, Summer 2026 | Bots minus pros: −0.26 [−6.47, 5.96] on 97 questions, p = 0.94, 282 bots (pros won 60 of 97); Metaculus's own chart (PR #5292, merged 2026-11-09) shows the same as a pro lead of 0.26 [−5.96, 6.47], and 1.20 [−6.19, 8.59] on the 46 binary questions; no results post found as of 2026-11-23 | Head-to-head on shared questions | [Metaculus aib-analysis PR #33](https://github.com/Metaculus/aib-analysis/pull/33), 2026-10-15; [metaculus PR #5292](https://github.com/Metaculus/metaculus/pull/5292), 2026-11-09 |
 | MiniBench 2026-11-02 (finalized), rank 1 and the template | takeoff.watch 22.77 [17.36, 29.05], 1st of 435 on 59 questions; best template bot `metac-claude-opus-5-5-high+asknews` 3.66 [−0.97, 7.94], rank 107; only 4 of 57 template bots averaged above 0; the template on Augur's free model (`metac-nemotron-3-ultra+asknews`) −7.66 [−14.5, −0.7] | Average spot peer score | [Leaderboard API, project 33135](https://www.metaculus.com/api/leaderboards/project/33135/), fetched 2026-11-20, re-read 2026-11-23 (finalized, unchanged); snapshot `data/standings/minibench-2026-11-02.json` |
-| Agentic harness against the template, same model | Metaculus's `metac-agent-*` bots beat `metac-*+asknews` on the same model in 10 of 10 pairs where both covered all 59 questions (12 of 12 counting two agents with 17), by 7.7 to 16.2 points a question (Opus 5.5 11.34 against 3.66; Gemini 3.8 Flash 10.78 against 2.76); differences of averages, no paired interval | Same round | Same |
+| Agentic harness against the template, same model | In MiniBench 2026-11-02 Metaculus's `metac-agent-*` bots beat `metac-*+asknews` on the same model in 10 of 10 pairs where both covered all 59 questions (12 of 12 counting two agents with 17), by 7.7 to 16.2 points a question (Opus 5.5 11.34 against 3.66; Gemini 3.8 Flash 10.78 against 2.76); 10 of 10 again in MiniBench 2026-10-19. It does not generalise cleanly: in Fall FutureEval (51 questions scored, read 2026-11-25) the agent is ahead in only 7 of 9 pairs with at least 30 questions on each side (behind on Kimi K3 −0.42 against 1.27 and GLM 5.3 −0.57 against 4.16; Opus 5.5 12.81 [1.33, 24.06] against 10.34 [3.46, 18.42]), and the two entries' intervals overlap in all 9 (in 8 of 10 and 9 of 10 in the two MiniBench rounds). Differences of averages, no paired interval | Same rounds; Fall FutureEval | Same, and [project 33121](https://www.metaculus.com/api/leaderboards/project/33121/), read 2026-11-25; `augur standings`, RESULTS.md's `agent-pairs` block |
 | Prize money, Q2 2025 | 1st Panshul42 (open source) $7,550; 2nd pgodzinai $4,563; 3rd CumulativeBot $3,270 | Tournament payout | [Metaculus notebook 39140](https://www.metaculus.com/notebooks/39140/), 2025 (re-read 2026-11-17) |
 | Prize money, Fall 2025 | Preseen-Atlas $6,859, manticAI $6,009, GreeneiBot2 $5,793; no Spring, Summer or Fall 2026 payout announcement found as of 2026-11-23 | Tournament payout | [Metaculus notebook 43469](https://www.metaculus.com/notebooks/43469/), 2026-05-08 |
 | Best bots, FutureEval Summer 2026 (finalized) | laertes 17.91 [14.63, 21.17] on 324 questions, futuresearch 17.80, preseen 17.13; best template `metac-claude-opus-4-8-high+asknews` 9.39 [5.53, 13.16], rank 21; reputation-weighted community 13.65 (rank 13); 282 bots | Average spot peer score | [Leaderboard API, project 33022](https://www.metaculus.com/api/leaderboards/project/33022/), read 2026-11-23; organiser |
-| FutureEval Fall 2026 (live, not finalized) | Panshul42 20.86 [9.69, 31.66] on 38 scored questions, 596 entries; best template `metac-claude-fable-5-1-high+asknews` 13.49 [4.52, 23.27] (rank 44); best agent house bot `metac-agent-gpt-6-astra` 11.81 (rank 56); unweighted community 14.71 (rank 36); the template on Augur's free model −15.55 (rank 449); no Augur entry | Same; early, wide intervals | [Leaderboard API, project 33121](https://www.metaculus.com/api/leaderboards/project/33121/), read 2026-11-23; snapshot `data/standings/fall-futureeval-2026.json` |
+| FutureEval Fall 2026 (live, not finalized) | Rank 1 Panshul42 20.91 [11.89, 30.53] on 51 scored questions (by summed score; laertes, rank 2, has the higher average, 21.12 [12.13, 30.00] on 50), 610 entries; best template `metac-claude-fable-5-1-high+asknews` 12.59 [5.39, 20.36] (rank 50); best agent house bot `metac-agent-claude-opus-5-5` 12.81 [1.33, 24.06] (rank 47); unweighted community 13.48 [10.67, 16.52] (rank 43); the template on Augur's free model `metac-nemotron-3-ultra+asknews` −12.19 [−23.66, −1.52] (rank 456); no Augur entry. The 2026-11-23 reading (38 questions, 596 entries, Panshul42 20.86, template on the free model −15.55) is superseded | Same; early, wide intervals | [Leaderboard API, project 33121](https://www.metaculus.com/api/leaderboards/project/33121/), read 2026-11-25 (`augur standings --round fall-futureeval-2026 --out ...`); snapshot `data/standings/fall-futureeval-2026.json` |
 | Bots against humans, Summer 2026 Metaculus Cup | Laertes and ManticAI finished 1st and 2nd overall, FutureSearch 5th (bots ineligible for prizes); the question "will a bot beat all humans" resolved Yes | Human tournament, bots entered unranked for prizes | [Metaculus notebook 45734](https://www.metaculus.com/notebooks/45734/), 2026-09-18; organiser |
 | Rest of the Spring 2026 top five, by summed score | Preseen-Atlas 18.25 [13.52, 22.99], SynapseSeer 16.87 [12.26, 21.47], manticAI 16.01 [11.72, 20.30], Preseen-Chestnut 18.26 [11.87, 24.64]; with GreeneiBot2 these are the top five by sum. The intervals overlap: no top bot is separated from the next | Same | [Spring 2026 results](https://forum.effectivealtruism.org/posts/iJ3qBDwpWCfNy9ZGd), 2026-09-09 |
 | Best bot, Summer 2026 (self-reported) | FutureSearch: #2 of 284 bots in Summer 2026 FutureEval behind laertes (5,783.66 against 5,803.42 summed spot peer score); no organiser results post for Summer 2026 found | Spot peer score, live | [FutureSearch evals](https://evals.futuresearch.ai/), 2026 |
 | Pastcasting, frozen web (self-reported) | FutureSearch: Brier 0.116 [0.109, 0.123] against Claude Opus 5 (xhigh) 0.120 on 2,386 Bench to the Future 3 questions, paired difference −0.0047 (FutureSearch minus Opus 5; the source prints it as +0.0047, top minus left), p < 0.001; its earlier lead of 0.010 ± 0.003 (n = 1,810) is reported as real, and the tie it reports is between two other models (0.0005, p = 0.85) | Backtest on frozen snapshots | [FutureSearch evals](https://evals.futuresearch.ai/); [Iterating on a forecaster](https://futuresearch.ai/iterating-on-a-forecaster), 2026-07-10 |
 | ForecastBench (the reference M4's number is set beside) | AIA Forecaster: Brier 0.1076 against superforecasters' 0.1110 on FB-7-21 (0.0753 against 0.0740 on its market subset), with agentic search and a fixed Platt step. Its ablation on the FB-Market subset (Table 4, which states no n): the market price alone 0.096; the model shown the price without search 0.103; no search, no price 0.116; agentic search 0.085; search and price 0.075. So a frontier model shown the price without search also failed to beat it, the outside twin of Augur's arm (d). A no-retrieval `qwen2.5:7b` run (M4) is **not comparable** to it: different questions, no search, a small local model; it is reported beside it only to show the distance | Backtest, self-reported | [AIA Forecaster, arXiv 2511.07678](https://arxiv.org/abs/2511.07678), 2025-11-10 |
 | ForecastBench tournament leaderboard | Top two entries (NeuroFusion, Anonymous 24) 69.4 difficulty-adjusted Brier Index; superforecaster median 68.1 (rank 9); public median 62.9. Baseline (no tools) leaderboard: superforecasters 66.9, best LLM 61.0. FutureSearch's `futuresearch_bull_v4` 67.4 (rank 22 of 550). The first plan's 70.6 and 67.9 came from search snippets and are dropped | Live biweekly question sets; humans surveyed on older questions; organiser-reported | [leaderboard_tournament.csv](https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/leaderboards/csv/leaderboard_tournament.csv), read 2026-11-20, re-read 2026-11-23 (CSV last changed 2026-11-17) |
-| Copying the shown market price (the Copier Line) | Copying the price ForecastBench shows scores Brier 0.0843 over 3,175 questions (Brier Index 70.93); 442 of 527 entries are significantly worse than the price they were shown and none beats it after FDR correction; baseline models go from 51.5 without the price to 68.1 with it. On market questions nobody has shown an edge over the shown price, so absolute Brier there mostly measures the price | Independent analysis of ForecastBench submissions | [The Copier Line](https://ea.greaterwrong.com/posts/8YuG9EuhyYqaNBt7F), 2026-08-21 |
+| Copying the shown market price (the Copier Line) | Copying the price ForecastBench shows scores Brier 0.0843 over 3,175 questions (Brier Index 70.93); 442 of 527 entries are significantly worse than the price they were shown and none beats it after FDR correction; baseline models go from 51.5 without the price to 68.1 with it. On market questions nobody has shown an edge over the shown price, so absolute Brier there mostly measures the price | Independent analysis of ForecastBench submissions | [The Copier Line](https://ea.greaterwrong.com/posts/8YuG9EuhyYqaNBt7F), 2026-08-21 (figures as of 2026-08-11); not re-read at source (429 on 2026-11-22 and 2026-11-23); re-read on 2026-11-25: the page loaded and 0.0843, 3,175, 70.93, 442 of 527 and 51.5 to 68.1 are as stated |
+| BLF, belief-state forecasting agent | Brier Index 73.3 for BLF (Pro) on **two ForecastBench tranches only** (A: 2025-10-26, B: 2025-11-09; 400 question-date instances), not the whole benchmark; its Table 1 pairs it with entrants on the same questions: Cassi 70.8 (Δ −2.4, significant), Grok 70.5 (Δ −1.4, not significant, p = 0.51 on tranche A), Foresight 69.3 (Δ −5.6), called exploratory. The belief-state loop's gain depends on the model: +3.00 [1.95, 4.25] on Gemini 3.1 Pro, +1.99 [1.12, 3.02] on Flash, −0.42 [−0.86, 0.002] on GPT-5.4. Disagreement-scaled shrinkage, tuned by cross-validation, selected α = 1, that is no shrinkage | Backtest on past ForecastBench tranches, self-reported | [K. Murphy, arXiv 2604.18576v5](https://arxiv.org/abs/2604.18576v5), 2026-09-27; re-read 2026-11-25 |
+| Dated retrieval from a frozen archive (Hindcast) | Retrieval from a frozen Reddit snapshot, every document checked `created_at < t0`, lowers Brier on 8 of 9 open-weight models over 216 Polymarket markets (the exception, R1-Distill-Qwen-7B, rises .256 to .318); Qwen3-32B .234 to .179, the largest drop; it helps only where Reddit discussed the event beforehand | Replay of resolved markets, frozen snapshot | [Ye et al., arXiv 2607.14051](https://arxiv.org/abs/2607.14051), 2026-07-15; re-read 2026-11-25 |
+| Apparent leakage that is recency (Zhang and Stadie) | Four of five flagship models show a naive before-cutoff minus after-cutoff gap of +0.044 to +0.061 (Brier improvement over the crowd), the pattern an audit reads as leakage; in a common time window all five gaps collapse together: recency, not leakage. Under a matched clean control no adjusted estimate is significantly positive | Backtest audit | [Zhang and Stadie, arXiv 2608.02985v2](https://arxiv.org/abs/2608.02985), 2026-11-10; re-read 2026-11-25 |
 | Leakage through date-filtered search | Brier 0.244 with no retrieval, 0.242 with leak-free documents, 0.108 with documents rated 3 to 4 on their 0 to 4 rubric; 93 binary questions opened in 2025 (from 393 audited); gpt-oss-120b | Retrospective, Google `before:` | [El Lahib et al.](https://arxiv.org/abs/2602.00758), ACL 2026 |
 | What separated winners | No strategy significant after correction (42 bots with at least 100 scored questions, 33 features); strongest raw signals: **GPT-5.4 as the final model r = +0.42** (a frontier final model in general only +0.20), checking similar questions or markets +0.34, extremizing −0.30, aggregating several forecasts −0.19; and, in the results post rather than the survey, higher-reasoning template variants beat their standard twins in 8 of 8 pairs (one-sided p = 0.004) | Self-reported survey against score | [Spring 2026 survey](https://forum.effectivealtruism.org/posts/tJoxFWkRev5wrEBar), 2026-09-09; [results post](https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK) |
 
@@ -1430,6 +1440,128 @@ the detectable effect is about 0.027 to 0.048, so the expected verdict is
 the interval's lower end is above −0.055. The judge flags fewer than 5%
 of the new sources at 3 or 4.
 
+**M13's registration (2026-11-25, before the searcher is written or any
+arm runs).** The design, the predictions and the reading rule, fixed
+here and rendered into RESULTS.md byte for byte.
+
+<!-- m13-registration:begin -->
+1. *The searcher (`gdelt`).* For each of a question's shared planned
+   queries (`data/backtest/m6-c2-queries.json`, the plan every Q2 arm
+   used), one GDELT DOC 2.0 `artlist` request: the query's words with
+   punctuation removed, words under three letters and a fixed stop list
+   dropped, at most six words, plus `sourcelang:english`;
+   `startdatetime` 90 days before the cutoff and `enddatetime` at the
+   cutoff, relevance order, at most 10 articles. One request every 5
+   seconds, with backoff on 429 and 5xx; every response is cached on disk
+   (`data/backtest/gdelt-cache/`) and committed, so a resumed or re-run
+   arm sends nothing twice. The query bound is never trusted: an article
+   whose `seendate` is after the cutoff is refused, whatever GDELT
+   returned. Nothing assumes how far back GDELT searches; an empty
+   answer is recorded as empty.
+2. *The text.* An article's text comes only from a Wayback capture of its
+   URL at or before the cutoff (the existing `wayback` capture code: the
+   capture's own timestamp is compared, redirects followed only while
+   still at or before the cutoff). No capture, no source: the live page is
+   never fetched. Market and forecasting hosts are excluded as in
+   `wayback`. The source's date is the capture timestamp
+   (`archive_capture`), its evidence names the capture and the `seendate`,
+   and it is written to the ledger before any model sees it, so the
+   leakage gate and `tests/test_leakage.py` cover it like any other
+   source. Per query, GDELT's articles are tried in order, at most four
+   Wayback lookups, and the first one admitted is kept: at most three news
+   sources a question.
+3. *Arm G.* The 64 questions of C2's fixed sample, as of each question's
+   open instant. Each question's evidence is arm O's admitted sources
+   exactly as O's forecasters saw them (read back from
+   `data/ledgers/m6-c2-open.sqlite`), plus the news sources from items 1
+   and 2; the brief is rewritten from all of them by the same prompt and
+   model, and three draws forecast from it, combined by the median. Model
+   `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free` in every role, as
+   in O. Where no news source is admitted, G's inputs are O's, no call is
+   made and G's forecast is O's recorded one. So G − O measures news
+   added to O's evidence and nothing else, and G − N is set beside M6's
+   O − N.
+4. *What is reported* (`make eval`, rendered by `make results`): the
+   share of the 64 questions that gained at least one news source whose
+   `seendate` is in the 30 days before open; sources admitted per question
+   in O and in G; G − O and G − N, paired Brier with 95% bootstrap
+   intervals (seeded, as in M6) and the detectable effect, overall and
+   split into priced (an as-of price from M5) and unpriced questions;
+   G − O on the questions that gained news alone; the leakage judge (same
+   model, El Lahib et al.'s 0 to 4 rubric) on the news sources; the cost
+   per question; and the result beside Hindcast, AIA and El Lahib et al.
+5. *The verdict*, on G − O over all 64: **moved** if the 95% interval is
+   entirely below 0; **not the limit** if the interval includes 0 and its
+   lower end is above −0.055 (Hindcast's Qwen3-32B gain), or if it is
+   entirely above 0; otherwise **unresolved**, with the questions needed
+   to detect a 0.02 and a 0.055 gain at 80% power from G − O's own paired
+   spread (M7's normal-approximation rule), set beside M7's power curve
+   for research (110 questions for 0.02).
+6. *If GDELT cannot be reached.* GDELT refused this repository's shared
+   addresses on 2026-11-23 and 2026-11-24 (HTTP 429 on a first request).
+   If it refuses every address the run can use, G is recorded as not run,
+   not as zero coverage, and the commands go under To measure.
+7. *Amendment, 2026-11-25 04:30 UTC, before any arm ran.* The DOC 2.0
+   API answered HTTP 429 to all six requests sent from the build machine
+   between 04:12 and 04:22 UTC (one every 75 seconds or more), while
+   GDELT's static files (`data.gdeltproject.org/gdeltv2/`) answered
+   at once. So discovery has a second route over the same index, used
+   only when the API refuses: GDELT's 15-minute GKG 2.1 files for the 30
+   days before the cutoff (every file stamped after 2026-05-12 00:00 and
+   at or before 2026-06-11 00:00 UTC, C2's single cutoff), each checked
+   against the MD5 GDELT's master list gives, reduced to a local index of
+   (batch time, URL, page title). The batch time plays the `seendate`'s
+   part and is checked against the cutoff the same way. A query's
+   keywords (item 1's rule) match an article when at least three of its
+   non-numeric keywords (all of them, if it has fewer) appear in the
+   title; matches are ordered by keywords matched, then newest first,
+   at most 10, and that list is cached and committed exactly as an API
+   answer would be. The window is 30 days rather than 90 to keep the
+   download near 15 GB; P41 counts the 30 days before open either way.
+   Item 2 (text only from a Wayback capture at or before the cutoff),
+   item 3, the predictions and the verdict are unchanged. Title matching
+   is narrower than the API's full-text search, which works against P41's
+   coverage, not for it.
+
+| # | Prediction |
+|---|------------|
+| P41 | Fewer than 60% of the 64 questions gain a news source whose `seendate` is in the 30 days before open. |
+| P42 | G adds fewer than 1.5 news sources a question on average (O showed 5.1 sources a question). |
+| P43 | G − O over all 64 has a point estimate between −0.055 and −0.002 and a 95% interval that includes 0. |
+| P44 | The verdict in item 5 is *unresolved*. |
+| P45 | G − N has a 95% interval that includes 0, as O − N's did. |
+| P46 | The judge rates fewer than 5% of the admitted news sources at 3 or 4. |
+
+**Reading rule.** Each prediction is marked held or failed as written,
+never edited. Nothing about the live bot changes from this arm: live
+research uses AskNews and the markets, not GDELT, and a backtest on one
+free model cannot move a live default. A second reader model and a split
+by source age stay cut (Considered and not chosen).
+<!-- m13-registration:end -->
+
+**M13's results (2026-11-25; RESULTS.md, P41 to P46 above unedited).** On
+C2's 64 questions, free nemotron in every role: 54 questions (84%) gained
+a news source GDELT saw in the 30 days before open, 1.55 a question
+(P41 and P42 failed; counting real articles only, 39 of 64 at 1.14 a
+question, and the 30-day condition held almost by construction, since
+the index covers only those 30 days). G − O is
++0.006 [−0.010, +0.022], so under item 5 the verdict is *not the limit*
+(P43 and P44 failed: the point estimate is on the wrong side, and the
+interval excludes a Hindcast-sized gain). G − N is −0.010 [−0.049,
++0.029] (P45 held). The judge rated 0 of 99 news uses at 3 or more (P46
+held). GDELT's API answered 3 of 193 discovery requests; the other 190
+came from item 7's GKG title index. A review after the run found that
+GDELT's title, not the capture's, reached the brief (item 2 broken for
+one digest page), that archive failures could settle a question as
+"nothing added", and that the rules for the retried question were set
+after the first run's outcomes; all are stated in RESULTS.md, and the
+code is fixed for later runs. One AP wire-digest page, whose GKG
+"title" is the whole feed, matched 26 questions. Without the 15 for which
+it was the only news, G − O is +0.010 [−0.006, +0.029] on 39 (exploratory,
+chosen after the run). A follow-up worth a milestone: a title-length cap
+and the API's full-text search from an address GDELT does not refuse (To
+measure), then a stronger reader model on the same evidence.
+
 ### Changed on review
 
 The cited commands were re-run on 2026-11-24 and reproduce (`make check`
@@ -1505,7 +1637,7 @@ source verifies, so the binary arm is not held hostage to it.
 - [x] M10: Release readiness and the final standing (Q5, final) — the schedule at full cadence for Spring 2027 and the standings re-read each round; the ForecastBench same-question backtest row; the Frontier table re-verified at its sources and updated with any Summer or Fall 2026 results published since; packaging as `augur-forecast` with a clean-environment install check, `release.yml` guarded by tags and trusted publishing, RELEASE.md, a Dockerfile for running the bot outside Actions, the README complete (what and why, demo with capture instructions, quickstart, architecture diagram, decisions and trade-offs, results table, roadmap), RESULTS.md complete with every number's method, cost and raw output and a "To measure" section for anything unrun, the season's final rank and any prize recorded, and a short published postmortem of the season (what carried the score, what leakage was worth), as committed on Metaculus's credits form. Done when a fresh clone runs the README quickstart as a dry run with a local model, `make check`, `make eval` and `make results` are green and byte-stable, the release workflow dry-runs, and every claim in the README traces to RESULTS.md.
 - [x] M11: The unattended shadow round and the rule that decides the floor (Q1) — the rule's exact text, its proxy and its candidate committed in this file before the 2026-11-30 round opens; a shadow mode on the schedule behind its own repository variable (`AUGUR_SHADOW`), separate from `AUGUR_SUBMIT`: no `--submit` on any path, the free nemotron route, `scripts/poll.py` deciding `has_work` against the posts the shadow ledger on the `ledger` branch already holds (standard library only), `augur baseline` on the same model in the same job with the `baseline` extra installed, the ledger pushed after Augur's forecasts and again after the template's so a timeout loses neither, MiniBench first and the FutureEval project with whatever of the day's free calls remain; `augur floor --round SLUG --ledger L`, which applies the rule from the ledger and a standings snapshot and prints admitted, not admitted or not yet decidable with the head-to-head, the implied peer score, both intervals, n and the measured paired spread; `augur resolve --manual-file F` (post, value, evidence URL), refusing a partial round. Done when a fake-server test proves a second tick skips every question the shadow ledger holds with no model call and that shadow mode can never produce `--submit`; the workflow runs two consecutive ticks under `act` (the first leaves Augur and template rows, the second skips them) inside the job's timeout, with the same check on GitHub against the bot-testing-area listed for the maintainer if no credentials are present; the calls per question and the minutes per run are measured and stated beside the free allowance; RESULTS.md carries the rule byte for byte as this file has it; the pull request names every repository variable the shadow schedule needs (and never sets `AUGUR_SUBMIT`); the milestone is merged to `main` before the 2026-11-30 round opens, since a rule or a schedule that lands after the round's first question cannot test it; and the round itself, its resolution and the verdict are recorded when they exist, or under To measure with the exact commands until then.
 - [x] M12: A forecast with no model in it, and one registered blend — predictions and the single primary candidate committed first; the statistical arm (`augur/statarm.py`): the price as of the cutoff where the markets searcher reads one, the walk-forward per-source base rate on other binary questions, and for numeric and discrete questions about a quoted series the last value plus the empirical distribution of the series' own past same-horizon changes through `augur/distributions.py`, from a free keyless dated source verified first (each value written to the ledger as a dated source, so the leakage gate covers it), abstaining wherever no series is found (if no such source verifies, the numeric rule abstains everywhere and RESULTS.md says so; the binary arm still ships); the primary candidate (one-third Augur, two-thirds arm, only where the arm has a price or a series) and the base-rate blend as a reported arm; the arm and both blends in M8's walk-forward harness on C4 with no model call, by source, with paired intervals, re-checked by `make eval`; `stat` and `blend` reference rows written by the shadow job before each question closes, and `augur floor --candidate blend`. Done when RESULTS.md holds the C4 table with each hypothesis marked held or failed, the series rule's coverage on a real round's question list, and the live comparison (or its To measure entry with the command), and a fake-server test proves a series value dated after the cutoff is refused.
-- [ ] M13: Dated news in the backtest: is the limit the evidence or the model? (Q2, Q3) — predictions committed first; the Frontier section corrected at its sources (Fall FutureEval's current count and leader, BLF as two tranches with its model-dependent loop, Hindcast, Zhang and Stadie; the Copier Line still marked not re-read) and `augur standings` printing the same-model agent-against-template pairs for the FutureEval project as well as finalized MiniBench rounds (at least 30 questions, both intervals), rendered in RESULTS.md by `make results`; a `gdelt` searcher for backtests (DOC 2.0 `artlist` with `enddatetime` at the cutoff, one request every 5 seconds with backoff, every response cached, no assumption about how far back it searches) whose article text comes only from a Wayback capture at or before the cutoff; arm G on M6's fixed 64 questions with the shared query plan, the same free model and three draws, through `make backtest-q2`; the leakage judge on the new sources. Done when RESULTS.md holds, from `make eval`, the share of questions that gained a news source dated in the 30 days before open, sources admitted per question before and after, G minus O and G minus N (paired Brier, interval, detectable effect) split into priced and unpriced questions, the judge's rate on news sources, and the result beside Hindcast, AIA and El Lahib et al. with the verdict (moved, not the limit, or unresolved with the n needed from M7's power curve); `tests/test_leakage.py` passes on the new ledger and a fake-server test proves an article seen or captured after the cutoff is refused.
+- [x] M13: Dated news in the backtest: is the limit the evidence or the model? (Q2, Q3) — predictions committed first; the Frontier section corrected at its sources (Fall FutureEval's current count and leader, BLF as two tranches with its model-dependent loop, Hindcast, Zhang and Stadie; the Copier Line still marked not re-read) and `augur standings` printing the same-model agent-against-template pairs for the FutureEval project as well as finalized MiniBench rounds (at least 30 questions, both intervals), rendered in RESULTS.md by `make results`; a `gdelt` searcher for backtests (DOC 2.0 `artlist` with `enddatetime` at the cutoff, one request every 5 seconds with backoff, every response cached, no assumption about how far back it searches) whose article text comes only from a Wayback capture at or before the cutoff; arm G on M6's fixed 64 questions with the shared query plan, the same free model and three draws, through `make backtest-q2`; the leakage judge on the new sources. Done when RESULTS.md holds, from `make eval`, the share of questions that gained a news source dated in the 30 days before open, sources admitted per question before and after, G minus O and G minus N (paired Brier, interval, detectable effect) split into priced and unpriced questions, the judge's rate on news sources, and the result beside Hindcast, AIA and El Lahib et al. with the verdict (moved, not the limit, or unresolved with the n needed from M7's power curve); `tests/test_leakage.py` passes on the new ledger and a fake-server test proves an article seen or captured after the cutoff is refused.
 
 **Plan changes, 2026-11-22 (M8, decided while building it).**
 

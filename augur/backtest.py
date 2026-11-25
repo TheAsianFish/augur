@@ -32,7 +32,7 @@ from augur.llm.endpoints import Route
 from augur.llm.router import Router
 from augur.log import get_logger
 from augur.predictions import BinaryPrediction, aggregate, values_json
-from augur.research.source import Searcher
+from augur.research.source import Searcher, Source
 
 log = get_logger(__name__)
 
@@ -78,6 +78,11 @@ class Retrieval:
     per_query: int = 2
     max_sources: int = 6
     loop_deadline_s: float = 600.0
+    base: dict[int, list[Source]] | None = None
+    """M13's arm G: each question's evidence from another arm, which the searchers add to."""
+    added_cap: int = 3
+    """With ``base``: at most this many added sources a question."""
+    base_label: str = "news"
 
     @property
     def mode(self) -> RunMode:
@@ -88,7 +93,8 @@ class Retrieval:
             how = f"loop{self.loop_steps}"
         else:
             how = "twopass" if self.passes == 2 else "onepass"
-        return f"{how}-asof-{self.as_of}"
+        label = f"{how}-asof-{self.as_of}"
+        return label if self.base is None else f"{label}+{self.base_label}"
 
 
 def release_gate(router: Router, opened: dict[int, datetime]) -> Callable[[Route, int], str | None]:
@@ -139,6 +145,16 @@ def done_questions(ledger: Ledger, tournament: str, mode: RunMode = RunMode.BACK
     return {int(r[0]) for r in rows}
 
 
+def nothing_added(ledger: Ledger, tournament: str) -> set[int]:
+    """Questions an earlier run of arm G settled with nothing added to the base arm."""
+    rows = ledger.connection.execute(
+        "SELECT o.question_id FROM question_outcomes o JOIN runs r ON r.run_id = o.run_id "
+        "WHERE r.tournament = ? AND o.status = 'skipped' AND o.reason = ?",
+        (tournament, NOTHING_ADDED),
+    ).fetchall()
+    return {int(q) for (q,) in rows}
+
+
 async def run_forecastbench(
     *,
     questions: Sequence[FBQuestion],
@@ -171,6 +187,10 @@ async def run_forecastbench(
     if mode is RunMode.UNRESTRICTED and wall_clock is None:
         raise AugurError("internal: the unrestricted arm needs the wall clock")
     done = done_questions(ledger, tournament, mode)
+    if retrieval is not None and retrieval.base is not None:
+        # A question that gained nothing is settled too: searching it again would draw
+        # a second sample of the archive's transient failures, not the same experiment.
+        done |= nothing_added(ledger, tournament)
     todo = [q for q in questions if q.question_id not in done]
     if not todo:
         out(f"all {len(questions)} questions already forecast in this ledger")
@@ -232,7 +252,22 @@ async def run_forecastbench(
         if researcher is not None and retrieval is not None:
             planned = (retrieval.queries or {}).get(q.question_id)
             try:
-                if retrieval.loop_steps:
+                if retrieval.base is not None:
+                    research, added = await researcher.research_added(
+                        run_id,
+                        q,
+                        cutoff,
+                        base=retrieval.base.get(q.question_id, []),
+                        queries=planned or [],
+                        cap=retrieval.added_cap,
+                    )
+                    if not added:
+                        # Nothing added: G's inputs are the base arm's, so its forecast stands.
+                        skipped += 1
+                        _outcome(ledger, run_id, fb, "skipped", NOTHING_ADDED, started)
+                        out(f"[{i}/{len(todo)}] {fb.source}:{fb.fb_id} nothing added")
+                        continue
+                elif retrieval.loop_steps:
                     research = await researcher.research_loop(
                         run_id,
                         q,
@@ -346,6 +381,7 @@ def _outcome(
 
 
 PLAN_SUFFIX = "+plan"
+NOTHING_ADDED = "nothing added to the base arm's evidence; its forecast stands"
 
 
 async def plan_queries(

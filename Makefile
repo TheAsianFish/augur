@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q3 power backtest-q4 calibration q6 install-check docker
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker
 
 UV ?= uv
 
@@ -75,6 +75,22 @@ backtest-q2: ## Q2 and the research loop on C2's fixed sample (free hosted model
 		--tournament "$(Q2_TOURNAMENT)+onepass-asof-open"
 	$(UV) run augur judge $(Q2_ARGS) --ledger data/ledgers/m6-c2-now.sqlite \
 		--tournament "$(Q2_TOURNAMENT)+onepass-asof-now"
+	$(MAKE) backtest-q2-news
+
+Q2_NEWS_MODEL = openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+Q2_NEWS_LEDGER = data/ledgers/m13-c2-news.sqlite
+GKG_INDEX = data/backtest/gdelt-gkg-index.tsv.gz
+
+backtest-q2-news: ## M13's arm G: O's sources plus dated news (GDELT, Wayback text); then the judge
+	test -f $(GKG_INDEX) || $(UV) run augur backtest gkg-index \
+		--start 2026-05-12T00:00:00Z --end 2026-06-11T00:00:00Z --out $(GKG_INDEX)
+	AUGUR_FORECAST_MODELS=$(Q2_NEWS_MODEL) AUGUR_RESEARCH_MODELS=$(Q2_NEWS_MODEL) AUGUR_FORECASTERS=3 \
+		$(UV) run augur backtest forecastbench $(Q2_ARGS) --sample 64 --retrieval open \
+		--searchers gdelt --add-to data/ledgers/m6-c2-open.sqlite --queries $(Q2_QUERIES) \
+		--ledger $(Q2_NEWS_LEDGER)
+	AUGUR_FORECAST_MODELS=$(Q2_NEWS_MODEL) AUGUR_RESEARCH_MODELS=$(Q2_NEWS_MODEL) \
+		$(UV) run augur judge $(Q2_ARGS) --ledger $(Q2_NEWS_LEDGER) \
+		--tournament "$(Q2_TOURNAMENT)+onepass-asof-open+news"
 	$(UV) run augur report
 
 Q3_U = openrouter:nvidia/nemotron-3-ultra-550b-a55b:free

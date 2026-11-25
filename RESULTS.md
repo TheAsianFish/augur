@@ -4,7 +4,9 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M12 builds a forecast with no
+committed file differs from a fresh render. M13 adds dated news to the
+leak-free backtest arm (GDELT discovery, Wayback text) and asks whether
+thin evidence or the model limits it. M12 builds a forecast with no
 model in it (a readable price, a base rate, or a quoted series' own
 history), scores it and one registered blend on C4 with no model call, and
 writes both beside Augur on every shadow tick. M11 registers the rule that
@@ -25,6 +27,242 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M13: dated news in the backtest: is the limit the evidence or the model?
+
+The registration below (design, P41 to P46 and the verdict rule) was
+committed before the `gdelt` searcher was written or any arm ran, and is
+rendered here from PLAN.md; item 7 was added, dated, after GDELT's API
+refused the build machine and before any arm ran.
+
+<!-- augur:begin m13-registration -->
+1. *The searcher (`gdelt`).* For each of a question's shared planned
+   queries (`data/backtest/m6-c2-queries.json`, the plan every Q2 arm
+   used), one GDELT DOC 2.0 `artlist` request: the query's words with
+   punctuation removed, words under three letters and a fixed stop list
+   dropped, at most six words, plus `sourcelang:english`;
+   `startdatetime` 90 days before the cutoff and `enddatetime` at the
+   cutoff, relevance order, at most 10 articles. One request every 5
+   seconds, with backoff on 429 and 5xx; every response is cached on disk
+   (`data/backtest/gdelt-cache/`) and committed, so a resumed or re-run
+   arm sends nothing twice. The query bound is never trusted: an article
+   whose `seendate` is after the cutoff is refused, whatever GDELT
+   returned. Nothing assumes how far back GDELT searches; an empty
+   answer is recorded as empty.
+2. *The text.* An article's text comes only from a Wayback capture of its
+   URL at or before the cutoff (the existing `wayback` capture code: the
+   capture's own timestamp is compared, redirects followed only while
+   still at or before the cutoff). No capture, no source: the live page is
+   never fetched. Market and forecasting hosts are excluded as in
+   `wayback`. The source's date is the capture timestamp
+   (`archive_capture`), its evidence names the capture and the `seendate`,
+   and it is written to the ledger before any model sees it, so the
+   leakage gate and `tests/test_leakage.py` cover it like any other
+   source. Per query, GDELT's articles are tried in order, at most four
+   Wayback lookups, and the first one admitted is kept: at most three news
+   sources a question.
+3. *Arm G.* The 64 questions of C2's fixed sample, as of each question's
+   open instant. Each question's evidence is arm O's admitted sources
+   exactly as O's forecasters saw them (read back from
+   `data/ledgers/m6-c2-open.sqlite`), plus the news sources from items 1
+   and 2; the brief is rewritten from all of them by the same prompt and
+   model, and three draws forecast from it, combined by the median. Model
+   `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free` in every role, as
+   in O. Where no news source is admitted, G's inputs are O's, no call is
+   made and G's forecast is O's recorded one. So G − O measures news
+   added to O's evidence and nothing else, and G − N is set beside M6's
+   O − N.
+4. *What is reported* (`make eval`, rendered by `make results`): the
+   share of the 64 questions that gained at least one news source whose
+   `seendate` is in the 30 days before open; sources admitted per question
+   in O and in G; G − O and G − N, paired Brier with 95% bootstrap
+   intervals (seeded, as in M6) and the detectable effect, overall and
+   split into priced (an as-of price from M5) and unpriced questions;
+   G − O on the questions that gained news alone; the leakage judge (same
+   model, El Lahib et al.'s 0 to 4 rubric) on the news sources; the cost
+   per question; and the result beside Hindcast, AIA and El Lahib et al.
+5. *The verdict*, on G − O over all 64: **moved** if the 95% interval is
+   entirely below 0; **not the limit** if the interval includes 0 and its
+   lower end is above −0.055 (Hindcast's Qwen3-32B gain), or if it is
+   entirely above 0; otherwise **unresolved**, with the questions needed
+   to detect a 0.02 and a 0.055 gain at 80% power from G − O's own paired
+   spread (M7's normal-approximation rule), set beside M7's power curve
+   for research (110 questions for 0.02).
+6. *If GDELT cannot be reached.* GDELT refused this repository's shared
+   addresses on 2026-11-23 and 2026-11-24 (HTTP 429 on a first request).
+   If it refuses every address the run can use, G is recorded as not run,
+   not as zero coverage, and the commands go under To measure.
+7. *Amendment, 2026-11-25 04:30 UTC, before any arm ran.* The DOC 2.0
+   API answered HTTP 429 to all six requests sent from the build machine
+   between 04:12 and 04:22 UTC (one every 75 seconds or more), while
+   GDELT's static files (`data.gdeltproject.org/gdeltv2/`) answered
+   at once. So discovery has a second route over the same index, used
+   only when the API refuses: GDELT's 15-minute GKG 2.1 files for the 30
+   days before the cutoff (every file stamped after 2026-05-12 00:00 and
+   at or before 2026-06-11 00:00 UTC, C2's single cutoff), each checked
+   against the MD5 GDELT's master list gives, reduced to a local index of
+   (batch time, URL, page title). The batch time plays the `seendate`'s
+   part and is checked against the cutoff the same way. A query's
+   keywords (item 1's rule) match an article when at least three of its
+   non-numeric keywords (all of them, if it has fewer) appear in the
+   title; matches are ordered by keywords matched, then newest first,
+   at most 10, and that list is cached and committed exactly as an API
+   answer would be. The window is 30 days rather than 90 to keep the
+   download near 15 GB; P41 counts the 30 days before open either way.
+   Item 2 (text only from a Wayback capture at or before the cutoff),
+   item 3, the predictions and the verdict are unchanged. Title matching
+   is narrower than the API's full-text search, which works against P41's
+   coverage, not for it.
+
+| # | Prediction |
+|---|------------|
+| P41 | Fewer than 60% of the 64 questions gain a news source whose `seendate` is in the 30 days before open. |
+| P42 | G adds fewer than 1.5 news sources a question on average (O showed 5.1 sources a question). |
+| P43 | G − O over all 64 has a point estimate between −0.055 and −0.002 and a 95% interval that includes 0. |
+| P44 | The verdict in item 5 is *unresolved*. |
+| P45 | G − N has a 95% interval that includes 0, as O − N's did. |
+| P46 | The judge rates fewer than 5% of the admitted news sources at 3 or 4. |
+
+**Reading rule.** Each prediction is marked held or failed as written,
+never edited. Nothing about the live bot changes from this arm: live
+research uses AskNews and the markets, not GDELT, and a backtest on one
+free model cannot move a live default. A second reader model and a split
+by source age stay cut (Considered and not chosen).
+<!-- augur:end m13-registration -->
+
+<!-- augur:begin news -->
+C2's fixed sample, 64 questions, cutoff each question's open instant. Model `nvidia/nemotron-3-ultra-550b-a55b:free` in every role, 3 draws, median. Arm G is arm O's sources exactly as O's forecasters saw them plus at most three news sources (GDELT discovery, text from a Wayback capture at or before the cutoff); where none was admitted G's forecast is O's.
+
+- Questions that gained a news source: 54/64 (84%); with a news source GDELT saw in the 30 days before open: 54/64 (84%).
+- News sources admitted: 99 question-source pairs (1.55 a question), 72 distinct pages. Sources a question was shown: O 5.06, G 6.61.
+- One AP wire-digest page (a GKG "title" thousands of characters long) matched 26 questions' queries and was the only news for 15 of them. Real articles only: 39/64 (61%) questions, 73 uses (1.14 a question). The last row below leaves the digest-only questions out (exploratory, chosen after the run).
+- Most frequent news hosts: bostonherald.com 26, bleacherreport.com 6, wgme.com 3, fox29.com 2, nypost.com 2, abc.net.au 1, abc13.com 1, abcnews.com 1.
+
+| Arm | Brier [95% interval] | Log score | n |
+|---|---|---|---|
+| N: no retrieval | 0.2045 [0.1284, 0.2859] | -0.697 | 64 |
+| O: one pass, sources as of open | 0.1887 [0.1173, 0.2642] | -0.563 | 64 |
+| G: O's sources plus dated news | 0.1947 [0.1218, 0.2725] | -0.595 | 64 |
+
+| Paired difference | Brier [95% interval] (MDE) |
+|---|---|
+| G − O (what dated news adds) | +0.0060 [-0.0096, +0.0221] (0.0227) |
+| G − N (news and the rest of retrieval) | -0.0098 [-0.0486, +0.0291] (0.0556) |
+| O − N (M6, for reference) | -0.0158 [-0.0503, +0.0170] (0.0483) |
+| G − O (questions that gained news, n = 54) | +0.0072 [-0.0113, +0.0256] (0.0266) |
+| G − O (priced, n = 47) | +0.0120 [-0.0085, +0.0326] (0.0290) |
+| G − N (priced, n = 47) | -0.0101 [-0.0593, +0.0383] (0.0693) |
+| G − O (unpriced, n = 17) | -0.0105 [-0.0275, +0.0018] (0.0214) |
+| G − N (unpriced, n = 17) | -0.0089 [-0.0690, +0.0466] (0.0811) |
+| G − O (gained a real article, n = 39; exploratory) | +0.0098 [-0.0064, +0.0288] (0.0254) |
+
+Spread of the per-question G − O Brier difference: SD 0.0648; at 80% power (two-sided 5%) that needs 83 questions for 0.020, 11 questions for 0.055 (M7's research curve: 110 for 0.02).
+
+The judge on the news sources (same model, El Lahib et al.'s 0 to 4 rubric): 99 question-source pairs judged, scores 0/1/2/3/4 97/1/1/0/0, at 3 or more 0/99 (0%).
+
+Cost per question that gained news ($0: free model): 4.0 successful model calls (1.0 research), 4,214 output tokens, 101 s wall time.
+
+Beside outside results (not the same protocol): Hindcast (arXiv 2607.14051): dated posts from a frozen Reddit snapshot lowered Brier on 8 of 9 open-weight models over 216 Polymarket markets, Qwen3-32B 0.234 to 0.179 (−0.055); AIA Forecaster (arXiv 2511.07678, re-read 2026-11-25): no search 0.1230, agentic search 0.1140 (−0.009) on ForecastBench (its Table 3, set not named), and 0.116 to 0.085 (−0.031) on its market subset (Table 4), with a frontier model; El Lahib et al. (arXiv 2602.00758): no retrieval 0.244, leak-free documents 0.242 (−0.002), gpt-oss-120b, Google results.
+
+**Verdict (registration item 5): not the limit.**
+
+Predictions registered in PLAN.md before the run:
+
+- P41 (under 60% gain recent news): 84% **failed**.
+- P42 (under 1.5 news sources a question): 1.55 **failed**.
+- P43 (G − O between −0.055 and −0.002, interval includes 0): +0.0060 [-0.0096, +0.0221] **failed**.
+- P44 (verdict unresolved): not the limit **failed**.
+- P45 (G − N interval includes 0): [-0.0486, +0.0291] **held**.
+- P46 (judge under 5% at 3 or more): 0.0% **held**.
+<!-- augur:end news -->
+
+**What it shows.**
+
+- **The experiment happened, with more coverage than predicted.** I
+  predicted that fewer than 60% of questions would gain news, because
+  Wayback captures of news articles are sparse (P41). By the registered
+  count 54 of 64 did (84%), at 1.55 news sources a question, so P41 and
+  P42 failed. Two qualifications, both found after the run. First, 26 of
+  the 99 uses are one wire-digest page (below). Counting real articles
+  only, 39 of 64 questions (61%) gained news, at 1.14 a question. Second,
+  the title index covers only the 30 days before the cutoff, so P41's
+  30-day condition held almost by construction: only one admitted source
+  came from the API's 90-day window.
+- **Dated news did not measurably help this model.** For a question that gained
+  news, G − O also includes a rewritten brief and three fresh draws, so
+  it is news plus that noise, which averages out over questions. G − O is +0.006 [−0.010,
+  +0.022]: if anything worse, and the interval's lower end (−0.010) rules
+  out a gain the size of Hindcast's 0.055, so the registered verdict is
+  *not the limit*, not the *unresolved* I predicted (P43 and P44 failed).
+  It does not rule out a gain under 0.010, the size of AIA's 0.009 or
+  El Lahib et al.'s 0.002: 64 questions cannot see an effect that small
+  (83 are needed for 0.02).
+  On the 47 priced questions it is +0.012 [−0.009, +0.033]. On the 17
+  unpriced (Metaculus and INFER) questions it is −0.011 [−0.028, +0.002],
+  the only split pointing the right way, and too small a sample to call.
+- **One page explains a quarter of the news, and removing it does not
+  change the answer.** The GKG "title" of one AP wire-digest page on
+  bostonherald.com is the whole feed, thousands of characters long, so it
+  matched three keywords for 26 questions and was the only news for 15 of
+  them. Leaving those 15 out (a cut chosen after the run, so exploratory),
+  G − O on the 39 questions that gained a real article is +0.010
+  [−0.006, +0.029]. The other matches are mixed. Some are on topic (Trump's
+  Taiwan remarks for a Taiwan question, a Donetsk strike for a front-line
+  question) and some only share words (Senegal's prime minister for a UK
+  prime-minister question).
+- **The gate held.** The judge rated 97 of the 99 news uses at 0, and
+  none at 3 or more (P46 held), and the ledger scan finds 0 violations.
+  The only score of 4 in G's ledger is M6's known Wikipedia revision,
+  carried over in O's evidence.
+- **What this says about the gap to the outside results.** Hindcast's
+  gain (−0.055 on Qwen3-32B) came from dated Reddit posts about each
+  market's own event, and AIA's (−0.009 overall, −0.031 on its market
+  subset) from agentic search on a frontier model. Both are retrieval much
+  closer to the question than keyword titles. Here,
+  adding dated, leak-free news to the same free model's brief gained
+  nothing measurable; El Lahib et al. report a similarly small change with
+  leak-free documents (−0.002), under a different protocol. On this model,
+  more evidence of this kind is not what holds the backtest back by
+  anything near Hindcast's margin. Two things remain untested: better-targeted news (the
+  API's full-text search, To measure) and a stronger reader model (cut
+  from this milestone).
+
+**Unfair or missing comparisons, named.** GDELT's DOC 2.0 API refused the
+build machine (HTTP 429, timeouts, dropped connections) on almost every
+request. Three of the run's 193 discovery answers came from the API (one
+of them an empty `{}`, see below) and 190 from the registered fallback, a title index over GDELT's GKG files for
+the 30 days before the cutoff (2,880 files, 3,109,386 titled articles,
+built in 6 minutes; manifest `data/backtest/gdelt-gkg-manifest.json`).
+Matching three title words is cruder than the API's full-text relevance,
+so G tests "dated news found by keyword titles", not the best GDELT can
+do. Every news text is a Wayback capture, so pages the archive missed
+or refused are lost: the first run's log has 81 articles with no
+capture at or before the cutoff, 6 empty captures, 92 archive connection
+errors retried and 22 articles given up after the retries. One question (metaculus 43343) had news
+admitted on its first attempt (through the title index) but lost two of
+three draws to the model's length limit. The resumed process asked
+GDELT's API first, and the API answered that query with HTTP 200 and an
+empty `{}`, which the searcher read as "no articles". So the question
+keeps O's forecast because the discovery route changed, not because news
+was missing. Two rules were written after the first run had printed its
+outcomes: each question is scored from its last run, and a question
+settled as "nothing added" is not searched again on resume. They touch
+only this question, and neither looked at a score. The review also found
+three faults, fixed after the run and not applied to it.
+(1) A news source's title came from GDELT, not the capture, so the digest
+page's feed-length "title" (106,084 characters) went into 26 brief
+prompts. That breaks item 2's "text only from Wayback" for that one page,
+which GDELT saw before the cutoff. (2) An archive failure on every
+candidate article settled a question as "nothing added". Of the 10
+questions without news, 7 had candidate articles, and the ledger does not
+record whether the archive failed or simply had no capture. (3) The
+ledger scan did not check `seendate`. Now titles come from the capture,
+archive failures fail the question so a resume retries it, and the scan
+refuses a news source GDELT saw after its cutoff. One free model, 64 questions, one ForecastBench set; the
+bootstrap treats questions as independent. Cost $0. Run: 2026-11-25,
+04:24 to 07:18 UTC, `make backtest-q2-news` step by step; raw output
+`data/runs/m13-c2-news.txt`; ledger `data/ledgers/m13-c2-news.sqlite`;
+GDELT answers `data/backtest/gdelt-cache/`.
 
 ## M12: a forecast with no model in it, and one registered blend
 
@@ -318,7 +556,7 @@ interval on the sum divided by the same count.
 <!-- augur:begin season -->
 | Round | Status, as read | Entries | Questions scored | Rank 1 | Best template bot | `metac-nemotron-3-ultra+asknews` (Augur's free model) | Community (unweighted) | Augur | Questions Augur submitted |
 |---|---|---|---|---|---|---|---|---|---|
-| Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`, project 33121) | open, 2026-11-23 | 596 | 38 | Panshul42 20.86 [9.69, 31.66], rank 1 | metac-claude-fable-5-1-high+asknews 13.49 [4.52, 23.27], rank 44 | -15.55 [-29.52, -2.01], rank 449 | 14.71 [11.48, 18.27], rank 36 | no entry | 0 of 173 |
+| Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`, project 33121) | open, 2026-11-25 | 610 | 51 | Panshul42 20.91 [11.89, 30.53], rank 1 | metac-claude-fable-5-1-high+asknews 12.59 [5.39, 20.36], rank 50 | -12.19 [-23.66, -1.52], rank 456 | 13.48 [10.67, 16.52], rank 43 | no entry | 0 of 182 |
 | MiniBench - 2026-10-19 (`minibench-2026-10-19`, project 33132) | finalized, 2026-11-23 | 410 | 59 | notatrollBotV1 14.47 [7.33, 22.22], rank 1 | metac-claude-opus-5-5-high+asknews 3.10 [-4.97, 10.01], rank 106 | -2.55 [-9.12, 3.53], rank 222 | 7.58 [5.31, 10.44], rank 37 | no entry | 0 of 60 |
 | MiniBench - 2026-11-02 (`minibench-2026-11-02`, project 33135) | finalized, 2026-11-20 | 435 | 59 | takeoff.watch 22.77 [17.36, 29.05], rank 1 | metac-claude-opus-5-5-high+asknews 3.66 [-0.97, 7.94], rank 107 | -7.66 [-14.51, -0.73], rank 295 | 5.06 [4.08, 6.12], rank 80 | no entry | 0 of 60 |
 | MiniBench (`minibench`, project 33169) | open, 2026-11-23 | 0 | 0 | none | none | none | none | no entry | 0 of 60 |
@@ -1255,8 +1493,11 @@ Predictions stated in PLAN.md before the run:
   likely reason is in the design: the forecasters read the loop's last
   belief (at most 120 words) instead of a 250-word brief written from every
   excerpt. Another is the model: Metaculus's agentic bots beat the template
-  by 7.7 to 16.2 points a question on frontier models with live search,
-  and none of that transfers to a free model reading Wikipedia revisions.
+  by 7.7 to 16.2 points a question on frontier models with live search in
+  MiniBench 2026-11-02 (in Fall FutureEval the agent is ahead in 7 of 9
+  same-model pairs, every pair's intervals overlapping; see the agent-pairs
+  table), and none of that transfers to a free model reading Wikipedia
+  revisions.
   Under the replacement rule the one pass stays the default.
 
 **Unfair or missing comparisons, named.** One free model, one ForecastBench
@@ -1598,24 +1839,24 @@ needs about 300 resolved questions to be detected four times in five; Fall
 <!-- augur:begin standings -->
 #### Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`)
 
-Finalized: no. Leaderboard entries: 596. Most questions any entry covers: 38. Score type: spot_peer_tournament. Fetched 2026-11-23T06:21:07.399355Z from https://www.metaculus.com/api/leaderboards/project/33121/.
+Finalized: no. Leaderboard entries: 610. Most questions any entry covers: 51. Score type: spot_peer_tournament. Fetched 2026-11-25T04:17:48.984745Z from https://www.metaculus.com/api/leaderboards/project/33121/.
 
 | Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
 |---|---|---|---|---|---|---|
-| Rank 1 | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
-| Best template bot | 44 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 38 | 13.49 [4.52, 23.27] | 512.8 |
-| Best Metaculus house bot (not the template) | 27 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 38 | 15.83 [7.83, 24.67] | 601.7 |
-| Best listed open-source bot | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
-| Community prediction | 36 | community prediction (unweighted) | community prediction | 38 | 14.71 [11.48, 18.27] | 559.1 |
-| Community prediction | 56 | community prediction (recency_weighted) | community prediction | 38 | 12.06 [9.14, 15.26] | 458.1 |
-| Community prediction | 46 | community prediction (reputation_weighted) | community prediction | 38 | 13.36 [9.72, 17.12] | 507.5 |
+| Rank 1 | 1 | Panshul42 | open-source bot | 51 | 20.91 [11.89, 30.53] | 1066.5 |
+| Best template bot | 50 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 51 | 12.59 [5.39, 20.36] | 641.9 |
+| Best Metaculus house bot (not the template) | 29 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 51 | 15.26 [8.81, 22.37] | 778.2 |
+| Best listed open-source bot | 1 | Panshul42 | open-source bot | 51 | 20.91 [11.89, 30.53] | 1066.5 |
+| Community prediction | 43 | community prediction (unweighted) | community prediction | 51 | 13.48 [10.67, 16.52] | 687.3 |
+| Community prediction | 54 | community prediction (recency_weighted) | community prediction | 51 | 11.84 [9.41, 14.46] | 603.9 |
+| Community prediction | 43 | community prediction (reputation_weighted) | community prediction | 51 | 13.34 [10.27, 16.79] | 680.6 |
 
 - Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
 - Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
 
-Median bot by summed score (the line Q5 predicts Augur clears): 34.1 over 5 questions, 6.82 a question (rank 249; the middle of 592 bot entries, many of which covered only part of the round, which a summed score punishes).
+Median bot by summed score (the line Q5 predicts Augur clears): 26.7 over 1 questions, 26.71 a question (rank 255; the middle of 606 bot entries, many of which covered only part of the round, which a summed score punishes).
 
-Questions in the round: 173; forecast and submitted by Augur: 0; not forecast: 173 no run saw it (from the committed ledgers; `augur standings --from data/standings/fall-futureeval-2026.json --ledger ...` lists each one).
+Questions in the round: 182; forecast and submitted by Augur: 0; not forecast: 182 no run saw it (from the committed ledgers; `augur standings --from data/standings/fall-futureeval-2026.json --ledger ...` lists each one).
 
 #### MiniBench - 2026-10-19 (`minibench-2026-10-19`)
 
@@ -1667,6 +1908,66 @@ The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 20
 
 Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 59 no run saw it; 1 forecast in a dry run, not submitted (from the committed ledgers; `augur standings --from data/standings/minibench.json --ledger ...` lists each one).
 <!-- augur:end standings -->
+
+### The agent harness against the template, same model (FutureEval and finalized MiniBench rounds)
+
+Is the MiniBench agent lead a property of the harness or of one round? The
+same pairs on the FutureEval project, beside each finalized MiniBench round
+with enough questions (M13).
+
+<!-- augur:begin agent-pairs -->
+`metac-agent-X` against the plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`) on the same model, from the committed snapshots in `data/standings` (`augur standings --from PATH` prints the same). Averages are Metaculus's summed spot peer score divided by questions covered (n); each interval is Metaculus's own on that entry, rescaled the same way. Overlapping intervals are not a paired test: the per-question scores are not in the snapshot.
+
+**Fall 2026 FutureEval Bot Tournament** (`fall-futureeval-2026`, project 33121; not finalized, read 2026-11-25; 51 questions scored at most).
+
+| Model | Agent | Agent avg [interval] | Agent n | Template | Template avg [interval] | Template n | Ahead |
+|---|---|---|---|---|---|---|---|
+| grok-4-7 | `metac-agent-grok-4-7` | 8.55 [-2.94, 19.70] | 51 | `metac-grok-4-7-high+asknews` | -2.27 [-12.20, 6.89] | 51 | agent |
+| gpt-6-1-sol | `metac-agent-gpt-6-1-sol` | 9.31 [-2.47, 20.68] | 51 | `metac-gpt-6-1-sol-high+asknews` | 4.21 [-4.03, 12.04] | 51 | agent |
+| gpt-6-astra | `metac-agent-gpt-6-astra` | 11.16 [0.77, 21.59] | 51 | `metac-gpt-6-astra-high+asknews` | 6.99 [-1.99, 15.88] | 51 | agent |
+| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 12.81 [1.33, 24.06] | 51 | `metac-claude-opus-5-5-high+asknews` | 10.34 [3.46, 18.42] | 51 | agent |
+| qwen-3-8-max | `metac-agent-qwen-3-8-max` | 0.64 [-15.99, 15.22] | 51 | `metac-qwen-3-8-max+asknews` | -0.84 [-8.25, 6.43] | 51 | agent |
+| gemini-3-8-flash | `metac-agent-gemini-3-8-flash` | 6.52 [-7.18, 19.02] | 51 | `metac-gemini-3-8-flash+asknews` | 5.31 [-4.39, 14.30] | 51 | agent |
+| claude-fable-5-1 | `metac-agent-claude-fable-5-1` | 12.68 [2.81, 22.10] | 51 | `metac-claude-fable-5-1-high+asknews` | 12.59 [5.39, 20.36] | 51 | agent |
+| kimi-k3 | `metac-agent-kimi-k3` | -0.42 [-14.94, 12.75] | 51 | `metac-kimi-k3+asknews` | 1.27 [-8.20, 9.92] | 49 | template |
+| glm-5-3 | `metac-agent-glm-5-3` | -0.57 [-14.70, 11.24] | 51 | `metac-glm-5-3+asknews` | 4.16 [-6.34, 13.54] | 50 | template |
+
+Agent ahead in 7 of 9 pairs; intervals overlap in 9. Pairs with both entries at 30 or more scored questions only; left out: claude-fable-5-2 (agent 3, template 3), gemini-4-argon (agent 27, template 29), muse-spark-1-3 (agent 28, template 46), muse-wonder (agent 4, template 24).
+
+**MiniBench - 2026-10-19** (`minibench-2026-10-19`, project 33132; finalized, read 2026-11-23; 59 questions scored at most).
+
+| Model | Agent | Agent avg [interval] | Agent n | Template | Template avg [interval] | Template n | Ahead |
+|---|---|---|---|---|---|---|---|
+| gpt-6-astra | `metac-agent-gpt-6-astra` | 9.19 [3.56, 15.25] | 58 | `metac-gpt-6-astra-high+asknews` | -2.64 [-7.32, 1.63] | 58 | agent |
+| grok-4-7 | `metac-agent-grok-4-7` | 7.91 [0.96, 14.30] | 58 | `metac-grok-4-7-high+asknews` | -3.33 [-10.71, 3.57] | 58 | agent |
+| kimi-k3 | `metac-agent-kimi-k3` | 6.93 [-0.05, 14.17] | 58 | `metac-kimi-k3+asknews` | -2.35 [-9.88, 3.78] | 54 | agent |
+| gemini-3-8-flash | `metac-agent-gemini-3-8-flash` | 3.78 [-3.69, 10.67] | 58 | `metac-gemini-3-8-flash+asknews` | -4.60 [-12.72, 2.19] | 58 | agent |
+| gemini-4-argon | `metac-agent-gemini-4-argon` | 8.66 [0.82, 16.63] | 58 | `metac-gemini-4-argon-high+asknews` | 0.51 [-6.25, 6.56] | 57 | agent |
+| gpt-6-1-sol | `metac-agent-gpt-6-1-sol` | 4.89 [-1.81, 11.64] | 58 | `metac-gpt-6-1-sol-high+asknews` | -2.69 [-7.53, 1.75] | 58 | agent |
+| claude-fable-5-1 | `metac-agent-claude-fable-5-1` | 10.05 [1.63, 17.19] | 58 | `metac-claude-fable-5-1-high+asknews` | 2.70 [-4.19, 8.96] | 57 | agent |
+| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 7.29 [-1.09, 15.37] | 58 | `metac-claude-opus-5-5-high+asknews` | 3.10 [-4.97, 10.01] | 58 | agent |
+| glm-5-3 | `metac-agent-glm-5-3` | 1.37 [-6.29, 8.28] | 58 | `metac-glm-5-3+asknews` | -2.12 [-8.54, 3.46] | 58 | agent |
+| qwen-3-8-max | `metac-agent-qwen-3-8-max` | 2.82 [-4.80, 9.67] | 58 | `metac-qwen-3-8-max+asknews` | -0.55 [-7.51, 5.20] | 58 | agent |
+
+Agent ahead in 10 of 10 pairs; intervals overlap in 9. Pairs with both entries at 30 or more scored questions only.
+
+**MiniBench - 2026-11-02** (`minibench-2026-11-02`, project 33135; finalized, read 2026-11-20; 59 questions scored at most).
+
+| Model | Agent | Agent avg [interval] | Agent n | Template | Template avg [interval] | Template n | Ahead |
+|---|---|---|---|---|---|---|---|
+| gemini-4-argon | `metac-agent-gemini-4-argon` | 15.39 [8.55, 21.27] | 59 | `metac-gemini-4-argon-high+asknews` | -0.84 [-7.18, 4.61] | 59 | agent |
+| qwen-3-8-max | `metac-agent-qwen-3-8-max` | 6.79 [-2.84, 14.37] | 59 | `metac-qwen-3-8-max+asknews` | -6.63 [-10.71, -2.44] | 59 | agent |
+| claude-fable-5-1 | `metac-agent-claude-fable-5-1` | 11.81 [5.94, 16.99] | 59 | `metac-claude-fable-5-1-high+asknews` | -0.08 [-5.63, 4.61] | 59 | agent |
+| grok-4-7 | `metac-agent-grok-4-7` | 4.67 [-2.70, 11.56] | 59 | `metac-grok-4-7-high+asknews` | -7.02 [-12.10, -1.90] | 59 | agent |
+| kimi-k3 | `metac-agent-kimi-k3` | 5.05 [-3.13, 11.84] | 59 | `metac-kimi-k3+asknews` | -3.21 [-9.28, 2.18] | 59 | agent |
+| glm-5-3 | `metac-agent-glm-5-3` | 5.58 [0.73, 9.99] | 59 | `metac-glm-5-3+asknews` | -2.61 [-7.43, 1.72] | 59 | agent |
+| gpt-6-1-sol | `metac-agent-gpt-6-1-sol` | 5.51 [-0.52, 11.30] | 59 | `metac-gpt-6-1-sol-high+asknews` | -2.55 [-6.63, 1.63] | 59 | agent |
+| gemini-3-8-flash | `metac-agent-gemini-3-8-flash` | 10.78 [2.97, 17.66] | 59 | `metac-gemini-3-8-flash+asknews` | 2.76 [-0.37, 6.13] | 59 | agent |
+| gpt-6-astra | `metac-agent-gpt-6-astra` | 6.19 [0.30, 11.41] | 59 | `metac-gpt-6-astra-high+asknews` | -1.77 [-5.96, 2.43] | 59 | agent |
+| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 11.34 [5.72, 16.67] | 59 | `metac-claude-opus-5-5-high+asknews` | 3.66 [-0.97, 7.94] | 59 | agent |
+
+Agent ahead in 10 of 10 pairs; intervals overlap in 8. Pairs with both entries at 30 or more scored questions only; left out: muse-spark-1-3 (agent 17, template 59), muse-wonder (agent 17, template 59).
+<!-- augur:end agent-pairs -->
 
 ### Template bots by model, the agent harness, and the proposed floor (MiniBench 2026-11-02, finalized)
 
@@ -1804,6 +2105,7 @@ missed, and why).
 |---|---|---|---|---|---|---|---|
 | `m1-dryrun-samples.sqlite` | 1 (dry_run 1) | 1 | 7 | 1 | 0 | 0 | 0 |
 | `m1-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 7 | 1 | 1 | 0 | 0 |
+| `m13-c2-news.sqlite` | 3 (backtest 3) | 64 | 274 | 54 | 0 | 0 | 0 |
 | `m2-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 16 | 2 | 2 | 0 | 0 |
 | `m2-probe.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 0 |
 | `m3-dryrun-minibench-2.sqlite` | 1 (dry_run 1) | 1 | 6 | 1 | 0 | 0 | 0 |
@@ -2170,6 +2472,7 @@ works against the real API; they say nothing yet about accuracy.
 | What | Why not yet | Command |
 |------|-------------|---------|
 | M12's live comparison: the primary candidate (`blend`) and the arm (`stat`) against Augur and the template on the 2026-11-30 round, P38's second half, P39 and P40 | The round opens about 2026-11-30; every shadow tick from M12's merge writes the `stat` and `blend` rows (on by default with `--shadow-ledger`) | After the round resolves, with the round's ledger and snapshot built as in the M11 row below: `augur floor --round ROUND --ledger L --standings data/standings/ROUND.json --candidate blend` (the registered candidate, if M12 merged before the round's first question opened; otherwise without `--candidate`, as M11 registered); `augur floor ... --candidate augur` beside it (reported); the `--candidate blend` run also prints P39 (the blend against Augur alone, the same 90% bootstrap); `augur score L --mode dry_run --cluster week` prints Augur against `stat`, `blend` and `template` at 95%; P38's count: `sqlite3 L "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'stat' AND detail LIKE 'series:%'"` |
+| Arm G through GDELT's DOC 2.0 API (full-text search, 90 days) rather than the local GKG title index | The API answered every request from the build machine with 429, a timeout or a dropped connection on 2026-11-23, -24 and -25 (one 200 in about 15 tries); the run used registration item 7's fallback | From an address GDELT does not refuse, with a fresh cache directory so no index answer is reused: `augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --sample 64 --retrieval open --searchers gdelt --add-to data/ledgers/m6-c2-open.sqlite --queries data/backtest/m6-c2-queries.json --gdelt-cache data/backtest/gdelt-cache-api --ledger data/ledgers/m13-c2-news-api.sqlite` (move the GKG index aside so the searcher cannot fall back), then the judge as in `make backtest-q2-news`; about 4 minutes of API pacing for 192 queries |
 | The series rule's five forecasts on the 2026-11-16 round, scored | Those questions resolve on 2026-11-26 and 2026-11-27; nothing was forecast or written for them (a coverage run, not a tick) | After 2026-11-27: read each close from the question page and score the committed percentiles in `data/statarm/m12-coverage-minibench-2026-11-16.json` (or re-run the arm in a dry-run ledger and `augur resolve --manual POST VALUE --evidence URL`); five questions, so a reading, not a test |
 | The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; the schedule runs it once the maintainer sets the repository variables (PR M11) | Unattended: `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30`. After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur standings --round ROUND --out data/standings/ROUND.json`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
 | The same two-tick check on GitHub itself | No GitHub credentials in the build environment; `act` ran it locally against a bare repository | `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2`, twice in a row; the second run's summary lists the first run's questions as "already in the shadow ledger" |

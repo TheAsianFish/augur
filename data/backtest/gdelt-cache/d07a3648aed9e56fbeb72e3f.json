@@ -1,0 +1,5 @@
+{
+ "body": "{\"articles\": [{\"domain\": \"today.az\", \"route\": \"gkg\", \"seendate\": \"20260607T090000Z\", \"title\": \"Today.Az - NATO conducts Baltic Zenith 2026 air defense drills in Latvia\", \"url\": \"http://today.az/news/regions/268250.html\"}, {\"domain\": \"www.azernews.az\", \"route\": \"gkg\", \"seendate\": \"20260607T061500Z\", \"title\": \"NATO conducts Baltic Zenith 2026 air defense drills in Latvia\", \"url\": \"https://www.azernews.az/region/259427.html\"}, {\"domain\": \"www.upi.com\", \"route\": \"gkg\", \"seendate\": \"20260520T074500Z\", \"title\": \"U.S. cuts Europe troops; NATO says defense posture remains strong\", \"url\": \"https://www.upi.com/Top_News/World-News/2026/05/20/belgium-US-NATO-troop-withdrawl/8281779253414/\"}, {\"domain\": \"www.yahoo.com\", \"route\": \"gkg\", \"seendate\": \"20260520T070000Z\", \"title\": \"U.S. cuts Europe troops; NATO says defense posture remains strong\", \"url\": \"https://www.yahoo.com/news/articles/u-cuts-europe-troops-nato-063236839.html\"}]}",
+ "fetched_at": "2026-11-25T05:50:25.906482+00:00",
+ "url": "gkg:NATO Baltic defense posture 2026 sourcelang:english|20260512000000|20260611000000"
+}

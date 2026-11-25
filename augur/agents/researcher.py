@@ -254,6 +254,40 @@ class Researcher:
             await self.second_pass(run_id, q, cutoff, result)
         return result
 
+    async def research_added(
+        self,
+        run_id: str,
+        q: Question,
+        cutoff: datetime,
+        base: list[Source],
+        queries: list[str],
+        cap: int,
+    ) -> tuple[ResearchResult, list[Source]]:
+        """M13's arm G: ``base`` (another arm's evidence) plus what the searchers add.
+
+        ``base`` goes through the gate first, unchanged and in order; then each
+        query is searched and up to ``cap`` new sources are admitted after it.
+        Returns the research and the added sources; the brief is written only
+        when something was added. A searcher that fails raises, so a question whose search did
+        not happen is never mistaken for one that found nothing.
+        """
+        result = ResearchResult(queries=list(queries[: self._max_queries]), sources=[])
+        self._gate(run_id, q, cutoff, list(base), result, len(base))
+        if len(result.sources) != len(base):
+            raise AugurError(
+                f"question {q.question_id}: {len(base) - len(result.sources)} base source(s) "
+                "were refused by the gate; the base arm's evidence must be dated at the cutoff"
+            )
+        found = await self._search_all(result.queries, cutoff, result)
+        if result.errors:
+            raise AugurError("; ".join(result.errors))
+        added = self._gate(run_id, q, cutoff, found, result, cap)
+        if added:
+            await self._brief(run_id, q, cutoff, result)
+            if result.errors:
+                raise AugurError("; ".join(result.errors))
+        return result, added
+
     async def second_pass(
         self, run_id: str, q: Question, cutoff: datetime, result: ResearchResult
     ) -> None:

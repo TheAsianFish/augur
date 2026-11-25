@@ -20,8 +20,8 @@ and the floor refused (exit 2).
 Was that the right call? The outside evidence says skipping was cheaper
 than posting. Metaculus runs its own template bot on the free model Augur
 used, and it lost points everywhere it played: −7.66 [−14.51, −0.73] a
-question in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −15.55 so far in
-Fall FutureEval. That is not proof that Augur would have lost too, but
+question in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −12.19 so far in
+Fall FutureEval (read 2026-11-25). That is not proof that Augur would have lost too, but
 it is the bar a free-model pipeline had to clear, and nothing in the
 backtests says Augur clears it.
 

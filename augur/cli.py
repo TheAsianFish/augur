@@ -37,7 +37,7 @@ from augur.backtest import (
     sample,
     write_queries,
 )
-from augur.clock import SystemClock
+from augur.clock import SystemClock, parse_iso
 from augur.config import Settings
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
 from augur.export import export_jsonl
@@ -80,9 +80,11 @@ from augur.replay import (
     recorded_prices,
 )
 from augur.research.asknews import AskNewsSearcher
+from augur.research.gdelt import GdeltSearcher, ResponseCache, gdelt_query
+from augur.research.gkg import GkgIndex, build_index
 from augur.research.markets import MarketsSearcher
 from augur.research.series import SeriesFetcher
-from augur.research.source import Searcher
+from augur.research.source import Searcher, Source
 from augur.research.wayback import WaybackSearcher
 from augur.research.wikipedia import WikipediaSearcher
 from augur.resolve import (
@@ -96,6 +98,9 @@ from augur.statarm import load_base_rates
 from augur.statlive import LiveStatArm
 
 log = get_logger("augur.cli")
+GDELT_CACHE = Path("data/backtest/gdelt-cache")
+GKG_INDEX = Path("data/backtest/gdelt-gkg-index.tsv.gz")
+GKG_MANIFEST = Path("data/backtest/gdelt-gkg-manifest.json")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -233,7 +238,20 @@ def _parser() -> argparse.ArgumentParser:
     fb.add_argument(
         "--searchers",
         default="wikipedia,wayback",
-        help="comma-separated searchers for --retrieval (wikipedia, wayback)",
+        help="comma-separated searchers for --retrieval (wikipedia, wayback, gdelt)",
+    )
+    fb.add_argument(
+        "--add-to",
+        type=Path,
+        metavar="LEDGER",
+        help="with --retrieval open: start from the sources arm O recorded in this ledger and "
+        "add what --searchers find (M13's arm G); a question gaining nothing keeps O's forecast",
+    )
+    fb.add_argument(
+        "--gdelt-cache",
+        type=Path,
+        default=GDELT_CACHE,
+        help=f"where GDELT's answers are cached, one file per request (default {GDELT_CACHE})",
     )
     fb.add_argument(
         "--queries",
@@ -292,6 +310,20 @@ def _parser() -> argparse.ArgumentParser:
         default="",
         help="with --research-from: a suffix naming this run's arm in the ledger",
     )
+    gk = bt_sub.add_parser(
+        "gkg-index",
+        help="build M13's local GDELT index from the 15-minute GKG files (no model call)",
+        description=(
+            "Download every GDELT GKG 2.1 file with a batch stamp after --start and at or "
+            "before --end, check each against the MD5 in GDELT's master list, and write one "
+            "line per article (batch stamp, URL, page title) to --out as gzipped TSV, with a "
+            "manifest. The gdelt searcher reads it when GDELT's DOC API refuses."
+        ),
+    )
+    gk.add_argument("--start", required=True, help="exclusive, ISO 8601 UTC")
+    gk.add_argument("--end", required=True, help="inclusive, ISO 8601 UTC (the cutoff)")
+    gk.add_argument("--out", type=Path, default=GKG_INDEX, help=f"default {GKG_INDEX}")
+    gk.add_argument("--manifest", type=Path, default=GKG_MANIFEST, help=f"default {GKG_MANIFEST}")
     bp = bt_sub.add_parser(
         "prices",
         help="record each ForecastBench market question's exact price as of its freeze date",
@@ -721,6 +753,20 @@ async def _backtest_prices(args: argparse.Namespace, settings: Settings) -> int:
 async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     if args.backtest_command == "prices":
         return await _backtest_prices(args, settings)
+    if args.backtest_command == "gkg-index":
+        start, end = parse_iso(args.start), parse_iso(args.end)
+        async with default_http_client() as http:
+            built = await build_index(http, start, end, args.out)
+        args.manifest.parent.mkdir(parents=True, exist_ok=True)
+        args.manifest.write_text(
+            json.dumps(built.manifest(start, end), indent=1, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(
+            f"{built.files} GKG files, {len(built.missing)} missing from the master list, "
+            f"{built.articles} articles with a title; wrote {args.out} and {args.manifest}"
+        )
+        return 0
     researching = args.plan_out is not None or args.retrieval != "none"
     if researching and (args.research_from is not None or args.first_member):
         raise ConfigError(
@@ -796,7 +842,28 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     return 1 if result.failed else 0
 
 
-def _backtest_searchers(names: str, http: httpx.AsyncClient) -> list[Searcher]:
+def _gkg_index(path: Path, queries: dict[int, list[str]] | None) -> GkgIndex | None:
+    """The local GKG index, if built, holding only words the planned queries can ask for."""
+    if not path.exists() or not queries:
+        return None
+    vocabulary = {
+        w.lower()
+        for qs in queries.values()
+        for q in qs
+        for w in (gdelt_query(q) or "").split()
+        if ":" not in w
+    }
+    index = GkgIndex.load(path, vocabulary)
+    print(f"GKG index {path}: loaded for {len(vocabulary)} query words")
+    return index
+
+
+def _backtest_searchers(
+    names: str,
+    http: httpx.AsyncClient,
+    gdelt_cache: Path = GDELT_CACHE,
+    gkg: GkgIndex | None = None,
+) -> list[Searcher]:
     # Searchers stamp ``retrieved_at`` with the real time; ``as_of`` is the cutoff.
     clock = SystemClock()
     found: list[Searcher] = []
@@ -805,9 +872,19 @@ def _backtest_searchers(names: str, http: httpx.AsyncClient) -> list[Searcher]:
             found.append(WikipediaSearcher(http, clock))
         elif name == "wayback":
             found.append(WaybackSearcher(http, clock))
+        elif name == "gdelt":
+            found.append(
+                GdeltSearcher(
+                    http,
+                    clock,
+                    WaybackSearcher(http, clock),
+                    cache=ResponseCache(gdelt_cache),
+                    index=gkg,
+                )
+            )
         else:
             raise ConfigError(
-                f"unknown backtest searcher {name!r}; use wikipedia and/or wayback "
+                f"unknown backtest searcher {name!r}; use wikipedia, wayback and/or gdelt "
                 "(AskNews and markets cannot prove dates for a backtest here)"
             )
     return found
@@ -826,6 +903,22 @@ async def _backtest_research(
         queries = read_queries(args.queries)
         missing = [q for q in questions if q.question_id not in queries]
         print(f"{len(queries)} planned question(s) in {args.queries}; {len(missing)} unplanned")
+    base: dict[int, list[Source]] | None = None
+    if args.add_to is not None:
+        if args.retrieval != "open" or args.loop or args.passes != 1 or queries is None:
+            raise ConfigError(
+                "--add-to is M13's arm G: one pass as of open with --queries, nothing else"
+            )
+        arm = f"{tournament}+onepass-asof-open"
+        recorded = recorded_research(args.add_to, arm)
+        base = {qid: list(r.research.sources) for qid, r in recorded.items()}
+        missing_base = [q.question_id for q in questions if q.question_id not in base]
+        if missing_base:
+            raise ConfigError(
+                f"{len(missing_base)} question(s) have no recorded research of {arm} in "
+                f"{args.add_to}; arm G adds to O's evidence and cannot start without it"
+            )
+        print(f"{len(base)} recorded research(es) of {arm} in {args.add_to}")
     clock = PinnedClock(SystemClock().now())
     async with default_http_client() as http:
         router = build_router(settings, http, load_snapshot(), SystemClock())
@@ -845,11 +938,18 @@ async def _backtest_research(
                     print(f"planned {len(planned)} question(s); wrote {args.plan_out}")
                     return 0
                 retrieval = Retrieval(
-                    searchers=_backtest_searchers(args.searchers, http),
+                    searchers=_backtest_searchers(
+                        args.searchers,
+                        http,
+                        args.gdelt_cache,
+                        _gkg_index(GKG_INDEX, queries) if "gdelt" in args.searchers else None,
+                    ),
                     as_of="now" if args.retrieval == "now" else "open",
                     queries=queries,
                     loop_steps=args.loop,
                     passes=args.passes,
+                    base=base,
+                    per_query=1 if base is not None else 2,
                 )
                 result = await run_forecastbench(
                     questions=questions,
