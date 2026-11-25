@@ -382,7 +382,13 @@ def add_parser(subparsers: Any) -> None:
             "admitted or not yet decidable. Offline; every verdict exits 0."
         ),
     )
-    p.add_argument("--round", required=True, metavar="SLUG", help="the round's project slug")
+    p.add_argument(
+        "--round",
+        action="append",
+        required=True,
+        metavar="SLUG",
+        help="the round's project slug; with --pooled, repeat it once per round",
+    )
     p.add_argument(
         "--ledger",
         type=Path,
@@ -394,8 +400,17 @@ def add_parser(subparsers: Any) -> None:
     p.add_argument(
         "--standings",
         type=Path,
+        action="append",
         metavar="S",
-        help="the round's standings snapshot (default data/standings/SLUG.json)",
+        help="the round's standings snapshot (default data/standings/SLUG.json); with "
+        "--pooled, one per --round in the same order",
+    )
+    p.add_argument(
+        "--pooled",
+        action="store_true",
+        help="M14's pooled analysis over every --round given (PLAN.md, m14-registration): "
+        "the pooled head-to-head, its interval clustered by opening day, n, clusters, spread "
+        "and each round's coverage; never a floor verdict, and --candidate does not apply",
     )
     p.add_argument(
         "--candidate",
@@ -408,11 +423,23 @@ def add_parser(subparsers: Any) -> None:
 
 
 def main(args: argparse.Namespace) -> int:
-    path: Path = args.standings or Path("data/standings") / f"{args.round}.json"
-    snapshot = load_snapshot(path)
-    if snapshot.round.slug != args.round:
+    if args.pooled:
+        from augur import pooled
+
+        return pooled.main(args)
+    rounds: list[str] = args.round
+    standings: list[Path] = args.standings or []
+    if len(rounds) != 1 or len(standings) > 1:
         raise AugurError(
-            f"{path} is the snapshot of {snapshot.round.slug}, not {args.round}; give the "
+            "the floor rule reads one round: give one --round (and at most one --standings); "
+            "--pooled reports several rounds together and never decides the floor"
+        )
+    slug = rounds[0]
+    path: Path = standings[0] if standings else Path("data/standings") / f"{slug}.json"
+    snapshot = load_snapshot(path)
+    if snapshot.round.slug != slug:
+        raise AugurError(
+            f"{path} is the snapshot of {snapshot.round.slug}, not {slug}; give the "
             "round's own snapshot with --standings"
         )
     result = decide(snapshot, args.ledger, args.candidate)
