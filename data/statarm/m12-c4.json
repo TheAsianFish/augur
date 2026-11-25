@@ -1,0 +1,498 @@
+{
+ "corpus": {
+  "instances": 926,
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "w_instances": 671,
+  "w_markets": 425
+ },
+ "groups": [
+  {
+   "arm_kinds": {
+    "base-rate": 191,
+    "price": 480
+   },
+   "base_rate": 0.3338,
+   "brier": {
+    "arm": 0.1466,
+    "augur": 0.224,
+    "base-rate-blend": 0.1494,
+    "candidate": 0.1455
+   },
+   "group": "all",
+   "markets": 425,
+   "n": 671,
+   "vs_augur": {
+    "arm": {
+     "clusters": 425,
+     "high": -0.0459,
+     "low": -0.1099,
+     "mde": 0.046,
+     "mean": -0.0773,
+     "n": 671
+    },
+    "base-rate-blend": {
+     "clusters": 425,
+     "high": -0.054,
+     "low": -0.0965,
+     "mde": 0.0306,
+     "mean": -0.0746,
+     "n": 671
+    },
+    "candidate": {
+     "clusters": 425,
+     "high": -0.0597,
+     "low": -0.0989,
+     "mde": 0.0282,
+     "mean": -0.0785,
+     "n": 671
+    }
+   },
+   "vs_price": {}
+  },
+  {
+   "arm_kinds": {
+    "price": 480
+   },
+   "base_rate": 0.3979,
+   "brier": {
+    "arm": 0.1353,
+    "augur": 0.2682,
+    "base-rate-blend": 0.1584,
+    "candidate": 0.1584,
+    "price": 0.1353
+   },
+   "group": "priced",
+   "markets": 344,
+   "n": 480,
+   "vs_augur": {
+    "arm": {
+     "clusters": 344,
+     "high": -0.0953,
+     "low": -0.1724,
+     "mde": 0.0556,
+     "mean": -0.1329,
+     "n": 480
+    },
+    "base-rate-blend": {
+     "clusters": 344,
+     "high": -0.0844,
+     "low": -0.1372,
+     "mde": 0.0379,
+     "mean": -0.1097,
+     "n": 480
+    },
+    "candidate": {
+     "clusters": 344,
+     "high": -0.0844,
+     "low": -0.1372,
+     "mde": 0.0379,
+     "mean": -0.1097,
+     "n": 480
+    },
+    "price": {
+     "clusters": 344,
+     "high": -0.0953,
+     "low": -0.1724,
+     "mde": 0.0556,
+     "mean": -0.1329,
+     "n": 480
+    }
+   },
+   "vs_price": {
+    "arm": {
+     "clusters": 344,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 480
+    },
+    "augur": {
+     "clusters": 344,
+     "high": 0.1724,
+     "low": 0.0953,
+     "mde": 0.0556,
+     "mean": 0.1329,
+     "n": 480
+    },
+    "base-rate-blend": {
+     "clusters": 344,
+     "high": 0.0385,
+     "low": 0.0081,
+     "mde": 0.0216,
+     "mean": 0.0232,
+     "n": 480
+    },
+    "candidate": {
+     "clusters": 344,
+     "high": 0.0385,
+     "low": 0.0081,
+     "mde": 0.0216,
+     "mean": 0.0232,
+     "n": 480
+    }
+   }
+  },
+  {
+   "arm_kinds": {
+    "base-rate": 191
+   },
+   "base_rate": 0.1728,
+   "brier": {
+    "arm": 0.1753,
+    "augur": 0.1129,
+    "base-rate-blend": 0.1267,
+    "candidate": 0.1129
+   },
+   "group": "unpriced",
+   "markets": 81,
+   "n": 191,
+   "vs_augur": {
+    "arm": {
+     "clusters": 81,
+     "high": 0.1067,
+     "low": 0.0171,
+     "mde": 0.0636,
+     "mean": 0.0623,
+     "n": 191
+    },
+    "base-rate-blend": {
+     "clusters": 81,
+     "high": 0.0392,
+     "low": -0.0147,
+     "mde": 0.0381,
+     "mean": 0.0137,
+     "n": 191
+    },
+    "candidate": {
+     "clusters": 81,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 191
+    }
+   },
+   "vs_price": {}
+  },
+  {
+   "arm_kinds": {
+    "price": 341
+   },
+   "base_rate": 0.3988,
+   "brier": {
+    "arm": 0.1433,
+    "augur": 0.2556,
+    "base-rate-blend": 0.1589,
+    "candidate": 0.1589,
+    "price": 0.1433
+   },
+   "group": "polymarket",
+   "markets": 272,
+   "n": 341,
+   "vs_augur": {
+    "arm": {
+     "clusters": 272,
+     "high": -0.0687,
+     "low": -0.1558,
+     "mde": 0.0621,
+     "mean": -0.1123,
+     "n": 341
+    },
+    "base-rate-blend": {
+     "clusters": 272,
+     "high": -0.0687,
+     "low": -0.1268,
+     "mde": 0.0415,
+     "mean": -0.0968,
+     "n": 341
+    },
+    "candidate": {
+     "clusters": 272,
+     "high": -0.0687,
+     "low": -0.1268,
+     "mde": 0.0415,
+     "mean": -0.0968,
+     "n": 341
+    },
+    "price": {
+     "clusters": 272,
+     "high": -0.0687,
+     "low": -0.1558,
+     "mde": 0.0621,
+     "mean": -0.1123,
+     "n": 341
+    }
+   },
+   "vs_price": {
+    "arm": {
+     "clusters": 272,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 341
+    },
+    "augur": {
+     "clusters": 272,
+     "high": 0.1558,
+     "low": 0.0687,
+     "mde": 0.0621,
+     "mean": 0.1123,
+     "n": 341
+    },
+    "base-rate-blend": {
+     "clusters": 272,
+     "high": 0.0329,
+     "low": -0.0024,
+     "mde": 0.0253,
+     "mean": 0.0155,
+     "n": 341
+    },
+    "candidate": {
+     "clusters": 272,
+     "high": 0.0329,
+     "low": -0.0024,
+     "mde": 0.0253,
+     "mean": 0.0155,
+     "n": 341
+    }
+   }
+  },
+  {
+   "arm_kinds": {
+    "price": 139
+   },
+   "base_rate": 0.3957,
+   "brier": {
+    "arm": 0.1154,
+    "augur": 0.2989,
+    "base-rate-blend": 0.1574,
+    "candidate": 0.1574,
+    "price": 0.1154
+   },
+   "group": "manifold",
+   "markets": 72,
+   "n": 139,
+   "vs_augur": {
+    "arm": {
+     "clusters": 72,
+     "high": -0.1045,
+     "low": -0.2706,
+     "mde": 0.119,
+     "mean": -0.1836,
+     "n": 139
+    },
+    "base-rate-blend": {
+     "clusters": 72,
+     "high": -0.0856,
+     "low": -0.2058,
+     "mde": 0.0858,
+     "mean": -0.1415,
+     "n": 139
+    },
+    "candidate": {
+     "clusters": 72,
+     "high": -0.0856,
+     "low": -0.2058,
+     "mde": 0.0858,
+     "mean": -0.1415,
+     "n": 139
+    },
+    "price": {
+     "clusters": 72,
+     "high": -0.1045,
+     "low": -0.2706,
+     "mde": 0.119,
+     "mean": -0.1836,
+     "n": 139
+    }
+   },
+   "vs_price": {
+    "arm": {
+     "clusters": 72,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 139
+    },
+    "augur": {
+     "clusters": 72,
+     "high": 0.2706,
+     "low": 0.1045,
+     "mde": 0.119,
+     "mean": 0.1836,
+     "n": 139
+    },
+    "base-rate-blend": {
+     "clusters": 72,
+     "high": 0.0717,
+     "low": 0.016,
+     "mde": 0.0406,
+     "mean": 0.042,
+     "n": 139
+    },
+    "candidate": {
+     "clusters": 72,
+     "high": 0.0717,
+     "low": 0.016,
+     "mde": 0.0406,
+     "mean": 0.042,
+     "n": 139
+    }
+   }
+  },
+  {
+   "arm_kinds": {
+    "base-rate": 190
+   },
+   "base_rate": 0.1684,
+   "brier": {
+    "arm": 0.1741,
+    "augur": 0.1115,
+    "base-rate-blend": 0.1253,
+    "candidate": 0.1115
+   },
+   "group": "metaculus",
+   "markets": 80,
+   "n": 190,
+   "vs_augur": {
+    "arm": {
+     "clusters": 80,
+     "high": 0.1067,
+     "low": 0.0168,
+     "mde": 0.0642,
+     "mean": 0.0626,
+     "n": 190
+    },
+    "base-rate-blend": {
+     "clusters": 80,
+     "high": 0.0392,
+     "low": -0.0146,
+     "mde": 0.0386,
+     "mean": 0.0138,
+     "n": 190
+    },
+    "candidate": {
+     "clusters": 80,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": 0.0,
+     "mean": 0.0,
+     "n": 190
+    }
+   },
+   "vs_price": {}
+  },
+  {
+   "arm_kinds": {
+    "base-rate": 1
+   },
+   "base_rate": 1.0,
+   "brier": {
+    "arm": 0.3933,
+    "augur": 0.3844,
+    "base-rate-blend": 0.3904,
+    "candidate": 0.3844
+   },
+   "group": "infer",
+   "markets": 1,
+   "n": 1,
+   "vs_augur": {
+    "arm": {
+     "clusters": 1,
+     "high": 0.0089,
+     "low": 0.0089,
+     "mde": -1.0,
+     "mean": 0.0089,
+     "n": 1
+    },
+    "base-rate-blend": {
+     "clusters": 1,
+     "high": 0.006,
+     "low": 0.006,
+     "mde": -1.0,
+     "mean": 0.006,
+     "n": 1
+    },
+    "candidate": {
+     "clusters": 1,
+     "high": 0.0,
+     "low": 0.0,
+     "mde": -1.0,
+     "mean": 0.0,
+     "n": 1
+    }
+   },
+   "vs_price": {}
+  }
+ ],
+ "hypotheses": [
+  {
+   "estimate": {
+    "clusters": 344,
+    "high": -0.0844,
+    "low": -0.1372,
+    "mde": 0.0379,
+    "mean": -0.1097,
+    "n": 480
+   },
+   "id": "P34",
+   "rule": "interval below 0",
+   "statistic": "priced: Brier(candidate) - Brier(Augur)",
+   "verdict": "held"
+  },
+  {
+   "estimate": {
+    "clusters": 344,
+    "high": 0.0385,
+    "low": 0.0081,
+    "mde": 0.0216,
+    "mean": 0.0232,
+    "n": 480
+   },
+   "id": "P35",
+   "rule": "point estimate above 0",
+   "statistic": "priced: Brier(candidate) - Brier(price)",
+   "verdict": "held"
+  },
+  {
+   "estimate": {
+    "clusters": 80,
+    "high": 0.0392,
+    "low": -0.0146,
+    "mde": 0.0386,
+    "mean": 0.0138,
+    "n": 190
+   },
+   "id": "P36",
+   "rule": "point estimate between +0.01 and +0.04",
+   "statistic": "Metaculus: Brier(base-rate blend) - Brier(Augur)",
+   "verdict": "held"
+  },
+  {
+   "estimate": {
+    "clusters": 425,
+    "high": -0.0459,
+    "low": -0.1099,
+    "mde": 0.046,
+    "mean": -0.0773,
+    "n": 671
+   },
+   "id": "P37",
+   "rule": "interval below 0",
+   "statistic": "all of W: Brier(arm) - Brier(Augur)",
+   "verdict": "held"
+  }
+ ],
+ "method": {
+  "bootstrap": "paired, resampling markets, 10,000 resamples, seeded, 95%",
+  "clip": [
+   0.01,
+   0.99
+  ],
+  "design": "M8's walk-forward W; base rates fitted on outcomes public before each instance opened",
+  "weight": "one-third Augur, two-thirds arm, in log-odds"
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "counts": {
+  "infer": {
+   "n": 6,
+   "yes": 2
+  },
+  "manifold": {
+   "n": 214,
+   "yes": 83
+  },
+  "metaculus": {
+   "n": 255,
+   "yes": 51
+  },
+  "polymarket": {
+   "n": 451,
+   "yes": 187
+  }
+ },
+ "fitted_on": "M8 corpus C4: 926 resolutions through 2026-11-15"
+}

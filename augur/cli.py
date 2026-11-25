@@ -25,6 +25,7 @@ from augur import (
     scorecard,
     shadow,
     standings,
+    stateval,
 )
 from augur.backtest import (
     PLAN_SUFFIX,
@@ -80,6 +81,7 @@ from augur.replay import (
 )
 from augur.research.asknews import AskNewsSearcher
 from augur.research.markets import MarketsSearcher
+from augur.research.series import SeriesFetcher
 from augur.research.source import Searcher
 from augur.research.wayback import WaybackSearcher
 from augur.research.wikipedia import WikipediaSearcher
@@ -90,6 +92,8 @@ from augur.resolve import (
     resolve_metaculus,
 )
 from augur.runner import TOURNAMENTS, ForecastRun, code_version, format_probe
+from augur.statarm import load_base_rates
+from augur.statlive import LiveStatArm
 
 log = get_logger("augur.cli")
 
@@ -150,6 +154,14 @@ def _parser() -> argparse.ArgumentParser:
         help="apply the live calibrator (augur/live_calibrator.json) to binary forecasts from "
         "the model it was fitted on; other models' forecasts stay raw (M8), and so do "
         "questions from sources it is withheld from (Metaculus, so every live question)",
+    )
+    fc.add_argument(
+        "--stat-arm",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="write M12's statistical arm and its registered blend as the stat and blend "
+        "reference rows of each question, before it closes (on by default in a shadow tick, "
+        "off otherwise; nothing it writes is posted)",
     )
     fc.add_argument(
         "--no-probe", action="store_true", help="skip the opening model probe (AUGUR_PROBE=0)"
@@ -391,6 +403,29 @@ def _parser() -> argparse.ArgumentParser:
         "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
     )
 
+    sa = sub.add_parser(
+        "statarm",
+        help="M12: the statistical arm and its blends on C4, with no model call",
+        description=(
+            "Score the model-free arm (price where readable, else the source's base rate) "
+            "and the registered blends against Augur's raw forecast in M8's walk-forward "
+            "harness on corpus C4, by source, and write the snapshot RESULTS.md renders "
+            "from and the base rates the live arm uses. Offline, free, deterministic."
+        ),
+    )
+    sa.add_argument("--out", type=Path, default=stateval.SNAPSHOT)
+    sa.add_argument(
+        "--coverage",
+        choices=sorted(stateval.COVERAGE),
+        metavar="ROUND",
+        help="instead, run the series rule on a round's question list (posts read from the "
+        "API with METACULUS_TOKEN, closes from the series source as of each question's "
+        f"open) and write its coverage file; one of {', '.join(sorted(stateval.COVERAGE))}",
+    )
+    sa.add_argument(
+        "--check", action="store_true", help="exit 1 if the committed files differ from a re-run"
+    )
+
     dis = sub.add_parser(
         "q6",
         help="Q6: does disagreement among the fleet's forecasts predict its errors?",
@@ -469,6 +504,12 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
     if args.submit and not settings.has_metaculus_token:
         raise MissingCredentialsError("--submit", ("METACULUS_TOKEN",))
     held = _shadow_held(args.shadow_ledger, ledger_path)
+    stat_on = args.stat_arm if args.stat_arm is not None else held is not None
+    if stat_on and args.submit:
+        raise AugurError(
+            "--stat-arm runs only on unposted runs (shadow ticks and dry runs): nothing it "
+            "writes may delay a submission; drop --stat-arm or --submit"
+        )
     async with default_http_client() as http:
         # A replay must not depend on the network, prices included.
         catalog = load_snapshot() if settings.is_replay else await fetch_catalog(http, clock.now())
@@ -490,6 +531,14 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
             searchers.append(MarketsSearcher(http, clock, metaculus=client))
         if client is None:
             print("METACULUS_TOKEN is not set: dry run on the committed sample questions.")
+        stat_arm = (
+            LiveStatArm(
+                rates=load_base_rates(),
+                fetcher=None if settings.is_replay else SeriesFetcher(http, clock),
+            )
+            if stat_on
+            else None
+        )
         with Ledger.open(ledger_path, clock) as ledger:
             run = ForecastRun(
                 settings=settings,
@@ -502,6 +551,7 @@ async def _forecast(args: argparse.Namespace, settings: Settings) -> int:
                 probe_providers=probe_providers,
                 blend_exact_price=bool(args.markets and args.blend),
                 calibrator=livecal.load_live() if args.calibrate else None,
+                stat_arm=stat_arm,
             )
             try:
                 report = await run.run(
@@ -951,6 +1001,51 @@ def _fbcompare(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _statarm_coverage(label: str, settings: Settings) -> int:
+    if not settings.has_metaculus_token:
+        raise MissingCredentialsError("augur statarm --coverage", ("METACULUS_TOKEN",))
+    snap_path, out = stateval.COVERAGE[label]
+    snap = standings.load_snapshot(snap_path)
+    async with default_http_client() as http:
+        client = MetaculusClient.from_settings(settings, http)
+        data = await stateval.round_coverage(snap, client, SeriesFetcher(http, SystemClock()))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(stateval.dumps(data), encoding="utf-8")
+    print(
+        f"{label}: {data['questions']} questions, {data['numeric_or_discrete']} numeric or "
+        f"discrete, the series rule reaches {data['reached']} and forecasts {data['forecast']}"
+    )
+    for row in data["rows"]:
+        if "query" in row:
+            print(f"  {row['post_id']} {row['query']}: {row['outcome']}")
+    print(f"wrote {out}")
+    return 0
+
+
+def _statarm(args: argparse.Namespace, settings: Settings) -> int:
+    if args.coverage:
+        return asyncio.run(_statarm_coverage(args.coverage, settings))
+    written = stateval.files(Path.cwd(), args.out)
+    if args.check:
+        stale = [p for p, text in written.items() if not p.exists() or p.read_text("utf-8") != text]
+        for p in stale:
+            print(f"{p} differs from a fresh run; run augur statarm")
+        for snap_path, cov in stateval.COVERAGE.values():
+            if cov.exists():
+                problems = stateval.check_coverage(cov, standings.load_snapshot(snap_path))
+                stale += [cov] if problems else []
+                for line in problems:
+                    print(line)
+        if not stale:
+            print(f"{args.out} and the live base rates match a fresh run")
+        return 1 if stale else 0
+    for p, text in written.items():
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        print(f"wrote {p}")
+    return 0
+
+
 def _calibrate(args: argparse.Namespace) -> int:
     out: Path = args.out
     snap = q4.snapshot(Path.cwd())
@@ -1041,6 +1136,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _power(args)
         if args.command == "calibrate":
             return _calibrate(args)
+        if args.command == "statarm":
+            return _statarm(args, settings)
         if args.command == "q6":
             return _q6(args)
         if args.command == "fbcompare":
