@@ -4,7 +4,9 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M12 builds a forecast with no
+committed file differs from a fresh render. M13 adds dated news to the
+leak-free backtest arm (GDELT discovery, Wayback text) and asks whether
+thin evidence or the model limits it. M12 builds a forecast with no
 model in it (a readable price, a base rate, or a quoted series' own
 history), scores it and one registered blend on C4 with no model call, and
 writes both beside Augur on every shadow tick. M11 registers the rule that
@@ -25,6 +27,112 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M13: dated news in the backtest: is the limit the evidence or the model?
+
+The registration below (design, P41 to P46 and the verdict rule) was
+committed before the `gdelt` searcher was written or any arm ran, and is
+rendered here from PLAN.md; item 7 was added, dated, after GDELT's API
+refused the build machine and before any arm ran.
+
+<!-- augur:begin m13-registration -->
+1. *The searcher (`gdelt`).* For each of a question's shared planned
+   queries (`data/backtest/m6-c2-queries.json`, the plan every Q2 arm
+   used), one GDELT DOC 2.0 `artlist` request: the query's words with
+   punctuation removed, words under three letters and a fixed stop list
+   dropped, at most six words, plus `sourcelang:english`;
+   `startdatetime` 90 days before the cutoff and `enddatetime` at the
+   cutoff, relevance order, at most 10 articles. One request every 5
+   seconds, with backoff on 429 and 5xx; every response is cached on disk
+   (`data/backtest/gdelt-cache/`) and committed, so a resumed or re-run
+   arm sends nothing twice. The query bound is never trusted: an article
+   whose `seendate` is after the cutoff is refused, whatever GDELT
+   returned. Nothing assumes how far back GDELT searches; an empty
+   answer is recorded as empty.
+2. *The text.* An article's text comes only from a Wayback capture of its
+   URL at or before the cutoff (the existing `wayback` capture code: the
+   capture's own timestamp is compared, redirects followed only while
+   still at or before the cutoff). No capture, no source: the live page is
+   never fetched. Market and forecasting hosts are excluded as in
+   `wayback`. The source's date is the capture timestamp
+   (`archive_capture`), its evidence names the capture and the `seendate`,
+   and it is written to the ledger before any model sees it, so the
+   leakage gate and `tests/test_leakage.py` cover it like any other
+   source. Per query, GDELT's articles are tried in order, at most four
+   Wayback lookups, and the first one admitted is kept: at most three news
+   sources a question.
+3. *Arm G.* The 64 questions of C2's fixed sample, as of each question's
+   open instant. Each question's evidence is arm O's admitted sources
+   exactly as O's forecasters saw them (read back from
+   `data/ledgers/m6-c2-open.sqlite`), plus the news sources from items 1
+   and 2; the brief is rewritten from all of them by the same prompt and
+   model, and three draws forecast from it, combined by the median. Model
+   `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free` in every role, as
+   in O. Where no news source is admitted, G's inputs are O's, no call is
+   made and G's forecast is O's recorded one. So G − O measures news
+   added to O's evidence and nothing else, and G − N is set beside M6's
+   O − N.
+4. *What is reported* (`make eval`, rendered by `make results`): the
+   share of the 64 questions that gained at least one news source whose
+   `seendate` is in the 30 days before open; sources admitted per question
+   in O and in G; G − O and G − N, paired Brier with 95% bootstrap
+   intervals (seeded, as in M6) and the detectable effect, overall and
+   split into priced (an as-of price from M5) and unpriced questions;
+   G − O on the questions that gained news alone; the leakage judge (same
+   model, El Lahib et al.'s 0 to 4 rubric) on the news sources; the cost
+   per question; and the result beside Hindcast, AIA and El Lahib et al.
+5. *The verdict*, on G − O over all 64: **moved** if the 95% interval is
+   entirely below 0; **not the limit** if the interval includes 0 and its
+   lower end is above −0.055 (Hindcast's Qwen3-32B gain), or if it is
+   entirely above 0; otherwise **unresolved**, with the questions needed
+   to detect a 0.02 and a 0.055 gain at 80% power from G − O's own paired
+   spread (M7's normal-approximation rule), set beside M7's power curve
+   for research (110 questions for 0.02).
+6. *If GDELT cannot be reached.* GDELT refused this repository's shared
+   addresses on 2026-11-23 and 2026-11-24 (HTTP 429 on a first request).
+   If it refuses every address the run can use, G is recorded as not run,
+   not as zero coverage, and the commands go under To measure.
+7. *Amendment, 2026-11-25 04:30 UTC, before any arm ran.* The DOC 2.0
+   API answered HTTP 429 to all six requests sent from the build machine
+   between 04:12 and 04:22 UTC (one every 75 seconds or more), while
+   GDELT's static files (`data.gdeltproject.org/gdeltv2/`) answered
+   at once. So discovery has a second route over the same index, used
+   only when the API refuses: GDELT's 15-minute GKG 2.1 files for the 30
+   days before the cutoff (every file stamped after 2026-05-12 00:00 and
+   at or before 2026-06-11 00:00 UTC, C2's single cutoff), each checked
+   against the MD5 GDELT's master list gives, reduced to a local index of
+   (batch time, URL, page title). The batch time plays the `seendate`'s
+   part and is checked against the cutoff the same way. A query's
+   keywords (item 1's rule) match an article when at least three of its
+   non-numeric keywords (all of them, if it has fewer) appear in the
+   title; matches are ordered by keywords matched, then newest first,
+   at most 10, and that list is cached and committed exactly as an API
+   answer would be. The window is 30 days rather than 90 to keep the
+   download near 15 GB; P41 counts the 30 days before open either way.
+   Item 2 (text only from a Wayback capture at or before the cutoff),
+   item 3, the predictions and the verdict are unchanged. Title matching
+   is narrower than the API's full-text search, which works against P41's
+   coverage, not for it.
+
+| # | Prediction |
+|---|------------|
+| P41 | Fewer than 60% of the 64 questions gain a news source whose `seendate` is in the 30 days before open. |
+| P42 | G adds fewer than 1.5 news sources a question on average (O showed 5.1 sources a question). |
+| P43 | G − O over all 64 has a point estimate between −0.055 and −0.002 and a 95% interval that includes 0. |
+| P44 | The verdict in item 5 is *unresolved*. |
+| P45 | G − N has a 95% interval that includes 0, as O − N's did. |
+| P46 | The judge rates fewer than 5% of the admitted news sources at 3 or 4. |
+
+**Reading rule.** Each prediction is marked held or failed as written,
+never edited. Nothing about the live bot changes from this arm: live
+research uses AskNews and the markets, not GDELT, and a backtest on one
+free model cannot move a live default. A second reader model and a split
+by source age stay cut (Considered and not chosen).
+<!-- augur:end m13-registration -->
+
+<!-- augur:begin news -->
+Arm G has not run: its ledger `data/ledgers/m13-c2-news.sqlite` is not committed (To measure has the commands).
+<!-- augur:end news -->
 
 ## M12: a forecast with no model in it, and one registered blend
 

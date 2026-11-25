@@ -28,7 +28,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from augur import fbcompare, power, q2, q3, replay, scorecard, standings
+from augur import fbcompare, power, q2, q3, q13, replay, scorecard, standings
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
@@ -1751,6 +1751,143 @@ def render_m12_registration(root: Path) -> str:
     return m.group("body")
 
 
+# -- M13: dated news in the backtest ---------------------------------------------------
+
+M13_REGISTRATION = re.compile(
+    r"<!-- m13-registration:begin -->\n(?P<body>.*?)<!-- m13-registration:end -->", re.S
+)
+G_LEDGER = LEDGERS / "m13-c2-news.sqlite"
+G_TOURNAMENT = Q2_TOURNAMENT + "+onepass-asof-open+news"
+# Outside results the arm is set beside (PLAN.md, Frontier; self-reported, other protocols).
+NEWS_OUTSIDE = (
+    "Hindcast (arXiv 2607.14051): dated retrieval from a frozen Reddit snapshot lowered Brier "
+    "on 8 of 9 open-weight models over 216 Polymarket markets, Qwen3-32B 0.234 to 0.179 "
+    "(−0.055)",
+    "AIA Forecaster (arXiv 2511.07678): no search 0.1230, agentic search 0.1140 (−0.009) on "
+    "FB-7-21 with a frontier model",
+    "El Lahib et al. (arXiv 2602.00758): no retrieval 0.244, leak-free documents 0.242 "
+    "(−0.002), gpt-oss-120b, Google results",
+)
+
+
+def render_m13_registration(root: Path) -> str:
+    """M13's registration exactly as PLAN.md committed it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = M13_REGISTRATION.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no m13-registration block")
+    return m.group("body")
+
+
+def _q13(root: Path) -> q13.Q13 | None:
+    if not (root / G_LEDGER).exists():
+        return None
+    report = load_set(
+        root / f"{Q2_SET}-llm.subset.json",
+        root / f"{Q2_SET}_resolution_set.subset.json",
+        released=date.min,
+    )
+    n_path, n_t = Q2_ARMS["N"]
+    o_path, o_t = Q2_ARMS["O"]
+    return q13.score_q13(
+        questions=report.kept,
+        sample=Q2_SAMPLE,
+        n_arm=q2.ArmSource(root / n_path, n_t),
+        o_arm=q2.ArmSource(root / o_path, o_t),
+        g_arm=q2.ArmSource(root / G_LEDGER, G_TOURNAMENT),
+        prices=q2.ArmSource(root / LEDGERS / "m5-replay-c2-prices.sqlite", Q2_TOURNAMENT),
+    )
+
+
+def render_news(root: Path) -> str:
+    s = _q13(root)
+    if s is None:
+        return (
+            "Arm G has not run: its ledger `data/ledgers/m13-c2-news.sqlite` is not committed "
+            "(To measure has the commands).\n"
+        )
+    n = s.sample
+    out = [
+        f"C2's fixed sample, {n} questions, cutoff each question's open instant. Model "
+        "`nvidia/nemotron-3-ultra-550b-a55b:free` in every role, 3 draws, median. Arm G is arm "
+        "O's sources exactly as O's forecasters saw them plus at most three news sources "
+        "(GDELT discovery, text from a Wayback capture at or before the cutoff); where none "
+        "was admitted G's forecast is O's.",
+        "",
+        f"- Questions that gained a news source: {_pct(s.gained, n)}; with a news source GDELT "
+        f"saw in the 30 days before open: {_pct(s.gained_recent, n)}.",
+        f"- News sources admitted: {s.news} ({s.news / n:.2f} a question). Sources a question "
+        f"was shown: O {s.base_per_question:.2f}, G {s.g_per_question:.2f}.",
+    ]
+    if s.domains:
+        out.append(
+            "- Most frequent news hosts: " + ", ".join(f"{d} {k}" for d, k in s.domains) + "."
+        )
+    out += [
+        "",
+        "| Arm | Brier [95% interval] | Log score | n |",
+        "|---|---|---|---|",
+    ]
+    out += [f"| {r.arm} | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |" for r in s.arms]
+    out += ["", "| Paired difference | Brier [95% interval] (MDE) |", "|---|---|"]
+    rows = [*s.diffs, *s.gained_diffs, *s.priced_diffs, *s.unpriced_diffs]
+    out += [f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in rows]
+    need = ", ".join(
+        f"{v} questions for {k:.3f}" if v is not None else f"not computable for {k:.3f}"
+        for k, v in s.needed.items()
+    )
+    out += [
+        "",
+        f"Spread of the per-question G − O Brier difference: SD {s.sd:.4f}; at 80% power "
+        f"(two-sided 5%) that needs {need} (M7's research curve: 110 for 0.02).",
+    ]
+    if s.judged:
+        sc = "/".join(str(c) for c in s.judge_scores)
+        out += [
+            "",
+            f"The judge on the news sources (same model, El Lahib et al.'s 0 to 4 rubric): "
+            f"{s.judged} judged, scores 0/1/2/3/4 {sc}, at 3 or more "
+            f"{_pct(s.judged_major, s.judged)}.",
+        ]
+    else:
+        out += ["", "The judge has not rated the news sources yet."]
+    if s.cost is not None:
+        c = s.cost
+        out += [
+            "",
+            f"Cost per question that gained news ($0: free model): {c.calls:.1f} successful "
+            f"model calls ({c.research_calls:.1f} research), {c.output_tokens:,.0f} output "
+            f"tokens, {c.seconds:.0f} s wall time.",
+        ]
+    out += ["", "Beside outside results (not the same protocol): " + "; ".join(NEWS_OUTSIDE) + "."]
+    go = s.diffs[0].brier
+    gn = s.diffs[1].brier
+    major = s.judged_major / s.judged if s.judged else None
+    out += [
+        "",
+        f"**Verdict (registration item 5): {s.verdict}.**",
+        "",
+        "Predictions registered in PLAN.md before the run:",
+        "",
+        f"- P41 (under 60% gain recent news): {100 * s.gained_recent / n:.0f}% "
+        f"{_held(s.gained_recent / n < 0.6)}.",
+        f"- P42 (under 1.5 news sources a question): {s.news / n:.2f} {_held(s.news / n < 1.5)}.",
+        f"- P43 (G − O between −0.055 and −0.002, interval includes 0): {go.mean:+.4f} "
+        f"[{go.low:+.4f}, {go.high:+.4f}] "
+        f"{_held(-0.055 <= go.mean <= -0.002 and go.low <= 0 <= go.high)}.",
+        f"- P44 (verdict unresolved): {s.verdict} {_held(s.verdict == 'unresolved')}.",
+        f"- P45 (G − N interval includes 0): [{gn.low:+.4f}, {gn.high:+.4f}] "
+        f"{_held(gn.low <= 0 <= gn.high)}.",
+        "- P46 (judge under 5% at 3 or more): "
+        + (
+            f"{100 * major:.1f}% {_held(major < 0.05)}."
+            if major is not None
+            else "**not yet tested**."
+        ),
+    ]
+    return "\n".join(out) + "\n"
+
+
 # -- M12: the statistical arm on C4 ---------------------------------------------------
 
 STATARM_PATH = Path("data/statarm/m12-c4.json")
@@ -2020,6 +2157,8 @@ BLOCKS: dict[str, Block] = {
         Block("fbcompare", render_fbcompare),
         Block("floor-rule", render_floor_rule),
         Block("m12-registration", render_m12_registration),
+        Block("m13-registration", render_m13_registration),
+        Block("news", render_news),
         Block("statarm", render_statarm),
         Block("statarm-coverage", render_statarm_coverage),
     )
