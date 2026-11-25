@@ -63,7 +63,11 @@ PROGRESS = "progress"
 REGISTERED = "registered"
 LATE = "late"
 REGISTERED_ROUNDS = ("fall-futureeval-2026",)
-"""Item 1, besides MiniBench rounds (``minibench`` and its dated ``minibench-*`` slugs)."""
+"""Item 1, besides the two MiniBench rounds after ``minibench-2026-11-16``."""
+LAST_EXCLUDED_ROUND = date(2026, 11, 16)
+"""Item 1: only MiniBench rounds that open after this one's start are registered."""
+FIRST_UNREGISTERED_ROUND = date(2026, 12, 28)
+"""The third round after it (rounds start every 14 days): no longer one of the two."""
 ABOVE = "above 0"
 BELOW = "below 0"
 UNRESOLVED = "not resolvable this season"
@@ -155,8 +159,23 @@ def when(day: date) -> str:
 
 
 def registered_round(slug: str) -> bool:
-    """Item 1's rounds: MiniBench and the Fall 2026 FutureEval project."""
-    return slug == "minibench" or slug.startswith("minibench-") or slug in REGISTERED_ROUNDS
+    """Item 1's rounds: the two MiniBench rounds after 2026-11-16 and Fall 2026 FutureEval.
+
+    A dated slug (``minibench-YYYY-MM-DD``, the round's start) counts only when it
+    starts after ``minibench-2026-11-16`` and before the round two after that would
+    have; the bare ``minibench`` slug is the current round, whichever it is, and is
+    not flagged.
+    """
+    if slug in REGISTERED_ROUNDS or slug == "minibench":
+        return True
+    prefix = "minibench-"
+    if not slug.startswith(prefix):
+        return False
+    try:
+        start = date.fromisoformat(slug.removeprefix(prefix))
+    except ValueError:
+        return False
+    return LAST_EXCLUDED_ROUND < start < FIRST_UNREGISTERED_ROUND
 
 
 @dataclass(frozen=True)

@@ -284,7 +284,13 @@ def test_a_round_outside_the_registration_is_flagged() -> None:
     assert pooled.registered_round("minibench")
     assert pooled.registered_round("minibench-2026-11-30")
     assert pooled.registered_round("fall-futureeval-2026")
+    assert pooled.registered_round("minibench-2026-12-14")
     assert not pooled.registered_round("bot-testing-area")
+    # Item 1: rounds up to and including 2026-11-16 are not registered, nor any after the two.
+    assert not pooled.registered_round("minibench-2026-11-16")
+    assert not pooled.registered_round("minibench-2026-11-02")
+    assert not pooled.registered_round("minibench-2026-12-28")
+    assert not pooled.registered_round("minibench-latest")
 
 
 def test_an_unregistered_round_gets_a_note(tmp_path: Path) -> None:
