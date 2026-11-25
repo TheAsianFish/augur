@@ -280,6 +280,38 @@ def _scan_prices(conn: sqlite3.Connection) -> list[Violation]:
     for sid, evidence in orphans:
         found.append(Violation("late_price", "", 0, f"{evidence} source {sid} has no price row"))
     found.extend(_scan_series(conn))
+    found.extend(_scan_news(conn))
+    return found
+
+
+_SEENDATE = re.compile(r"seendate=(\d{8}T\d{6}Z)")
+
+
+def _scan_news(conn: sqlite3.Connection) -> list[Violation]:
+    """A ``gdelt`` source (M13) names when GDELT saw the article: never after its cutoff.
+
+    Its date is the Wayback capture's, which the other checks compare; the
+    ``seendate`` in its evidence is checked here, so an article GDELT first
+    saw after the question opened fails the scan even if a capture predates it.
+    """
+    found = []
+    for sid, detail, as_of in conn.execute(
+        "SELECT source_id, evidence_detail, as_of FROM sources WHERE searcher = 'gdelt'"
+    ):
+        match = _SEENDATE.search(str(detail))
+        if match is None:
+            found.append(Violation("undated_source", "", 0, f"news source {sid} has no seendate"))
+            continue
+        seen = datetime.strptime(match.group(1), "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+        if to_iso(seen) > str(as_of):
+            found.append(
+                Violation(
+                    "late_source",
+                    "",
+                    0,
+                    f"news source {sid} seen by GDELT at {to_iso(seen)}, asked for as of {as_of}",
+                )
+            )
     return found
 
 

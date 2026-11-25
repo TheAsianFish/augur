@@ -201,7 +201,7 @@ async def test_good_article_yields_one_dated_source() -> None:
     assert "seendate=20241220T080000Z" in src.evidence_detail
     assert "capture=20241230093000" in src.evidence_detail
     assert "central bank held rates steady" in src.excerpt
-    assert src.title == "Bank holds rates"
+    assert src.title == "Rates Story"  # the capture's own title, never GDELT's
     assert src.query == QUERY
     assert src.as_of == AS_OF
     assert src.retrieved_at == NOW
@@ -359,3 +359,31 @@ def test_parse_seendate() -> None:
     assert parse_seendate(" 20241231T235959Z ") == datetime(2024, 12, 31, 23, 59, 59, tzinfo=UTC)
     for bad in ["", "2025-01-01T12:00:00Z", "20250101120000", "20251301T120000Z", "abc"]:
         assert parse_seendate(bad) is None
+
+
+async def test_a_feed_length_gdelt_title_never_reaches_the_source() -> None:
+    web = FakeWeb([article(GOOD, title="word " * 5000)], {GOOD: ["20241230093000"]})
+    searcher, http, _ = make(web)
+    async with http:
+        [src] = await searcher.search(QUERY, AS_OF, 5)
+    assert src.title == "Rates Story"
+    assert "word word" not in src.title + src.excerpt
+
+
+async def test_an_archive_failure_is_an_error_not_an_empty_answer() -> None:
+    def web(request: httpx.Request) -> httpx.Response:
+        if request.url.host == GDELT_HOST:
+            return httpx.Response(200, json={"articles": [article(GOOD)]})
+        return httpx.Response(503)  # the archive is down for every retry
+
+    searcher, http, _ = make(web)
+    async with http:
+        with pytest.raises(SearchError, match="Wayback lookup"):
+            await searcher.search(QUERY, AS_OF, 5)
+
+
+async def test_no_capture_at_all_is_still_an_empty_answer() -> None:
+    web = FakeWeb([article(GOOD)], {})
+    searcher, http, _ = make(web)
+    async with http:
+        assert await searcher.search(QUERY, AS_OF, 5) == []

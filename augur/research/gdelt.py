@@ -51,6 +51,7 @@ GKG_LOOKBACK = timedelta(days=30)
 """The local GKG index's window (registration item 7): 30 days, not the API's 90."""
 MAX_RECORDS = 10
 MAX_WORDS = 6
+MAX_TITLE = 200
 MAX_LOOKUPS = 4
 """Wayback lookups per query before the query is given up."""
 REQUEST_TIMEOUT = httpx.Timeout(60.0, connect=10.0)
@@ -204,6 +205,7 @@ class GdeltSearcher:
             return []
         articles = parse_articles(await self._artlist(keywords, as_of))
         found: list[Source] = []
+        failures: list[str] = []
         lookups = 0
         for article in articles:
             if len(found) >= limit or lookups >= self._max_lookups:
@@ -228,12 +230,20 @@ class GdeltSearcher:
                 captured = await self._wayback.capture(url, as_of, query)
             except SearchError as exc:
                 log.warning("gdelt_capture_failed", url=url, error=str(exc))
+                failures.append(str(exc))
                 continue
             if captured is None or captured.published_at is None:
                 continue
             if captured.published_at > as_of:  # capture() refuses these; checked again
                 continue
             found.append(self._source(captured, query, url, seen, article, as_of))
+        if not found and failures:
+            # The archive failed, not the search: a question must not settle as "nothing
+            # added" on a transient error, so the caller fails it and a resume retries it.
+            raise SearchError(
+                f"every Wayback lookup for {query!r} that could have answered failed "
+                f"({failures[0]}); retry later"
+            )
         return found
 
     def _source(
@@ -245,7 +255,9 @@ class GdeltSearcher:
         article: dict[str, Any],
         as_of: datetime,
     ) -> Source:
-        title = str(article.get("title") or "").strip() or captured.title
+        # Only the capture's own text reaches a model (registration item 2): GDELT's
+        # title is discovery metadata, and a GKG "title" can be a whole feed.
+        title = captured.title[:MAX_TITLE]
         domain = str(article.get("domain") or urlsplit(url).hostname or "")
         return Source.build(
             searcher=self.name,
