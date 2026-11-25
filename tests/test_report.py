@@ -87,3 +87,51 @@ def test_cli_report_writes_then_checks(
 def test_the_committed_results_match_a_fresh_render() -> None:
     stale = report.check(REPO / "RESULTS.md", REPO, required=list(report.BLOCKS))
     assert stale == [], f"RESULTS.md blocks {stale} differ from a render: run `make results`"
+
+
+def test_agent_pairs_cover_futureeval_and_finalized_rounds_with_enough_questions(
+    tmp_path: Path,
+) -> None:
+    import json
+
+    def snapshot(slug: str, finalized: bool, coverage: float) -> str:
+        entries = [
+            ("metac-agent-grok-4-7", 8.0 * coverage),
+            ("metac-grok-4-7-high+asknews", -2.0 * coverage),
+        ]
+        return json.dumps(
+            {
+                "version": 1,
+                "round": {"id": 1, "slug": slug, "name": slug},
+                "leaderboard": {
+                    "finalized": finalized,
+                    "max_coverage": coverage,
+                    "entries": [
+                        {
+                            "user": {"id": i, "username": n, "is_bot": True},
+                            "score": score,
+                            "coverage": coverage,
+                            "ci_lower": score - coverage,
+                            "ci_upper": score + coverage,
+                        }
+                        for i, (n, score) in enumerate(entries)
+                    ],
+                },
+                "questions": [],
+                "fetched_at": "2026-11-25T00:00:00Z",
+                "source_url": "https://example.test/lb",
+            }
+        )
+
+    root = tmp_path / "data" / "standings"
+    root.mkdir(parents=True)
+    (root / "fall-futureeval-2026.json").write_text(snapshot("fall-futureeval-2026", False, 40))
+    (root / "minibench-a.json").write_text(snapshot("minibench-a", True, 59))
+    (root / "minibench-b.json").write_text(snapshot("minibench-b", True, 12))  # too few
+    (root / "minibench.json").write_text(snapshot("minibench", False, 59))  # still open
+    text = report.render_agent_pairs(tmp_path)
+    assert "`fall-futureeval-2026`" in text
+    assert "`minibench-a`" in text
+    assert "`minibench-b`" not in text
+    assert "`minibench`," not in text
+    assert text.count("Agent ahead in 1 of 1 pairs; intervals overlap in 0.") == 2

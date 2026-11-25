@@ -608,6 +608,21 @@ class AgentPair:
         assert self.template.average is not None
         return self.agent.average - self.template.average
 
+    @property
+    def ahead(self) -> str:
+        """``agent``, ``template`` or ``tie``, by the two average spot peer scores."""
+        if self.difference > 0:
+            return "agent"
+        return "template" if self.difference < 0 else "tie"
+
+    @property
+    def intervals_overlap(self) -> bool | None:
+        """Whether the two entries' intervals overlap; None if either has none."""
+        a, t = self.agent.average_interval, self.template.entry.average_interval
+        if a is None or t is None:
+            return None
+        return a[0] <= t[1] and t[0] <= a[1]
+
 
 def agent_vs_template(round_: RoundStandings) -> tuple[list[AgentPair], list[str], list[str]]:
     """``(pairs, agents without a template, templates without an agent)``.
@@ -634,6 +649,76 @@ def agent_vs_template(round_: RoundStandings) -> tuple[list[AgentPair], list[str
     lone_templates = sorted(r.name for k, r in plain.items() if k not in used)
     pairs.sort(key=lambda p: -p.difference)
     return pairs, sorted(lone_agents), lone_templates
+
+
+PAIR_MIN_QUESTIONS = 30
+"""A same-model pair is shown only when both entries have this many scored questions."""
+
+
+def shows_agent_pairs(round_: RoundStandings) -> bool:
+    """Finalized rounds, and the FutureEval project while it runs (it is read as it scores)."""
+    return round_.board().finalized or "futureeval" in round_.round.slug.lower()
+
+
+def scored_agent_pairs(
+    round_: RoundStandings, min_questions: float = PAIR_MIN_QUESTIONS
+) -> tuple[list[AgentPair], list[AgentPair]]:
+    """``(pairs where both entries have >= min_questions, the pairs left out)``.
+
+    The pairing is ``agent_vs_template``'s; only the coverage threshold is added.
+    """
+    pairs, _, _ = agent_vs_template(round_)
+    kept = [
+        p
+        for p in pairs
+        if p.agent.coverage >= min_questions and p.template.entry.coverage >= min_questions
+    ]
+    left = [p for p in pairs if p not in kept]
+    return kept, left
+
+
+def agent_pairs_markdown(round_: RoundStandings, min_questions: float = PAIR_MIN_QUESTIONS) -> str:
+    """The same-model agent-against-template pairs of one round, with both intervals."""
+    board = round_.board()
+    kept, left = scored_agent_pairs(round_, min_questions)
+    status = "finalized" if board.finalized else "not finalized"
+    out = [
+        f"**{round_.round.name}** (`{round_.round.slug}`, project {round_.round.id}; "
+        f"{status}, read {round_.fetched_at.date().isoformat()}; "
+        f"{_fmt_questions(board.max_coverage)} questions scored at most).",
+        "",
+    ]
+    if kept:
+        out += [
+            "| Model | Agent | Agent avg [interval] | Agent n | Template | "
+            "Template avg [interval] | Template n | Ahead |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+        for p in kept:
+            out.append(
+                f"| {p.model} | `{p.agent.name}` | {_fmt_avg(p.agent)} | "
+                f"{_fmt_questions(p.agent.coverage)} | `{p.template.name}` | "
+                f"{_fmt_avg(p.template.entry)} | {_fmt_questions(p.template.entry.coverage)} | "
+                f"{p.ahead} |"
+            )
+        out.append("")
+    ahead = sum(p.ahead == "agent" for p in kept)
+    overlap = sum(p.intervals_overlap is True for p in kept)
+    unknown = sum(p.intervals_overlap is None for p in kept)
+    line = (
+        f"Agent ahead in {ahead} of {len(kept)} pairs; intervals overlap in {overlap}"
+        + (f" ({unknown} without an interval)" if unknown else "")
+        + f". Pairs with both entries at {_fmt_questions(min_questions)} or more scored "
+        "questions only"
+    )
+    if left:
+        line += "; left out: " + ", ".join(
+            f"{p.model} (agent {_fmt_questions(p.agent.coverage)}, template "
+            f"{_fmt_questions(p.template.entry.coverage)})"
+            for p in sorted(left, key=lambda p: p.model)
+        )
+    out.append(line + ".")
+    return "\n".join(out) + "\n"
 
 
 @dataclass(frozen=True)
@@ -754,6 +839,9 @@ async def main(args: argparse.Namespace, settings: Settings) -> int:
         args.out.write_text(snapshot_text(round_), encoding="utf-8")
     outcomes = read_outcomes(ledgers) if ledgers else None
     print(render(round_, outcomes), end="")
+    if shows_agent_pairs(round_):
+        print(f"\n### Agent harness against template, same model ({round_.round.slug})\n")
+        print(agent_pairs_markdown(round_), end="")
     if round_.board().finalized:
         # Every template by model and the agent-minus-template gap for each model pair.
         from augur.llm.catalog import load_snapshot as load_catalog

@@ -309,6 +309,29 @@ def render_season(root: Path) -> str:
     return standings.season_markdown(rounds, outcomes)
 
 
+def render_agent_pairs(root: Path) -> str:
+    """Same-model agent-against-template pairs: FutureEval and every finalized MiniBench round."""
+    parts: list[str] = []
+    for path in sorted((root / STANDINGS).glob("*.json")):
+        round_ = standings.load_snapshot(path)
+        if not standings.shows_agent_pairs(round_):
+            continue
+        if round_.board().max_coverage < standings.PAIR_MIN_QUESTIONS:
+            continue
+        parts.append(standings.agent_pairs_markdown(round_).rstrip("\n"))
+    if not parts:
+        return "No snapshot with enough scored questions committed.\n"
+    intro = (
+        "`metac-agent-X` against the plain template `metac-X+asknews` (or "
+        "`metac-X-<effort>+asknews`) on the same model, from the committed snapshots in "
+        f"`{STANDINGS}` (`augur standings --from PATH` prints the same). Averages are "
+        "Metaculus's summed spot peer score divided by questions covered (n); each interval is "
+        "Metaculus's own on that entry, rescaled the same way. Overlapping intervals are not a "
+        "paired test: the per-question scores are not in the snapshot."
+    )
+    return "\n\n".join([intro, *parts]) + "\n"
+
+
 TEMPLATES_SNAPSHOT = STANDINGS / "minibench-2026-11-02.json"
 
 
@@ -2145,6 +2168,7 @@ BLOCKS: dict[str, Block] = {
         Block("live-scores", render_live),
         Block("ledgers", render_ledgers),
         Block("standings", render_standings),
+        Block("agent-pairs", render_agent_pairs),
         Block("templates", render_templates),
         Block("season", render_season),
         Block("replay", render_replay),

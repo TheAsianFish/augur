@@ -424,6 +424,99 @@ def test_agent_vs_template_matches_through_the_effort_suffix_and_names_the_rest(
     assert lone_templates == ["metac-gpt-4-1+asknews"]  # the variant never pairs or lists
 
 
+def _pair_round(
+    slug: str,
+    entries: list[tuple[str, float, float, float, float]],
+    *,
+    finalized: bool = False,
+) -> standings.RoundStandings:
+    """Entries as ``(name, average, coverage, interval low, interval high)``, per question."""
+    raw = {
+        "finalized": finalized,
+        "max_coverage": max((c for _, _, c, _, _ in entries), default=0.0),
+        "entries": [
+            {
+                "user": {"id": i, "username": name, "is_bot": True},
+                "score": avg * cov,
+                "coverage": cov,
+                "rank": i,
+                "ci_lower": lo * cov,
+                "ci_upper": hi * cov,
+            }
+            for i, (name, avg, cov, lo, hi) in enumerate(entries, start=1)
+        ],
+    }
+    return standings.RoundStandings(
+        round=standings.RoundInfo(id=33121, slug=slug, name="Fall FutureEval"),
+        leaderboard_raw=raw,
+        questions=[],
+        fetched_at=NOW,
+        source_url="https://example.test/lb",
+    )
+
+
+_PAIRS: list[tuple[str, float, float, float, float]] = [
+    # agent ahead, effort suffix on the template, intervals overlap
+    ("metac-agent-claude-opus-5-5", 12.0, 51, 1.0, 24.0),
+    ("metac-claude-opus-5-5-high+asknews", 10.0, 51, 3.0, 18.0),
+    # template ahead; exactly 30 questions is enough; intervals apart
+    ("metac-agent-kimi-k3", -5.0, 35, -9.0, -1.0),
+    ("metac-kimi-k3+asknews", 6.0, 30, 2.0, 10.0),
+    # template under 30: left out
+    ("metac-agent-glm-5-3", 4.0, 51, -6.0, 14.0),
+    ("metac-glm-5-3+asknews", 1.0, 29, -8.0, 10.0),
+    ("metac-autocast", 30.0, 51, 20.0, 40.0),
+]
+
+
+def test_scored_agent_pairs_need_30_questions_on_both_sides() -> None:
+    kept, left = standings.scored_agent_pairs(_pair_round("fall-futureeval-2026", _PAIRS))
+    assert [(p.model, p.agent.name, p.template.name) for p in kept] == [
+        ("claude-opus-5-5", "metac-agent-claude-opus-5-5", "metac-claude-opus-5-5-high+asknews"),
+        ("kimi-k3", "metac-agent-kimi-k3", "metac-kimi-k3+asknews"),
+    ]
+    assert [p.model for p in left] == ["glm-5-3"]
+    assert [p.ahead for p in kept] == ["agent", "template"]
+    assert [p.intervals_overlap for p in kept] == [True, False]
+
+
+def test_agent_pairs_markdown_shows_both_intervals_and_counts() -> None:
+    text = standings.agent_pairs_markdown(_pair_round("fall-futureeval-2026", _PAIRS))
+    assert (
+        "| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 12.00 [1.00, 24.00] | 51 | "
+        "`metac-claude-opus-5-5-high+asknews` | 10.00 [3.00, 18.00] | 51 | agent |"
+    ) in text
+    assert (
+        "| kimi-k3 | `metac-agent-kimi-k3` | -5.00 [-9.00, -1.00] | 35 | "
+        "`metac-kimi-k3+asknews` | 6.00 [2.00, 10.00] | 30 | template |"
+    ) in text
+    assert "Agent ahead in 1 of 2 pairs; intervals overlap in 1." in text
+    assert "left out: glm-5-3 (agent 51, template 29)" in text
+    assert "glm-5-3 |" not in text
+
+
+def test_agent_pairs_show_for_futureeval_and_finalized_rounds_only() -> None:
+    assert standings.shows_agent_pairs(_pair_round("fall-futureeval-2026", _PAIRS))
+    assert standings.shows_agent_pairs(_pair_round("minibench-x", _PAIRS, finalized=True))
+    assert not standings.shows_agent_pairs(_pair_round("minibench", _PAIRS))
+
+
+def test_standings_prints_futureeval_pairs_from_a_snapshot(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import asyncio
+
+    path = tmp_path / "fe.json"
+    path.write_text(
+        standings.snapshot_text(_pair_round("fall-futureeval-2026", _PAIRS)), encoding="utf-8"
+    )
+    args = argparse.Namespace(from_path=path, round_slug=None, ledger=[], out=None)
+    assert asyncio.run(standings.main(args, Settings())) == 0
+    out = capsys.readouterr().out
+    assert "### Agent harness against template, same model (fall-futureeval-2026)" in out
+    assert "Agent ahead in 1 of 2 pairs" in out
+
+
 def test_floor_admits_at_zero_and_above_and_rejects_below() -> None:
     admitted, rejected, frontier = standings.admitted_by_template(
         _board([(n, s, c) for n, s, c in _SMALL]), _catalog(), draws=5

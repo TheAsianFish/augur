@@ -426,7 +426,7 @@ interval on the sum divided by the same count.
 <!-- augur:begin season -->
 | Round | Status, as read | Entries | Questions scored | Rank 1 | Best template bot | `metac-nemotron-3-ultra+asknews` (Augur's free model) | Community (unweighted) | Augur | Questions Augur submitted |
 |---|---|---|---|---|---|---|---|---|---|
-| Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`, project 33121) | open, 2026-11-23 | 596 | 38 | Panshul42 20.86 [9.69, 31.66], rank 1 | metac-claude-fable-5-1-high+asknews 13.49 [4.52, 23.27], rank 44 | -15.55 [-29.52, -2.01], rank 449 | 14.71 [11.48, 18.27], rank 36 | no entry | 0 of 173 |
+| Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`, project 33121) | open, 2026-11-25 | 610 | 51 | Panshul42 20.91 [11.89, 30.53], rank 1 | metac-claude-fable-5-1-high+asknews 12.59 [5.39, 20.36], rank 50 | -12.19 [-23.66, -1.52], rank 456 | 13.48 [10.67, 16.52], rank 43 | no entry | 0 of 182 |
 | MiniBench - 2026-10-19 (`minibench-2026-10-19`, project 33132) | finalized, 2026-11-23 | 410 | 59 | notatrollBotV1 14.47 [7.33, 22.22], rank 1 | metac-claude-opus-5-5-high+asknews 3.10 [-4.97, 10.01], rank 106 | -2.55 [-9.12, 3.53], rank 222 | 7.58 [5.31, 10.44], rank 37 | no entry | 0 of 60 |
 | MiniBench - 2026-11-02 (`minibench-2026-11-02`, project 33135) | finalized, 2026-11-20 | 435 | 59 | takeoff.watch 22.77 [17.36, 29.05], rank 1 | metac-claude-opus-5-5-high+asknews 3.66 [-0.97, 7.94], rank 107 | -7.66 [-14.51, -0.73], rank 295 | 5.06 [4.08, 6.12], rank 80 | no entry | 0 of 60 |
 | MiniBench (`minibench`, project 33169) | open, 2026-11-23 | 0 | 0 | none | none | none | none | no entry | 0 of 60 |
@@ -1363,8 +1363,11 @@ Predictions stated in PLAN.md before the run:
   likely reason is in the design: the forecasters read the loop's last
   belief (at most 120 words) instead of a 250-word brief written from every
   excerpt. Another is the model: Metaculus's agentic bots beat the template
-  by 7.7 to 16.2 points a question on frontier models with live search,
-  and none of that transfers to a free model reading Wikipedia revisions.
+  by 7.7 to 16.2 points a question on frontier models with live search in
+  MiniBench 2026-11-02 (in Fall FutureEval the agent is ahead in 7 of 9
+  same-model pairs, every pair's intervals overlapping; see the agent-pairs
+  table), and none of that transfers to a free model reading Wikipedia
+  revisions.
   Under the replacement rule the one pass stays the default.
 
 **Unfair or missing comparisons, named.** One free model, one ForecastBench
@@ -1706,24 +1709,24 @@ needs about 300 resolved questions to be detected four times in five; Fall
 <!-- augur:begin standings -->
 #### Fall 2026 FutureEval Bot Tournament (`fall-futureeval-2026`)
 
-Finalized: no. Leaderboard entries: 596. Most questions any entry covers: 38. Score type: spot_peer_tournament. Fetched 2026-11-23T06:21:07.399355Z from https://www.metaculus.com/api/leaderboards/project/33121/.
+Finalized: no. Leaderboard entries: 610. Most questions any entry covers: 51. Score type: spot_peer_tournament. Fetched 2026-11-25T04:17:48.984745Z from https://www.metaculus.com/api/leaderboards/project/33121/.
 
 | Row | Rank | Name | Kind | Questions | Avg spot peer score / question [interval] | Summed score |
 |---|---|---|---|---|---|---|
-| Rank 1 | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
-| Best template bot | 44 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 38 | 13.49 [4.52, 23.27] | 512.8 |
-| Best Metaculus house bot (not the template) | 27 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 38 | 15.83 [7.83, 24.67] | 601.7 |
-| Best listed open-source bot | 1 | Panshul42 | open-source bot | 38 | 20.86 [9.69, 31.66] | 792.8 |
-| Community prediction | 36 | community prediction (unweighted) | community prediction | 38 | 14.71 [11.48, 18.27] | 559.1 |
-| Community prediction | 56 | community prediction (recency_weighted) | community prediction | 38 | 12.06 [9.14, 15.26] | 458.1 |
-| Community prediction | 46 | community prediction (reputation_weighted) | community prediction | 38 | 13.36 [9.72, 17.12] | 507.5 |
+| Rank 1 | 1 | Panshul42 | open-source bot | 51 | 20.91 [11.89, 30.53] | 1066.5 |
+| Best template bot | 50 | metac-claude-fable-5-1-high+asknews | Metaculus template bot | 51 | 12.59 [5.39, 20.36] | 641.9 |
+| Best Metaculus house bot (not the template) | 29 | metac-asknews-deepnews[research-only] | Metaculus house bot (not the template) | 51 | 15.26 [8.81, 22.37] | 778.2 |
+| Best listed open-source bot | 1 | Panshul42 | open-source bot | 51 | 20.91 [11.89, 30.53] | 1066.5 |
+| Community prediction | 43 | community prediction (unweighted) | community prediction | 51 | 13.48 [10.67, 16.52] | 687.3 |
+| Community prediction | 54 | community prediction (recency_weighted) | community prediction | 51 | 11.84 [9.41, 14.46] | 603.9 |
+| Community prediction | 43 | community prediction (reputation_weighted) | community prediction | 51 | 13.34 [10.27, 16.79] | 680.6 |
 
 - Augur (Augur-bot-1) is not on this round's leaderboard: it has no scored forecast here.
 - Average = summed score / questions covered; the interval is Metaculus's interval on the sum divided by the same count (their method is not verified here). Rank is Metaculus's, by summed score; ties share a rank. Template variants (`+asknews[...]`, `+asknews(...)`) are Metaculus's experiments on the template. Open-source bots are matched against a short sourced list: nostreambot (https://www.lesswrong.com/posts/wZBbDqzfBjYG58CxK (Spring 2026 results, MIT)); Panshul42 (https://www.metaculus.com/notebooks/39140/ (Q2 2025 winner, open source)).
 
-Median bot by summed score (the line Q5 predicts Augur clears): 34.1 over 5 questions, 6.82 a question (rank 249; the middle of 592 bot entries, many of which covered only part of the round, which a summed score punishes).
+Median bot by summed score (the line Q5 predicts Augur clears): 26.7 over 1 questions, 26.71 a question (rank 255; the middle of 606 bot entries, many of which covered only part of the round, which a summed score punishes).
 
-Questions in the round: 173; forecast and submitted by Augur: 0; not forecast: 173 no run saw it (from the committed ledgers; `augur standings --from data/standings/fall-futureeval-2026.json --ledger ...` lists each one).
+Questions in the round: 182; forecast and submitted by Augur: 0; not forecast: 182 no run saw it (from the committed ledgers; `augur standings --from data/standings/fall-futureeval-2026.json --ledger ...` lists each one).
 
 #### MiniBench - 2026-10-19 (`minibench-2026-10-19`)
 
@@ -1775,6 +1778,66 @@ The leaderboard has no entries yet (round starts 2026-11-16T00:00:00Z, closes 20
 
 Questions in the round: 60; forecast and submitted by Augur: 0; not forecast: 59 no run saw it; 1 forecast in a dry run, not submitted (from the committed ledgers; `augur standings --from data/standings/minibench.json --ledger ...` lists each one).
 <!-- augur:end standings -->
+
+### The agent harness against the template, same model (FutureEval and finalized MiniBench rounds)
+
+Is the MiniBench agent lead a property of the harness or of one round? The
+same pairs on the FutureEval project, beside each finalized MiniBench round
+with enough questions (M13).
+
+<!-- augur:begin agent-pairs -->
+`metac-agent-X` against the plain template `metac-X+asknews` (or `metac-X-<effort>+asknews`) on the same model, from the committed snapshots in `data/standings` (`augur standings --from PATH` prints the same). Averages are Metaculus's summed spot peer score divided by questions covered (n); each interval is Metaculus's own on that entry, rescaled the same way. Overlapping intervals are not a paired test: the per-question scores are not in the snapshot.
+
+**Fall 2026 FutureEval Bot Tournament** (`fall-futureeval-2026`, project 33121; not finalized, read 2026-11-25; 51 questions scored at most).
+
+| Model | Agent | Agent avg [interval] | Agent n | Template | Template avg [interval] | Template n | Ahead |
+|---|---|---|---|---|---|---|---|
+| grok-4-7 | `metac-agent-grok-4-7` | 8.55 [-2.94, 19.70] | 51 | `metac-grok-4-7-high+asknews` | -2.27 [-12.20, 6.89] | 51 | agent |
+| gpt-6-1-sol | `metac-agent-gpt-6-1-sol` | 9.31 [-2.47, 20.68] | 51 | `metac-gpt-6-1-sol-high+asknews` | 4.21 [-4.03, 12.04] | 51 | agent |
+| gpt-6-astra | `metac-agent-gpt-6-astra` | 11.16 [0.77, 21.59] | 51 | `metac-gpt-6-astra-high+asknews` | 6.99 [-1.99, 15.88] | 51 | agent |
+| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 12.81 [1.33, 24.06] | 51 | `metac-claude-opus-5-5-high+asknews` | 10.34 [3.46, 18.42] | 51 | agent |
+| qwen-3-8-max | `metac-agent-qwen-3-8-max` | 0.64 [-15.99, 15.22] | 51 | `metac-qwen-3-8-max+asknews` | -0.84 [-8.25, 6.43] | 51 | agent |
+| gemini-3-8-flash | `metac-agent-gemini-3-8-flash` | 6.52 [-7.18, 19.02] | 51 | `metac-gemini-3-8-flash+asknews` | 5.31 [-4.39, 14.30] | 51 | agent |
+| claude-fable-5-1 | `metac-agent-claude-fable-5-1` | 12.68 [2.81, 22.10] | 51 | `metac-claude-fable-5-1-high+asknews` | 12.59 [5.39, 20.36] | 51 | agent |
+| kimi-k3 | `metac-agent-kimi-k3` | -0.42 [-14.94, 12.75] | 51 | `metac-kimi-k3+asknews` | 1.27 [-8.20, 9.92] | 49 | template |
+| glm-5-3 | `metac-agent-glm-5-3` | -0.57 [-14.70, 11.24] | 51 | `metac-glm-5-3+asknews` | 4.16 [-6.34, 13.54] | 50 | template |
+
+Agent ahead in 7 of 9 pairs; intervals overlap in 9. Pairs with both entries at 30 or more scored questions only; left out: claude-fable-5-2 (agent 3, template 3), gemini-4-argon (agent 27, template 29), muse-spark-1-3 (agent 28, template 46), muse-wonder (agent 4, template 24).
+
+**MiniBench - 2026-10-19** (`minibench-2026-10-19`, project 33132; finalized, read 2026-11-23; 59 questions scored at most).
+
+| Model | Agent | Agent avg [interval] | Agent n | Template | Template avg [interval] | Template n | Ahead |
+|---|---|---|---|---|---|---|---|
+| gpt-6-astra | `metac-agent-gpt-6-astra` | 9.19 [3.56, 15.25] | 58 | `metac-gpt-6-astra-high+asknews` | -2.64 [-7.32, 1.63] | 58 | agent |
+| grok-4-7 | `metac-agent-grok-4-7` | 7.91 [0.96, 14.30] | 58 | `metac-grok-4-7-high+asknews` | -3.33 [-10.71, 3.57] | 58 | agent |
+| kimi-k3 | `metac-agent-kimi-k3` | 6.93 [-0.05, 14.17] | 58 | `metac-kimi-k3+asknews` | -2.35 [-9.88, 3.78] | 54 | agent |
+| gemini-3-8-flash | `metac-agent-gemini-3-8-flash` | 3.78 [-3.69, 10.67] | 58 | `metac-gemini-3-8-flash+asknews` | -4.60 [-12.72, 2.19] | 58 | agent |
+| gemini-4-argon | `metac-agent-gemini-4-argon` | 8.66 [0.82, 16.63] | 58 | `metac-gemini-4-argon-high+asknews` | 0.51 [-6.25, 6.56] | 57 | agent |
+| gpt-6-1-sol | `metac-agent-gpt-6-1-sol` | 4.89 [-1.81, 11.64] | 58 | `metac-gpt-6-1-sol-high+asknews` | -2.69 [-7.53, 1.75] | 58 | agent |
+| claude-fable-5-1 | `metac-agent-claude-fable-5-1` | 10.05 [1.63, 17.19] | 58 | `metac-claude-fable-5-1-high+asknews` | 2.70 [-4.19, 8.96] | 57 | agent |
+| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 7.29 [-1.09, 15.37] | 58 | `metac-claude-opus-5-5-high+asknews` | 3.10 [-4.97, 10.01] | 58 | agent |
+| glm-5-3 | `metac-agent-glm-5-3` | 1.37 [-6.29, 8.28] | 58 | `metac-glm-5-3+asknews` | -2.12 [-8.54, 3.46] | 58 | agent |
+| qwen-3-8-max | `metac-agent-qwen-3-8-max` | 2.82 [-4.80, 9.67] | 58 | `metac-qwen-3-8-max+asknews` | -0.55 [-7.51, 5.20] | 58 | agent |
+
+Agent ahead in 10 of 10 pairs; intervals overlap in 9. Pairs with both entries at 30 or more scored questions only.
+
+**MiniBench - 2026-11-02** (`minibench-2026-11-02`, project 33135; finalized, read 2026-11-20; 59 questions scored at most).
+
+| Model | Agent | Agent avg [interval] | Agent n | Template | Template avg [interval] | Template n | Ahead |
+|---|---|---|---|---|---|---|---|
+| gemini-4-argon | `metac-agent-gemini-4-argon` | 15.39 [8.55, 21.27] | 59 | `metac-gemini-4-argon-high+asknews` | -0.84 [-7.18, 4.61] | 59 | agent |
+| qwen-3-8-max | `metac-agent-qwen-3-8-max` | 6.79 [-2.84, 14.37] | 59 | `metac-qwen-3-8-max+asknews` | -6.63 [-10.71, -2.44] | 59 | agent |
+| claude-fable-5-1 | `metac-agent-claude-fable-5-1` | 11.81 [5.94, 16.99] | 59 | `metac-claude-fable-5-1-high+asknews` | -0.08 [-5.63, 4.61] | 59 | agent |
+| grok-4-7 | `metac-agent-grok-4-7` | 4.67 [-2.70, 11.56] | 59 | `metac-grok-4-7-high+asknews` | -7.02 [-12.10, -1.90] | 59 | agent |
+| kimi-k3 | `metac-agent-kimi-k3` | 5.05 [-3.13, 11.84] | 59 | `metac-kimi-k3+asknews` | -3.21 [-9.28, 2.18] | 59 | agent |
+| glm-5-3 | `metac-agent-glm-5-3` | 5.58 [0.73, 9.99] | 59 | `metac-glm-5-3+asknews` | -2.61 [-7.43, 1.72] | 59 | agent |
+| gpt-6-1-sol | `metac-agent-gpt-6-1-sol` | 5.51 [-0.52, 11.30] | 59 | `metac-gpt-6-1-sol-high+asknews` | -2.55 [-6.63, 1.63] | 59 | agent |
+| gemini-3-8-flash | `metac-agent-gemini-3-8-flash` | 10.78 [2.97, 17.66] | 59 | `metac-gemini-3-8-flash+asknews` | 2.76 [-0.37, 6.13] | 59 | agent |
+| gpt-6-astra | `metac-agent-gpt-6-astra` | 6.19 [0.30, 11.41] | 59 | `metac-gpt-6-astra-high+asknews` | -1.77 [-5.96, 2.43] | 59 | agent |
+| claude-opus-5-5 | `metac-agent-claude-opus-5-5` | 11.34 [5.72, 16.67] | 59 | `metac-claude-opus-5-5-high+asknews` | 3.66 [-0.97, 7.94] | 59 | agent |
+
+Agent ahead in 10 of 10 pairs; intervals overlap in 8. Pairs with both entries at 30 or more scored questions only; left out: muse-spark-1-3 (agent 17, template 59), muse-wonder (agent 17, template 59).
+<!-- augur:end agent-pairs -->
 
 ### Template bots by model, the agent harness, and the proposed floor (MiniBench 2026-11-02, finalized)
 
