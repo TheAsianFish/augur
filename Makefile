@@ -45,6 +45,7 @@ eval: ## Offline and free: scan every committed ledger, re-score the backtest, c
 	$(UV) run augur ledger check data/ledgers/*.sqlite
 	$(UV) run augur score $(FB_LEDGER) --mode backtest
 	$(UV) run augur power --check
+	$(UV) run augur rereads --check
 	$(UV) run augur calibrate --check
 	$(UV) run augur q6 --check
 	$(UV) run augur fbcompare --check

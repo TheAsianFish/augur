@@ -28,7 +28,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from augur import fbcompare, power, q2, q3, q13, replay, scorecard, standings
+from augur import fbcompare, pooled, power, q2, q3, q13, replay, rereads, scorecard, standings
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
@@ -2013,6 +2013,102 @@ def _level(v: float) -> str:
     return f"{v:,.0f}" if abs(v) >= 1000 else f"{v:.4g}"
 
 
+# -- M14: the pooled Q1 analysis --------------------------------------------------------
+
+M14_REGISTRATION = re.compile(
+    r"<!-- m14-registration:begin -->\n(?P<body>.*?)<!-- m14-registration:end -->", re.S
+)
+REREADS_PATH = Path("data/power/m14-rereads.json")
+
+
+def render_m14_registration(root: Path) -> str:
+    """M14's registration exactly as PLAN.md committed it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = M14_REGISTRATION.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no m14-registration block")
+    return m.group("body")
+
+
+def render_m14_sample_size(root: Path) -> str:
+    """Item 7's table: questions needed for +2 and +5 at the assumed spread."""
+    del root
+    out = [
+        "Questions needed for a true lead at 80% power, read by the 90% interval's lower end "
+        "(one-sided 5%), questions treated as independent (clustering by opening day only "
+        "raises these): n = ⌈((z_0.95 + z_0.80) σ / δ)²⌉ (`augur.pooled.needed`).",
+        "",
+        "| Lead δ | σ = 32 (assumed, registered) | σ measured on the analysis date |",
+        "|--------|------------------------------|---------------------------------|",
+    ]
+    for lead in pooled.LEADS:
+        out.append(
+            f"| +{lead:g} points | {pooled.needed(pooled.ASSUMED_SPREAD, lead):,} | "
+            f"not yet readable (2027-01-11: `augur floor --pooled`) |"
+        )
+    out += [
+        "",
+        "For scale: one 60-question round reaches 80% power only for a lead of about "
+        f"{(pooled.needed(pooled.ASSUMED_SPREAD, 1.0) / 60) ** 0.5:.1f} points at σ = 32, and the "
+        "day's free calls cap a shadow day at about 45 questions (M11).",
+    ]
+    return "\n".join(out) + "\n"
+
+
+def render_m14_rereads(root: Path) -> str:
+    path = root / REREADS_PATH
+    if not path.exists():
+        return "The re-read simulation has not been run (`augur rereads`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    rounds = int(snap["rounds"])
+    out = [
+        f"**Synthetic** (made-up data, not a measurement): {int(snap['seasons']):,} simulated "
+        f"seasons, seed {snap['seed']}, head-to-head per question drawn from a normal with mean "
+        f"0 (a candidate with no lead) and SD {float(snap['spread']):g}, S = 0; the rule's lower "
+        f"end read as mean − {float(snap['z']):.3f} × SD / √m (the normal approximation to its "
+        "bootstrap). Share of seasons in which the one-round rule admits the no-lead candidate "
+        "at least once within the first k rounds (`augur rereads`, re-checked by `make eval`).",
+        "",
+        "| Questions a round | Read as | "
+        + " | ".join(f"k = {k}" for k in range(1, rounds + 1))
+        + " |",
+        "|---|---|" + "---|" * rounds,
+    ]
+    tables = {int(t["n"]): t for t in snap["tables"]}
+    for n, t in tables.items():
+        out.append(
+            f"| {n} | cumulative (all rounds so far, re-read after each) | "
+            + " | ".join(f"{x:.1%}" for x in t["cumulative"])
+            + " |"
+        )
+        out.append(
+            f"| {n} | each round alone | " + " | ".join(f"{x:.1%}" for x in t["separate"]) + " |"
+        )
+    out.append(
+        "| (exact, independent rounds) | each round alone, 1 − 0.95^k | "
+        + " | ".join(f"{rereads.analytic_separate(k):.1%}" for k in range(1, rounds + 1))
+        + " |"
+    )
+    t60 = tables[60]
+    cum4, sep4 = float(t60["cumulative"][-1]), float(t60["separate"][-1])
+    out += [
+        "",
+        "Predictions registered before the simulation first ran (PLAN.md, m14-registration):",
+        "",
+        f"- P50 (at n = 60, cumulative re-reads after four rounds admit in 10% to 15% of "
+        f"seasons): {cum4:.1%}, {_held(0.10 <= cum4 <= 0.15)}.",
+        f"- P51 (at n = 60, each of four rounds alone admits in 15% to 22%): {sep4:.1%}, "
+        f"{_held(0.15 <= sep4 <= 0.22)}.",
+        "",
+        "Read as: the floor rule's 5% holds only for one look. Re-reading it after every round "
+        f"on the growing pool more than doubles the false admission rate ({cum4:.1%} after "
+        f"four), and reading four rounds one at a time nearly quadruples it ({sep4:.1%}). This "
+        "is why the floor rule decides one named round and the pooled analysis has one date "
+        "and cannot admit.",
+    ]
+    return "\n".join(out) + "\n"
+
+
 def render_statarm_coverage(root: Path) -> str:
     path = root / COVERAGE_PATH
     if not path.exists():
@@ -2196,6 +2292,9 @@ BLOCKS: dict[str, Block] = {
         Block("news", render_news),
         Block("statarm", render_statarm),
         Block("statarm-coverage", render_statarm_coverage),
+        Block("m14-registration", render_m14_registration),
+        Block("m14-sample-size", render_m14_sample_size),
+        Block("m14-rereads", render_m14_rereads),
     )
 }
 

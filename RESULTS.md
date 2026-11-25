@@ -4,7 +4,11 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M13 adds dated news to the
+committed file differs from a fresh render. M14 registers, before the
+2026-11-30 round opens, the one pooled Q1 analysis the season's shadow
+rounds will get (one quantity, one date, clustered by opening day), with
+a report that cannot admit a route and a synthetic table of what
+re-reading the one-round floor rule would cost. M13 adds dated news to the
 leak-free backtest arm (GDELT discovery, Wayback text) and asks whether
 thin evidence or the model limits it. M12 builds a forecast with no
 model in it (a readable price, a base rate, or a quoted series' own
@@ -27,6 +31,205 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M14: what two shadow rounds can say about Q1, registered before the first opens
+
+The registration below (P47 to P51, the analysis and its date) was
+committed as `7469604` ("Register M14's pooled Q1 analysis before the
+2026-11-30 round", 2026-11-25T20:50:14Z), before any M14 code or
+simulation, and is rendered here from PLAN.md, so a later edit to either
+copy fails the build. When it was committed, the round it is about was not
+yet listed: at 20:55 UTC, Metaculus's `minibench` project was still the
+2026-11-16 round (project 33169, closing 2026-12-04), and no shadow
+question had been forecast (`data/runs/m14-github-check-2026-11-25.txt`).
+The build machine has no GitHub credentials, so GitHub's own push time is
+read once the branch is published (To measure). The floor rule's block is
+unchanged byte for byte (`tests/test_floor_rule.py`; `diff` against
+`main`'s copy is empty).
+
+<!-- augur:begin m14-registration -->
+**M14's pooled Q1 analysis, registered 2026-11-25, before the 2026-11-30
+MiniBench round's first question opens and before any of its code or its
+simulation exists.** The floor rule (the `floor-rule` block above) is not
+changed by anything here: it still reads one round, and only it can admit
+a route.
+
+1. *The rounds.* The two MiniBench rounds that open after
+   `minibench-2026-11-16` (about 2026-11-30 and 2026-12-14, under
+   whatever slugs `scripts/standings_rounds.py` reads for them), and the
+   Fall 2026 FutureEval project (`fall-futureeval-2026`, project 33121).
+   Questions from the bot-testing-area and any other project are not
+   included.
+2. *The questions (the selection).* A question is in the pooled sample
+   when it is a post in its round's standings snapshot and the shadow
+   ledger holds both Augur's aggregate and the shadow template's forecast
+   for it, from a shadow tick, with its latest resolution `resolved`. Which
+   questions get forecast is decided by the schedule alone: the poll's own
+   order, four questions a tick, within the day's free-call budget.
+   Nothing is added or dropped by hand, and a forecast question is never
+   removed. Annulled or ambiguous questions, questions only one side
+   forecast (uncovered) and questions with no resolution by the analysis
+   date are counted, per round, and printed as results.
+3. *The primary quantity.* One: the mean head-to-head
+   h = 100 × ln(p_A / p_T) of Augur's aggregate against the shadow
+   template over every pooled question, scored exactly as item 3 of the
+   floor rule scores it (halved on numeric and discrete questions,
+   probabilities held to [0.001, 0.999], the latest forecast of each side).
+   *Secondary* (reported, never the test): the same mean for the
+   registered blend (M12's primary candidate, the `blend` rows) against
+   the template, on the pooled questions that have a `blend` row.
+4. *The interval.* A 90% percentile bootstrap, 10,000 resamples, seed
+   20261119, resampling *opening days*: a question's cluster is the UTC
+   calendar day of its `open_time` in the ledger, and each resample draws
+   as many days as there are, with replacement, taking every pooled
+   question that opened on a drawn day. The number of clusters is printed
+   beside the interval. With fewer than eight clusters, the
+   question-level interval (each question its own cluster, same resamples
+   and seed) is printed as well, labelled the optimistic one; the
+   day-clustered interval stays the primary.
+5. *When.* Once, on **2027-01-11** (UTC), after the 2026-12-14 round's
+   last scheduled resolution: from the shadow ledger rebuilt from the
+   `ledger` branch's `shadow/` tree as it stands that day, each round's
+   latest standings snapshot fetched on or before that day, and the
+   resolutions recorded by then. A reading before that date is a progress
+   reading, labelled so, and is never the registered result. The date
+   does not move for any n.
+6. *Reading.* Above 0 if the interval's lower end is above 0; below 0 if
+   its upper end is below 0; otherwise *not resolvable this season*, with
+   the n needed (item 7) stated. Whatever the reading, it is an
+   unsubmitted shadow comparison on a below-floor model, decides nothing
+   about submission, and is labelled so wherever it is printed.
+7. *Sample size.* The questions needed for a true lead of δ points at 80%
+   power, read by the interval's lower end (one-sided 5%), treating
+   questions as independent (clustering only raises it):
+   n = ⌈((z_0.95 + z_0.80) σ / δ)²⌉. At the assumed paired spread
+   σ = 32: +5 needs 254 and +2 needs 1,583. It is recomputed once, on the
+   analysis date, with σ the measured SD of h over the pooled questions;
+   the date does not move.
+8. *What it is printed beside.* `augur floor --pooled` prints, per
+   round: forecast by each side, scored, annulled, uncovered and
+   unresolved; then the pooled mean, its day-clustered interval, n, the
+   cluster count, the measured spread and the item 7 table. It prints
+   no floor verdict and cannot: the per-round verdicts come only from
+   `augur floor --round R --candidate blend`, set beside it in RESULTS.md
+   with `augur score L --mode live --cluster week` on the pooled ledger,
+   the public `metac-nemotron-3-ultra+asknews` average of each round and
+   the outside agent-minus-template gaps from `augur standings`.
+9. *Re-reading the one-round rule (synthetic).* A seeded simulation,
+   labelled synthetic in every place it is printed: rounds of n
+   questions (n = 30 and 60), each h drawn from a normal with mean 0
+   (a candidate with no lead) and SD 32, S = 0 so the rule's two
+   conditions coincide; the rule's lower end read as mean − z_0.95 × SD /
+   √n (the normal approximation to its bootstrap); 20,000 simulated
+   seasons, seed 20261125. Reported: the share of seasons in which the
+   rule admits at least once within the first k = 1 to 4 rounds, (a)
+   applied after each round to all rounds so far (cumulative looks) and
+   (b) applied to each round alone. Re-checked by `make eval`.
+
+| # | Prediction |
+|---|------------|
+| P47 | On the analysis date, the pooled mean head-to-head of Augur's aggregate against the shadow template is between −2 and +8 points, and its day-clustered 90% interval includes 0 (the reading is *not resolvable this season*). |
+| P48 | Fewer than 90 questions are scored across the two MiniBench rounds together. |
+| P49 | Recomputed from the measured spread on the analysis date, +5 points needs more than 200 scored questions and +2 more than 1,000. |
+| P50 | In the synthetic table at n = 60, re-reading the rule on the cumulative data after each of four rounds admits a no-lead candidate in between 10% and 15% of seasons (nominal 5%). |
+| P51 | In the synthetic table at n = 60, applying the rule to each of four rounds alone admits a no-lead candidate in between 15% and 22% of seasons. |
+
+**Reading rule.** A prediction is marked held, failed or not yet
+readable as written, never edited. P47 to P49 are read on the analysis
+date and not before; P50 and P51 when the simulation first runs.
+<!-- augur:end m14-registration -->
+
+### Questions needed (registration item 7)
+
+<!-- augur:begin m14-sample-size -->
+Questions needed for a true lead at 80% power, read by the 90% interval's lower end (one-sided 5%), questions treated as independent (clustering by opening day only raises these): n = ⌈((z_0.95 + z_0.80) σ / δ)²⌉ (`augur.pooled.needed`).
+
+| Lead δ | σ = 32 (assumed, registered) | σ measured on the analysis date |
+|--------|------------------------------|---------------------------------|
+| +2 points | 1,583 | not yet readable (2027-01-11: `augur floor --pooled`) |
+| +5 points | 254 | not yet readable (2027-01-11: `augur floor --pooled`) |
+
+For scale: one 60-question round reaches 80% power only for a lead of about 10.3 points at σ = 32, and the day's free calls cap a shadow day at about 45 questions (M11).
+<!-- augur:end m14-sample-size -->
+
+### Re-reading the one-round rule (registration item 9, synthetic)
+
+<!-- augur:begin m14-rereads -->
+**Synthetic** (made-up data, not a measurement): 20,000 simulated seasons, seed 20261125, head-to-head per question drawn from a normal with mean 0 (a candidate with no lead) and SD 32, S = 0; the rule's lower end read as mean − 1.645 × SD / √m (the normal approximation to its bootstrap). Share of seasons in which the one-round rule admits the no-lead candidate at least once within the first k rounds (`augur rereads`, re-checked by `make eval`).
+
+| Questions a round | Read as | k = 1 | k = 2 | k = 3 | k = 4 |
+|---|---|---|---|---|---|
+| 30 | cumulative (all rounds so far, re-read after each) | 5.5% | 8.6% | 10.9% | 12.5% |
+| 30 | each round alone | 5.5% | 10.7% | 15.6% | 20.5% |
+| 60 | cumulative (all rounds so far, re-read after each) | 5.2% | 8.1% | 10.2% | 11.8% |
+| 60 | each round alone | 5.2% | 10.0% | 14.8% | 19.5% |
+| (exact, independent rounds) | each round alone, 1 − 0.95^k | 5.0% | 9.8% | 14.3% | 18.5% |
+
+Predictions registered before the simulation first ran (PLAN.md, m14-registration):
+
+- P50 (at n = 60, cumulative re-reads after four rounds admit in 10% to 15% of seasons): 11.8%, **held**.
+- P51 (at n = 60, each of four rounds alone admits in 15% to 22%): 19.5%, **held**.
+
+Read as: the floor rule's 5% holds only for one look. Re-reading it after every round on the growing pool more than doubles the false admission rate (11.8% after four), and reading four rounds one at a time nearly quadruples it (19.5%). This is why the floor rule decides one named round and the pooled analysis has one date and cannot admit.
+<!-- augur:end m14-rereads -->
+
+### The schedule on GitHub, read 2026-11-25 (no token, $0)
+
+The shadow schedule has not run on GitHub yet, so there is no two-tick
+check and no chain spacing to read. Origin has no `ledger` branch; the
+Tournament workflow's last 35 runs (2026-11-19T13:38Z to 2026-11-25T16:30Z)
+were all `schedule` events and none was a `workflow_dispatch`, so the
+dispatch chain has never fired; and the latest tick (16:30:17Z) ran its
+poll and skipped the shadow, forecast and chain jobs, so `AUGUR_SHADOW` is
+not yet `true` on the repository. Raw output:
+`data/runs/m14-github-check-2026-11-25.txt`.
+
+What the chain has to fix is measured, though. `python3
+scripts/chain_spacing.py data/runs/m14-tournament-runs-2026-11-25.json
+--since 2026-11-18T00:00:00Z --target 30` over the same 35 scheduled
+ticks: median gap 220.4 minutes, largest 678.5, smallest 35.8, and 1 of
+34 gaps within 10 minutes of the 30-minute target
+(`data/runs/m14-chain-spacing-cron-only.txt`). A MiniBench question is
+open for about three hours (M3), so on cron alone more than half of the
+gaps are longer than a question's whole window. The chain's code is
+unchanged in M14: it has never run, so there is no failure to fix yet, and
+the same script reads its spacing once it does (To measure).
+
+### The predictions
+
+- P47 (pooled mean between −2 and +8, interval includes 0): **not yet
+  readable**; read on 2027-01-11.
+- P48 (fewer than 90 questions scored across the two rounds): **not yet
+  readable**; read on 2027-01-11.
+- P49 (from the measured spread, +5 needs more than 200 and +2 more than
+  1,000): **not yet readable**; at the assumed spread of 32 the table
+  above gives 254 and 1,583.
+- P50 and P51: read in the synthetic table above, from its first run.
+
+### What the pooled report will sit beside
+
+`augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026
+--ledger L` prints, for each round, the questions forecast by each side,
+scored, annulled, uncovered and unresolved; then the pooled head-to-head
+of Augur's aggregate against the shadow template with its 90% interval
+clustered by opening day, n, the number of opening days, the measured
+spread and the n needed; the blend against the template the same way, as
+the secondary quantity; and the label *an unsubmitted shadow comparison on
+a below-floor model*. It never prints a floor verdict, and a test proves
+that even a lead the floor rule itself admits in every round comes out as
+"above 0" and nothing more (`tests/test_pooled.py`). Before 2027-01-11
+every reading is labelled a progress reading.
+
+In RESULTS.md it will be set beside: each round's own floor line (`augur
+floor --round R --candidate blend`); `augur score L --mode live --cluster
+week` on the pooled ledger; the public template on the same free model,
+`metac-nemotron-3-ultra+asknews`, which averaged −7.66 on MiniBench
+2026-11-02 and −12.19 so far in Fall FutureEval (standings above); and the
+outside agent-against-template gaps on the same model: 10 of 10 pairs
+ahead by 7.7 to 16.2 points on MiniBench 2026-11-02, but 7 of 9 ahead by a
+median of +1.5 in Fall FutureEval, every interval overlapping (the
+agent-pairs table above). None of those exist for Augur yet; the commands
+are under To measure.
 
 ## M13: dated news in the backtest: is the limit the evidence or the model?
 
@@ -2471,11 +2674,13 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| GitHub's push time of M14's registration (`7469604`), against the 2026-11-30 round's first question | No GitHub credentials on the build machine (`git push` refused); the branch is published with the pull request | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.after == "7469604e7ef4d8295f36d6454ad7d10251fe16e9" or .ref == "refs/heads/dev/m14") \| [.timestamp, .activity_type, .ref, .after]'` (the earliest push containing the commit), and the round's first `open_time`: `augur standings --round minibench --out /tmp/mb.json` once the round is listed, then `python3 -c "import json; print(min(q['open_time'] for q in json.load(open('/tmp/mb.json'))['questions'] if q.get('open_time')))"` or the question pages; the registration counts only if the push is earlier |
+| M14's pooled Q1 analysis (P47 to P49) | Registered for 2027-01-11, after the 2026-12-14 round's last scheduled resolution; no shadow question exists yet | On 2027-01-11 (UTC): `scripts/shadow_fetch.sh branch && augur ledger import branch --out data/ledgers/m14-shadow-pooled.sqlite`; `augur standings --round R --out data/standings/R.json` for both rounds and `fall-futureeval-2026`; `augur resolve --ledger data/ledgers/m14-shadow-pooled.sqlite` (or `--manual-file`); then `augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026 --ledger data/ledgers/m14-shadow-pooled.sqlite --json data/runs/m14-pooled.json`, beside `augur floor --round R --ledger data/ledgers/m14-shadow-pooled.sqlite --candidate blend` per round and `augur score data/ledgers/m14-shadow-pooled.sqlite --mode live --cluster week`; label it an unsubmitted shadow comparison on a below-floor model |
+| The first two-tick check on GitHub and the measured chain spacing (M14) | The shadow schedule is off and the chain has never fired (read 2026-11-25: no `ledger` branch, 0 dispatched runs) | Maintainer: set `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30` (never `AUGUR_SUBMIT`), then `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2` twice, the second after the first finishes. Then `scripts/shadow_fetch.sh /tmp/shadow` (the second tick's export lists none of the first tick's questions), and after a day of chained ticks `curl -s "https://api.github.com/repos/TheAsianFish/augur/actions/workflows/tournament.yml/runs?per_page=100" > runs.json && python3 scripts/chain_spacing.py runs.json --since START --target 30`; if most gaps are not within 10 minutes of 30, fix the chain before the round |
 | M12's live comparison: the primary candidate (`blend`) and the arm (`stat`) against Augur and the template on the 2026-11-30 round, P38's second half, P39 and P40 | The round opens about 2026-11-30; every shadow tick from M12's merge writes the `stat` and `blend` rows (on by default with `--shadow-ledger`) | After the round resolves, with the round's ledger and snapshot built as in the M11 row below: `augur floor --round ROUND --ledger L --standings data/standings/ROUND.json --candidate blend` (the registered candidate, if M12 merged before the round's first question opened; otherwise without `--candidate`, as M11 registered); `augur floor ... --candidate augur` beside it (reported); the `--candidate blend` run also prints P39 (the blend against Augur alone, the same 90% bootstrap); `augur score L --mode dry_run --cluster week` prints Augur against `stat`, `blend` and `template` at 95%; P38's count: `sqlite3 L "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'stat' AND detail LIKE 'series:%'"` |
 | Arm G through GDELT's DOC 2.0 API (full-text search, 90 days) rather than the local GKG title index | The API answered every request from the build machine with 429, a timeout or a dropped connection on 2026-11-23, -24 and -25 (one 200 in about 15 tries); the run used registration item 7's fallback | From an address GDELT does not refuse, with a fresh cache directory so no index answer is reused: `augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --sample 64 --retrieval open --searchers gdelt --add-to data/ledgers/m6-c2-open.sqlite --queries data/backtest/m6-c2-queries.json --gdelt-cache data/backtest/gdelt-cache-api --ledger data/ledgers/m13-c2-news-api.sqlite` (move the GKG index aside so the searcher cannot fall back), then the judge as in `make backtest-q2-news`; about 4 minutes of API pacing for 192 queries |
 | The series rule's five forecasts on the 2026-11-16 round, scored | Those questions resolve on 2026-11-26 and 2026-11-27; nothing was forecast or written for them (a coverage run, not a tick) | After 2026-11-27: read each close from the question page and score the committed percentiles in `data/statarm/m12-coverage-minibench-2026-11-16.json` (or re-run the arm in a dry-run ledger and `augur resolve --manual POST VALUE --evidence URL`); five questions, so a reading, not a test |
 | The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; the schedule runs it once the maintainer sets the repository variables (PR M11) | Unattended: `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30`. After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur standings --round ROUND --out data/standings/ROUND.json`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
-| The same two-tick check on GitHub itself | No GitHub credentials in the build environment; `act` ran it locally against a bare repository | `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2`, twice in a row; the second run's summary lists the first run's questions as "already in the shadow ledger" |
 | The season's final ranks and any prize (Q5) | Fall FutureEval and the last MiniBench rounds are still open on 2026-11-23, and Augur has no scored forecast in any of them | Nothing to run by hand: the `Standings` workflow re-reads them daily onto the `ledger` branch; to render one here, `augur standings --round SLUG --out data/standings/SLUG.json && make results` |
 | Publishing 0.1.0 to PyPI and the first real run of the publish job | Publishing is the maintainer's step (trusted publisher, `pypi` environment) | RELEASE.md, "Releasing 0.1.0": `gh workflow run release.yml -f dry_run=true`, then `git tag v0.1.0 && git push origin v0.1.0` |
 | The release and standings workflows on GitHub itself | No GitHub credentials here; both ran under `act` or step by step locally (`data/runs/m10-standings-step.txt`) | `gh workflow run release.yml -f dry_run=true`; `gh workflow run standings.yml` and check `standings/` on the `ledger` branch |

@@ -22,6 +22,7 @@ from augur import (
     q4,
     q6,
     report,
+    rereads,
     scorecard,
     shadow,
     standings,
@@ -417,6 +418,16 @@ def _parser() -> argparse.ArgumentParser:
     )
     pw.add_argument("--out", type=Path, default=report.POWER_PATH)
     pw.add_argument(
+        "--check", action="store_true", help="exit 1 if the committed file differs from a re-run"
+    )
+
+    rr = sub.add_parser(
+        "rereads",
+        help="M14, synthetic: how often re-reading the one-round floor rule admits a "
+        "candidate with no lead",
+    )
+    rr.add_argument("--out", type=Path, default=report.REREADS_PATH)
+    rr.add_argument(
         "--check", action="store_true", help="exit 1 if the committed file differs from a re-run"
     )
 
@@ -1052,6 +1063,21 @@ def _score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _rereads(args: argparse.Namespace) -> int:
+    text = rereads.snapshot_text(rereads.snapshot())
+    out: Path = args.out
+    if args.check:
+        if not out.exists() or out.read_text(encoding="utf-8") != text:
+            print(f"{out} differs from a fresh simulation; run augur rereads")
+            return 1
+        print(f"{out} matches a fresh simulation")
+        return 0
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(text, encoding="utf-8")
+    print(f"wrote {out}")
+    return 0
+
+
 def _power(args: argparse.Namespace) -> int:
     snap = report.power_snapshot(Path.cwd())
     if snap is None:
@@ -1234,6 +1260,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return _report(args)
         if args.command == "power":
             return _power(args)
+        if args.command == "rereads":
+            return _rereads(args)
         if args.command == "calibrate":
             return _calibrate(args)
         if args.command == "statarm":
