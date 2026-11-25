@@ -1430,6 +1430,84 @@ the detectable effect is about 0.027 to 0.048, so the expected verdict is
 the interval's lower end is above −0.055. The judge flags fewer than 5%
 of the new sources at 3 or 4.
 
+**M13's registration (2026-11-25, before the searcher is written or any
+arm runs).** The design, the predictions and the reading rule, fixed
+here and rendered into RESULTS.md byte for byte.
+
+<!-- m13-registration:begin -->
+1. *The searcher (`gdelt`).* For each of a question's shared planned
+   queries (`data/backtest/m6-c2-queries.json`, the plan every Q2 arm
+   used), one GDELT DOC 2.0 `artlist` request: the query's words with
+   punctuation removed, words under three letters and a fixed stop list
+   dropped, at most six words, plus `sourcelang:english`;
+   `startdatetime` 90 days before the cutoff and `enddatetime` at the
+   cutoff, relevance order, at most 10 articles. One request every 5
+   seconds, with backoff on 429 and 5xx; every response is cached on disk
+   (`data/backtest/gdelt-cache/`) and committed, so a resumed or re-run
+   arm sends nothing twice. The query bound is never trusted: an article
+   whose `seendate` is after the cutoff is refused, whatever GDELT
+   returned. Nothing assumes how far back GDELT searches; an empty
+   answer is recorded as empty.
+2. *The text.* An article's text comes only from a Wayback capture of its
+   URL at or before the cutoff (the existing `wayback` capture code: the
+   capture's own timestamp is compared, redirects followed only while
+   still at or before the cutoff). No capture, no source: the live page is
+   never fetched. Market and forecasting hosts are excluded as in
+   `wayback`. The source's date is the capture timestamp
+   (`archive_capture`), its evidence names the capture and the `seendate`,
+   and it is written to the ledger before any model sees it, so the
+   leakage gate and `tests/test_leakage.py` cover it like any other
+   source. Per query, GDELT's articles are tried in order, at most four
+   Wayback lookups, and the first one admitted is kept: at most three news
+   sources a question.
+3. *Arm G.* The 64 questions of C2's fixed sample, as of each question's
+   open instant. Each question's evidence is arm O's admitted sources
+   exactly as O's forecasters saw them (read back from
+   `data/ledgers/m6-c2-open.sqlite`), plus the news sources from items 1
+   and 2; the brief is rewritten from all of them by the same prompt and
+   model, and three draws forecast from it, combined by the median. Model
+   `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free` in every role, as
+   in O. Where no news source is admitted, G's inputs are O's, no call is
+   made and G's forecast is O's recorded one. So G − O measures news
+   added to O's evidence and nothing else, and G − N is set beside M6's
+   O − N.
+4. *What is reported* (`make eval`, rendered by `make results`): the
+   share of the 64 questions that gained at least one news source whose
+   `seendate` is in the 30 days before open; sources admitted per question
+   in O and in G; G − O and G − N, paired Brier with 95% bootstrap
+   intervals (seeded, as in M6) and the detectable effect, overall and
+   split into priced (an as-of price from M5) and unpriced questions;
+   G − O on the questions that gained news alone; the leakage judge (same
+   model, El Lahib et al.'s 0 to 4 rubric) on the news sources; the cost
+   per question; and the result beside Hindcast, AIA and El Lahib et al.
+5. *The verdict*, on G − O over all 64: **moved** if the 95% interval is
+   entirely below 0; **not the limit** if the interval includes 0 and its
+   lower end is above −0.055 (Hindcast's Qwen3-32B gain), or if it is
+   entirely above 0; otherwise **unresolved**, with the questions needed
+   to detect a 0.02 and a 0.055 gain at 80% power from G − O's own paired
+   spread (M7's normal-approximation rule), set beside M7's power curve
+   for research (110 questions for 0.02).
+6. *If GDELT cannot be reached.* GDELT refused this repository's shared
+   addresses on 2026-11-23 and 2026-11-24 (HTTP 429 on a first request).
+   If it refuses every address the run can use, G is recorded as not run,
+   not as zero coverage, and the commands go under To measure.
+
+| # | Prediction |
+|---|------------|
+| P41 | Fewer than 60% of the 64 questions gain a news source whose `seendate` is in the 30 days before open. |
+| P42 | G adds fewer than 1.5 news sources a question on average (O showed 5.1 sources a question). |
+| P43 | G − O over all 64 has a point estimate between −0.055 and −0.002 and a 95% interval that includes 0. |
+| P44 | The verdict in item 5 is *unresolved*. |
+| P45 | G − N has a 95% interval that includes 0, as O − N's did. |
+| P46 | The judge rates fewer than 5% of the admitted news sources at 3 or 4. |
+
+**Reading rule.** Each prediction is marked held or failed as written,
+never edited. Nothing about the live bot changes from this arm: live
+research uses AskNews and the markets, not GDELT, and a backtest on one
+free model cannot move a live default. A second reader model and a split
+by source age stay cut (Considered and not chosen).
+<!-- m13-registration:end -->
+
 ### Changed on review
 
 The cited commands were re-run on 2026-11-24 and reproduce (`make check`
