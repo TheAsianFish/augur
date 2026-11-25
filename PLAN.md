@@ -1542,13 +1542,20 @@ by source age stay cut (Considered and not chosen).
 **M13's results (2026-11-25; RESULTS.md, P41 to P46 above unedited).** On
 C2's 64 questions, free nemotron in every role: 54 questions (84%) gained
 a news source GDELT saw in the 30 days before open, 1.55 a question
-(P41 and P42 failed: coverage was much better than predicted). G − O is
+(P41 and P42 failed; counting real articles only, 39 of 64 at 1.14 a
+question, and the 30-day condition held almost by construction, since
+the index covers only those 30 days). G − O is
 +0.006 [−0.010, +0.022], so under item 5 the verdict is *not the limit*
 (P43 and P44 failed: the point estimate is on the wrong side, and the
 interval excludes a Hindcast-sized gain). G − N is −0.010 [−0.049,
 +0.029] (P45 held). The judge rated 0 of 99 news uses at 3 or more (P46
 held). GDELT's API answered 3 of 193 discovery requests; the other 190
-came from item 7's GKG title index. One AP wire-digest page, whose GKG
+came from item 7's GKG title index. A review after the run found that
+GDELT's title, not the capture's, reached the brief (item 2 broken for
+one digest page), that archive failures could settle a question as
+"nothing added", and that the rules for the retried question were set
+after the first run's outcomes; all are stated in RESULTS.md, and the
+code is fixed for later runs. One AP wire-digest page, whose GKG
 "title" is the whole feed, matched 26 questions. Without the 15 for which
 it was the only news, G − O is +0.010 [−0.006, +0.029] on 39 (exploratory,
 chosen after the run). A follow-up worth a milestone: a title-length cap

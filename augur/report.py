@@ -1783,11 +1783,12 @@ G_LEDGER = LEDGERS / "m13-c2-news.sqlite"
 G_TOURNAMENT = Q2_TOURNAMENT + "+onepass-asof-open+news"
 # Outside results the arm is set beside (PLAN.md, Frontier; self-reported, other protocols).
 NEWS_OUTSIDE = (
-    "Hindcast (arXiv 2607.14051): dated retrieval from a frozen Reddit snapshot lowered Brier "
+    "Hindcast (arXiv 2607.14051): dated posts from a frozen Reddit snapshot lowered Brier "
     "on 8 of 9 open-weight models over 216 Polymarket markets, Qwen3-32B 0.234 to 0.179 "
     "(−0.055)",
-    "AIA Forecaster (arXiv 2511.07678): no search 0.1230, agentic search 0.1140 (−0.009) on "
-    "FB-7-21 with a frontier model",
+    "AIA Forecaster (arXiv 2511.07678, re-read 2026-11-25): no search 0.1230, agentic search "
+    "0.1140 (−0.009) on ForecastBench (its Table 3, set not named), and 0.116 to 0.085 "
+    "(−0.031) on its market subset (Table 4), with a frontier model",
     "El Lahib et al. (arXiv 2602.00758): no retrieval 0.244, leak-free documents 0.242 "
     "(−0.002), gpt-oss-120b, Google results",
 )
@@ -1839,15 +1840,18 @@ def render_news(root: Path) -> str:
         "",
         f"- Questions that gained a news source: {_pct(s.gained, n)}; with a news source GDELT "
         f"saw in the 30 days before open: {_pct(s.gained_recent, n)}.",
-        f"- News sources admitted: {s.news} ({s.news / n:.2f} a question). Sources a question "
-        f"was shown: O {s.base_per_question:.2f}, G {s.g_per_question:.2f}.",
+        f"- News sources admitted: {s.news} question-source pairs ({s.news / n:.2f} a "
+        f"question), {s.pages} distinct pages. Sources a question was shown: O "
+        f"{s.base_per_question:.2f}, G {s.g_per_question:.2f}.",
     ]
     if s.digest_questions:
         out.append(
             f'- One AP wire-digest page (a GKG "title" thousands of characters long) '
             f"matched {s.digest_questions} questions' queries and was the only news for "
-            f"{s.digest_only} of them; the last row below leaves those out (exploratory, "
-            "chosen after the run)."
+            f"{s.digest_only} of them. Real articles only: "
+            f"{_pct(s.gained - s.digest_only, n)} questions, "
+            f"{s.real_uses} uses ({s.real_uses / n:.2f} a question). The last "
+            "row below leaves the digest-only questions out (exploratory, chosen after the run)."
         )
     if s.domains:
         out.append(

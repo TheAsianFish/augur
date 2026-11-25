@@ -134,8 +134,8 @@ by source age stay cut (Considered and not chosen).
 C2's fixed sample, 64 questions, cutoff each question's open instant. Model `nvidia/nemotron-3-ultra-550b-a55b:free` in every role, 3 draws, median. Arm G is arm O's sources exactly as O's forecasters saw them plus at most three news sources (GDELT discovery, text from a Wayback capture at or before the cutoff); where none was admitted G's forecast is O's.
 
 - Questions that gained a news source: 54/64 (84%); with a news source GDELT saw in the 30 days before open: 54/64 (84%).
-- News sources admitted: 99 (1.55 a question). Sources a question was shown: O 5.06, G 6.61.
-- One AP wire-digest page (a GKG "title" thousands of characters long) matched 26 questions' queries and was the only news for 15 of them; the last row below leaves those out (exploratory, chosen after the run).
+- News sources admitted: 99 question-source pairs (1.55 a question), 72 distinct pages. Sources a question was shown: O 5.06, G 6.61.
+- One AP wire-digest page (a GKG "title" thousands of characters long) matched 26 questions' queries and was the only news for 15 of them. Real articles only: 39/64 (61%) questions, 73 uses (1.14 a question). The last row below leaves the digest-only questions out (exploratory, chosen after the run).
 - Most frequent news hosts: bostonherald.com 26, bleacherreport.com 6, wgme.com 3, fox29.com 2, nypost.com 2, abc.net.au 1, abc13.com 1, abcnews.com 1.
 
 | Arm | Brier [95% interval] | Log score | n |
@@ -162,7 +162,7 @@ The judge on the news sources (same model, El Lahib et al.'s 0 to 4 rubric): 99 
 
 Cost per question that gained news ($0: free model): 4.0 successful model calls (1.0 research), 4,214 output tokens, 101 s wall time.
 
-Beside outside results (not the same protocol): Hindcast (arXiv 2607.14051): dated retrieval from a frozen Reddit snapshot lowered Brier on 8 of 9 open-weight models over 216 Polymarket markets, Qwen3-32B 0.234 to 0.179 (−0.055); AIA Forecaster (arXiv 2511.07678): no search 0.1230, agentic search 0.1140 (−0.009) on FB-7-21 with a frontier model; El Lahib et al. (arXiv 2602.00758): no retrieval 0.244, leak-free documents 0.242 (−0.002), gpt-oss-120b, Google results.
+Beside outside results (not the same protocol): Hindcast (arXiv 2607.14051): dated posts from a frozen Reddit snapshot lowered Brier on 8 of 9 open-weight models over 216 Polymarket markets, Qwen3-32B 0.234 to 0.179 (−0.055); AIA Forecaster (arXiv 2511.07678, re-read 2026-11-25): no search 0.1230, agentic search 0.1140 (−0.009) on ForecastBench (its Table 3, set not named), and 0.116 to 0.085 (−0.031) on its market subset (Table 4), with a frontier model; El Lahib et al. (arXiv 2602.00758): no retrieval 0.244, leak-free documents 0.242 (−0.002), gpt-oss-120b, Google results.
 
 **Verdict (registration item 5): not the limit.**
 
@@ -178,13 +178,19 @@ Predictions registered in PLAN.md before the run:
 
 **What it shows.**
 
-- **The experiment happened, and coverage was not the problem.** I
+- **The experiment happened, with more coverage than predicted.** I
   predicted that fewer than 60% of questions would gain news, because
-  Wayback captures of news articles are sparse (P41). Instead 54 of 64 did
-  (84%), every one of them with an article GDELT saw in the 30 days before
-  open, at 1.55 news sources a question. So, unlike M6's arms, G's
-  evidence is no longer almost all Wikipedia. P41 and P42 failed.
-- **Dated news did not help this model.** G − O is +0.006 [−0.010,
+  Wayback captures of news articles are sparse (P41). By the registered
+  count 54 of 64 did (84%), at 1.55 news sources a question, so P41 and
+  P42 failed. Two qualifications, both found after the run. First, 26 of
+  the 99 uses are one wire-digest page (below). Counting real articles
+  only, 39 of 64 questions (61%) gained news, at 1.14 a question. Second,
+  the title index covers only the 30 days before the cutoff, so P41's
+  30-day condition held almost by construction: only one admitted source
+  came from the API's 90-day window.
+- **Dated news did not help this model.** For a question that gained
+  news, G − O also includes a rewritten brief and three fresh draws, so
+  it is news plus that noise, which averages out over questions. G − O is +0.006 [−0.010,
   +0.022]: if anything worse, and the interval's lower end (−0.010) rules
   out a gain the size of Hindcast's 0.055, so the registered verdict is
   *not the limit*, not the *unresolved* I predicted (P43 and P44 failed).
@@ -206,8 +212,10 @@ Predictions registered in PLAN.md before the run:
   The only score of 4 in G's ledger is M6's known Wikipedia revision,
   carried over in O's evidence.
 - **What this says about the gap to the outside results.** Hindcast's
-  gain (−0.055 on Qwen3-32B) and AIA's (−0.009 with agentic search on a
-  frontier model) come from retrieval designed for the question. Here,
+  gain (−0.055 on Qwen3-32B) came from dated Reddit posts about each
+  market's own event, and AIA's (−0.009 overall, −0.031 on its market
+  subset) from agentic search on a frontier model. Both are retrieval much
+  closer to the question than keyword titles. Here,
   adding dated, leak-free news to the same free model's brief left it
   where it was, as El Lahib et al. found with leak-free documents (−0.002).
   On this model, more evidence of this kind is not what holds the
@@ -217,8 +225,8 @@ Predictions registered in PLAN.md before the run:
 
 **Unfair or missing comparisons, named.** GDELT's DOC 2.0 API refused the
 build machine (HTTP 429, timeouts, dropped connections) on almost every
-request. Three of the run's 193 discovery answers came from the API and
-190 from the registered fallback, a title index over GDELT's GKG files for
+request. Three of the run's 193 discovery answers came from the API (one
+of them an empty `{}`, see below) and 190 from the registered fallback, a title index over GDELT's GKG files for
 the 30 days before the cutoff (2,880 files, 3,109,386 titled articles,
 built in 6 minutes; manifest `data/backtest/gdelt-gkg-manifest.json`).
 Matching three title words is cruder than the API's full-text relevance,
@@ -227,10 +235,26 @@ do. Every news text is a Wayback capture, so pages the archive missed
 or refused are lost: the first run's log has 81 articles with no
 capture at or before the cutoff, 6 empty captures, 92 archive connection
 errors retried and 22 articles given up after the retries. One question (metaculus 43343) had news
-admitted on its first attempt but lost two of three draws to the model's
-length limit. On the retry the archive returned nothing, so it keeps O's
-forecast, as a question with no news does (each question is scored from
-its last run). One free model, 64 questions, one ForecastBench set; the
+admitted on its first attempt (through the title index) but lost two of
+three draws to the model's length limit. The resumed process asked
+GDELT's API first, and the API answered that query with HTTP 200 and an
+empty `{}`, which the searcher read as "no articles". So the question
+keeps O's forecast because the discovery route changed, not because news
+was missing. Two rules were written after the first run had printed its
+outcomes: each question is scored from its last run, and a question
+settled as "nothing added" is not searched again on resume. They touch
+only this question, and neither looked at a score. The review also found
+three faults, fixed after the run and not applied to it.
+(1) A news source's title came from GDELT, not the capture, so the digest
+page's feed-length "title" (106,084 characters) went into 26 brief
+prompts. That breaks item 2's "text only from Wayback" for that one page,
+which GDELT saw before the cutoff. (2) An archive failure on every
+candidate article settled a question as "nothing added". Of the 10
+questions without news, 7 had candidate articles, and the ledger does not
+record whether the archive failed or simply had no capture. (3) The
+ledger scan did not check `seendate`. Now titles come from the capture,
+archive failures fail the question so a resume retries it, and the scan
+refuses a news source GDELT saw after its cutoff. One free model, 64 questions, one ForecastBench set; the
 bootstrap treats questions as independent. Cost $0. Run: 2026-11-25,
 04:24 to 07:18 UTC, `make backtest-q2-news` step by step; raw output
 `data/runs/m13-c2-news.txt`; ledger `data/ledgers/m13-c2-news.sqlite`;

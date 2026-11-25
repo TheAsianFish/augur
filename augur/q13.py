@@ -125,6 +125,7 @@ class Q13:
     gained: int
     gained_recent: int
     news: int
+    pages: int
     base_per_question: float
     g_per_question: float
     arms: list[ArmRow]
@@ -135,6 +136,7 @@ class Q13:
     unpriced_diffs: list[DiffRow]
     gained_diffs: list[DiffRow]
     digest_only: int
+    real_uses: int
     digest_questions: int
     article_diffs: list[DiffRow]
     """Exploratory, chosen after the run: G − O where a real article (not the digest) came."""
@@ -267,6 +269,7 @@ def score_q13(
         gained=len(gained_list),
         gained_recent=len(recent & set(common)),
         news=sum(per_question.values()),
+        pages=len({n.source_id for n in news if n.question_id in per_question}),
         base_per_question=base_mean,
         g_per_question=base_mean + sum(per_question.values()) / len(common),
         arms=arms,
@@ -277,6 +280,7 @@ def score_q13(
         unpriced_diffs=split(unpriced_q, f"unpriced, n = {len(unpriced_q)}"),
         gained_diffs=gained_diffs,
         digest_only=len([q for q in gained_list if q not in real]),
+        real_uses=sum(1 for n in news if not n.digest and n.question_id in per_question),
         digest_questions=len(with_digest & set(common)),
         article_diffs=article_diffs,
         sd=sd,
