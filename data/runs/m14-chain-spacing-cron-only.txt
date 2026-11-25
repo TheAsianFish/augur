@@ -1,0 +1,11 @@
+$ python3 scripts/chain_spacing.py data/runs/m14-tournament-runs-2026-11-25.json --since 2026-11-18T00:00:00Z --target 30
+runs: 35; gaps: 34
+median gap 220.4 min; largest 678.5 min; smallest 35.8 min
+within 10 min of the 30-minute target: 1 of 34
+gaps (min): 77.3, 456.3, 35.8, 348.5, 228.0, 353.8, 242.7, 202.6, 169.7, 238.7, 214.7, 328.4, 226.0, 182.0, 188.3, 56.9, 451.0, 132.6, 444.4, 54.9, 332.2, 52.3, 483.0, 132.8, 635.9, 58.4, 425.5, 89.1, 678.5, 50.3, 436.5, 47.3, 649.7, 107.6
+
+$ python3 scripts/chain_spacing.py data/runs/m14-tournament-runs-2026-11-25.json --since 2026-11-24T00:00:00Z --target 30
+runs: 8; gaps: 7
+median gap 107.6 min; largest 678.5 min; smallest 47.3 min
+within 10 min of the 30-minute target: 0 of 7
+gaps (min): 89.1, 678.5, 50.3, 436.5, 47.3, 649.7, 107.6

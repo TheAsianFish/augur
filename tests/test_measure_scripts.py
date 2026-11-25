@@ -294,3 +294,34 @@ def test_hand_labels_refuse_a_different_sample_or_no_rater() -> None:
         ahl.merge(_labels([0, 1]), _labels([1, 1, 1]), "a person")
     with pytest.raises(ahl.LabelError, match="rater"):
         ahl.merge(_labels([0, 1, 2]), _labels([1, 1, 1]), " ")
+
+
+# --- chain spacing (M14) ----------------------------------------------------------
+
+cs = _load("chain_spacing")
+
+
+def _run(event: str, at: str, *, name: str = "Tournament", branch: str = "main") -> dict[str, Any]:
+    return {"event": event, "name": name, "head_branch": branch, "created_at": at}
+
+
+def test_chain_spacing_keeps_ticks_on_main_and_measures_the_gaps() -> None:
+    runs = {
+        "workflow_runs": [
+            _run("workflow_dispatch", "2026-11-30T01:05:00Z"),
+            _run("schedule", "2026-11-30T00:00:00Z"),
+            _run("workflow_dispatch", "2026-11-30T00:31:00Z"),
+            _run("push", "2026-11-30T00:10:00Z"),
+            _run("schedule", "2026-11-30T00:20:00Z", name="Standings"),
+            _run("workflow_dispatch", "2026-11-30T00:15:00Z", branch="dev/m14"),
+            _run("schedule", "2026-11-29T20:00:00Z"),
+        ]
+    }
+    times = cs.starts(runs, _t("2026-11-30T00:00:00"))
+    assert [t.strftime("%H:%M") for t in times] == ["00:00", "00:31", "01:05"]
+    gaps = cs.spacing(times)
+    assert gaps == pytest.approx([31.0, 34.0])
+    lines = cs.report(gaps, 30.0, 3.0)
+    assert lines[0] == "runs: 3; gaps: 2"
+    assert "within 3 min of the 30-minute target: 1 of 2" in lines
+    assert cs.report([], 30.0, 10.0)[0].startswith("fewer than two runs")

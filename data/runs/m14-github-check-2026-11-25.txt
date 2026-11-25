@@ -1,0 +1,32 @@
+M14: the shadow schedule and the next round, read 2026-11-25 (UTC) from outside, no GitHub token.
+
+$ git ls-remote --heads https://github.com/TheAsianFish/augur.git      (20:57 UTC)
+30cedf2f55fe9bef80b5f7ee2fc15249d9dc9731	refs/heads/dev/plan
+2b01f2bbb589a058f9b0eadd8fcf313a521f04dd	refs/heads/main
+-> no `ledger` branch: no shadow tick has pushed, so there is no two-tick check on GitHub
+   and no chain spacing to read from it.
+
+$ curl -s https://api.github.com/repos/TheAsianFish/augur/actions/workflows/tournament.yml/runs?per_page=100
+35 runs (2026-11-19T13:38:40Z to 2026-11-25T16:30:17Z), every one event=schedule; 0 workflow_dispatch
+-> the dispatch chain (AUGUR_CHAIN_MINUTES) has never fired, and neither has a manual dispatch.
+   Trimmed copy: data/runs/m14-tournament-runs-2026-11-25.json; spacing:
+   data/runs/m14-chain-spacing-cron-only.txt
+
+$ curl -s https://api.github.com/repos/TheAsianFish/augur/actions/runs/45654570333/jobs   (the 16:30:17Z tick)
+poll success   (step "Read the shadow ledger from the ledger branch": skipped)
+forecast skipped
+shadow skipped
+chain skipped
+-> AUGUR_SHADOW is not 'true' on the repository as of the latest tick.
+
+$ uv run augur standings --round minibench --out /tmp/m14/minibench.json      (20:55:09 UTC)
+round: {'id': 33169, 'name': 'MiniBench', 'slug': 'minibench', 'start_date': '2026-11-16T00:00:00Z',
+        'close_date': '2026-12-04T00:00:00Z', 'forecasting_end_date': '2026-11-18T21:43:57Z'}
+60 questions, statuses closed or resolved
+-> `minibench` still names the 2026-11-16 round; the round opening about 2026-11-30 is not
+   listed yet, so none of its questions has opened.
+
+M14's registration commit: 7469604e7ef4d8295f36d6454ad7d10251fe16e9, committed 2026-11-25T20:50:14Z.
+`git push -u origin dev/m14` from the build machine: "could not read Username for
+'https://github.com'" (no credentials here); GitHub's push time is read after the branch is
+published (RESULTS.md, To measure).
