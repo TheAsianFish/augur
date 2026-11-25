@@ -169,7 +169,7 @@ flowchart LR
   PROBE --> ROUTER{router<br/>ordered chain per role,<br/>fallback, floor}
   CAT[OpenRouter model list<br/>prices, listing dates] --> ROUTER
   RUN --> RES[researcher<br/>plan queries]
-  RES --> S[searchers as_of cutoff<br/>Wikipedia revisions, Wayback captures,<br/>AskNews, market prices]
+  RES --> S[searchers as_of cutoff<br/>Wikipedia revisions, Wayback captures,<br/>GDELT news via Wayback (backtests),<br/>AskNews, market prices]
   S --> LED[(ledger<br/>SQLite, append-only)]
   LED --> GATE{leakage gate<br/>proven date <= cutoff}
   GATE -->|admitted only| BRIEF[one-pass brief, a second pass<br/>on sub-questions, or the loop]
@@ -201,7 +201,7 @@ flowchart LR
 | `augur/metaculus.py` | Typed `httpx` client: list, detail (`my_forecasts`), a forecast of any type, private comment; token bucket and `Retry-After`. |
 | `augur/predictions.py`, `augur/distributions.py` | What a forecast is per type, how members combine, the payload; percentiles to the CDF Metaculus accepts, its validity rules mirrored from the server, property-tested. |
 | `augur/llm/` | `endpoints` (presets and `AUGUR_ENDPOINT_*`, `endpoint:model` routes), `openai_compat` (one provider for every OpenAI-compatible host, sorting refusals into rate-limited, out-of-credit, auth, unavailable, empty), `router` (the chain per role, cool-downs, the floor), `catalog` (OpenRouter's model list: prices, listing dates), `probe` (opening probe, burst limit measurement), `registry` (frontier tier, local release dates), `ollama`, `replay`. |
-| `augur/research/` | `Source` record with `date_evidence`; `wikipedia` (the revision current at `as_of`), `wayback` (the newest capture at or before `as_of` of each URL the question names, its own timestamp compared, never the query's day bound), `asknews` (bounded by `end_timestamp`), `markets` (prices as of the cutoff). |
+| `augur/research/` | `Source` record with `date_evidence`; `wikipedia` (the revision current at `as_of`), `wayback` (the newest capture at or before `as_of` of each URL the question names, its own timestamp compared, never the query's day bound), `asknews` (bounded by `end_timestamp`), `markets` (prices as of the cutoff), `gdelt` (M13, backtests only: GDELT discovery bounded at the cutoff, an article seen after it refused whatever GDELT returned, its text only from a Wayback capture at or before the cutoff; a local index of GDELT's GKG files answers when the API refuses). |
 | `augur/leakage.py` | The gate, and `scan_ledger`, which re-checks every stored row. |
 | `augur/ledger.py` | Numbered migrations; every table refuses `UPDATE` and `DELETE`. |
 | `augur/agents/` | Researcher (one pass; a second pass that searches the sub-questions that would most change the answer; or a bounded loop that writes a belief and what is still unknown and picks the next query), forecaster draws with per-member stances and model chains, and the recorder every model call passes through: it walks the role's chain, and times, costs, budgets and ledgers every attempt and switch. |
