@@ -42,6 +42,8 @@ def test_separate_near_analytic() -> None:
 def test_cumulative_below_separate_and_above_first() -> None:
     (t,) = _tables()
     assert t.cumulative[3] > t.cumulative[0]
+    assert all(c <= s for c, s in zip(t.cumulative, t.separate, strict=True))
+    assert t.cumulative[3] < t.separate[3]
 
 
 def test_same_seed_identical() -> None:

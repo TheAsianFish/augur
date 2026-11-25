@@ -2101,10 +2101,10 @@ def render_m14_rereads(root: Path) -> str:
         f"{_held(0.15 <= sep4 <= 0.22)}.",
         "",
         "Read as: the floor rule's 5% holds only for one look. Re-reading it after every round "
-        f"on the growing pool more than doubles the false admission rate ({cum4:.1%} after "
-        f"four), and reading four rounds one at a time nearly quadruples it ({sep4:.1%}). This "
-        "is why the floor rule decides one named round and the pooled analysis has one date "
-        "and cannot admit.",
+        f"on the growing pool admits a no-lead candidate in {cum4:.1%} of seasons after four, "
+        f"{cum4 / rereads.NOMINAL:.1f} times the nominal rate, and reading four rounds one at a "
+        f"time in {sep4:.1%}, {sep4 / rereads.NOMINAL:.1f} times. This is why the floor rule "
+        "decides one named round and the pooled analysis has one date and cannot admit.",
     ]
     return "\n".join(out) + "\n"
 

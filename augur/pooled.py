@@ -15,7 +15,8 @@ The analysis is PLAN.md's ``m14-registration`` block, registered before the
   interval is printed beside it, labelled the optimistic one;
 - the n a lead of +2 or +5 points needs is printed at the assumed spread
   of 32 and at the measured one;
-- before :data:`ANALYSIS_DATE` every reading is a progress reading.
+- only a reading on :data:`ANALYSIS_DATE` is the registered result; one before
+  it is a progress reading and one after it a late reading, each labelled so.
 
 It reads the floor rule's counts but never its verdict: nothing it returns
 or prints can say whether a route may submit. Only ``augur floor --round R``
@@ -58,6 +59,11 @@ LABEL = (
     "route is below the submit floor, and this report decides nothing about submission "
     "(only augur floor --round R reads the floor rule, one round at a time)"
 )
+PROGRESS = "progress"
+REGISTERED = "registered"
+LATE = "late"
+REGISTERED_ROUNDS = ("fall-futureeval-2026",)
+"""Item 1, besides MiniBench rounds (``minibench`` and its dated ``minibench-*`` slugs)."""
 ABOVE = "above 0"
 BELOW = "below 0"
 UNRESOLVED = "not resolvable this season"
@@ -141,10 +147,23 @@ class Arm:
     spread: float | None
 
 
+def when(day: date) -> str:
+    """Item 5: only a reading on the analysis date itself is the registered result."""
+    if day < ANALYSIS_DATE:
+        return PROGRESS
+    return REGISTERED if day == ANALYSIS_DATE else LATE
+
+
+def registered_round(slug: str) -> bool:
+    """Item 1's rounds: MiniBench and the Fall 2026 FutureEval project."""
+    return slug == "minibench" or slug.startswith("minibench-") or slug in REGISTERED_ROUNDS
+
+
 @dataclass(frozen=True)
 class PooledReport:
     analysed_at: str
-    progress: bool
+    reading_time: str
+    """``progress`` before the analysis date, ``registered`` on it, ``late`` after it."""
     rounds: tuple[RoundCoverage, ...]
     duplicates: int
     primary: Arm
@@ -154,16 +173,22 @@ class PooledReport:
     needed_measured: tuple[int, ...] | None
 
     def lines(self) -> list[str]:
-        when = (
-            f"progress reading on {self.analysed_at[:10]}, before the registered analysis date "
-            f"{ANALYSIS_DATE.isoformat()}: not the registered result"
-            if self.progress
-            else f"registered analysis, read {self.analysed_at[:10]} "
-            f"(analysis date {ANALYSIS_DATE.isoformat()})"
-        )
-        out = [f"pooled Q1 analysis (PLAN.md, m14-registration): {when}", f"label: {LABEL}"]
+        day, registered = self.analysed_at[:10], ANALYSIS_DATE.isoformat()
+        heading = {
+            PROGRESS: f"progress reading on {day}, before the registered analysis date "
+            f"{registered}: not the registered result",
+            REGISTERED: f"registered analysis, read {day} (analysis date {registered})",
+            LATE: f"late reading on {day}, after the registered analysis date {registered}: not "
+            "the registered result, which is the reading made on that date",
+        }[self.reading_time]
+        out = [f"pooled Q1 analysis (PLAN.md, m14-registration): {heading}", f"label: {LABEL}"]
         out.append("rounds:")
         out.extend(f"  {r.line()}" for r in self.rounds)
+        out.extend(
+            f"  note: {r.round} is not one of the registered rounds (registration item 1)"
+            for r in self.rounds
+            if not registered_round(r.round)
+        )
         if self.duplicates:
             out.append(f"  {self.duplicates} posts appear in more than one snapshot; counted once")
         for arm, role in ((self.primary, "primary"), (self.secondary, "secondary")):
@@ -220,11 +245,14 @@ def _arm_lines(arm: Arm, role: str) -> list[str]:
     return out
 
 
-def _arm(name: str, items: Sequence[tuple[float, str]]) -> Arm:
+def _arm(name: str, items: Sequence[tuple[str, int, float]]) -> Arm:
+    """``items`` are (opening day, question id, h); sorted first, so the seeded resamples, and
+    so the interval, do not depend on the order the rounds were given in."""
     if not items:
         return Arm(name, None, None, None)
-    values = [h for h, _ in items]
-    days = [d for _, d in items]
+    ordered = sorted(items)
+    values = [h for _, _, h in ordered]
+    days = [d for d, _, _ in ordered]
     by_day = Interval.of(values, days)
     by_question = (
         Interval.of(values, list(range(len(values)))) if by_day.clusters < MIN_CLUSTERS else None
@@ -256,8 +284,8 @@ def pool(
     opened = {s.question_id: opening_day(s) for s in scorecard.load(ledger_paths).scored}
     seen: dict[str, set[int]] = {floor.AUGUR: set(), floor.BLEND: set()}
     duplicates = 0
-    primary: list[tuple[float, str]] = []
-    secondary: list[tuple[float, str]] = []
+    primary: list[tuple[str, int, float]] = []
+    secondary: list[tuple[str, int, float]] = []
     coverage: list[RoundCoverage] = []
     for snap in snapshots:
         own = floor.decide(snap, ledger_paths, floor.AUGUR)
@@ -271,7 +299,7 @@ def pool(
                         duplicates += 1
                     continue
                 held.add(s.question_id)
-                into.append((s.h, opened[s.question_id]))
+                into.append((opened[s.question_id], s.question_id, s.h))
         coverage.append(
             RoundCoverage(
                 round=own.round,
@@ -293,7 +321,7 @@ def pool(
     now = clock.now()
     return PooledReport(
         analysed_at=to_iso(now),
-        progress=now.astimezone(UTC).date() < ANALYSIS_DATE,
+        reading_time=when(now.astimezone(UTC).date()),
         rounds=tuple(coverage),
         duplicates=duplicates,
         primary=first,

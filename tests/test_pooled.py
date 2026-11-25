@@ -249,14 +249,45 @@ def test_a_reading_before_the_analysis_date_is_labelled_progress(tmp_path: Path)
     ledger = _ledger(tmp_path / "l.sqlite", [Q(1, 0.8, 0.6), Q(2, 0.6, 0.8)])
     snaps = [_snapshot([1, 2], "minibench-2026-11-30")]
     early = pooled.pool(snaps, [ledger], clock=BEFORE)
-    assert early.progress
+    assert early.reading_time == pooled.PROGRESS
     assert "progress reading" in early.lines()[0]
     assert "not the registered result" in early.lines()[0]
-    late = pooled.pool(snaps, [ledger], clock=ON_THE_DAY)
-    assert not late.progress
-    assert late.lines()[0].endswith(f"(analysis date {date(2027, 1, 11).isoformat()})")
+    on_the_day = pooled.pool(snaps, [ledger], clock=ON_THE_DAY)
+    assert on_the_day.reading_time == pooled.REGISTERED
+    assert on_the_day.lines()[0].endswith(f"(analysis date {date(2027, 1, 11).isoformat()})")
+    later = pooled.pool(snaps, [ledger], clock=FixedClock(datetime(2027, 1, 12, tzinfo=UTC)))
+    assert later.reading_time == pooled.LATE
+    assert "late reading" in later.lines()[0]
+    assert "not the registered result" in later.lines()[0]
     # Nothing scored yet still prints a report, with the assumed-spread table.
     empty = pooled.pool([_snapshot([9], "minibench-2026-12-14")], [ledger], clock=BEFORE)
     assert empty.primary.by_day is None
     assert empty.needed_measured is None
     assert any("+5 needs 254" in line for line in empty.lines())
+
+
+def test_the_interval_does_not_depend_on_the_order_of_the_rounds(tmp_path: Path) -> None:
+    first = [Q(i, 0.5 + 0.05 * i, 0.6, DAY_A + timedelta(days=i % 3)) for i in range(1, 7)]
+    second = [
+        Q(i, 0.9 - 0.04 * (i - 10), 0.6, DAY_A + timedelta(days=i % 3)) for i in range(11, 15)
+    ]
+    ledger = _ledger(tmp_path / "l.sqlite", first + second)
+    a = _snapshot([q.post_id for q in first], "minibench-2026-11-30")
+    b = _snapshot([q.post_id for q in second], "minibench-2026-12-14")
+    one = pooled.pool([a, b], [ledger], clock=BEFORE)
+    other = pooled.pool([b, a], [ledger], clock=BEFORE)
+    assert one.primary == other.primary
+    assert one.primary.by_question is not None
+
+
+def test_a_round_outside_the_registration_is_flagged() -> None:
+    assert pooled.registered_round("minibench")
+    assert pooled.registered_round("minibench-2026-11-30")
+    assert pooled.registered_round("fall-futureeval-2026")
+    assert not pooled.registered_round("bot-testing-area")
+
+
+def test_an_unregistered_round_gets_a_note(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path / "l.sqlite", [Q(1, 0.8, 0.6)])
+    report = pooled.pool([_snapshot([1], "bot-testing-area")], [ledger], clock=BEFORE)
+    assert any("bot-testing-area is not one of the registered rounds" in x for x in report.lines())

@@ -170,7 +170,7 @@ Predictions registered before the simulation first ran (PLAN.md, m14-registratio
 - P50 (at n = 60, cumulative re-reads after four rounds admit in 10% to 15% of seasons): 11.8%, **held**.
 - P51 (at n = 60, each of four rounds alone admits in 15% to 22%): 19.5%, **held**.
 
-Read as: the floor rule's 5% holds only for one look. Re-reading it after every round on the growing pool more than doubles the false admission rate (11.8% after four), and reading four rounds one at a time nearly quadruples it (19.5%). This is why the floor rule decides one named round and the pooled analysis has one date and cannot admit.
+Read as: the floor rule's 5% holds only for one look. Re-reading it after every round on the growing pool admits a no-lead candidate in 11.8% of seasons after four, 2.4 times the nominal rate, and reading four rounds one at a time in 19.5%, 3.9 times. This is why the floor rule decides one named round and the pooled analysis has one date and cannot admit.
 <!-- augur:end m14-rereads -->
 
 ### The schedule on GitHub, read 2026-11-25 (no token, $0)
@@ -217,8 +217,12 @@ spread and the n needed; the blend against the template the same way, as
 the secondary quantity; and the label *an unsubmitted shadow comparison on
 a below-floor model*. It never prints a floor verdict, and a test proves
 that even a lead the floor rule itself admits in every round comes out as
-"above 0" and nothing more (`tests/test_pooled.py`). Before 2027-01-11
-every reading is labelled a progress reading.
+"above 0" and nothing more (`tests/test_pooled.py`). Only a reading on
+2027-01-11 is the registered result: one before it is labelled a progress
+reading, one after it a late reading, and a round outside the
+registration gets a note. Questions are sorted by opening day and id
+before the bootstrap, so the interval does not depend on the order the
+rounds are given in.
 
 In RESULTS.md it will be set beside: each round's own floor line (`augur
 floor --round R --candidate blend`); `augur score L --mode live --cluster
