@@ -1842,6 +1842,13 @@ def render_news(root: Path) -> str:
         f"- News sources admitted: {s.news} ({s.news / n:.2f} a question). Sources a question "
         f"was shown: O {s.base_per_question:.2f}, G {s.g_per_question:.2f}.",
     ]
+    if s.digest_questions:
+        out.append(
+            f'- One AP wire-digest page (a GKG "title" thousands of characters long) '
+            f"matched {s.digest_questions} questions' queries and was the only news for "
+            f"{s.digest_only} of them; the last row below leaves those out (exploratory, "
+            "chosen after the run)."
+        )
     if s.domains:
         out.append(
             "- Most frequent news hosts: " + ", ".join(f"{d} {k}" for d, k in s.domains) + "."
@@ -1853,7 +1860,7 @@ def render_news(root: Path) -> str:
     ]
     out += [f"| {r.arm} | {_est(r.brier, 4)} | {r.log:.3f} | {r.n} |" for r in s.arms]
     out += ["", "| Paired difference | Brier [95% interval] (MDE) |", "|---|---|"]
-    rows = [*s.diffs, *s.gained_diffs, *s.priced_diffs, *s.unpriced_diffs]
+    rows = [*s.diffs, *s.gained_diffs, *s.priced_diffs, *s.unpriced_diffs, *s.article_diffs]
     out += [f"| {d.label} | {_signed(d.brier, 4)} ({d.brier.mde:.4f}) |" for d in rows]
     need = ", ".join(
         f"{v} questions for {k:.3f}" if v is not None else f"not computable for {k:.3f}"

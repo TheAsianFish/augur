@@ -28,6 +28,8 @@ from augur.redraw import recorded_research
 from augur.replay import recorded_prices
 
 RECENT = timedelta(days=30)
+DIGEST_TITLE = 200
+"""Characters: no real headline in arm G is longer; the one digest page's is thousands."""
 HINDCAST_GAIN = 0.055
 """Hindcast's Qwen3-32B gain from dated retrieval (0.234 to 0.179), the verdict's bar."""
 Z_95, Z_80 = 1.959964, 0.841621
@@ -50,22 +52,41 @@ class News:
     source_id: str
     seen: datetime | None
     url: str
+    title: str = ""
+
+    @property
+    def digest(self) -> bool:
+        """A wire-digest page whose GKG "title" is a whole feed (found after the run)."""
+        return len(self.title) > DIGEST_TITLE
 
 
 def news_sources(path: Path, tournament: str) -> list[News]:
-    """Every news source the gate admitted for a question in arm G's runs, once each."""
+    """The news sources the gate admitted for each question in its deciding run, once each.
+
+    A question's deciding run is the one that recorded its latest outcome: a
+    question whose draws failed and whose retry gained nothing keeps O's
+    forecast, so the first attempt's news does not count for it.
+    """
     out: dict[tuple[int, str], News] = {}
     with closing(sqlite3.connect(f"file:{path}?mode=ro", uri=True)) as conn:
-        for qid, sid, detail, url in conn.execute(
-            "SELECT u.question_id, s.source_id, s.evidence_detail, s.url FROM source_uses u "
-            "JOIN runs r ON r.run_id = u.run_id JOIN sources s ON s.source_id = u.source_id "
+        deciding: dict[int, str] = {}
+        for qid, run_id in conn.execute(
+            "SELECT o.question_id, o.run_id FROM question_outcomes o "
+            "JOIN runs r ON r.run_id = o.run_id WHERE r.tournament = ? ORDER BY o.rowid",
+            (tournament,),
+        ):
+            deciding[int(qid)] = str(run_id)
+        for qid, run_id, sid, detail, url, title in conn.execute(
+            "SELECT u.question_id, u.run_id, s.source_id, s.evidence_detail, s.url, s.title "
+            "FROM source_uses u JOIN runs r ON r.run_id = u.run_id "
+            "JOIN sources s ON s.source_id = u.source_id "
             "WHERE r.tournament = ? AND u.admitted = 1 AND s.searcher = 'gdelt' "
             "ORDER BY u.use_id",
             (tournament,),
         ):
             key = (int(qid), str(sid))
-            if key not in out:
-                out[key] = News(int(qid), str(sid), seendate(str(detail)), str(url))
+            if deciding.get(int(qid)) == str(run_id) and key not in out:
+                out[key] = News(int(qid), str(sid), seendate(str(detail)), str(url), str(title))
     return list(out.values())
 
 
@@ -113,6 +134,10 @@ class Q13:
     unpriced: int
     unpriced_diffs: list[DiffRow]
     gained_diffs: list[DiffRow]
+    digest_only: int
+    digest_questions: int
+    article_diffs: list[DiffRow]
+    """Exploratory, chosen after the run: G − O where a real article (not the digest) came."""
     sd: float
     needed: dict[float, int | None]
     verdict: str
@@ -199,6 +224,20 @@ def score_q13(
                 y,
             )
         )
+    real = {n.question_id for n in news if not n.digest}
+    with_digest = {n.question_id for n in news if n.digest}
+    article_q = [q for q in common if q in real]
+    article_diffs = []
+    if article_q:
+        y = [outcome[q] for q in article_q]
+        article_diffs.append(
+            diff_row(
+                f"G − O (gained a real article, n = {len(article_q)}; exploratory)",
+                [g_f[q] for q in article_q],
+                [o_f[q] for q in article_q],
+                y,
+            )
+        )
     recent = {
         n.question_id
         for n in news
@@ -237,6 +276,9 @@ def score_q13(
         unpriced=len(unpriced_q),
         unpriced_diffs=split(unpriced_q, f"unpriced, n = {len(unpriced_q)}"),
         gained_diffs=gained_diffs,
+        digest_only=len([q for q in gained_list if q not in real]),
+        digest_questions=len(with_digest & set(common)),
+        article_diffs=article_diffs,
         sd=sd,
         needed={e: n_needed(sd, e) for e in (0.02, HINDCAST_GAIN)},
         verdict=verdict(go),
