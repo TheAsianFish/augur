@@ -188,12 +188,15 @@ Predictions registered in PLAN.md before the run:
   the title index covers only the 30 days before the cutoff, so P41's
   30-day condition held almost by construction: only one admitted source
   came from the API's 90-day window.
-- **Dated news did not help this model.** For a question that gained
+- **Dated news did not measurably help this model.** For a question that gained
   news, G − O also includes a rewritten brief and three fresh draws, so
   it is news plus that noise, which averages out over questions. G − O is +0.006 [−0.010,
   +0.022]: if anything worse, and the interval's lower end (−0.010) rules
   out a gain the size of Hindcast's 0.055, so the registered verdict is
   *not the limit*, not the *unresolved* I predicted (P43 and P44 failed).
+  It does not rule out a gain under 0.010, the size of AIA's 0.009 or
+  El Lahib et al.'s 0.002: 64 questions cannot see an effect that small
+  (83 are needed for 0.02).
   On the 47 priced questions it is +0.012 [−0.009, +0.033]. On the 17
   unpriced (Metaculus and INFER) questions it is −0.011 [−0.028, +0.002],
   the only split pointing the right way, and too small a sample to call.
@@ -216,10 +219,11 @@ Predictions registered in PLAN.md before the run:
   market's own event, and AIA's (−0.009 overall, −0.031 on its market
   subset) from agentic search on a frontier model. Both are retrieval much
   closer to the question than keyword titles. Here,
-  adding dated, leak-free news to the same free model's brief left it
-  where it was, as El Lahib et al. found with leak-free documents (−0.002).
-  On this model, more evidence of this kind is not what holds the
-  backtest back. Two things remain untested: better-targeted news (the
+  adding dated, leak-free news to the same free model's brief gained
+  nothing measurable; El Lahib et al. report a similarly small change with
+  leak-free documents (−0.002), under a different protocol. On this model,
+  more evidence of this kind is not what holds the backtest back by
+  anything near Hindcast's margin. Two things remain untested: better-targeted news (the
   API's full-text search, To measure) and a stronger reader model (cut
   from this milestone).
 
