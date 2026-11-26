@@ -178,8 +178,8 @@ uv run augur rereads --check            # the synthetic re-read table, as make e
 M7 and M13 both point at the reader, not the evidence, as this pipeline's
 limit, so M16 asks whether the newer free model (`nemotron-3.5-super-vl`)
 reads better than the current route (`nemotron-3-ultra`) on identical
-questions. Both forecast the 292 market questions of the two ForecastBench
-sets posed after the newer model's listing, one draw, no retrieval, before
+questions. Both forecast the 146 market questions of each ForecastBench
+set posed after the newer model's listing (47 are posed in both), one draw, no retrieval, before
 the outcomes were read, under a route rule committed before any call. A
 reported live arm (`AUGUR_SHADOW_READER=true`) adds three draws on the
 newer model to each shadow tick from the exact forecaster request Augur's
