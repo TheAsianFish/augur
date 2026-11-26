@@ -4,7 +4,10 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M15 forecasts ForecastBench's
+committed file differs from a fresh render. M16 sets the newer free model
+(`nemotron-3.5-super-vl`) against the current route on the same
+ForecastBench questions, forecast before their outcomes were published,
+under a route rule registered before any call. M15 forecasts ForecastBench's
 dataset questions, half of every set and never touched before, with no
 model at all (base rates and a stock's own history), beside the
 benchmark's baselines and leaders on the same instances. M14 registers, before the
@@ -160,6 +163,46 @@ Predictions registered before any call (PLAN.md, m16-registration):
 - P60: held: median 19.3 s against 40.1 s.
 - P61: not yet readable: the live arm starts with the 2026-12-14 round.
 <!-- augur:end readers -->
+
+### How it was run (2026-11-26, $0)
+
+After a one-question check per route (14:49 and 14:50 UTC, two minutes
+after the registration), `make backtest-reader` ran all four (route, set)
+runs at once into one ledger a route until about 16:55, and one resume
+pass at 16:56 retried the questions that had failed, the same for both
+routes. The forecasts were
+committed as `78daba3` (16:59:43Z) before either resolution file was
+opened; the 2026-11-22 file did not exist (HTTP 404 at 17:01Z). `make
+resolve-reader` then fetched the 2026-11-08 file (published upstream
+2026-11-25T17:20:41Z, item 3) and resolved both ledgers. Of that set's
+146 questions, 135 have a row and 15 resolved yes or no a month in.
+
+What failed: every failure is an empty or unparsable answer, not a rate
+limit. The newer route ran out of output tokens nine times (`finish_reason
+'length'`: it reasons for a median 1,600 output tokens a call against the
+current route's 890), the current route three times, and each had one
+answer with no `Probability:` line; after the resume pass one question a
+route stays unforecast. 47 Metaculus questions are posed in both sets
+(frozen three weeks apart); each (set, question) is its own row, and the
+bootstrap resamples a question once with both its rows.
+
+### What it says
+
+- **Not decidable, as predicted.** On the first 15 resolved questions the
+  newer route is +0.033 Brier worse, with an interval from −0.073 to
+  +0.147 (P58 held, P59 failed: the point estimate went the other way).
+  The detectable effect at n = 15 is 0.158, and at the measured spread a
+  0.01 difference needs about 3,800 questions and 0.02 about 940, far
+  past the two sets' 292 instances. The registered reading is 2027-01-11.
+- **The newer route is twice as fast** (median 19.3 s a call against 40.1
+  s; P60 held), so the rule's second clause, an upper end below +0.01
+  with no higher latency, is the one it can meet, and only if the
+  interval narrows.
+- **Both readers are far behind the price.** On the same 15 questions the
+  freeze price scores 0.279 against 0.431 and 0.464, the pattern M5, M10
+  and M12 found on older sets. 12 of the 15 resolved yes: the first
+  questions to resolve are the "by date" markets that resolve early, so
+  this subset is not the set.
 
 ## M15: ForecastBench's dataset half with no model
 
@@ -3124,6 +3167,9 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| M16's registered reading (route rule, P58 to P60 on the full sets) | Registered for 2027-01-11; on 2026-11-26 only 15 of the 2026-11-08 set's questions had resolved and the 2026-11-22 file did not exist | `make resolve-reader` whenever ForecastBench publishes or updates either file (it re-fetches, records the SHA-256 and upstream commit time, resolves both ledgers, re-renders); on 2027-01-11 the same, then `augur readers --live L` with the live ledger below, and the verdict in the block is the registered one |
+| M16's live arm on the 2026-12-14 round (P61) | The arm is off until the maintainer sets the repository variable, and the round opens about 2026-12-14 | Maintainer: set `AUGUR_SHADOW_READER=true` (with the shadow variables from M11; never `AUGUR_SUBMIT`). After the round resolves: `scripts/shadow_fetch.sh branch && augur ledger import branch/shadow --out data/ledgers/m16-live.sqlite`, `augur resolve --ledger data/ledgers/m16-live.sqlite` (or `--manual-file`), `augur readers --live data/ledgers/m16-live.sqlite`, and `augur score data/ledgers/m16-live.sqlite --mode dry_run --cluster week` (the `reader` and `reader-base` rows beside the others); P61's count: `sqlite3 data/ledgers/m16-live.sqlite "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'reader'"` against the floor's scored n |
+| GitHub's push time of M16's registration (`5a6850f`) | No GitHub credentials on the build machine | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.ref == "refs/heads/dev/m16") \| [.timestamp, .after]'` (the earliest push containing the commit) |
 | GitHub's push time of M14's registration (`7469604`), against the 2026-11-30 round's first question | No GitHub credentials on the build machine (`git push` refused); the branch is published with the pull request | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.after == "7469604e7ef4d8295f36d6454ad7d10251fe16e9" or .ref == "refs/heads/dev/m14") \| [.timestamp, .activity_type, .ref, .after]'` (the earliest push containing the commit), and the round's first `open_time`: `augur standings --round minibench --out /tmp/mb.json` once the round is listed, then `python3 -c "import json; print(min(q['open_time'] for q in json.load(open('/tmp/mb.json'))['questions'] if q.get('open_time')))"` or the question pages; the registration counts only if the push is earlier |
 | M14's pooled Q1 analysis (P47 to P49) | Registered for 2027-01-11, after the 2026-12-14 round's last scheduled resolution; no shadow question exists yet | On 2027-01-11 (UTC): `scripts/shadow_fetch.sh branch && augur ledger import branch --out data/ledgers/m14-shadow-pooled.sqlite`; `augur standings --round R --out data/standings/R.json` for both rounds and `fall-futureeval-2026`; `augur resolve --ledger data/ledgers/m14-shadow-pooled.sqlite` (or `--manual-file`); then `augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026 --ledger data/ledgers/m14-shadow-pooled.sqlite --json data/runs/m14-pooled.json`, beside `augur floor --round R --ledger data/ledgers/m14-shadow-pooled.sqlite --candidate blend` per round and `augur score data/ledgers/m14-shadow-pooled.sqlite --mode live --cluster week`; label it an unsubmitted shadow comparison on a below-floor model |
 | The first two-tick check on GitHub and the measured chain spacing (M14) | The shadow schedule is off and the chain has never fired (read 2026-11-25: no `ledger` branch, 0 dispatched runs) | Maintainer: set `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30` (never `AUGUR_SUBMIT`), then `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2` twice, the second after the first finishes. Then `scripts/shadow_fetch.sh /tmp/shadow` (the second tick's export lists none of the first tick's questions), and after a day of chained ticks `curl -s "https://api.github.com/repos/TheAsianFish/augur/actions/workflows/tournament.yml/runs?per_page=100" > runs.json && python3 scripts/chain_spacing.py runs.json --since START --target 30`; if most gaps are not within 10 minutes of 30, fix the chain before the round |
