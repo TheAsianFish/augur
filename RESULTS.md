@@ -35,6 +35,131 @@ against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
 
+## M16: a newer free reader on the same questions
+
+**A backtest on two free models, one draw each, no retrieval.** M7 and M13
+both say the reader, not the evidence, limits this pipeline, and the
+public template on `nemotron-3.5-super-vl` averages −3.25 and −4.75 a
+question against −12.19 and −7.66 for the current route (different
+coverage, no intervals). M16 asks the same question on identical
+questions: both free routes forecast the market questions of the two
+ForecastBench sets posed after the newer model's 2026-10-15 listing, and
+the route rule decides Spring 2027's default from the paired Brier
+difference.
+
+The registration below (the routes, the corpus, the live arm, the
+statistic, the rule, the analysis date and P58 to P61) was committed as
+`5a6850f` ("Register M16's route rule, corpus and predictions before any
+call", 2026-11-26T14:47:38Z), before any M16 code and before either
+route was called on an M16 question. It is rendered here from PLAN.md, so
+a later edit to either copy fails the build.
+
+<!-- augur:begin m16-registration -->
+**M16's registration (2026-11-26).**
+
+1. *The routes.* The current route, `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free`
+   (OpenRouter listing 2026-06-04), and the newer route,
+   `openrouter:nvidia/nemotron-3.5-super-vl:free` (listing 2026-10-15),
+   each the only route of its chain (no fallback to another model), with
+   the default reasoning effort and the forecaster prompt as committed.
+2. *The backtest corpus.* The market questions (Metaculus and Polymarket;
+   the loader's sources) of ForecastBench's `2026-11-08-llm.json` and
+   `2026-11-22-llm.json` as fetched on 2026-11-26 with the SHA-256 above,
+   kept by the loader's own rules except that no resolution set is needed
+   to forecast: frozen after both routes' listing dates and with a market
+   close date. One draw (member 0, seed 0), no retrieval, the clock pinned
+   to each question's freeze instant, one ledger per route
+   (`data/ledgers/m16-reader-current.sqlite`, `m16-reader-newer.sqlite`),
+   run together by `make backtest-reader` so both meet the same hours of
+   the host's load. A question either route fails to answer after the
+   runner's own retries is left out of the pair and counted.
+3. *Prospective, with one exception stated.* Both ledgers are committed
+   before `2026-11-22_resolution_set.json` exists. The 2026-11-08 file
+   already existed when this was written (above): the models cannot read
+   it (no retrieval, both listed before the freeze), so what is lost is
+   only the protection against the analyst, which this registration,
+   committed before any call, replaces. Its rows are scored with the
+   rest, and RESULTS.md says which set is which.
+4. *The live arm (reported, never the floor's candidate).* From the
+   2026-12-14 MiniBench round, behind the repository variable
+   `AUGUR_SHADOW_READER` (off unless `true`): on each question of a shadow
+   tick that holds Augur's aggregate and the template's row, three draws
+   (members 0 to 2) on the newer route from the forecaster request
+   Augur's member 0 saw in that tick, rebuilt from the ledger and refused
+   unless it matches the recorded one except for the model, combined as
+   Augur combines draws and written as a `reader` reference row after
+   Augur, the template, `stat` and `blend`. It is served only while the
+   day's calls in the shadow exports plus three stay within
+   `AUGUR_SHADOW_DAILY_CALLS`. Its comparator is the same combination of
+   Augur's own members 0 to 2 from the same tick, before calibration or
+   any blend.
+5. *The statistic.* Per binary question, Brier(newer) − Brier(current).
+   The backtest difference pools both sets; the live difference pools the
+   resolved binary questions of the live arm; *pooled* means both
+   together, one row a question. Each is a mean with a 95% paired
+   bootstrap interval (10,000 resamples of questions, seed 20261119), the
+   minimum detectable effect at 80% power beside it, and n. Live
+   head-to-head points (`100·ln(p_newer/p_current)` on the outcome,
+   halved for numeric and discrete) are reported for every live question
+   type with the same bootstrap; they do not enter the rule. Latency is
+   the median `latency_ms` of the successful forecaster calls of each
+   route in the two backtest ledgers.
+6. *The rule (Spring 2027's default free route).* On the analysis date,
+   the newer route becomes the default if the pooled interval lies wholly
+   below 0, or if its upper end is below +0.01 and the newer route's
+   median latency is no higher than the current route's. Otherwise the
+   default stays: "kept" if the interval lies wholly above 0, "not
+   decidable at this n" if it contains 0, with the n a 0.01 and a 0.02
+   difference would need from the measured spread.
+7. *The analysis date.* 2027-01-11, on the resolution files ForecastBench
+   has published by that day (fetched then, SHA-256 recorded) and the
+   live rows resolved by then. A reading before it is a progress reading
+   and cannot switch the route; a reading after it is a late reading.
+8. *The predictions.*
+    - **P58.** On the 2026-11-08 set's questions resolved in its first
+      resolution file, the backtest interval is wider than ±0.05 (half
+      width above 0.05) and contains 0.
+    - **P59.** On the same questions, Brier(newer) − Brier(current) lies
+      between −0.03 and 0.00.
+    - **P60.** The newer route's median forecaster latency in the
+      backtest is lower than the current route's.
+    - **P61.** Live, the `reader` row exists on fewer than half of the
+      2026-12-14 round's questions that the floor rule scores.
+<!-- augur:end m16-registration -->
+
+### The two routes on the same questions
+
+<!-- augur:begin readers -->
+Routes: current `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free`, newer `openrouter:nvidia/nemotron-3.5-super-vl:free`. One draw, no retrieval, $0 (free routes). Latency is the median over each route's successful forecaster calls (registration item 5).
+
+| Route | Forecast 2026-11-08 | Forecast 2026-11-22 | Not forecast | Calls | Errors | Median latency | Mean latency | Median output tokens |
+|---|---|---|---|---|---|---|---|---|
+| current | 146 | 145 | 0 | 295 | 3 | 40.1 s | 48.7 s | 890 |
+| newer | 145 | 146 | 0 | 301 | 9 | 19.3 s | 21.7 s | 1600 |
+
+Brier(newer) − Brier(current) on the questions both routes forecast that have resolved yes or no (negative favours the newer route; 95% paired bootstrap):
+
+| Set | Forecast before its resolution file? | Paired | Yes share | Brier newer | Brier current | Market price (same questions) | Newer − current |
+|---|---|---|---|---|---|---|---|
+| 2026-11-08 | no (file unread; item 3) | 0 | — | — | — | — | — |
+| 2026-11-22 | yes | 0 | — | — | — | — | — |
+
+Resolution files read: none published yet. Left out of the pairs: 245 not resolved to 0 or 1.
+
+- Backtest, both sets: —.
+- Live arm: no reading yet (from the 2026-12-14 round; To measure).
+- Pooled (the rule's quantity): —.
+
+**Verdict (registration item 6, progress reading): not decidable: no question has resolved.**
+
+Predictions registered before any call (PLAN.md, m16-registration):
+
+- P58: not yet readable: no question of the set resolved.
+- P59: not yet readable: no question of the set resolved.
+- P60: held: median 19.3 s against 40.1 s.
+- P61: not yet readable: the live arm starts with the 2026-12-14 round.
+<!-- augur:end readers -->
+
 ## M15: ForecastBench's dataset half with no model
 
 **A backtest row in raw Brier on matched instances, not a Brier Index.**
@@ -2631,6 +2756,8 @@ missed, and why).
 | `m1-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 7 | 1 | 1 | 0 | 0 |
 | `m13-c2-news.sqlite` | 3 (backtest 3) | 64 | 274 | 54 | 0 | 0 | 0 |
 | `m15-dataset-closes.sqlite` | 1 (backtest 1) | 348 | 0 | 0 | 0 | 0 | 0 |
+| `m16-reader-current.sqlite` | 5 (backtest 5) | 245 | 295 | 291 | 0 | 0 | 0 |
+| `m16-reader-newer.sqlite` | 5 (backtest 5) | 245 | 301 | 291 | 0 | 0 | 0 |
 | `m2-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 16 | 2 | 2 | 0 | 0 |
 | `m2-probe.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 0 |
 | `m3-dryrun-minibench-2.sqlite` | 1 (dry_run 1) | 1 | 6 | 1 | 0 | 0 | 0 |

@@ -1,0 +1,11 @@
+{"event": "model switch", "from_route": "openrouter:nvidia/nemotron-3.5-super-vl:free", "level": "warning", "member": 0, "outcome": "exhausted", "reason": "empty", "role": "forecaster", "timestamp": "2026-11-26T16:57:28.815979Z", "to_route": null}
+{"error": "no model in the forecast chain could answer: nvidia/nemotron-3.5-super-vl:free on openrouter returned no text (finish_reason 'length'); a reasoning model may need more max_tokens; add models to AUGUR_FORECAST_MODELS or retry later", "event": "forecaster failed", "level": "warning", "member": 0, "timestamp": "2026-11-26T16:57:28.816666Z"}
+{"error": "only 0 of 1 draws parsed: member 0: no model in the forecast chain could answer: nvidia/nemotron-3.5-super-vl:free on openrouter returned no text (finish_reason 'length'); a reasoning model may need more max_tokens; add models to AUGUR_FORECAST_MODELS or retry later", "event": "backtest question failed", "level": "warning", "question": "41130", "timestamp": "2026-11-26T16:57:28.816783Z"}
+2026-11-08-llm.json: 146 questions (no resolution set: forecast only)
+  kept     146
+[1/5] polymarket:0x9cf87b067740fc6c9cd1394bda541a3a05f2cc39b047df924923bce92505354c p=0.12 (14 s)
+[2/5] polymarket:0x3e20908c1d9d1cb796851cbd0261a76b45f9838c4e30e124a1488adf9a119a65 p=0.20 (26 s)
+[3/5] metaculus:41130 failed: only 0 of 1 draws parsed: member 0: no model in the forecast chain could answer: nvidia/nemotron-3.5-super-vl:free on openrouter returned no text (finish_reason 'length'); a reasoning model may need more max_tokens; add models to AUGUR_FORECAST_MODELS or retry later
+[4/5] metaculus:36478 p=0.08 (18 s)
+[5/5] polymarket:0xc0f076bc4d90a44df34a729277e9d1f294f0cb60d2c3b1b3800908b1e15b923b p=0.68 (17 s)
+ledger: data/ledgers/m16-reader-newer.sqlite (run run_95a3605a0ee84284a161): 4 forecast, 141 done earlier, 0 skipped, 1 failed

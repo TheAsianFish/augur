@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker backtest-reader resolve-reader reader
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker backtest-reader resolve-reader
 
 UV ?= uv
 
@@ -50,6 +50,7 @@ eval: ## Offline and free: scan every committed ledger, re-score the backtest, c
 	$(UV) run augur q6 --check
 	$(UV) run augur fbcompare --check
 	$(UV) run augur statarm --check
+	$(UV) run augur readers --check
 	$(UV) run augur report --check
 
 backtest: ## ForecastBench, no retrieval, local model; hours on a CPU (ARGS adds options)
@@ -153,3 +154,15 @@ backtest-reader: ## M16: both free routes, one draw, no retrieval, on the sets f
 		done; \
 	done; \
 	wait
+
+resolve-reader: ## M16: fetch each set's resolution file (only after both routes' forecasts are committed), resolve both ledgers, re-score
+	for s in $(READER_SETS); do \
+		if $(UV) run python scripts/fetch_forecastbench.py --open-resolutions $$s data/forecastbench; then \
+			for l in $(READER_LEDGER_CURRENT) $(READER_LEDGER_NEWER); do \
+				$(UV) run augur resolve --ledger $$l \
+				--forecastbench data/forecastbench/$${s}_resolution_set.open.json || exit 1; \
+			done; \
+		else echo "$$s: no resolution file yet"; fi; \
+	done
+	$(UV) run augur readers
+	$(UV) run augur report
