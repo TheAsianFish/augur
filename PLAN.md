@@ -2047,6 +2047,112 @@ the first verdict is "not decidable"; the point estimate favours the
 newer model by 0.00 to 0.03. Live, it covers fewer than half of the
 round's scored questions, because it is served last.
 
+**M16's registration, committed 2026-11-26 before any M16 code and before
+either route is called on any M16 question.** What had been seen when it
+was written: both question sets (`2026-11-08-llm.json`, SHA-256
+`9a5a6d89…fc00fb`, and `2026-11-22-llm.json`, `4bb4cc57…7c952`; 146
+Metaculus and Polymarket questions each, all frozen on 2026-10-29 and
+2026-11-19 respectively, every one with a market close date), and the
+fact, found while starting this build, that ForecastBench committed
+`2026-11-08_resolution_set.json` at 2026-11-25T17:20:41Z, after the plan
+above was written. Its existence and commit time were read; its contents
+were not. `2026-11-22_resolution_set.json` did not exist (HTTP 404). No
+M16 forecast and no Brier score exists. RESULTS.md carries the block
+byte for byte.
+
+<!-- m16-registration:begin -->
+**M16's registration (2026-11-26).**
+
+1. *The routes.* The current route, `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free`
+   (OpenRouter listing 2026-06-04), and the newer route,
+   `openrouter:nvidia/nemotron-3.5-super-vl:free` (listing 2026-10-15),
+   each the only route of its chain (no fallback to another model), with
+   the default reasoning effort and the forecaster prompt as committed.
+2. *The backtest corpus.* The market questions (Metaculus and Polymarket;
+   the loader's sources) of ForecastBench's `2026-11-08-llm.json` and
+   `2026-11-22-llm.json` as fetched on 2026-11-26 with the SHA-256 above,
+   kept by the loader's own rules except that no resolution set is needed
+   to forecast: frozen after both routes' listing dates and with a market
+   close date. One draw (member 0, seed 0), no retrieval, the clock pinned
+   to each question's freeze instant, one ledger per route
+   (`data/ledgers/m16-reader-current.sqlite`, `m16-reader-newer.sqlite`),
+   run together by `make backtest-reader` so both meet the same hours of
+   the host's load. A question either route fails to answer after the
+   runner's own retries is left out of the pair and counted.
+3. *Prospective, with one exception stated.* Both ledgers are committed
+   before `2026-11-22_resolution_set.json` exists. The 2026-11-08 file
+   already existed when this was written (above): the models cannot read
+   it (no retrieval, both listed before the freeze), so what is lost is
+   only the protection against the analyst, which this registration,
+   committed before any call, replaces. Its rows are scored with the
+   rest, and RESULTS.md says which set is which.
+4. *The live arm (reported, never the floor's candidate).* From the
+   2026-12-14 MiniBench round, behind the repository variable
+   `AUGUR_SHADOW_READER` (off unless `true`): on each question of a shadow
+   tick that holds Augur's aggregate and the template's row, three draws
+   (members 0 to 2) on the newer route from the forecaster request
+   Augur's member 0 saw in that tick, rebuilt from the ledger and refused
+   unless it matches the recorded one except for the model, combined as
+   Augur combines draws and written as a `reader` reference row after
+   Augur, the template, `stat` and `blend`. It is served only while the
+   day's calls in the shadow exports plus three stay within
+   `AUGUR_SHADOW_DAILY_CALLS`. Its comparator is the same combination of
+   Augur's own members 0 to 2 from the same tick, before calibration or
+   any blend.
+5. *The statistic.* Per binary question, Brier(newer) − Brier(current).
+   The backtest difference pools both sets; the live difference pools the
+   resolved binary questions of the live arm; *pooled* means both
+   together, one row a question. Each is a mean with a 95% paired
+   bootstrap interval (10,000 resamples of questions, seed 20261119), the
+   minimum detectable effect at 80% power beside it, and n. Live
+   head-to-head points (`100·ln(p_newer/p_current)` on the outcome,
+   halved for numeric and discrete) are reported for every live question
+   type with the same bootstrap; they do not enter the rule. Latency is
+   the median `latency_ms` of the successful forecaster calls of each
+   route in the two backtest ledgers.
+6. *The rule (Spring 2027's default free route).* On the analysis date,
+   the newer route becomes the default if the pooled interval lies wholly
+   below 0, or if its upper end is below +0.01 and the newer route's
+   median latency is no higher than the current route's. Otherwise the
+   default stays: "kept" if the interval lies wholly above 0, "not
+   decidable at this n" if it contains 0, with the n a 0.01 and a 0.02
+   difference would need from the measured spread.
+7. *The analysis date.* 2027-01-11, on the resolution files ForecastBench
+   has published by that day (fetched then, SHA-256 recorded) and the
+   live rows resolved by then. A reading before it is a progress reading
+   and cannot switch the route; a reading after it is a late reading.
+8. *The predictions.*
+    - **P58.** On the 2026-11-08 set's questions resolved in its first
+      resolution file, the backtest interval is wider than ±0.05 (half
+      width above 0.05) and contains 0.
+    - **P59.** On the same questions, Brier(newer) − Brier(current) lies
+      between −0.03 and 0.00.
+    - **P60.** The newer route's median forecaster latency in the
+      backtest is lower than the current route's.
+    - **P61.** Live, the `reader` row exists on fewer than half of the
+      2026-12-14 round's questions that the floor rule scores.
+<!-- m16-registration:end -->
+
+**M16's results (2026-11-26, $0; RESULTS.md, M16; the block above
+unedited).** Both routes forecast all 292 instances (146 a set) with one
+draw and no retrieval; after one resume pass, applied to both routes,
+one instance a route stays unforecast (empty answers: the newer route
+ran out of output tokens nine times, the current one three). The
+forecasts were committed as `78daba3` before either resolution file was
+opened. On the 2026-11-08 file's 15 resolved questions, newer − current
+is +0.033 [−0.073, +0.147]: P58 **held** (half width 0.110), P59
+**failed** (the point estimate favours the current route), P60 **held**
+(median 19.3 s a call against 40.1 s), P61 not yet readable. Progress
+reading: not decidable; the registered reading is 2027-01-11. Two
+clarifications, found after the first scoring run and changing no rule
+and no number on the 2026-11-08 set (its 15 pairs are the same either
+way): 47 Metaculus questions are posed in both sets, so a row is a
+(set, question) pair, each set is resolved only from its own file, and
+item 5's "resamples of questions" resamples a question once with both its
+rows; and the resolver now writes a set's own resolution row for a
+question an earlier set already resolved the same way, which it used to
+skip.
+
 ### Considered and not chosen
 
 - *An anytime-valid confidence sequence for the floor, tested on an A/A
@@ -2131,7 +2237,7 @@ round's scored questions, because it is served last.
 - [x] M13: Dated news in the backtest: is the limit the evidence or the model? (Q2, Q3) — predictions committed first; the Frontier section corrected at its sources (Fall FutureEval's current count and leader, BLF as two tranches with its model-dependent loop, Hindcast, Zhang and Stadie; the Copier Line still marked not re-read) and `augur standings` printing the same-model agent-against-template pairs for the FutureEval project as well as finalized MiniBench rounds (at least 30 questions, both intervals), rendered in RESULTS.md by `make results`; a `gdelt` searcher for backtests (DOC 2.0 `artlist` with `enddatetime` at the cutoff, one request every 5 seconds with backoff, every response cached, no assumption about how far back it searches) whose article text comes only from a Wayback capture at or before the cutoff; arm G on M6's fixed 64 questions with the shared query plan, the same free model and three draws, through `make backtest-q2`; the leakage judge on the new sources. Done when RESULTS.md holds, from `make eval`, the share of questions that gained a news source dated in the 30 days before open, sources admitted per question before and after, G minus O and G minus N (paired Brier, interval, detectable effect) split into priced and unpriced questions, the judge's rate on news sources, and the result beside Hindcast, AIA and El Lahib et al. with the verdict (moved, not the limit, or unresolved with the n needed from M7's power curve); `tests/test_leakage.py` passes on the new ledger and a fake-server test proves an article seen or captured after the cutoff is refused.
 - [x] M14: The pooled Q1 analysis, registered before the round opens — the registration committed in this file before the 2026-11-30 round's first question: one primary quantity (Augur's aggregate against the shadow template, pooled over the 2026-11-30 and 2026-12-14 rounds and the FutureEval shadow questions), the registered blend as secondary, one fixed analysis date, clustering by opening day with the cluster count printed and the question-level interval beside it below eight clusters, the selection of scored questions stated, and the n for +2 and +5 points at the assumed 32-point spread, recomputed once from the measured one; `augur floor --pooled` over several rounds' snapshots, which prints the pooled head-to-head, its interval, n, clusters, spread and per-round coverage and can never print a floor verdict; a seeded, labelled synthetic table of how often the one-round rule admits a no-lead candidate when re-read after one to four rounds, cumulatively and round by round; the first two-tick check on GitHub and the measured chain spacing read from the `ledger` branch if it exists, with the chain fixed first if it does not hold its spacing; the pooled report printed beside each round's `augur floor --candidate blend` line, `augur score L --mode live --cluster week`, the public nemotron template's score and the outside agent-minus-template gaps, labelled an unsubmitted shadow comparison on a below-floor model. Done when the registration was pushed to the public `origin` before the round's first question opened (GitHub's push time recorded) and the floor rule's block is byte-identical; a test proves the pooled report cannot emit an admission and that its clustering matches a hand-computed case; RESULTS.md holds the registration, the sample-size table, the synthetic table (re-checked by `make eval`) and each hypothesis marked held, failed or not yet readable; and the pooled result, the GitHub check and the chain spacing are recorded when they exist, or under To measure with the exact commands.
 - [x] M15: ForecastBench's dataset half with no model — predictions committed first; a loader for dataset questions (single-series form, sets 2026-07-05 to 2026-09-27, resolved horizons, everything else counted as out of scope); the arms always 50%, the source's walk-forward base rate (outcomes dated before the due date only, 50% until 20 exist) and, on yfinance, the series arm (the share of the ticker's past same-horizon changes that were positive, closes dated at or before the freeze instant and written to the ledger first, shrunk toward the base rate with a registered weight); DBnomics, FRED, Wikipedia and ACLED on the base rate only unless a keyless endpoint with vintages verifies; `scripts/extract_forecast_sets.py` extended to the dataset instances with a small committed extract; `augur fbcompare` scoring each arm on the same instances as Naive Forecaster (primary), Imputed Forecaster, the top two entries and, where present, "stat-v1" and "undertow-mix". Done when RESULTS.md holds, from `make eval` with no model call, Brier by source and pooled for every arm and comparator, paired differences with intervals clustered by series and by resolution date and both cluster counts, coverage by source, each hypothesis marked held or failed, and the row labelled a backtest, not a Brier Index; `tests/test_leakage.py` passes on the new ledger and a fake-server test proves a close dated after the freeze instant is refused.
-- [ ] M16: A newer free reader on the same questions — the route rule and predictions committed before any call (the newer route becomes the Spring 2027 default only if the pooled paired interval excludes 0 in its favour, or its Brier difference's upper end is below +0.01 and its median latency is no higher; otherwise the default stays); `make backtest-reader`: `nvidia/nemotron-3.5-super-vl:free` and the current route, one draw, no retrieval, on the market questions of the ForecastBench sets that froze after 2026-10-15 (2026-11-08 and 2026-11-22; the 2026-10-25 set froze on 2026-10-09 and is excluded), forecast before their resolution sets are published, resumable, scored per set as its resolutions appear and analysed once on the registered date; a reported live arm from the 2026-12-14 round, three draws on the newer route from the brief and sources Augur's draws saw in the tick, written as a reference row after Augur, the template, `stat` and `blend`, only within what the day's free calls leave, behind its own repository variable and never the floor's candidate. Done when a fake-server test proves the arm is served last, makes no call once the day's budget is spent, reuses the tick's brief byte for byte and cannot become the floor's candidate; the release gate refuses either model on a set posed before its listing; both routes' forecasts on both qualifying sets are in a committed ledger dated before the set's resolution file was published; RESULTS.md holds the paired Brier difference on every qualifying set resolved by the merge with its interval, n and detectable effect (or states that none had resolved), calls and latency per route, the verdict under the registered rule (switched, kept or not decidable with the n needed), and the remaining sets and the live comparison under To measure with their commands; the pull request names the repository variable.
+- [x] M16: A newer free reader on the same questions — the route rule and predictions committed before any call (the newer route becomes the Spring 2027 default only if the pooled paired interval excludes 0 in its favour, or its Brier difference's upper end is below +0.01 and its median latency is no higher; otherwise the default stays); `make backtest-reader`: `nvidia/nemotron-3.5-super-vl:free` and the current route, one draw, no retrieval, on the market questions of the ForecastBench sets that froze after 2026-10-15 (2026-11-08 and 2026-11-22; the 2026-10-25 set froze on 2026-10-09 and is excluded), forecast before their resolution sets are published, resumable, scored per set as its resolutions appear and analysed once on the registered date; a reported live arm from the 2026-12-14 round, three draws on the newer route from the brief and sources Augur's draws saw in the tick, written as a reference row after Augur, the template, `stat` and `blend`, only within what the day's free calls leave, behind its own repository variable and never the floor's candidate. Done when a fake-server test proves the arm is served last, makes no call once the day's budget is spent, reuses the tick's brief byte for byte and cannot become the floor's candidate; the release gate refuses either model on a set posed before its listing; both routes' forecasts on both qualifying sets are in a committed ledger dated before the set's resolution file was published; RESULTS.md holds the paired Brier difference on every qualifying set resolved by the merge with its interval, n and detectable effect (or states that none had resolved), calls and latency per route, the verdict under the registered rule (switched, kept or not decidable with the n needed), and the remaining sets and the live comparison under To measure with their commands; the pull request names the repository variable.
 
 **Plan changes, 2026-11-22 (M8, decided while building it).**
 

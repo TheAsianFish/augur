@@ -301,7 +301,9 @@ def resolve_forecastbench(ledger: Ledger, resolution_set: Path) -> ResolveReport
             report.open += 1
             continue
         found = ("resolved", "yes" if float(r["resolved_to"]) == 1.0 else "no")
-        if ledger.latest_resolution(qid) == found:
+        # A question posed in two sets has one id: each set's file is recorded once, so
+        # the second set gets its own row (and freeze price) even when the outcome agrees.
+        if ledger.latest_resolution(qid) == found and _recorded_from(ledger, qid, data):
             report.unchanged += 1
             continue
         ledger.record_resolution(
@@ -544,3 +546,13 @@ def resolve_manual_file(ledger: Ledger, path: Path, round_posts: Iterable[int]) 
         round_questions=len(round_questions),
         already_resolved=sum(1 for qid in round_questions.values() if qid in resolved),
     )
+
+
+def _recorded_from(ledger: Ledger, question_id: int, data: dict[str, Any]) -> bool:
+    """Whether ``question_id`` already has a resolution row read from this set's file."""
+    row = ledger.connection.execute(
+        "SELECT 1 FROM resolutions WHERE question_id = ? AND source = 'forecastbench' "
+        "AND evidence LIKE ? LIMIT 1",
+        (question_id, f"{data.get('question_set')} resolution set: %"),
+    ).fetchone()
+    return row is not None

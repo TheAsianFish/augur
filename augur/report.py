@@ -37,6 +37,7 @@ from augur import (
     q2,
     q3,
     q13,
+    readercmp,
     replay,
     rereads,
     scorecard,
@@ -2446,6 +2447,130 @@ def render_fbdataset(root: Path) -> str:
     return "\n".join(out) + "\n"
 
 
+# -- M16: a newer free reader on the same questions ------------------------------------
+
+M16_REGISTRATION = re.compile(
+    r"<!-- m16-registration:begin -->\n(?P<body>.*?)<!-- m16-registration:end -->", re.S
+)
+
+
+def render_m16_registration(root: Path) -> str:
+    """M16's registration exactly as PLAN.md committed it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = M16_REGISTRATION.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no m16-registration block")
+    return m.group("body")
+
+
+def _m16_est(e: dict[str, Any] | None, digits: int = 3) -> str:
+    if e is None:
+        return "—"
+    mde = "—" if e["mde"] is None else f"{e['mde']:.{digits}f}"
+    return (
+        f"{e['mean']:+.{digits}f} [{e['low']:+.{digits}f}, {e['high']:+.{digits}f}] "
+        f"(n = {e['n']}, detectable {mde})"
+    )
+
+
+def _m16_s(ms: float | None) -> str:
+    return "—" if ms is None else f"{ms / 1000:.1f} s"
+
+
+def render_readers(root: Path) -> str:
+    path = root / readercmp.SNAPSHOT
+    if not path.exists():
+        return "M16's comparison has not been run (`augur readers`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    use = snap["usage"]
+    out = [
+        f"Routes: current `{snap['routes']['current']}`, newer `{snap['routes']['newer']}`. "
+        "One draw, no retrieval, $0 (free routes). Latency is the median over each route's "
+        "successful forecaster calls (registration item 5).",
+        "",
+        "| Route | Forecast 2026-11-08 | Forecast 2026-11-22 | Not forecast | Calls | Errors "
+        "| Median latency | Mean latency | Median output tokens |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for name in ("current", "newer"):
+        u = use[name]
+        failed = sum(u["failed"].values())
+        mean = None if u["mean_latency_ms"] is None else float(u["mean_latency_ms"])
+        tokens = "—" if u["output_tokens_median"] is None else f"{u['output_tokens_median']:.0f}"
+        out.append(
+            f"| {name} | {u['forecast']['2026-11-08']} | {u['forecast']['2026-11-22']} | "
+            f"{failed} | {u['calls']} | {u['errors']} | {_m16_s(u['median_latency_ms'])} | "
+            f"{_m16_s(mean)} | {tokens} |"
+        )
+    left = ", ".join(f"{n} {why}" for why, n in sorted(snap["left_out"].items()) if n)
+    out += [
+        "",
+        "Brier(newer) − Brier(current) on the questions both routes forecast that have "
+        "resolved yes or no (negative favours the newer route; 95% paired bootstrap):",
+        "",
+        "| Set | Forecast before its resolution file? | Paired | Yes share | Brier newer "
+        "| Brier current | Market price (same questions) | Newer − current |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for name, st in snap["sets"].items():
+        market = st["brier_market"]
+        price = "—" if market is None else f"{market['market']:.3f} (n = {market['n']})"
+        yes = "—" if st["yes_share"] is None else f"{st['yes_share']:.2f}"
+        out.append(
+            f"| {name} | {'yes' if st['prospective'] else 'no (file unread; item 3)'} | "
+            f"{st['paired']} | {yes} | {_m16_f(st['brier_newer'])} | "
+            f"{_m16_f(st['brier_current'])} | {price} | {_m16_est(st['diff'])} |"
+        )
+    files = snap["resolution_files"]
+    read = (
+        "; ".join(
+            f"{f['set']} fetched {f['fetched'][:16].replace('T', ' ')} UTC (upstream commit "
+            f"{(f['upstream']['committed'] or '?')[:16].replace('T', ' ')} UTC, SHA-256 "
+            f"`{f['sha256'][:12]}…`)"
+            for f in files
+        )
+        if files
+        else "none published yet"
+    )
+    out += [
+        "",
+        f"Resolution files read: {read}." + (f" Left out of the pairs: {left}." if left else ""),
+        "",
+        f"- Backtest, both sets: {_m16_est(snap['backtest'])}.",
+        "- Live arm: "
+        + (
+            "no reading yet (from the 2026-12-14 round; To measure)."
+            if snap["live"] is None
+            else f"{snap['live']['questions']} questions; Brier "
+            f"{_m16_est(snap['live']['brier_diff'])}; head-to-head "
+            f"{_m16_est(snap['live']['head_to_head'], 1)}."
+        ),
+        f"- Pooled (the rule's quantity): {_m16_est(snap['pooled'])}.",
+    ]
+    if snap["n_needed"]:
+        out.append(
+            "- Questions needed at the measured spread (80% power, two-sided 5%): "
+            + ", ".join(f"{n:,} for {t}" for t, n in snap["n_needed"].items())
+            + "."
+        )
+    reading = snap["reading"]
+    out += [
+        "",
+        f"**Verdict (registration item 6, {reading['kind']} reading"
+        + (f" of {reading['date']}" if reading["date"] else "")
+        + f"): {snap['verdict']}.**",
+        "",
+        "Predictions registered before any call (PLAN.md, m16-registration):",
+        "",
+    ]
+    out += [f"- {h['id']}: {h['result']}." for h in snap["hypotheses"]]
+    return "\n".join(out) + "\n"
+
+
+def _m16_f(x: float | None) -> str:
+    return "—" if x is None else f"{x:.3f}"
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -2475,6 +2600,8 @@ BLOCKS: dict[str, Block] = {
         Block("m14-rereads", render_m14_rereads),
         Block("m15-registration", render_m15_registration),
         Block("fbdataset", render_fbdataset),
+        Block("m16-registration", render_m16_registration),
+        Block("readers", render_readers),
     )
 }
 

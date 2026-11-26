@@ -1,6 +1,6 @@
 # Augur
 
-**Status: 0.1.0, release candidate; M1 to M15 built, M16 planned.** Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M1 to M16 built.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. The 2026-11-30 MiniBench round runs as
@@ -171,6 +171,24 @@ in 11.8% of simulated seasons, not 5%.
 ```sh
 uv run augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026 --ledger shadow.sqlite
 uv run augur rereads --check            # the synthetic re-read table, as make eval runs it
+```
+
+### A newer free reader on the same questions (M16)
+
+M7 and M13 both point at the reader, not the evidence, as this pipeline's
+limit, so M16 asks whether the newer free model (`nemotron-3.5-super-vl`)
+reads better than the current route (`nemotron-3-ultra`) on identical
+questions. Both forecast the 146 market questions of each ForecastBench
+set posed after the newer model's listing (47 are posed in both), one draw, no retrieval, before
+the outcomes were read, under a route rule committed before any call. A
+reported live arm (`AUGUR_SHADOW_READER=true`) adds three draws on the
+newer model to each shadow tick from the exact forecaster request Augur's
+draws saw, served last and only within the day's free calls.
+
+```sh
+make backtest-reader                    # both routes on both sets (free, resumable, about two hours)
+make resolve-reader                     # each set's resolution file as it appears, then augur readers
+uv run augur readers --check            # the paired comparison and the rule, as make eval runs it
 ```
 
 ### ForecastBench's dataset half, with no model (M15)
@@ -364,6 +382,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M16, the newer free reader against the current route on the same ForecastBench questions (2026-11-08 and 2026-11-22 sets, one draw, no retrieval, $0; progress reading of 2026-11-26) | On the 15 questions resolved so far the newer route is +0.033 Brier worse with an interval from −0.073 to +0.147: not decidable, and a 0.01 difference would need about 3,800 questions. It is twice as fast (median 19.3 s a call against 40.1 s). Both trail the freeze price on the same questions (0.279 against 0.431 and 0.464). The rule binds on 2027-01-11 |
 | M15, ForecastBench's dataset questions with no model (4,398 instances, seven sets 2026-07-05 to 2026-09-27, $0; a backtest row in raw Brier, not a Brier Index) | The source's walk-forward base rate scores 0.2200 against 0.25 for always 50% and 0.2795 for ForecastBench's Naive Forecaster; the series arm on stocks adds nothing (+0.003), and no forecaster, the leaders included, beats 0.25 on stocks. The leaders score 0.155 and 0.129 and the no-model entry stat-v1 0.1739 on their instances, ahead of the base rate by 0.047 to 0.103: on Wikipedia rankings and, for hybrid ensemble 1 and stat-v1, above all on daily temperatures (their largest single source of gain), where a rate built over spring points the wrong way in autumn. Three of six predictions held; the base rate's gain over 50% missed its registered margin by 0.00001, so the follow-up blend does not open |
 | M14, the pooled Q1 analysis, registered 2026-11-25 before the 2026-11-30 round (P47 to P51) | Nothing to pool yet: the shadow schedule has not run on GitHub (no `ledger` branch; the Tournament workflow's 35 ticks since 2026-11-19 were all cron, median gap 220.4 minutes, against a question's three-hour window). At the assumed spread of 32 points, a +5 lead needs 254 scored questions and +2 needs 1,583. Synthetic (seeded, no real data): re-reading the one-round floor rule after each of four 60-question rounds admits a no-lead candidate in 11.8% of seasons, and reading each round alone in 19.5%, against a nominal 5% (P50 and P51 held). P47 to P49 are read on 2027-01-11 |
 | M13, dated news in the leak-free backtest (C2's 64 questions, the same free model, three draws, $0): arm O's sources plus at most three news sources a question (GDELT discovery bounded at the cutoff, text only from a Wayback capture at or before it) | 54 of 64 questions gained news seen in the 30 days before open (39 counting real articles only; one wire-digest page matched 26), and the judge rated none of the 99 news uses as leaking. Adding it did not help: G − O +0.006 [−0.010, +0.022] Brier, which rules out a Hindcast-sized gain (−0.055), so the registered verdict is *not the limit*. Four of six predictions failed (coverage was better than predicted, and there was no small gain). Discovery ran on a GKG title index, because GDELT's API refused this machine |
@@ -473,8 +492,8 @@ shadow round against the same-model template, and the rule that decides whether 
 be submitted; M12 (done) a forecast with no model in it and one registered blend; M13 (done) dated news in the
 backtest, and the same-model agent-against-template pairs in FutureEval; M14 (done) a pooled analysis of the shadow
 rounds, registered before the first one opens; M15 (done) ForecastBench's dataset questions with no model, against the
-leaderboard's own baselines on the same instances; M16 (next) a newer free model on the same questions, under a rule
-for choosing the default route. Details in
+leaderboard's own baselines on the same instances; M16 (done) a newer free model on the same questions, under a rule
+for choosing the default route (its registered reading is 2027-01-11). Details in
 [PLAN.md](PLAN.md).
 
 ## Development

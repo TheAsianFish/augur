@@ -1,0 +1,16 @@
+{
+ "kept": 146,
+ "licence": "ForecastBench datasets, Forecasting Research Institute, CC BY-SA 4.0",
+ "model_release": "nvidia/nemotron-3.5-super-vl:free 2026-10-15 (OpenRouter listing date)",
+ "removed": {
+  "not a market question (dataset questions are M6's)": 354
+ },
+ "resolutions": "not requested: forecast before its outcomes are read",
+ "sha256": {
+  "questions": "4bb4cc57450dfe27032ee85fb75ee24d7bb4906fc6f762c5a4de2c45cbb7c952"
+ },
+ "total": 500,
+ "urls": {
+  "questions": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/question_sets/2026-11-22-llm.json"
+ }
+}

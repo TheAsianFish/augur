@@ -1,0 +1,160 @@
+{
+ "backtest": {
+  "high": 0.14696,
+  "low": -0.07299,
+  "mde": 0.15845,
+  "mean": 0.03292,
+  "n": 15,
+  "sd": 0.21905,
+  "unrounded": [
+   0.032919999999999984,
+   -0.07299333333333337,
+   0.14695999999999998
+  ]
+ },
+ "backtest_brier": {
+  "current": 0.4315,
+  "market": {
+   "current": 0.4315,
+   "market": 0.27921,
+   "n": 15,
+   "newer": 0.46442
+  },
+  "newer": 0.46442
+ },
+ "hypotheses": [
+  {
+   "id": "P58",
+   "result": "held: half width 0.1100, interval [-0.0730, +0.1470] on 15 questions"
+  },
+  {
+   "id": "P59",
+   "result": "failed: +0.0329"
+  },
+  {
+   "id": "P60",
+   "result": "held: median 19.3 s against 40.1 s"
+  },
+  {
+   "id": "P61",
+   "result": "not yet readable: the live arm starts with the 2026-12-14 round"
+  }
+ ],
+ "left_out": {
+  "not resolved to 0 or 1": 275,
+  "one route only": 2,
+  "resolutions disagree": 0
+ },
+ "live": null,
+ "method": {
+  "analysis_date": "2027-01-11",
+  "statistic": "Brier(newer) - Brier(current) per question and set, 95% paired bootstrap resampling questions (a question posed in both sets is one), 10,000 resamples, seed 20261119"
+ },
+ "n_needed": {
+  "0.01": 3767,
+  "0.02": 942
+ },
+ "pooled": {
+  "high": 0.14696,
+  "low": -0.07299,
+  "mde": 0.15845,
+  "mean": 0.03292,
+  "n": 15,
+  "sd": 0.21905,
+  "unrounded": [
+   0.032919999999999984,
+   -0.07299333333333337,
+   0.14695999999999998
+  ]
+ },
+ "reading": {
+  "date": "2026-11-26",
+  "kind": "progress"
+ },
+ "resolution_files": [
+  {
+   "fetched": "2026-11-26T17:01:52Z",
+   "set": "2026-11-08",
+   "sha256": "cba8eff2bd7e2810fc9260151efa4e746c3e7db9cbfcc2e2f40a1b45793a9419",
+   "upstream": {
+    "commit": "678d514ecd1cede1c0cfd009dc83be7e4fdf0940",
+    "committed": "2026-11-25T17:20:41Z",
+    "url": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/resolution_sets/2026-11-08_resolution_set.json"
+   }
+  }
+ ],
+ "routes": {
+  "current": "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free",
+  "newer": "openrouter:nvidia/nemotron-3.5-super-vl:free"
+ },
+ "sets": {
+  "2026-11-08": {
+   "brier_current": 0.4315,
+   "brier_market": {
+    "current": 0.4315,
+    "market": 0.27921,
+    "n": 15,
+    "newer": 0.46442
+   },
+   "brier_newer": 0.46442,
+   "diff": {
+    "high": 0.14696,
+    "low": -0.07299,
+    "mde": 0.15845,
+    "mean": 0.03292,
+    "n": 15,
+    "sd": 0.21905,
+    "unrounded": [
+     0.032919999999999984,
+     -0.07299333333333337,
+     0.14695999999999998
+    ]
+   },
+   "paired": 15,
+   "prospective": false,
+   "yes_share": 0.8
+  },
+  "2026-11-22": {
+   "brier_current": null,
+   "brier_market": null,
+   "brier_newer": null,
+   "diff": null,
+   "paired": 0,
+   "prospective": true,
+   "yes_share": null
+  }
+ },
+ "usage": {
+  "current": {
+   "calls": 295,
+   "errors": 3,
+   "failed": {
+    "2026-11-08": 0,
+    "2026-11-22": 1
+   },
+   "forecast": {
+    "2026-11-08": 146,
+    "2026-11-22": 145
+   },
+   "mean_latency_ms": 48707.1,
+   "median_latency_ms": 40090.0,
+   "output_tokens_median": 890.0
+  },
+  "newer": {
+   "calls": 301,
+   "errors": 9,
+   "failed": {
+    "2026-11-08": 1,
+    "2026-11-22": 0
+   },
+   "forecast": {
+    "2026-11-08": 145,
+    "2026-11-22": 146
+   },
+   "mean_latency_ms": 21654.7,
+   "median_latency_ms": 19323.0,
+   "output_tokens_median": 1600.0
+  }
+ },
+ "verdict": "not decidable at this n (progress reading: the rule binds only on 2027-01-11)"
+}

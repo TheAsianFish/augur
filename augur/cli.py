@@ -23,6 +23,8 @@ from augur import (
     livecal,
     q4,
     q6,
+    reader,
+    readercmp,
     report,
     rereads,
     scorecard,
@@ -44,7 +46,7 @@ from augur.clock import SystemClock, parse_iso
 from augur.config import Settings
 from augur.errors import AugurError, ConfigError, MissingCredentialsError
 from augur.export import export_jsonl
-from augur.forecastbench import FBQuestion, load_set
+from augur.forecastbench import FBQuestion, load_open_set, load_set
 from augur.importer import import_exports
 from augur.judge import judge_arm
 from augur.leakage import scan_ledger
@@ -227,7 +229,13 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     fb.add_argument("--questions", type=Path, required=True, help="question set JSON")
-    fb.add_argument("--resolutions", type=Path, required=True, help="resolution set JSON")
+    fb.add_argument(
+        "--resolutions",
+        type=Path,
+        help="resolution set JSON; without it the set is forecast before its outcomes are "
+        "published (M16's prospective backtest: no retrieval only), and scored later with "
+        "`augur resolve --forecastbench`",
+    )
     fb.add_argument("--limit", type=int, help="forecast only the first N eligible questions")
     fb.add_argument("--ledger", type=Path, help="override AUGUR_LEDGER")
     fb.add_argument(
@@ -530,6 +538,8 @@ def _parser() -> argparse.ArgumentParser:
 
     standings.add_parser(sub)
     baseline.add_parser(sub)
+    reader.add_parser(sub)
+    readercmp.add_parser(sub)
     floor.add_parser(sub)
 
     led = sub.add_parser("ledger", help="inspect a ledger")
@@ -841,13 +851,15 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
             f"{answering.key} has no known release date, so a backtest cannot rule out that "
             "it remembers the outcomes; use a model with one (augur models list)"
         )
+    ledger_path: Path = args.ledger or settings.ledger_path
+    if args.resolutions is None:
+        return await _backtest_open(args, settings, released, ledger_path)
     report = load_set(args.questions, args.resolutions, released=released, limit=args.limit)
     print("\n".join(report.lines()))
     questions = sample(report.kept, args.sample)
     if args.sample is not None:
         print(f"  sample  {len(questions):>4} (first {args.sample} by question id)")
     clock = PinnedClock(SystemClock().now())
-    ledger_path: Path = args.ledger or settings.ledger_path
     tournament = f"forecastbench:{report.question_set}"
     research = None
     extra: dict[str, object] = {}
@@ -886,6 +898,51 @@ async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
                     code_version=code_version(),
                     research_for=research,
                     extra_settings=extra,
+                    first_member=args.first_member,
+                )
+            finally:
+                await router.aclose()
+    print(
+        f"ledger: {ledger_path} (run {result.run_id}): {result.forecast} forecast, "
+        f"{result.resumed} done earlier, {result.skipped} skipped, {result.failed} failed"
+    )
+    return 1 if result.failed else 0
+
+
+async def _backtest_open(
+    args: argparse.Namespace, settings: Settings, released: date, ledger_path: Path
+) -> int:
+    """M16: forecast a set whose resolutions are not published yet, with no retrieval."""
+    if (
+        args.retrieval != "none"
+        or args.plan_out is not None
+        or args.research_from is not None
+        or args.prices is not None
+    ):
+        raise ConfigError(
+            "without --resolutions only the no-retrieval arm runs (a prospective backtest); "
+            "drop --retrieval, --plan-out, --research-from and --prices, or pass the "
+            "resolution set"
+        )
+    report = load_open_set(args.questions, released=released)
+    print("\n".join(report.lines()))
+    questions = sample(report.kept, args.sample)
+    if args.limit is not None:
+        questions = questions[: args.limit]
+    clock = PinnedClock(SystemClock().now())
+    async with default_http_client() as http:
+        router = build_router(settings, http, load_snapshot(), SystemClock())
+        with Ledger.open(ledger_path, clock) as ledger:
+            try:
+                result = await run_forecastbench(
+                    questions=questions,
+                    tournament=f"forecastbench:{report.question_set}",
+                    settings=settings,
+                    router=router,
+                    ledger=ledger,
+                    clock=clock,
+                    code_version=code_version(),
+                    extra_settings={"resolutions": "not published when forecast"},
                     first_member=args.first_member,
                 )
             finally:
@@ -1300,6 +1357,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_judge(args, settings))
         if args.command == "baseline":
             return asyncio.run(baseline.main(args, settings))
+        if args.command == "readers":
+            return readercmp.main(args)
+        if args.command == "reader":
+            return asyncio.run(reader.main(args, settings))
         if args.command == "floor":
             return floor.main(args)
         if args.command == "resolve":

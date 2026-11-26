@@ -1,0 +1,12 @@
+{
+ "fetched": "2026-11-26T17:01:52Z",
+ "licence": "ForecastBench datasets, Forecasting Research Institute, CC BY-SA 4.0",
+ "resolved_0_or_1": 15,
+ "rows": 135,
+ "sha256": "cba8eff2bd7e2810fc9260151efa4e746c3e7db9cbfcc2e2f40a1b45793a9419",
+ "upstream": {
+  "commit": "678d514ecd1cede1c0cfd009dc83be7e4fdf0940",
+  "committed": "2026-11-25T17:20:41Z",
+  "url": "https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets/resolution_sets/2026-11-08_resolution_set.json"
+ }
+}

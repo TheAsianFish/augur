@@ -1,0 +1,4 @@
+2026-11-08-llm.json: 146 questions (no resolution set: forecast only)
+  kept     146
+[1/1] polymarket:0x885eda75b1174a0d10c01d5f7b3b0275dd9bbd7afa0994433985b26e6cd74ebd p=0.80 (67 s)
+ledger: data/ledgers/m16-reader-current.sqlite (run run_c032ad80cfff4449975e): 1 forecast, 145 done earlier, 0 skipped, 0 failed

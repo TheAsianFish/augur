@@ -1,0 +1,7 @@
+2026-11-22-llm.json: 146 questions (no resolution set: forecast only)
+  kept     146
+[1/4] metaculus:45421 p=0.30 (17 s)
+[2/4] polymarket:0x5851bae96eeb26f343fa3c39602ce4d63f58629afdbc58bf409d565425f23443 p=0.25 (28 s)
+[3/4] polymarket:0xc2744f636bb3ca024f0e5286dab0944710de063a65783a62e86a7d4c194a4393 p=0.15 (32 s)
+[4/4] polymarket:0x44dd0d4c90d1ab8f1be6162af992787de5cbec135fe5ef3cbb38489c23e54a13 p=0.12 (11 s)
+ledger: data/ledgers/m16-reader-newer.sqlite (run run_ab5c3b6798a8466da6a9): 4 forecast, 142 done earlier, 0 skipped, 0 failed

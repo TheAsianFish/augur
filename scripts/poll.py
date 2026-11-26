@@ -23,7 +23,9 @@ detail. The
 MiniBench has nothing to do and the day's free calls allow a full run:
 ``AUGUR_SHADOW_DAILY_CALLS`` (default 1000, OpenRouter's daily allowance for
 free models) against the calls the exports show today, the template's
-counted at ``AUGUR_SHADOW_TEMPLATE_CALLS`` a question.
+counted at ``AUGUR_SHADOW_TEMPLATE_CALLS`` a question. The newer free
+reader's calls (M16, a run whose tournament ends in ``+reader``) count toward
+the day but not toward Augur's calls a question.
 """
 
 from __future__ import annotations
@@ -54,6 +56,8 @@ DAILY_CALLS_DEFAULT = 1000
 AUGUR_CALLS_DEFAULT = 8
 TEMPLATE_CALLS_DEFAULT = 15
 MAX_QUESTIONS_DEFAULT = 6
+# M16's reader arm runs in its own run, named after the tournament it reads.
+READER_SUFFIX = "+reader"
 
 Fetch = Callable[[str, Mapping[str, str]], Any]
 
@@ -180,6 +184,8 @@ def read_shadow(directory: str, today: str) -> ShadowLedger:
         return found
     seen_calls: set[str] = set()
     seen_templates: set[str] = set()
+    reader_runs: set[str] = set()
+    calls: list[tuple[str, int]] = []  # (run id, question id) of each distinct call
     paths: list[str] = []
     for root, _dirs, names in os.walk(directory):
         paths.extend(os.path.join(root, n) for n in names if n.endswith(".jsonl"))
@@ -194,7 +200,10 @@ def read_shadow(directory: str, today: str) -> ShadowLedger:
                     table, row = item["table"], item["row"]
                 except (ValueError, KeyError, TypeError):
                     raise PollError(f"{path}:{number} is not an export line") from None
-                if table == "forecasts" and row.get("kind") == "aggregate":
+                if table == "runs":
+                    if str(row.get("tournament") or "").endswith(READER_SUFFIX):
+                        reader_runs.add(str(row.get("run_id")))
+                elif table == "forecasts" and row.get("kind") == "aggregate":
                     found.held.add(int(row["question_id"]))
                 elif table == "reference_forecasts" and row.get("forecaster") == "template":
                     found.templated.add(int(row["question_id"]))
@@ -208,10 +217,13 @@ def read_shadow(directory: str, today: str) -> ShadowLedger:
                     if key in seen_calls:
                         continue  # a tick's second push repeats its first
                     seen_calls.add(key)
-                    qid = int(row.get("question_id") or 0)
-                    found.calls_by_question[qid] = found.calls_by_question.get(qid, 0) + 1
+                    calls.append((str(row.get("run_id")), int(row.get("question_id") or 0)))
                     if str(row.get("started_at", "")).startswith(today):
                         found.calls_today += 1
+    # After every file: a run's row may sit in another export than its calls.
+    for run_id, qid in calls:
+        if run_id not in reader_runs:
+            found.calls_by_question[qid] = found.calls_by_question.get(qid, 0) + 1
     return found
 
 
