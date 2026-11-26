@@ -24,6 +24,7 @@ from augur import (
     q4,
     q6,
     reader,
+    readercmp,
     report,
     rereads,
     scorecard,
@@ -538,6 +539,7 @@ def _parser() -> argparse.ArgumentParser:
     standings.add_parser(sub)
     baseline.add_parser(sub)
     reader.add_parser(sub)
+    readercmp.add_parser(sub)
     floor.add_parser(sub)
 
     led = sub.add_parser("ledger", help="inspect a ledger")
@@ -1355,6 +1357,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return asyncio.run(_judge(args, settings))
         if args.command == "baseline":
             return asyncio.run(baseline.main(args, settings))
+        if args.command == "readers":
+            return readercmp.main(args)
         if args.command == "reader":
             return asyncio.run(reader.main(args, settings))
         if args.command == "floor":
