@@ -1,6 +1,6 @@
 # Augur
 
-**Status: 0.1.0, release candidate; M1 to M14 built, M15 and M16 planned.** Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M1 to M15 built, M16 planned.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. The 2026-11-30 MiniBench round runs as
@@ -173,6 +173,27 @@ uv run augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026 -
 uv run augur rereads --check            # the synthetic re-read table, as make eval runs it
 ```
 
+### ForecastBench's dataset half, with no model (M15)
+
+Half of every ForecastBench set asks whether a series (a stock's close, a
+FRED or DBnomics series, an ACLED count, a Wikipedia ranking) will be
+higher on each resolution date than on the due date, and the leaderboard's
+leaders pull furthest ahead there. M15 forecasts 4,398 of these instances
+with no model call: the source's base rate, the series' own past outcomes,
+and for stocks the share of the ticker's past same-horizon moves that were
+up, from closes dated at or before each question's freeze instant and
+written to a backtest ledger first. Each is scored beside ForecastBench's
+own baselines and named entries on exactly the instances they forecast.
+The base rate beats a coin and the Naive Forecaster; nothing beats a coin
+on stocks, the leaders included; and the leaders' edge sits in Wikipedia
+rankings and, for two of the three, in daily temperatures, where a
+walk-forward rate built over spring points the wrong way in autumn.
+
+```sh
+uv run augur backtest dataset-closes    # the stocks' closes as of each freeze instant (Yahoo, keyless)
+uv run augur fbcompare --check          # M10's and M15's same-instance rows, as make eval runs them
+```
+
 Presets: `openrouter`, `groq`, `gemini`, `github` (each reads its own key
 variable) and `ollama`; any other OpenAI-compatible host is
 `AUGUR_ENDPOINT_<NAME>_URL` plus `_KEY_ENV`. `--submit` to MiniBench or
@@ -343,6 +364,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M15, ForecastBench's dataset questions with no model (4,398 instances, seven sets 2026-07-05 to 2026-09-27, $0; a backtest row in raw Brier, not a Brier Index) | The source's walk-forward base rate scores 0.2200 against 0.25 for always 50% and 0.2795 for ForecastBench's Naive Forecaster; the series arm on stocks adds nothing (+0.003), and no forecaster, the leaders included, beats 0.25 on stocks. The leaders score 0.155 and 0.129 and the no-model entry stat-v1 0.1739 on their instances, ahead of the base rate by 0.047 to 0.103: on Wikipedia rankings and, for hybrid ensemble 1 and stat-v1, above all on daily temperatures (their largest single source of gain), where a rate built over spring points the wrong way in autumn. Three of six predictions held; the base rate's gain over 50% missed its registered margin by 0.00001, so the follow-up blend does not open |
 | M14, the pooled Q1 analysis, registered 2026-11-25 before the 2026-11-30 round (P47 to P51) | Nothing to pool yet: the shadow schedule has not run on GitHub (no `ledger` branch; the Tournament workflow's 35 ticks since 2026-11-19 were all cron, median gap 220.4 minutes, against a question's three-hour window). At the assumed spread of 32 points, a +5 lead needs 254 scored questions and +2 needs 1,583. Synthetic (seeded, no real data): re-reading the one-round floor rule after each of four 60-question rounds admits a no-lead candidate in 11.8% of seasons, and reading each round alone in 19.5%, against a nominal 5% (P50 and P51 held). P47 to P49 are read on 2027-01-11 |
 | M13, dated news in the leak-free backtest (C2's 64 questions, the same free model, three draws, $0): arm O's sources plus at most three news sources a question (GDELT discovery bounded at the cutoff, text only from a Wayback capture at or before it) | 54 of 64 questions gained news seen in the 30 days before open (39 counting real articles only; one wire-digest page matched 26), and the judge rated none of the 99 news uses as leaking. Adding it did not help: G − O +0.006 [−0.010, +0.022] Brier, which rules out a Hindcast-sized gain (−0.055), so the registered verdict is *not the limit*. Four of six predictions failed (coverage was better than predicted, and there was no small gain). Discovery ran on a GKG title index, because GDELT's API refused this machine |
 | M12, the statistical arm and the registered blend on C4 (671 walk-forward instances, $0, no model call); all four predictions held | Where the bot could read a price (480 instances), the primary candidate beats the model's raw forecast by −0.110 [−0.137, −0.084] Brier, and the price alone is still better than the blend (+0.023 [+0.008, +0.038]). On the 190 Metaculus-written instances, where there is no price, the base rate alone is worse than the raw model (+0.063 [+0.017, +0.107]), so the candidate leaves Augur's forecast unchanged there. On the 2026-11-16 round's 60 questions the series rule reaches 7 and forecasts 5; the live comparison is the 2026-11-30 round (To measure) |
@@ -450,8 +472,8 @@ season's standing, the ForecastBench same-question row and the postmortem; M11 (
 shadow round against the same-model template, and the rule that decides whether the free model may
 be submitted; M12 (done) a forecast with no model in it and one registered blend; M13 (done) dated news in the
 backtest, and the same-model agent-against-template pairs in FutureEval; M14 (done) a pooled analysis of the shadow
-rounds, registered before the first one opens; M15 (next) ForecastBench's dataset questions with no model, against the
-leaderboard's own baselines on the same instances; M16 a newer free model on the same questions, under a rule
+rounds, registered before the first one opens; M15 (done) ForecastBench's dataset questions with no model, against the
+leaderboard's own baselines on the same instances; M16 (next) a newer free model on the same questions, under a rule
 for choosing the default route. Details in
 [PLAN.md](PLAN.md).
 

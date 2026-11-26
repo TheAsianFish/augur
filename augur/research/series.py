@@ -334,15 +334,34 @@ class SeriesFetcher:
                 return symbol
         return None
 
-    def chart_url(self, symbol: str) -> str:
-        """The chart URL :meth:`fetch` reads for ``symbol``."""
-        return f"{self._base}/v8/finance/chart/{quote(symbol, safe='')}?range=2y&interval=1d"
+    def chart_url(self, symbol: str, params: dict[str, str] | None = None) -> str:
+        """The chart URL :meth:`fetch` reads for ``symbol`` (with ``params``, as asked)."""
+        query = params or {"range": "2y", "interval": "1d"}
+        joined = "&".join(f"{k}={v}" for k, v in query.items())
+        return f"{self._base}/v8/finance/chart/{quote(symbol, safe='')}?{joined}"
 
-    async def fetch(self, symbol: str, as_of: datetime) -> Series:
-        """Two years of ``symbol``'s daily closes, keeping those dated at or before ``as_of``."""
+    @staticmethod
+    def period(start: datetime, as_of: datetime) -> dict[str, str]:
+        """Chart parameters for the closes from ``start`` to a day past ``as_of``.
+
+        A backtest asks for an explicit period, since ``range=2y`` counts back
+        from today. The request runs a day past ``as_of`` on purpose: what keeps
+        a later close out is the filter in :meth:`fetch`, never the request.
+        """
+        first = int(ensure_utc(start).timestamp())
+        last = int((ensure_utc(as_of) + timedelta(days=1)).timestamp())
+        return {"period1": str(first), "period2": str(last), "interval": "1d"}
+
+    async def fetch(self, symbol: str, as_of: datetime, *, start: datetime | None = None) -> Series:
+        """``symbol``'s daily closes, keeping those dated at or before ``as_of``.
+
+        Two years back from today by default (the live arm); from ``start``
+        to a day past ``as_of`` when ``start`` is given (a backtest).
+        """
         as_of = ensure_utc(as_of)
         url = f"{self._base}/v8/finance/chart/{quote(symbol, safe='')}"
-        body = await self._get(url, {"range": "2y", "interval": "1d"})
+        params = {"range": "2y", "interval": "1d"} if start is None else self.period(start, as_of)
+        body = await self._get(url, params)
         chart = body.get("chart") if isinstance(body, dict) else None
         if not isinstance(chart, dict):
             raise SearchError(
@@ -394,7 +413,7 @@ class SeriesFetcher:
             symbol=str(meta.get("symbol") or symbol),
             name=str(name).strip(),
             currency=str(meta.get("currency") or ""),
-            url=self.chart_url(symbol),
+            url=self.chart_url(symbol, params),
             observations=tuple(by_day[d] for d in sorted(by_day)),
             refused=refused,
             as_of=as_of,

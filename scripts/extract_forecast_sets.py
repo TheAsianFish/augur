@@ -14,6 +14,14 @@ ForecastBench resolved it, the market value on the forecast due date, and
 every entrant's forecast with its imputed flag. A provenance header names
 the archive (URL, size, SHA-256, last-modified, fetch date) and its licence.
 
+With ``--dataset DIR --dataset-out OUT`` (M15) it also cuts the dataset
+instances: for every corpus set of M15's extract in ``DIR``
+(``scripts/extract_dataset_questions.py``), ``OUT/<set>.json`` holds the
+forecasts of ForecastBench's naive, imputed and always-0.5 baselines and of
+the external entries named in :data:`DATASET_ENTRANTS` (where the set holds
+them) on each (source, id, resolution date) instance, with the outcome as
+the forecast set gives it and each forecast's imputed flag.
+
 The files are untrusted data: read only as JSON, standard library only.
 """
 
@@ -154,6 +162,84 @@ def extract_set(
     return {"question_set": question_set, "entrants": entrants, "questions": list(rows.values())}
 
 
+DATASET_BASELINES = ("naive-forecaster", "imputed-forecaster", "always-0.5")
+DATASET_ENTRANTS = (
+    ("Anonymous 24", "model-4"),
+    ("NeuroFusion", "hybrid ensemble 1"),
+    ("Anonymous 39", "stat-v1 (calibrated market anchor + dataset base rates)"),
+    ("Anonymous 23", "undertow-mix (statbase x gpt-5.6-sol)"),
+)
+"""M15's comparators beside the baselines (PLAN.md, ``m15-registration``, item 8)."""
+
+
+def dataset_keys(extract: Path) -> list[tuple[str, str, str]]:
+    """The (source, id, resolution date) instances of one set of M15's extract."""
+    data = json.loads(extract.read_text(encoding="utf-8"))
+    return [
+        (str(q["source"]), str(q["id"]), day)
+        for q in data["questions"]
+        for day in sorted(q["resolutions"])
+    ]
+
+
+def _wanted(file: str, data: dict[str, Any]) -> bool:
+    if file.startswith("ForecastBench."):
+        return file[len("ForecastBench.") : -5] in DATASET_BASELINES
+    return (str(data.get("organization")), str(data.get("model"))) in DATASET_ENTRANTS
+
+
+def extract_dataset_set(
+    set_dir: Path, question_set: str, keys: Sequence[tuple[str, str, str]]
+) -> dict[str, Any]:
+    """One set's baseline and named-entrant forecasts on the dataset instances ``keys``."""
+    wanted = set(keys)
+    entrants: list[dict[str, Any]] = []
+    rows: dict[tuple[str, str, str], dict[str, Any]] = {
+        k: {"source": k[0], "id": k[1], "resolution_date": k[2], "forecasts": [], "imputed": []}
+        for k in keys
+    }
+    prefix = f"{question_set}."
+    for path in sorted(set_dir.glob("*.json")):
+        if not path.name.startswith(prefix):
+            raise ExtractError(f"{path.name} is not a {question_set} file")
+        file = path.name[len(prefix) :]
+        if not (file.startswith("ForecastBench.") or file.startswith("external.")):
+            continue
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not _wanted(file, data):
+            continue
+        if data.get("question_set") != f"{question_set}-llm.json":
+            raise ExtractError(f"{path.name} is for {data.get('question_set')!r}")
+        index = len(entrants)
+        entrants.append(
+            {
+                "file": file,
+                "organization": str(data["organization"]),
+                "model": str(data["model"]),
+                "leaderboard_eligible": bool(data.get("leaderboard_eligible")),
+                "group": group_of(file),
+            }
+        )
+        got: dict[tuple[str, str, str], tuple[float, bool]] = {}
+        for f in data["forecasts"]:
+            if not isinstance(f.get("id"), str) or f.get("direction"):
+                continue
+            key = (str(f.get("source")), str(f["id"]), str(f.get("resolution_date"))[:10])
+            if key not in wanted or f.get("forecast") is None:
+                continue
+            if key in got:
+                raise ExtractError(f"{path.name}: {key} appears twice")
+            got[key] = (float(f["forecast"]), bool(f.get("imputed")))
+            row = rows[key]
+            _same(row, "resolved_to", f.get("resolved_to"), path.name)
+        for key in keys:
+            value = got.get(key)
+            rows[key]["forecasts"].append(None if value is None else value[0])
+            if value is not None and value[1]:
+                rows[key]["imputed"].append(index)
+    return {"question_set": question_set, "entrants": entrants, "instances": list(rows.values())}
+
+
 def dumps(doc: dict[str, Any]) -> str:
     """Sorted keys; each entrant and each question on a line of its own (byte-stable)."""
     lines = ["{"]
@@ -195,7 +281,11 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("--subsets", type=Path, default=Path("data/forecastbench"))
     parser.add_argument("--last-modified", required=True)
     parser.add_argument("--fetched", required=True)
+    parser.add_argument("--dataset", type=Path, help="M15's dataset extract directory")
+    parser.add_argument("--dataset-out", type=Path, help="where the dataset cut goes")
     args = parser.parse_args(argv)
+    if (args.dataset is None) != (args.dataset_out is None):
+        raise ExtractError("--dataset and --dataset-out go together")
     head = provenance(args.tarball, args.last_modified, args.fetched)
     args.out.mkdir(parents=True, exist_ok=True)
     for subset in sorted(args.subsets.glob("*-llm.subset.json")):
@@ -208,6 +298,20 @@ def main(argv: Sequence[str]) -> int:
         doc["provenance"] = head
         (args.out / f"{question_set}.json").write_text(dumps(doc), encoding="utf-8")
         print(f"{question_set}: {len(doc['entrants'])} entrants, {len(doc['questions'])} questions")
+    if args.dataset is not None:
+        args.dataset_out.mkdir(parents=True, exist_ok=True)
+        for extract in sorted(args.dataset.glob("2026-*.json")):
+            if json.loads(extract.read_text(encoding="utf-8")).get("role") != "corpus":
+                continue
+            question_set = extract.stem
+            set_dir = args.sets_dir / question_set
+            if not set_dir.is_dir():
+                raise ExtractError(f"{question_set}: no forecast set in {args.sets_dir}")
+            doc = extract_dataset_set(set_dir, question_set, dataset_keys(extract))
+            doc["provenance"] = head
+            (args.dataset_out / f"{question_set}.json").write_text(dumps(doc), encoding="utf-8")
+            names = ", ".join(e["model"] for e in doc["entrants"])
+            print(f"{question_set} (dataset): {len(doc['instances'])} instances; {names}")
     return 0
 
 

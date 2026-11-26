@@ -1,0 +1,1546 @@
+{
+ "briers": [
+  {
+   "brier": {
+    "A": 0.25,
+    "Always 0.5": 0.25,
+    "B": 0.22,
+    "C": 0.2206,
+    "Imputed": 0.25,
+    "Naive": 0.2795
+   },
+   "group": "pooled",
+   "n": 4398,
+   "yes_share": 0.3522
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "Always 0.5": 0.25,
+    "B": 0.106,
+    "C": 0.1019,
+    "Imputed": 0.25,
+    "Naive": 0.1329
+   },
+   "group": "acled",
+   "n": 900,
+   "yes_share": 0.12
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "Always 0.5": 0.25,
+    "B": 0.3428,
+    "C": 0.401,
+    "Imputed": 0.25,
+    "Naive": 0.2309
+   },
+   "group": "dbnomics",
+   "n": 849,
+   "yes_share": 0.3746
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "Always 0.5": 0.25,
+    "B": 0.2426,
+    "C": 0.2493,
+    "Imputed": 0.25,
+    "Naive": 0.251
+   },
+   "group": "fred",
+   "n": 873,
+   "yes_share": 0.6529
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "Always 0.5": 0.25,
+    "B": 0.158,
+    "C": 0.0733,
+    "Imputed": 0.25,
+    "Naive": 0.5331
+   },
+   "group": "wikipedia",
+   "n": 882,
+   "yes_share": 0.1939
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "Always 0.5": 0.25,
+    "B": 0.2573,
+    "C": 0.2863,
+    "D": 0.2605,
+    "Imputed": 0.25,
+    "Naive": 0.2507
+   },
+   "group": "yfinance",
+   "n": 894,
+   "yes_share": 0.4273
+  }
+ ],
+ "comparisons": [
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.02208765505577974,
+    "low": -0.03880868063879025
+   },
+   "by_series": {
+    "clusters": 1016,
+    "high": -0.018608235138723804,
+    "low": -0.04162978533085286
+   },
+   "first": "B",
+   "group": "pooled",
+   "mean": -0.029989229767720307,
+   "n": 4398,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.01575169840305226,
+    "low": -0.044399345211974764
+   },
+   "by_series": {
+    "clusters": 1016,
+    "high": -0.015566012480955085,
+    "low": -0.043381984961850965
+   },
+   "first": "C",
+   "group": "pooled",
+   "mean": -0.02935242526896337,
+   "n": 4398,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.008448555958228915,
+    "low": -0.007381343105152974
+   },
+   "by_series": {
+    "clusters": 1016,
+    "high": 0.008756162922691341,
+    "low": -0.00798865465255296
+   },
+   "first": "C",
+   "group": "pooled",
+   "mean": 0.0006368044987569359,
+   "n": 4398,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.04463577814750198,
+    "low": -0.07460375490333598
+   },
+   "by_series": {
+    "clusters": 1016,
+    "high": -0.038584716564601336,
+    "low": -0.08098512066835639
+   },
+   "first": "B",
+   "group": "pooled",
+   "mean": -0.059446387961676055,
+   "n": 4398,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.03792988981259841,
+    "low": -0.07923648525529715
+   },
+   "by_series": {
+    "clusters": 1016,
+    "high": -0.03586246849051149,
+    "low": -0.08261075429617834
+   },
+   "first": "C",
+   "group": "pooled",
+   "mean": -0.05880958346291911,
+   "n": 4398,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.041195686230316775,
+    "low": 0.017646631806318383
+   },
+   "by_series": {
+    "clusters": 1016,
+    "high": 0.045338351337466866,
+    "low": 0.01403986751840549
+   },
+   "first": "Naive",
+   "group": "pooled",
+   "mean": 0.029457158193955738,
+   "n": 4398,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.127088967167209,
+    "low": -0.15911775114195087
+   },
+   "by_series": {
+    "clusters": 335,
+    "high": -0.11867424000454246,
+    "low": -0.16775763588807413
+   },
+   "first": "B",
+   "group": "acled",
+   "mean": -0.1439790744948778,
+   "n": 900,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.13298537716292588,
+    "low": -0.1628625500913698
+   },
+   "by_series": {
+    "clusters": 335,
+    "high": -0.12438656796209278,
+    "low": -0.1705792482987477
+   },
+   "first": "C",
+   "group": "acled",
+   "mean": -0.14814917815333278,
+   "n": 900,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.001127298784293683,
+    "low": -0.00768897757071717
+   },
+   "by_series": {
+    "clusters": 335,
+    "high": 0.0003262879078453249,
+    "low": -0.009366851366508753
+   },
+   "first": "C",
+   "group": "acled",
+   "mean": -0.004170103658455005,
+   "n": 900,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.010414870325869631,
+    "low": -0.0429008444446945
+   },
+   "by_series": {
+    "clusters": 335,
+    "high": -3.199754776978236e-05,
+    "low": -0.05350764996209089
+   },
+   "first": "B",
+   "group": "acled",
+   "mean": -0.026890624494877776,
+   "n": 900,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.015691037069512467,
+    "low": -0.045893802674332726
+   },
+   "by_series": {
+    "clusters": 335,
+    "high": -0.0060925109723926505,
+    "low": -0.0562204699898295
+   },
+   "first": "C",
+   "group": "acled",
+   "mean": -0.031060728153332783,
+   "n": 900,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.10667584888888888,
+    "low": -0.12736008333333335
+   },
+   "by_series": {
+    "clusters": 335,
+    "high": -0.09648548245614035,
+    "low": -0.13621715828877004
+   },
+   "first": "Naive",
+   "group": "acled",
+   "mean": -0.11708845,
+   "n": 900,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.13234398653703994,
+    "low": 0.05012230884465769
+   },
+   "by_series": {
+    "clusters": 77,
+    "high": 0.110438583220998,
+    "low": 0.07445254970416455
+   },
+   "first": "B",
+   "group": "dbnomics",
+   "mean": 0.09277792690537665,
+   "n": 849,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.21048252582553686,
+    "low": 0.08857416383406351
+   },
+   "by_series": {
+    "clusters": 77,
+    "high": 0.17465644517580498,
+    "low": 0.12700521962401087
+   },
+   "first": "C",
+   "group": "dbnomics",
+   "mean": 0.1509960183261757,
+   "n": 849,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.08169747805246085,
+    "low": 0.035305077853805635
+   },
+   "by_series": {
+    "clusters": 77,
+    "high": 0.07264574187407231,
+    "low": 0.04316145808401821
+   },
+   "first": "C",
+   "group": "dbnomics",
+   "mean": 0.05821809142079905,
+   "n": 849,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.19115899831954172,
+    "low": 0.03615338879789838
+   },
+   "by_series": {
+    "clusters": 77,
+    "high": 0.14569592208312354,
+    "low": 0.07586344152006931
+   },
+   "first": "B",
+   "group": "dbnomics",
+   "mean": 0.11187840083809772,
+   "n": 849,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.27082026378168816,
+    "low": 0.07400897243268231
+   },
+   "by_series": {
+    "clusters": 77,
+    "high": 0.21015432668258544,
+    "low": 0.1279746148774446
+   },
+   "first": "C",
+   "group": "dbnomics",
+   "mean": 0.17009649225889678,
+   "n": 849,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.032210962589098995,
+    "low": -0.07120677915872564
+   },
+   "by_series": {
+    "clusters": 77,
+    "high": 0.005412016675594431,
+    "low": -0.041737735775005176
+   },
+   "first": "Naive",
+   "group": "dbnomics",
+   "mean": -0.019100473932721074,
+   "n": 849,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.004460230649883783,
+    "low": -0.010350953657293762
+   },
+   "by_series": {
+    "clusters": 149,
+    "high": -0.004934979133843075,
+    "low": -0.00974352722134423
+   },
+   "first": "B",
+   "group": "fred",
+   "mean": -0.007425057777907062,
+   "n": 873,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.009656390158936759,
+    "low": -0.010949838148870539
+   },
+   "by_series": {
+    "clusters": 149,
+    "high": 0.015958427421456638,
+    "low": -0.017205493151340796
+   },
+   "first": "C",
+   "group": "fred",
+   "mean": -0.0006589133486546425,
+   "n": 873,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.017703074516513456,
+    "low": -0.004065971130955982
+   },
+   "by_series": {
+    "clusters": 149,
+    "high": 0.02355561780654213,
+    "low": -0.010172729227756057
+   },
+   "first": "C",
+   "group": "fred",
+   "mean": 0.00676614442925242,
+   "n": 873,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.004660062096217996,
+    "low": -0.012069264275543893
+   },
+   "by_series": {
+    "clusters": 149,
+    "high": -0.005536290641622227,
+    "low": -0.011284552220617921
+   },
+   "first": "B",
+   "group": "fred",
+   "mean": -0.008432664918368688,
+   "n": 873,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.00887951820434366,
+    "low": -0.012338246149402397
+   },
+   "by_series": {
+    "clusters": 149,
+    "high": 0.01493382940411681,
+    "low": -0.018270713536881342
+   },
+   "first": "C",
+   "group": "fred",
+   "mean": -0.0016665204891162678,
+   "n": 873,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.0023069399388730497,
+    "low": -0.0004045710119807142
+   },
+   "by_series": {
+    "clusters": 149,
+    "high": 0.0022517496410018266,
+    "low": -0.0001652977442109969
+   },
+   "first": "Naive",
+   "group": "fred",
+   "mean": 0.0010076071404616254,
+   "n": 873,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.07930574193638892,
+    "low": -0.10320842069739646
+   },
+   "by_series": {
+    "clusters": 199,
+    "high": -0.05796876561265193,
+    "low": -0.12612183089446324
+   },
+   "first": "B",
+   "group": "wikipedia",
+   "mean": -0.09199742416391402,
+   "n": 882,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.16962609301717027,
+    "low": -0.18399824684789454
+   },
+   "by_series": {
+    "clusters": 199,
+    "high": -0.15766607480200645,
+    "low": -0.19466102298867216
+   },
+   "first": "C",
+   "group": "wikipedia",
+   "mean": -0.17668450507172034,
+   "n": 882,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.07244474556361231,
+    "low": -0.09754327720866916
+   },
+   "by_series": {
+    "clusters": 199,
+    "high": -0.06189936889620493,
+    "low": -0.10911563872384569
+   },
+   "first": "C",
+   "group": "wikipedia",
+   "mean": -0.08468708090780633,
+   "n": 882,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.3578378499265986,
+    "low": -0.3917087702831792
+   },
+   "by_series": {
+    "clusters": 199,
+    "high": -0.29585667510554375,
+    "low": -0.46021746813069064
+   },
+   "first": "B",
+   "group": "wikipedia",
+   "mean": -0.3750839137045599,
+   "n": 882,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": -0.4498108503255246,
+    "low": -0.4700523409440655
+   },
+   "by_series": {
+    "clusters": 199,
+    "high": -0.3908437913523204,
+    "low": -0.5340695447528355
+   },
+   "first": "C",
+   "group": "wikipedia",
+   "mean": -0.45977099461236615,
+   "n": 882,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.2966706793684933,
+    "low": 0.26870564269889785
+   },
+   "by_series": {
+    "clusters": 199,
+    "high": 0.350357861775884,
+    "low": 0.21974824552771274
+   },
+   "first": "Naive",
+   "group": "wikipedia",
+   "mean": 0.28308648954064586,
+   "n": 882,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.014622127510381621,
+    "low": -0.00021389955869509844
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.010537398600186423,
+    "low": 0.003983677183270776
+   },
+   "first": "B",
+   "group": "yfinance",
+   "mean": 0.007319774202434373,
+   "n": 894,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.045902245141790185,
+    "low": 0.02597530851473519
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.04958493482340421,
+    "low": 0.023509884910608334
+   },
+   "first": "C",
+   "group": "yfinance",
+   "mean": 0.0363060841977721,
+   "n": 894,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.03968171399232384,
+    "low": 0.018590042848938452
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.04176822345891293,
+    "low": 0.016523399563416682
+   },
+   "first": "C",
+   "group": "yfinance",
+   "mean": 0.02898630999533773,
+   "n": 894,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.013926259686241338,
+    "low": -0.000715751540536104
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.010048530863955652,
+    "low": 0.0032584032790002565
+   },
+   "first": "B",
+   "group": "yfinance",
+   "mean": 0.006663662012921083,
+   "n": 894,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.045850240502175975,
+    "low": 0.024811265085948008
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.04915232177450523,
+    "low": 0.022575351336905657
+   },
+   "first": "C",
+   "group": "yfinance",
+   "mean": 0.03564997200825881,
+   "n": 894,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.0018096369584565,
+    "low": -0.0006283146925199704
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.001965655022098913,
+    "low": -0.0006722294700216188
+   },
+   "first": "Naive",
+   "group": "yfinance",
+   "mean": 0.0006561121895132905,
+   "n": 894,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.008718171997214747,
+    "low": -0.0019809414288048583
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.007636074386840995,
+    "low": -0.0010295964940341927
+   },
+   "first": "D",
+   "group": "yfinance",
+   "mean": 0.003156870553245955,
+   "n": 894,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.016984972977576486,
+    "low": 0.00363532513789315
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.01578962461451775,
+    "low": 0.005319884994745287
+   },
+   "first": "D",
+   "group": "yfinance",
+   "mean": 0.01047664475568033,
+   "n": 894,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 18,
+    "high": 0.016614372286476765,
+    "low": 0.002749543930837938
+   },
+   "by_series": {
+    "clusters": 256,
+    "high": 0.015089636047331358,
+    "low": 0.004680207900272847
+   },
+   "first": "D",
+   "group": "yfinance",
+   "mean": 0.00982053256616704,
+   "n": 894,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.09424404932182716,
+    "low": -0.09640984667521074
+   },
+   "by_series": {
+    "clusters": 246,
+    "high": -0.07428400227882268,
+    "low": -0.11556209048603942
+   },
+   "first": "model-4",
+   "group": "model-4",
+   "mean": -0.09532471521774227,
+   "n": 485,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.03267473210561932,
+    "low": -0.06089429218400049
+   },
+   "by_series": {
+    "clusters": 246,
+    "high": -0.027566752752155074,
+    "low": -0.0674060271289444
+   },
+   "first": "model-4",
+   "group": "model-4",
+   "mean": -0.04681360447478762,
+   "n": 485,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.024626865576898197,
+    "low": -0.06517831639089894
+   },
+   "by_series": {
+    "clusters": 246,
+    "high": -0.024722252776002217,
+    "low": -0.06535896310205395
+   },
+   "first": "model-4",
+   "group": "model-4",
+   "mean": -0.04494439660329444,
+   "n": 485,
+   "second": "C"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.14640390888511898,
+    "low": -0.15188669070495125
+   },
+   "by_series": {
+    "clusters": 246,
+    "high": -0.1103667039297863,
+    "low": -0.19012243128421996
+   },
+   "first": "model-4",
+   "group": "model-4",
+   "mean": -0.14915095214742669,
+   "n": 485,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.1208208600074756,
+    "low": -0.12131788455187804
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.1057683777085506,
+    "low": -0.13646612760428803
+   },
+   "first": "hybrid ensemble 1",
+   "group": "hybrid ensemble 1",
+   "mean": -0.12106937227967683,
+   "n": 492,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.09887757660538489,
+    "low": -0.1068576397422314
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.07942973551033919,
+    "low": -0.12705244494358775
+   },
+   "first": "hybrid ensemble 1",
+   "group": "hybrid ensemble 1",
+   "mean": -0.10286760817380815,
+   "n": 492,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.09276344521464029,
+    "low": -0.12338225952805666
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.08367246579515099,
+    "low": -0.1328094133610214
+   },
+   "first": "hybrid ensemble 1",
+   "group": "hybrid ensemble 1",
+   "mean": -0.10807285237134848,
+   "n": 492,
+   "second": "C"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.15893464545854868,
+    "low": -0.1773958016396345
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.13029077706216513,
+    "low": -0.20848064159462557
+   },
+   "first": "hybrid ensemble 1",
+   "group": "hybrid ensemble 1",
+   "mean": -0.1681652235490916,
+   "n": 492,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.06331894426829268,
+    "low": -0.08883896613821138
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.05714769018181818,
+    "low": -0.09442127931034483
+   },
+   "first": "stat-v1",
+   "group": "stat-v1",
+   "mean": -0.07607895520325203,
+   "n": 492,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.04087863632179953,
+    "low": -0.07487574587296716
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.0335352293850556,
+    "low": -0.08168427048737605
+   },
+   "first": "stat-v1",
+   "group": "stat-v1",
+   "mean": -0.057877191097383346,
+   "n": 492,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.03476450493105492,
+    "low": -0.09140036565879243
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.04153130332486101,
+    "low": -0.08450711836772973
+   },
+   "first": "stat-v1",
+   "group": "stat-v1",
+   "mean": -0.06308243529492367,
+   "n": 492,
+   "second": "C"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": -0.11939686135604917,
+    "low": -0.12695275158928446
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": -0.08580323658252673,
+    "low": -0.16232959590484686
+   },
+   "first": "stat-v1",
+   "group": "stat-v1",
+   "mean": -0.12317480647266679,
+   "n": 492,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 3,
+    "high": -0.0956129310963618,
+    "low": -0.11123371009054099
+   },
+   "by_series": {
+    "clusters": 247,
+    "high": -0.0873059123820642,
+    "low": -0.1243734065791594
+   },
+   "first": "undertow-mix",
+   "group": "undertow-mix",
+   "mean": -0.10599033006028026,
+   "n": 735,
+   "second": "A"
+  },
+  {
+   "by_date": {
+    "clusters": 3,
+    "high": -0.07443938060109549,
+    "low": -0.09469452642627614
+   },
+   "by_series": {
+    "clusters": 247,
+    "high": -0.06167668421414461,
+    "low": -0.1077600375703779
+   },
+   "first": "undertow-mix",
+   "group": "undertow-mix",
+   "mean": -0.08441176749293981,
+   "n": 735,
+   "second": "B"
+  },
+  {
+   "by_date": {
+    "clusters": 3,
+    "high": -0.07311651503571014,
+    "low": -0.11544579471582858
+   },
+   "by_series": {
+    "clusters": 247,
+    "high": -0.06270784735188226,
+    "low": -0.11701805945819264
+   },
+   "first": "undertow-mix",
+   "group": "undertow-mix",
+   "mean": -0.08972839509320887,
+   "n": 735,
+   "second": "C"
+  },
+  {
+   "by_date": {
+    "clusters": 3,
+    "high": -0.1066326473551403,
+    "low": -0.12326271362377678
+   },
+   "by_series": {
+    "clusters": 247,
+    "high": -0.08171345966308703,
+    "low": -0.152934096042542
+   },
+   "first": "undertow-mix",
+   "group": "undertow-mix",
+   "mean": -0.11572734923888327,
+   "n": 735,
+   "second": "Naive"
+  },
+  {
+   "by_date": {
+    "clusters": 2,
+    "high": 0.07487574587296716,
+    "low": 0.04087863632179953
+   },
+   "by_series": {
+    "clusters": 248,
+    "high": 0.08168427048737605,
+    "low": 0.0335352293850556
+   },
+   "first": "B",
+   "group": "stat-v1",
+   "mean": 0.057877191097383346,
+   "n": 492,
+   "second": "stat-v1"
+  }
+ ],
+ "coverage": {
+  "by_source": [
+   {
+    "b_from_history": 900,
+    "c_with_own_history": 190,
+    "d_reached": 0,
+    "instances": 900,
+    "questions": 350,
+    "series": 335,
+    "series_arm": "none: base rates only (registration item 7)",
+    "source": "acled"
+   },
+   {
+    "b_from_history": 849,
+    "c_with_own_history": 799,
+    "d_reached": 0,
+    "instances": 849,
+    "questions": 340,
+    "series": 77,
+    "series_arm": "none: base rates only (registration item 7)",
+    "source": "dbnomics"
+   },
+   {
+    "b_from_history": 873,
+    "c_with_own_history": 863,
+    "d_reached": 0,
+    "instances": 873,
+    "questions": 346,
+    "series": 149,
+    "series_arm": "none: base rates only (registration item 7)",
+    "source": "fred"
+   },
+   {
+    "b_from_history": 882,
+    "c_with_own_history": 761,
+    "d_reached": 0,
+    "instances": 882,
+    "questions": 343,
+    "series": 199,
+    "series_arm": "none: base rates only (registration item 7)",
+    "source": "wikipedia"
+   },
+   {
+    "b_from_history": 894,
+    "c_with_own_history": 683,
+    "d_reached": 886,
+    "instances": 894,
+    "questions": 348,
+    "series": 256,
+    "series_arm": "the ticker's closes (Yahoo chart, keyless)",
+    "source": "yfinance"
+   }
+  ],
+  "dataset_questions": 1750,
+  "instances": 4398,
+  "left_out": {
+   "a listed past resolution date with no row resolved to 0 or 1": 85,
+   "a listed resolution date after the fetch day": 9500,
+   "a question with no resolved date": 23
+  },
+  "outcome_mismatches": 0,
+  "series": 1016,
+  "yfinance_questions": 348,
+  "yfinance_with_closes": 346
+ },
+ "entrants": [
+  {
+   "brier": {
+    "A": 0.25,
+    "B": 0.2015,
+    "C": 0.1996,
+    "Naive": 0.3038,
+    "model-4": 0.1547
+   },
+   "by_source": [
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1381,
+      "C": 0.1193,
+      "model-4": 0.0934
+     },
+     "n": 100,
+     "source": "acled"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2268,
+      "C": 0.2692,
+      "model-4": 0.1963
+     },
+     "n": 91,
+     "source": "dbnomics"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2392,
+      "C": 0.2334,
+      "model-4": 0.2119
+     },
+     "n": 96,
+     "source": "fred"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1415,
+      "C": 0.0953,
+      "model-4": 0.0252
+     },
+     "n": 98,
+     "source": "wikipedia"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2644,
+      "C": 0.2865,
+      "model-4": 0.25
+     },
+     "n": 100,
+     "source": "yfinance"
+    }
+   ],
+   "entrant": "model-4",
+   "kind": "leader",
+   "model": "model-4",
+   "n": 485,
+   "organization": "Anonymous 24",
+   "sets": [
+    "2026-08-30"
+   ]
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "B": 0.2318,
+    "C": 0.237,
+    "Naive": 0.2971,
+    "hybrid ensemble 1": 0.1289
+   },
+   "by_source": [
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1061,
+      "C": 0.1119,
+      "hybrid ensemble 1": 0.0469
+     },
+     "n": 100,
+     "source": "acled"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.4013,
+      "C": 0.424,
+      "hybrid ensemble 1": 0.1479
+     },
+     "n": 98,
+     "source": "dbnomics"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2355,
+      "C": 0.2844,
+      "hybrid ensemble 1": 0.2003
+     },
+     "n": 96,
+     "source": "fred"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1627,
+      "C": 0.0797,
+      "hybrid ensemble 1": 0.0002
+     },
+     "n": 98,
+     "source": "wikipedia"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2555,
+      "C": 0.2875,
+      "hybrid ensemble 1": 0.25
+     },
+     "n": 100,
+     "source": "yfinance"
+    }
+   ],
+   "entrant": "hybrid ensemble 1",
+   "kind": "leader",
+   "model": "hybrid ensemble 1",
+   "n": 492,
+   "organization": "NeuroFusion",
+   "sets": [
+    "2026-09-27"
+   ]
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "B": 0.2318,
+    "C": 0.237,
+    "Naive": 0.2971,
+    "stat-v1": 0.1739
+   },
+   "by_source": [
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1061,
+      "C": 0.1119,
+      "stat-v1": 0.0735
+     },
+     "n": 100,
+     "source": "acled"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.4013,
+      "C": 0.424,
+      "stat-v1": 0.1963
+     },
+     "n": 98,
+     "source": "dbnomics"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2355,
+      "C": 0.2844,
+      "stat-v1": 0.2688
+     },
+     "n": 96,
+     "source": "fred"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1627,
+      "C": 0.0797,
+      "stat-v1": 0.0766
+     },
+     "n": 98,
+     "source": "wikipedia"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2555,
+      "C": 0.2875,
+      "stat-v1": 0.2567
+     },
+     "n": 100,
+     "source": "yfinance"
+    }
+   ],
+   "entrant": "stat-v1",
+   "kind": "no model",
+   "model": "stat-v1 (calibrated market anchor + dataset base rates)",
+   "n": 492,
+   "organization": "Anonymous 39",
+   "sets": [
+    "2026-09-27"
+   ]
+  },
+  {
+   "brier": {
+    "A": 0.25,
+    "B": 0.2284,
+    "C": 0.2337,
+    "Naive": 0.2597,
+    "undertow-mix": 0.144
+   },
+   "by_source": [
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.106,
+      "C": 0.1045,
+      "undertow-mix": 0.0955
+     },
+     "n": 150,
+     "source": "acled"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.4046,
+      "C": 0.4906,
+      "undertow-mix": 0.1246
+     },
+     "n": 140,
+     "source": "dbnomics"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.242,
+      "C": 0.2337,
+      "undertow-mix": 0.2251
+     },
+     "n": 148,
+     "source": "fred"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.1272,
+      "C": 0.0484,
+      "undertow-mix": 0.0176
+     },
+     "n": 147,
+     "source": "wikipedia"
+    },
+    {
+     "brier": {
+      "A": 0.25,
+      "B": 0.2722,
+      "C": 0.3048,
+      "undertow-mix": 0.2545
+     },
+     "n": 150,
+     "source": "yfinance"
+    }
+   ],
+   "entrant": "undertow-mix",
+   "kind": "mixed",
+   "model": "undertow-mix (statbase x gpt-5.6-sol)",
+   "n": 735,
+   "organization": "Anonymous 23",
+   "sets": [
+    "2026-08-16"
+   ]
+  }
+ ],
+ "follow_up": {
+  "b_no_worse_than_stat_v1": false,
+  "opens": false,
+  "p52_and_p53": false,
+  "reading": "B − stat-v1 +0.05788, by series [+0.03354, +0.08168] on 492"
+ },
+ "hypotheses": [
+  {
+   "id": "P52",
+   "reading": "B − A -0.02999, by series [-0.04163, -0.01861]",
+   "verdict": "failed"
+  },
+  {
+   "id": "P53",
+   "reading": "B − Naive -0.05945, by series [-0.08099, -0.03858]",
+   "verdict": "held"
+  },
+  {
+   "id": "P54",
+   "reading": "B − A interval width by date 0.0167 against by series 0.0230 (0.73x)",
+   "verdict": "failed"
+  },
+  {
+   "id": "P55",
+   "reading": "on yfinance B − D -0.00316 (D − B +0.00316, by series [-0.00103, +0.00764])",
+   "verdict": "held"
+  },
+  {
+   "id": "P56",
+   "reading": "model-4 − B -0.04681 on 485; hybrid ensemble 1 − B -0.10287 on 492",
+   "verdict": "held"
+  },
+  {
+   "id": "P57",
+   "reading": "C − B +0.00064, by series [-0.00799, +0.00876]",
+   "verdict": "failed"
+  }
+ ],
+ "label": "a backtest row in raw Brier on matched instances, not a Brier Index: ForecastBench's index rescales against its baselines and imputes missing forecasts",
+ "method": {
+  "arms": {
+   "A": "0.5",
+   "B": "(yes + 1) / (n + 2) over the source's known outcomes; 0.5 while n < 20",
+   "C": "(yes_s + 4·B) / (n_s + 4) over the series' known outcomes",
+   "D": "0.5·(share of past h-observation changes above 0 in the last 730 days of admitted closes) + 0.5·B; B with fewer than 100 changes"
+  },
+  "bootstrap": "95%, 10,000 resamples, seed 20261119, resampling series (source, id) and, separately, resolution dates",
+  "comparators": "forecasts as published, unclipped; an external entry's imputed forecasts left out; the baselines' flag ignored",
+  "corpus": "sets 2026-07-05 to 2026-09-27; history from 2026-01-04; an outcome dated D known at freeze F when D + 14 days is on or before F's day",
+  "statistic": "Brier(first) − Brier(second), paired by instance; negative: first is better"
+ },
+ "provenance": {
+  "archive": {
+   "attribution": "ForecastBench processed forecast sets, Forecasting Research Institute (forecastbench.org/datasets), CC BY-SA 4.0; cut down to the question instances Augur's backtests forecast, values unchanged",
+   "bytes": 144053316,
+   "extracted_by": "scripts/extract_forecast_sets.py",
+   "fetched": "2026-11-26",
+   "last_modified": "Wed, 25 Nov 2026 17:14:44 GMT",
+   "licence": "CC BY-SA 4.0",
+   "sha256": "1ddccd02e1410533a944d9fb7ff94bc2d56a980bd6446a5fbec27bd560463dfa",
+   "url": "https://www.forecastbench.org/assets/data/processed-forecast-sets/processed_forecast_sets.tar.gz"
+  },
+  "closes_ledger": "data/ledgers/m15-dataset-closes.sqlite",
+  "sets": {
+   "2026-01-04": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "6e2a23bdb27d3449e80752e82db4d37ae74680145c188033ff5ae9b1a02de5e1",
+    "resolutions_sha256": "16cf3bff171a93a905e14162724efcda91e59dc8ff80d1382ab46adc83ff0ea7"
+   },
+   "2026-01-18": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "5b6b3108134e02b823f9a6486bb5b1753d4f2e5eb2332e5dedf4768279d6285f",
+    "resolutions_sha256": "5dd346886357d18b6ac6751b1ac4d28bb7d57f0097ac75e54689ceaef7325750"
+   },
+   "2026-02-01": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "92d3c6fe92cdacdbbc3856b4b76d72ec1bff1608826af286df6307a027bc0dd7",
+    "resolutions_sha256": "7f076fb0b539190aa40e809c57b6cd04393e291b460a788bb29228c3701be4aa"
+   },
+   "2026-02-15": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "080fbfdcc3862fe6805dbd746bfb24e180f69a47a2ce359f78c918ff5ed3affb",
+    "resolutions_sha256": "33389131d0a9839cace89c895f1354b96320c315cd751006f0bdaa3167e80791"
+   },
+   "2026-03-01": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "fa12fb34a0e76c5912fd7d25e534a7147e8cb87284ea0a3fb309a78d4d62e405",
+    "resolutions_sha256": "5be11ec247cc240a0a75e5a44bfe08796228b9946ddd156888d3e7542eb9a9ee"
+   },
+   "2026-03-15": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "4de06c2ef88a64ba3cd205b9ddbbbd123d482ab770e0535adf8c8fb097d15078",
+    "resolutions_sha256": "a84f17a4ff00f6a107c388aba80589156f86ca47e6b879f72ea3a3a3bf248a7c"
+   },
+   "2026-03-29": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "e43601443384d86d2d7cee455e2d987bc9c8056b3c94f0d50ca1ee4c4d0f42f2",
+    "resolutions_sha256": "eed108cad0839768d1b67c8136a234dfb3b20b5df580abf502b387ed19185ad3"
+   },
+   "2026-04-12": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "792208b93fc3aaf7e5d9cf9c013ee28517f130a4077dccbcf6a50b7f3695985a",
+    "resolutions_sha256": "42ac63619ac4447dcd7364f47ec198ec588395307ad145f57662ca27bb6746a9"
+   },
+   "2026-04-26": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "ce1b582bd5b1bdb3c7b8a65e775c4f335b28b52e756963ccbe88a949b4081750",
+    "resolutions_sha256": "11c757efb457a64e9951a02d93969e549a219a820cdcf69ad1c28b164c4966c5"
+   },
+   "2026-05-10": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "892c7637abb8a32996f9b90446af5b0bb486a7f7af9a2b94beda87a9508f444a",
+    "resolutions_sha256": "f5f49df3a33bb7c5d96e2f2901ff45a314f7009605df632f25cf55db816ca723"
+   },
+   "2026-05-24": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "eaf464d95e0c6ee935521d96ca149cf07d9c2fc81d573902a4b2f0a322800e80",
+    "resolutions_sha256": "75842dbca02fcbf1e554fcb419a10bcba4b79a63da8df2c354b65a29dc6ee550"
+   },
+   "2026-06-07": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "281800b9820217dd2ace94f876f9f7752aff6d4c1b1bafeffd8b217c722a7846",
+    "resolutions_sha256": "86bb3f2b0213706566205bc4fc6cfabffe5163905512322a22c8c93f59a6a86e"
+   },
+   "2026-06-21": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "90294f0009c5dc7cc523791f3714ea6ca2386f6df182e81e76571c7a0f564555",
+    "resolutions_sha256": "371ccdebc5be42bb9be0c66120165cbb3221ddcc6ed0d5c7435d9e50cf1c6dbe"
+   },
+   "2026-07-05": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "d7b3652ab8b49f81eb85cc96406209ff67da38c0bcdda322216d612e89a2946b",
+    "resolutions_sha256": "fa07f61e7a052f151c2561da459f5cc6bb31bbef1e7eb8cee155101d43553a99"
+   },
+   "2026-07-19": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "60f738996a6fe7fe01d34f34ecf7cf66708658d0189b1eae149b09e29f3be05b",
+    "resolutions_sha256": "77a7aecc0da4db3347fa3fc7ebf93121d6f252fb9e22faba8085da4fed6e1253"
+   },
+   "2026-08-02": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "3b29862d7aa16776969a9ade960908cc9b02c8efc69e207a4437e4b1859df017",
+    "resolutions_sha256": "17db96b556f592d2411df6ad5ca15a9e068b66aa4ae832c4895a938cc69553e6"
+   },
+   "2026-08-16": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "3df98bb497ebe893d9248a34d170ca980b00026f6657fa4fba303836317f372e",
+    "resolutions_sha256": "4043cc5f69bc9e5d0efe67a139fb6a57d5369a03606f468befed39d5932b97b6"
+   },
+   "2026-08-30": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "aab6999d96c984b690f2376612b1ce990d0f6592aadb8a5f81707ec2e5d45bb7",
+    "resolutions_sha256": "9570948f04e12ecc83457a857202efbfac652024ef5b2e36ccac3f689ec4b3aa"
+   },
+   "2026-09-13": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "6bc6c460960077c944dfbcfedb9d103d4d5db13bc33270727aa77becbff5eb22",
+    "resolutions_sha256": "7578a70197020df1fcc6102221ef25ccdb075c5f73de7b0a9d339c8ac238d8ad"
+   },
+   "2026-09-27": {
+    "fetched": "2026-11-26",
+    "questions_sha256": "aa51aea53b5a259140d4e64a547869d595c52248368fbe7708b0cdfd26ce8e5c",
+    "resolutions_sha256": "cf9e5a4fc31fc0cdd9424b72d32729459f6affd2dba213c739ceeee840fd2262"
+   }
+  }
+ }
+}

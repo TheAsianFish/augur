@@ -17,6 +17,8 @@ from augur import (
     baseline,
     diagram,
     fbcompare,
+    fbdataset,
+    fbdataset_eval,
     floor,
     livecal,
     q4,
@@ -325,6 +327,21 @@ def _parser() -> argparse.ArgumentParser:
     gk.add_argument("--end", required=True, help="inclusive, ISO 8601 UTC (the cutoff)")
     gk.add_argument("--out", type=Path, default=GKG_INDEX, help=f"default {GKG_INDEX}")
     gk.add_argument("--manifest", type=Path, default=GKG_MANIFEST, help=f"default {GKG_MANIFEST}")
+    dc = bt_sub.add_parser(
+        "dataset-closes",
+        help="record each M15 yfinance question's daily closes as of its freeze instant",
+        description=(
+            "For every yfinance question of M15's corpus sets (data/forecastbench/dataset), "
+            "fetch the ticker's daily closes from Yahoo Finance's keyless chart endpoint for "
+            f"the {fbdataset.FETCH_DAYS} days before its freeze instant, keep only closes "
+            "dated at or before it (day D's close is dated 00:00 UTC of D + 1), and write them "
+            "to the ledger as one dated source, admitted through the leakage gate. No model "
+            "is called. Resumable: questions the ledger holds are skipped. Free."
+        ),
+    )
+    dc.add_argument(
+        "--ledger", type=Path, default=fbdataset.LEDGER, help=f"default {fbdataset.LEDGER}"
+    )
     bp = bt_sub.add_parser(
         "prices",
         help="record each ForecastBench market question's exact price as of its freeze date",
@@ -488,14 +505,23 @@ def _parser() -> argparse.ArgumentParser:
 
     fbc = sub.add_parser(
         "fbcompare",
-        help="M10: Augur's backtests beside every ForecastBench entrant on the same questions",
+        help="M10 and M15: Augur's arms beside ForecastBench's entrants on the same instances",
         description=(
-            "Pair each ForecastBench entrant's published forecasts (the committed extract in "
-            "data/forecastbench/forecast-sets) with Augur's arms C1, C2, O and C4 on the "
-            "instances Augur scored, and read P30 to P33. Offline, free, deterministic."
+            "M10: pair each ForecastBench entrant's published forecasts (the committed extract "
+            "in data/forecastbench/forecast-sets) with Augur's arms C1, C2, O and C4 on the "
+            "instances Augur scored, and read P30 to P33. M15: score the no-model arms on the "
+            "dataset questions (data/forecastbench/dataset, the closes ledger) beside the "
+            "baselines and named entries (data/forecastbench/forecast-sets-dataset), and read "
+            "P52 to P57. No model call; offline, free, deterministic."
         ),
     )
     fbc.add_argument("--out", type=Path, default=fbcompare.SNAPSHOT)
+    fbc.add_argument(
+        "--dataset-out",
+        type=Path,
+        default=fbdataset_eval.SNAPSHOT,
+        help=f"M15's dataset row (default {fbdataset_eval.SNAPSHOT})",
+    )
     fbc.add_argument(
         "--check",
         action="store_true",
@@ -761,7 +787,25 @@ async def _backtest_prices(args: argparse.Namespace, settings: Settings) -> int:
     return 0
 
 
+async def _backtest_dataset_closes(args: argparse.Namespace) -> int:
+    loaded = fbdataset.load(Path.cwd())
+    held = fbdataset.recorded_ids(args.ledger)
+    todo = [q for q in fbdataset.yfinance_questions(loaded) if q.question_id not in held]
+    print(f"{len(todo)} yfinance questions to fetch ({len(held)} already in {args.ledger})")
+    clock = SystemClock()
+    async with default_http_client() as http:
+        fetcher = SeriesFetcher(http, clock)
+        with Ledger.open(args.ledger, clock) as ledger:
+            report = await fbdataset.record_closes(
+                questions=todo, fetcher=fetcher, ledger=ledger, code_version=code_version()
+            )
+    print(f"ledger: {args.ledger} {report.line()}")
+    return 0
+
+
 async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
+    if args.backtest_command == "dataset-closes":
+        return await _backtest_dataset_closes(args)
     if args.backtest_command == "prices":
         return await _backtest_prices(args, settings)
     if args.backtest_command == "gkg-index":
@@ -1113,17 +1157,23 @@ def _q6(args: argparse.Namespace) -> int:
 
 
 def _fbcompare(args: argparse.Namespace) -> int:
-    text = fbcompare.dumps(fbcompare.snapshot(Path.cwd()))
-    out: Path = args.out
+    root = Path.cwd()
+    files: dict[Path, str] = {
+        args.out: fbcompare.dumps(fbcompare.snapshot(root)),
+        args.dataset_out: fbdataset_eval.dumps(fbdataset_eval.snapshot(root)),
+    }
     if args.check:
-        if not out.exists() or out.read_text(encoding="utf-8") != text:
-            print(f"{out} differs from a fresh run; run augur fbcompare")
-            return 1
-        print(f"{out} matches a fresh run")
-        return 0
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(text, encoding="utf-8")
-    print(f"wrote {out}")
+        stale = [p for p, t in files.items() if not p.exists() or p.read_text("utf-8") != t]
+        for p in stale:
+            print(f"{p} differs from a fresh run; run augur fbcompare")
+        for p in files:
+            if p not in stale:
+                print(f"{p} matches a fresh run")
+        return 1 if stale else 0
+    for p, text in files.items():
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text, encoding="utf-8")
+        print(f"wrote {p}")
     return 0
 
 

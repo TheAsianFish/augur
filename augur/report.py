@@ -28,7 +28,20 @@ from datetime import date
 from pathlib import Path
 from typing import Any
 
-from augur import fbcompare, pooled, power, q2, q3, q13, replay, rereads, scorecard, standings
+from augur import (
+    fbcompare,
+    fbdataset,
+    fbdataset_eval,
+    pooled,
+    power,
+    q2,
+    q3,
+    q13,
+    replay,
+    rereads,
+    scorecard,
+    standings,
+)
 from augur.clock import to_iso
 from augur.config import Settings
 from augur.forecastbench import load_set
@@ -2268,6 +2281,171 @@ def render_fbcompare(root: Path) -> str:
     return "\n".join(out) + "\n"
 
 
+# -- M15: ForecastBench's dataset questions with no model ------------------------------
+
+M15_REGISTRATION = re.compile(
+    r"<!-- m15-registration:begin -->\n(?P<body>.*?)<!-- m15-registration:end -->", re.S
+)
+M15_ARMS = {
+    "A": "A: always 50%",
+    "B": "B: source base rate",
+    "C": "C: series' own rate",
+    "D": "D: series arm",
+}
+
+
+def render_m15_registration(root: Path) -> str:
+    """M15's registration exactly as PLAN.md committed it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = M15_REGISTRATION.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no m15-registration block")
+    return m.group("body")
+
+
+def _m15_name(name: str) -> str:
+    return M15_ARMS.get(name, name)
+
+
+M15_FEW_CLUSTERS = 8
+"""Below this many clusters an interval is printed but marked as not meaningful."""
+
+
+def _m15_ci(e: dict[str, Any]) -> str:
+    mark = " †" if e["clusters"] < M15_FEW_CLUSTERS else ""
+    return f"[{e['low']:+.4f}, {e['high']:+.4f}] ({e['clusters']}){mark}"
+
+
+def _m15_row(c: dict[str, Any], label: str | None = None) -> str:
+    what = f"{_m15_name(c['first'])} − {_m15_name(c['second'])}"
+    return (
+        f"| {label or c['group']} | {what} | {c['n']} | {c['mean']:+.4f} | "
+        f"{_m15_ci(c['by_series'])} | {_m15_ci(c['by_date'])} |"
+    )
+
+
+def render_fbdataset(root: Path) -> str:
+    path = root / fbdataset_eval.SNAPSHOT
+    if not path.exists():
+        return "M15's dataset row has not been run (`augur fbcompare`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    cov = snap["coverage"]
+    left = ", ".join(f"{n:,} {why}" for why, n in sorted(cov["left_out"].items()))
+    out = [
+        f"**Label: {snap['label']}.** No model call, $0. Corpus: "
+        f"{cov['dataset_questions']:,} dataset questions in the seven sets 2026-07-05 to "
+        f"2026-09-27, {cov['instances']:,} scored instances on {cov['series']} series. Left "
+        f"out: {left}. ForecastBench's processed files resolve "
+        + (
+            "every instance as the resolution sets do."
+            if not cov["outcome_mismatches"]
+            else f"{cov['outcome_mismatches']} instances differently (scored with the "
+            "resolution set's outcome)."
+        ),
+        "",
+        "Coverage by source:",
+        "",
+        "| Source | Instances | Questions | Series | B from ≥ 20 known outcomes | C with the "
+        "series' own history | D reached | Series arm |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for c in cov["by_source"]:
+        d = str(c["d_reached"]) if c["source"] == "yfinance" else "—"
+        out.append(
+            f"| {c['source']} | {c['instances']} | {c['questions']} | {c['series']} | "
+            f"{c['b_from_history']} | {c['c_with_own_history']} | {d} | {c['series_arm']} |"
+        )
+    out += [
+        "",
+        f"yfinance closes: {cov['yfinance_with_closes']} of {cov['yfinance_questions']} "
+        "questions have an admitted source in the closes ledger "
+        f"(`{snap['provenance']['closes_ledger']}`); the rest get B.",
+        "",
+        "Brier on every corpus instance (lower is better):",
+        "",
+        "| Group | n | Yes share | A: 50% | B: source rate | C: series' rate | D: series arm "
+        "| Naive | Imputed | Always 0.5 |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for g in snap["briers"]:
+        b = g["brier"]
+
+        def cell(k: str, b: dict[str, float] = b) -> str:
+            return f"{b[k]:.4f}" if k in b else "—"
+
+        out.append(
+            f"| {g['group']} | {g['n']} | {g['yes_share']:.3f} | {cell('A')} | {cell('B')} | "
+            f"{cell('C')} | {cell('D')} | {cell('Naive')} | {cell('Imputed')} | "
+            f"{cell('Always 0.5')} |"
+        )
+    out += [
+        "",
+        "Paired differences, first − second (negative: the first is better), 95% bootstrap "
+        "intervals clustered by series and, separately, by resolution date (cluster counts "
+        "in parentheses):",
+        "",
+        "| Group | Difference | n | Mean | By series | By date |",
+        "|---|---|---|---|---|---|",
+    ]
+    for c in snap["comparisons"]:
+        if c["group"] in ("pooled", "yfinance") or c["group"] in fbdataset.SOURCES:
+            out.append(_m15_row(c))
+    out += [
+        "",
+        "The named entries on their own instances (Brier, then the paired differences):",
+        "",
+        "| Entry | Kind | Set | n | Entry | A | B | C | Naive |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for e in snap["entrants"]:
+        b = e["brier"]
+        out.append(
+            f'| {e["organization"]} "{e["model"]}" | {e["kind"]} | {", ".join(e["sets"])} | '
+            f"{e['n']} | {b[e['entrant']]:.4f} | {b['A']:.4f} | {b['B']:.4f} | {b['C']:.4f} | "
+            f"{b['Naive']:.4f} |"
+        )
+    out += [
+        "",
+        "| Group | Difference | n | Mean | By series | By date |",
+        "|---|---|---|---|---|---|",
+    ]
+    for c in snap["comparisons"]:
+        if c["group"] not in ("pooled", "yfinance") and c["group"] not in fbdataset.SOURCES:
+            out.append(_m15_row(c))
+    out += [
+        "",
+        f"† Fewer than {M15_FEW_CLUSTERS} clusters: one set has two or three resolution dates, "
+        "so a date-clustered interval for one entry's set is printed but carries no weight.",
+        "",
+        "By source, each entry beside the arms on the same instances (Brier):",
+        "",
+        "| Entry | Source | n | Entry | A | B | C |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for e in snap["entrants"]:
+        for s in e["by_source"]:
+            b = s["brier"]
+            out.append(
+                f"| {e['entrant']} | {s['source']} | {s['n']} | {b[e['entrant']]:.4f} | "
+                f"{b['A']:.4f} | {b['B']:.4f} | {b['C']:.4f} |"
+            )
+    out += ["", "| # | Reading | Verdict |", "|---|---|---|"]
+    for h in snap["hypotheses"]:
+        out.append(f"| {h['id']} | {h['reading']} | **{h['verdict']}** |")
+    f = snap["follow_up"]
+    why = ("P52 and P53 both held" if f["p52_and_p53"] else "P52 and P53 did not both hold") + (
+        "; B is no worse than stat-v1 (upper end below +0.01)"
+        if f["b_no_worse_than_stat_v1"]
+        else "; B is worse than stat-v1 (upper end at or above +0.01)"
+    )
+    out += [
+        "",
+        f"Follow-up (item 11): **{'opens' if f['opens'] else 'does not open'}**: {why}; "
+        f"{f['reading']}.",
+    ]
+    return "\n".join(out) + "\n"
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -2295,6 +2473,8 @@ BLOCKS: dict[str, Block] = {
         Block("m14-registration", render_m14_registration),
         Block("m14-sample-size", render_m14_sample_size),
         Block("m14-rereads", render_m14_rereads),
+        Block("m15-registration", render_m15_registration),
+        Block("fbdataset", render_fbdataset),
     )
 }
 
