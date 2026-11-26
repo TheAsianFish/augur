@@ -30,9 +30,9 @@ def _run(ledger: Ledger) -> str:
 def test_migrations_apply_once_and_reopen(tmp_path: Path, clock: FixedClock) -> None:
     path = tmp_path / "l.sqlite"
     with Ledger.open(path, clock) as first:
-        assert first.schema_version() == 8
+        assert first.schema_version() == 9
     with Ledger.open(path, clock) as again:
-        assert again.schema_version() == 8
+        assert again.schema_version() == 9
 
 
 @pytest.mark.parametrize("table", APPEND_ONLY_TABLES)
@@ -263,7 +263,7 @@ def test_a_schema_1_ledger_is_migrated_in_place(tmp_path: Path, clock: FixedCloc
     copy = tmp_path / "m1.sqlite"
     shutil.copy(original, copy)
     with Ledger.open(copy, clock) as led:
-        assert led.schema_version() == 8
+        assert led.schema_version() == 9
         assert led.count("llm_calls") == 7
         assert led.count("model_switches") == 0
     assert scan_ledger(copy) == []
@@ -283,7 +283,7 @@ def test_migration_4_keeps_every_forecast_of_an_older_ledger(tmp_path: Path) -> 
         ).fetchall()
     assert before
     with Ledger.open(copy, FixedClock(T0)) as led:
-        assert led.schema_version() == 8
+        assert led.schema_version() == 9
         conn = led.connection
         after = conn.execute(
             "SELECT forecast_id, probability, reasoning FROM forecasts ORDER BY forecast_id"
@@ -405,7 +405,7 @@ def test_migration_8_keeps_every_reference_and_admits_stat_and_blend(tmp_path: P
         before = old.execute("SELECT * FROM reference_forecasts ORDER BY reference_id").fetchall()
     assert before
     with Ledger.open(copy, FixedClock(T0)) as led:
-        assert led.schema_version() == 8
+        assert led.schema_version() == 9
         conn = led.connection
         after = conn.execute("SELECT * FROM reference_forecasts ORDER BY reference_id").fetchall()
         assert after == before
@@ -416,6 +416,46 @@ def test_migration_8_keeps_every_reference_and_admits_stat_and_blend(tmp_path: P
                 post_id=post_id,
                 question_type=qtype,
                 forecaster=who,
+                detail="test",
+                values={"probability": 0.4},
+                as_of=T0,
+                source="test",
+            )
+        with pytest.raises(sqlite3.DatabaseError):
+            conn.execute("DELETE FROM reference_forecasts")
+
+
+def test_migration_9_keeps_every_reference_and_admits_the_reader_rows(tmp_path: Path) -> None:
+    """M16: the reference rows survive, and reader and reader-base rows are accepted."""
+    import shutil
+
+    committed = Path(__file__).resolve().parent.parent / "data/ledgers/m4-shadow-template.sqlite"
+    copy = tmp_path / "m4.sqlite"
+    shutil.copy(committed, copy)
+    with closing(sqlite3.connect(f"file:{committed}?mode=ro", uri=True)) as old:
+        before = old.execute("SELECT * FROM reference_forecasts ORDER BY reference_id").fetchall()
+    with Ledger.open(copy, FixedClock(T0)) as led:
+        conn = led.connection
+        after = conn.execute("SELECT * FROM reference_forecasts ORDER BY reference_id").fetchall()
+        assert after == before
+        qid, post_id, qtype = before[0][1], before[0][2], before[0][3]
+        for who in ("reader", "reader-base"):
+            led.record_reference(
+                question_id=qid,
+                post_id=post_id,
+                question_type=qtype,
+                forecaster=who,
+                detail="test",
+                values={"probability": 0.4},
+                as_of=T0,
+                source="test",
+            )
+        with pytest.raises(LedgerError):
+            led.record_reference(
+                question_id=qid,
+                post_id=post_id,
+                question_type=qtype,
+                forecaster="someone-else",
                 detail="test",
                 values={"probability": 0.4},
                 as_of=T0,

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Export a shadow tick's ledger to the `ledger` branch as shadow/<UTC day>/<NAME>.jsonl,
-# with the tick's printed output beside it (M11). The scheduled job calls this twice
-# with the same NAME: after Augur's forecasts and again after the template's, so a
-# timeout in the template step loses neither. The second export is a superset of the
-# first and replaces it; no other run writes that path.
+# with the tick's printed output beside it (M11). The scheduled job calls this with
+# the same NAME after Augur's forecasts, again after the template's, and (M16) after
+# the reader's when it runs, so a timeout in a later step loses nothing earlier. Each
+# export is a superset of the one before and replaces it; no other run writes that path.
 #
 #   scripts/push_shadow.sh LEDGER.sqlite OUTPUT.txt NAME
 set -euo pipefail

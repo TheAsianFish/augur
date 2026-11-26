@@ -12,7 +12,8 @@ name: Tournament
 # AUGUR_SHADOW ('true': scheduled ticks run the shadow job below instead of the
 # forecast job), AUGUR_SHADOW_MODELS (the shadow route; default the free nemotron),
 # AUGUR_SHADOW_DAILY_CALLS (the free calls a day the poll budgets; default 1000),
-# AUGUR_SHADOW_MAX_QUESTIONS (questions a shadow tick takes; default 4).
+# AUGUR_SHADOW_MAX_QUESTIONS (questions a shadow tick takes; default 4),
+# AUGUR_SHADOW_READER ('true': M16's newer free reader runs last in each shadow tick).
 #
 # Shadow mode (M11): Augur and Metaculus's template bot forecast the same open
 # questions on the same free model, and nothing is posted: no step of the shadow
@@ -20,7 +21,7 @@ name: Tournament
 # A tick's work is decided against the shadow tree of the ledger branch (the
 # questions it already holds), not against Metaculus, since a dry run leaves no
 # forecast there. Each tick pushes its export after Augur's forecasts and again
-# after the template's, so a timeout loses neither.
+# after the template's (and after the reader's, when it runs), so a timeout loses neither.
 #
 # Cadence (RESULTS.md M3): every 90 minutes on two offset lines, which caught
 # 99.25% of 3-hour MiniBench windows in simulation against the measured delays,
@@ -191,12 +192,13 @@ jobs:
   # --shadow-ledger. Measured on the bot-testing-area (RESULTS.md M11): about 2
   # minutes and 7 calls a question for Augur, 2 minutes and 15 calls for the
   # template, so a tick takes 4 questions by default; Augur's step stops starting
-  # questions at 14 minutes, the template's at 11.
+  # questions at 14 minutes, the template's at 11. M16's reader (behind the
+  # AUGUR_SHADOW_READER variable) comes last and stops starting questions at 8.
   shadow:
     needs: poll
     if: needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 56
     permissions:
       contents: write # the ledger branch push
     env:
@@ -274,11 +276,31 @@ jobs:
       - name: Push the template's forecasts to the ledger branch
         if: always()
         run: bash scripts/push_shadow.sh run.sqlite run.txt "$SHADOW_NAME"
+      # Reported, never the floor's candidate: three draws on the newer free route from
+      # the request Augur's member 0 saw, only while the day's free calls allow them.
+      - name: Newer free reader (reported arm, M16)
+        id: reader
+        if: always() && vars.AUGUR_SHADOW_READER == 'true'
+        continue-on-error: true
+        timeout-minutes: 10
+        env:
+          AUGUR_SHADOW_READER: 'true'
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          AUGUR_SHADOW_DAILY_CALLS: ${{ vars.AUGUR_SHADOW_DAILY_CALLS }}
+        run: |
+          set -o pipefail
+          if [ ! -f run.sqlite ]; then echo "no run ledger: nothing for the reader" | tee -a run.txt; exit 0; fi
+          echo "== augur reader --ledger run.sqlite --shadow-ledger shadow.sqlite" | tee -a run.txt
+          uv run --no-sync augur reader --ledger run.sqlite --shadow-ledger shadow.sqlite \
+            --max-minutes 8 2>&1 | tee -a run.txt
+      - name: Push the reader's forecasts to the ledger branch
+        if: always() && vars.AUGUR_SHADOW_READER == 'true'
+        run: bash scripts/push_shadow.sh run.sqlite run.txt "$SHADOW_NAME"
       - name: Summary
         if: always()
         run: |
           {
-            echo "### Shadow tick (${{ github.event_name }}, forecast ${{ steps.forecast.outcome }}, template ${{ steps.template.outcome }})"
+            echo "### Shadow tick (${{ github.event_name }}, forecast ${{ steps.forecast.outcome }}, template ${{ steps.template.outcome }}, reader ${{ steps.reader.outcome || 'off' }})"
             echo '```'
             if [ -f run.txt ]; then tail -n 60 run.txt; else echo "no output"; fi
             echo '```'
