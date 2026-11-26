@@ -4,7 +4,10 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M14 registers, before the
+committed file differs from a fresh render. M15 forecasts ForecastBench's
+dataset questions, half of every set and never touched before, with no
+model at all (base rates and a stock's own history), beside the
+benchmark's baselines and leaders on the same instances. M14 registers, before the
 2026-11-30 round opens, the one pooled Q1 analysis the season's shadow
 rounds will get (one quantity, one date, clustered by opening day), with
 a report that cannot admit a route and a synthetic table of what
@@ -31,6 +34,318 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M15: ForecastBench's dataset half with no model
+
+**A backtest row in raw Brier on matched instances, not a Brier Index.**
+ForecastBench's dataset questions (will a series be higher on each
+resolution date than on the due date) are half of every set, and every
+Augur backtest before this dropped them. M15 forecasts them with no model
+call at all: always 50% (A), the source's walk-forward base rate (B), the
+series' own walk-forward rate shrunk toward B (C), and, on `yfinance`, the
+share of the ticker's past same-horizon changes that were positive, shrunk
+toward B (D). Each is set beside ForecastBench's own baselines and four
+named entries on exactly the instances they forecast.
+
+The registration below (the arms, the 14-day outcome lag, the shrink
+weights, the comparators, the statistic and P52 to P57) was committed as
+`3c43d35` ("Register M15's arms, comparators and predictions before any
+run", 2026-11-26T03:42:07Z), before any M15 code, before any close was
+fetched and before any arm was scored. It is rendered here from PLAN.md,
+so a later edit to either copy fails the build. The build machine has no
+GitHub credentials, so GitHub's push time is read once the branch is
+published (To measure).
+
+<!-- augur:begin m15-registration -->
+**M15's registration (2026-11-26).** No model is called anywhere in M15.
+
+1. *The corpus.* The question sets `2026-07-05-llm.json` to
+   `2026-09-27-llm.json` (seven sets, every two weeks) of
+   `forecastingresearch/forecastbench-datasets` and their resolution
+   sets, as fetched on 2026-11-26 (SHA-256 recorded). An *instance* is
+   (set, source, id, resolution date) for a question whose source is
+   `acled`, `dbnomics`, `fred`, `wikipedia` or `yfinance`, whose id is one
+   string (a list of ids is a pair question), and whose row in the
+   resolution set at that date is resolved to 0 or 1. Pair questions, any
+   other dataset source (`serpapi`) and dated rows that are not resolved
+   to 0 or 1 are counted by reason and left out. Market questions belong
+   to M10 and are not counted here.
+2. *The history.* The same rule applied to every 2026 set from
+   `2026-01-04` on, the corpus sets included, gives the outcomes the base
+   rates read; the sets before `2026-07-05` are never scored. An outcome
+   dated by its resolution date D is known to a question frozen at instant
+   F only if D + 14 days is on or before F's date. This is stricter than
+   "before the due date": ACLED, FRED and DBnomics publish with a lag this
+   repository cannot date, and 14 days is a bound, not a proof.
+3. *Arm A, always 50%.*
+4. *Arm B, the source's walk-forward base rate:* (yes + 1) / (n + 2) over
+   the outcomes of the question's source known at F (every horizon), and
+   0.5 while n < 20.
+5. *Arm C, the series' own walk-forward rate* (added by this
+   registration; a reported arm with its own prediction, never a
+   replacement for B in P52 to P56): (yes_s + 4·B) / (n_s + 4) over the
+   known outcomes of the same (source, id), every horizon; B itself when
+   n_s = 0.
+6. *Arm D, the series arm, `yfinance` only.* Daily closes from Yahoo
+   Finance's chart endpoint (keyless, M12's dating rule: the close of
+   trading day D is dated 00:00 UTC of D + 1 and admitted only at or
+   before F), written to a backtest ledger as one dated source per
+   question and admitted through the leakage gate before anything reads
+   them. h = max(1, round(calendar days from the due date to the
+   resolution date × the series' observations per day over its last 365
+   days)). p_series is the share of the overlapping h-observation changes
+   among the admitted closes of the last 730 days before F that are above
+   0 (a tie is not "higher"), and D = 0.5·p_series + 0.5·B. With fewer
+   than 100 changes, or no admitted close, D is B and the question is
+   counted as not reached. Yahoo's history is split-adjusted after the
+   fact; a ratio of two closes is not changed by a split.
+7. *The other sources get no series arm.* FRED's keyless
+   `fredgraph.csv` ignores `vintage_date` (it returned today's revised
+   values on 2026-11-26) and ALFRED's API needs a key; DBnomics' API
+   serves the latest revision. ACLED needs an account, and Wikipedia's
+   rankings are not one series. RESULTS.md states this as coverage.
+8. *Comparators*, from ForecastBench's processed forecast sets (the
+   archive fetched 2026-11-26, SHA-256 recorded), on the same instances:
+   Naive Forecaster (the primary comparator), Imputed Forecaster and
+   Always 0.5 on every set; the two leaderboard leaders, Anonymous 24
+   "model-4" (2026-08-30) and NeuroFusion "hybrid ensemble 1"
+   (2026-09-27); Anonymous 39 "stat-v1 (calibrated market anchor +
+   dataset base rates)" (2026-09-27) and Anonymous 23 "undertow-mix
+   (statbase x gpt-5.6-sol)" (2026-08-16). Forecasts as published,
+   unclipped; an external entry's imputed forecasts are left out of its
+   comparison; the baselines' flag is ignored, as in M10.
+9. *The statistic.* Brier (p − y)² per instance; every difference is
+   Brier(first) − Brier(second), paired by instance, with a 95% bootstrap
+   interval (10,000 resamples, seed 20261119) resampling clusters, once
+   by series (source, id) and once by resolution date, both printed with
+   their cluster counts. "The interval excludes 0" means the
+   series-clustered interval. Pooled means every instance of the corpus;
+   per-source rows are descriptive.
+10. *The predictions.*
+    - **P52.** Pooled, B − A is at most −0.03 and its interval is below 0.
+    - **P53.** Pooled, B − Naive Forecaster is at most −0.02 and its
+      interval is below 0.
+    - **P54.** For B − A pooled, the date-clustered interval is at least
+      twice as wide as the series-clustered one.
+    - **P55.** On `yfinance`, B − D is below +0.005: the series arm adds
+      less than 0.005 over the base rate.
+    - **P56.** Each leader beats B by at least 0.02 on its own instances:
+      entry − B is at most −0.02 for both.
+    - **P57.** Pooled, C − B is at most −0.01 and its interval is below 0.
+11. *The follow-up* (the one-third Augur blend on a fixed sample of these
+    questions, registered in its own milestone) opens if P52 and P53 hold,
+    or if B is no worse than "stat-v1" on its instances: the upper end of
+    B − stat-v1's interval is below +0.01. M15 records which, and runs no
+    blend.
+12. *The label.* A backtest row in raw Brier on matched instances, never a
+    Brier Index: ForecastBench's index rescales against its baselines and
+    imputes missing forecasts, neither of which happens here.
+<!-- augur:end m15-registration -->
+
+### How it was run (2026-11-26, $0, no model call)
+
+```sh
+# the published sets, then the cut (standard library only, files read as untrusted JSON)
+python -I scripts/extract_dataset_questions.py RAW_DIR data/forecastbench/dataset --fetched 2026-11-26
+# the processed forecast sets archive (Last-Modified 2026-11-25 17:14:44 GMT, 144,053,316 bytes)
+python -I scripts/extract_forecast_sets.py SETS_DIR TARBALL /tmp/discard --subsets /tmp/empty \
+    --last-modified "Wed, 25 Nov 2026 17:14:44 GMT" --fetched 2026-11-26 \
+    --dataset data/forecastbench/dataset --dataset-out data/forecastbench/forecast-sets-dataset
+uv run augur backtest dataset-closes      # Yahoo's keyless chart endpoint, about 6 minutes
+uv run augur fbcompare                    # writes data/forecastbench/m15-dataset.json; make eval re-checks it
+```
+
+`augur backtest dataset-closes` asked Yahoo for each of the 348 `yfinance`
+questions' closes from 800 days before its freeze instant to a day after
+it. It recorded 346 (one lookup failed, `BK` on 2026-07-05; one ticker had
+no close at or before its freeze, `QRVO` on 2026-09-13; both get B, as
+registered). The server sent 346 closes dated after their question's
+freeze, one per question, and every one was refused before anything was
+written. The ledger (`data/ledgers/m15-dataset-closes.sqlite`) scans clean,
+and `tests/test_fbdataset_closes.py` proves on a fake server that a close
+dated after the freeze instant is refused, that a forged admission of a
+late source is refused by the ledger, and that reading back refuses a late
+close even inside an admitted source.
+
+<!-- augur:begin fbdataset -->
+**Label: a backtest row in raw Brier on matched instances, not a Brier Index: ForecastBench's index rescales against its baselines and imputes missing forecasts.** No model call, $0. Corpus: 1,750 dataset questions in the seven sets 2026-07-05 to 2026-09-27, 4,398 scored instances on 1016 series. Left out: 85 a listed past resolution date with no row resolved to 0 or 1, 9,500 a listed resolution date after the fetch day, 23 a question with no resolved date. ForecastBench's processed files resolve every instance as the resolution sets do.
+
+Coverage by source:
+
+| Source | Instances | Questions | Series | B from ≥ 20 known outcomes | C with the series' own history | D reached | Series arm |
+|---|---|---|---|---|---|---|---|
+| acled | 900 | 350 | 335 | 900 | 190 | — | none: base rates only (registration item 7) |
+| dbnomics | 849 | 340 | 77 | 849 | 799 | — | none: base rates only (registration item 7) |
+| fred | 873 | 346 | 149 | 873 | 863 | — | none: base rates only (registration item 7) |
+| wikipedia | 882 | 343 | 199 | 882 | 761 | — | none: base rates only (registration item 7) |
+| yfinance | 894 | 348 | 256 | 894 | 683 | 886 | the ticker's closes (Yahoo chart, keyless) |
+
+yfinance closes: 346 of 348 questions have an admitted source in the closes ledger (`data/ledgers/m15-dataset-closes.sqlite`); the rest get B.
+
+Brier on every corpus instance (lower is better):
+
+| Group | n | Yes share | A: 50% | B: source rate | C: series' rate | D: series arm | Naive | Imputed | Always 0.5 |
+|---|---|---|---|---|---|---|---|---|---|
+| pooled | 4398 | 0.352 | 0.2500 | 0.2200 | 0.2206 | — | 0.2795 | 0.2500 | 0.2500 |
+| acled | 900 | 0.120 | 0.2500 | 0.1060 | 0.1019 | — | 0.1329 | 0.2500 | 0.2500 |
+| dbnomics | 849 | 0.375 | 0.2500 | 0.3428 | 0.4010 | — | 0.2309 | 0.2500 | 0.2500 |
+| fred | 873 | 0.653 | 0.2500 | 0.2426 | 0.2493 | — | 0.2510 | 0.2500 | 0.2500 |
+| wikipedia | 882 | 0.194 | 0.2500 | 0.1580 | 0.0733 | — | 0.5331 | 0.2500 | 0.2500 |
+| yfinance | 894 | 0.427 | 0.2500 | 0.2573 | 0.2863 | 0.2605 | 0.2507 | 0.2500 | 0.2500 |
+
+Paired differences, first − second (negative: the first is better), 95% bootstrap intervals clustered by series and, separately, by resolution date (cluster counts in parentheses):
+
+| Group | Difference | n | Mean | By series | By date |
+|---|---|---|---|---|---|
+| pooled | B: source base rate − A: always 50% | 4398 | -0.0300 | [-0.0416, -0.0186] (1016) | [-0.0388, -0.0221] (18) |
+| pooled | C: series' own rate − A: always 50% | 4398 | -0.0294 | [-0.0434, -0.0156] (1016) | [-0.0444, -0.0158] (18) |
+| pooled | C: series' own rate − B: source base rate | 4398 | +0.0006 | [-0.0080, +0.0088] (1016) | [-0.0074, +0.0084] (18) |
+| pooled | B: source base rate − Naive | 4398 | -0.0594 | [-0.0810, -0.0386] (1016) | [-0.0746, -0.0446] (18) |
+| pooled | C: series' own rate − Naive | 4398 | -0.0588 | [-0.0826, -0.0359] (1016) | [-0.0792, -0.0379] (18) |
+| pooled | Naive − A: always 50% | 4398 | +0.0295 | [+0.0140, +0.0453] (1016) | [+0.0176, +0.0412] (18) |
+| acled | B: source base rate − A: always 50% | 900 | -0.1440 | [-0.1678, -0.1187] (335) | [-0.1591, -0.1271] (18) |
+| acled | C: series' own rate − A: always 50% | 900 | -0.1481 | [-0.1706, -0.1244] (335) | [-0.1629, -0.1330] (18) |
+| acled | C: series' own rate − B: source base rate | 900 | -0.0042 | [-0.0094, +0.0003] (335) | [-0.0077, -0.0011] (18) |
+| acled | B: source base rate − Naive | 900 | -0.0269 | [-0.0535, -0.0000] (335) | [-0.0429, -0.0104] (18) |
+| acled | C: series' own rate − Naive | 900 | -0.0311 | [-0.0562, -0.0061] (335) | [-0.0459, -0.0157] (18) |
+| acled | Naive − A: always 50% | 900 | -0.1171 | [-0.1362, -0.0965] (335) | [-0.1274, -0.1067] (18) |
+| dbnomics | B: source base rate − A: always 50% | 849 | +0.0928 | [+0.0745, +0.1104] (77) | [+0.0501, +0.1323] (18) |
+| dbnomics | C: series' own rate − A: always 50% | 849 | +0.1510 | [+0.1270, +0.1747] (77) | [+0.0886, +0.2105] (18) |
+| dbnomics | C: series' own rate − B: source base rate | 849 | +0.0582 | [+0.0432, +0.0726] (77) | [+0.0353, +0.0817] (18) |
+| dbnomics | B: source base rate − Naive | 849 | +0.1119 | [+0.0759, +0.1457] (77) | [+0.0362, +0.1912] (18) |
+| dbnomics | C: series' own rate − Naive | 849 | +0.1701 | [+0.1280, +0.2102] (77) | [+0.0740, +0.2708] (18) |
+| dbnomics | Naive − A: always 50% | 849 | -0.0191 | [-0.0417, +0.0054] (77) | [-0.0712, +0.0322] (18) |
+| fred | B: source base rate − A: always 50% | 873 | -0.0074 | [-0.0097, -0.0049] (149) | [-0.0104, -0.0045] (18) |
+| fred | C: series' own rate − A: always 50% | 873 | -0.0007 | [-0.0172, +0.0160] (149) | [-0.0109, +0.0097] (18) |
+| fred | C: series' own rate − B: source base rate | 873 | +0.0068 | [-0.0102, +0.0236] (149) | [-0.0041, +0.0177] (18) |
+| fred | B: source base rate − Naive | 873 | -0.0084 | [-0.0113, -0.0055] (149) | [-0.0121, -0.0047] (18) |
+| fred | C: series' own rate − Naive | 873 | -0.0017 | [-0.0183, +0.0149] (149) | [-0.0123, +0.0089] (18) |
+| fred | Naive − A: always 50% | 873 | +0.0010 | [-0.0002, +0.0023] (149) | [-0.0004, +0.0023] (18) |
+| wikipedia | B: source base rate − A: always 50% | 882 | -0.0920 | [-0.1261, -0.0580] (199) | [-0.1032, -0.0793] (18) |
+| wikipedia | C: series' own rate − A: always 50% | 882 | -0.1767 | [-0.1947, -0.1577] (199) | [-0.1840, -0.1696] (18) |
+| wikipedia | C: series' own rate − B: source base rate | 882 | -0.0847 | [-0.1091, -0.0619] (199) | [-0.0975, -0.0724] (18) |
+| wikipedia | B: source base rate − Naive | 882 | -0.3751 | [-0.4602, -0.2959] (199) | [-0.3917, -0.3578] (18) |
+| wikipedia | C: series' own rate − Naive | 882 | -0.4598 | [-0.5341, -0.3908] (199) | [-0.4701, -0.4498] (18) |
+| wikipedia | Naive − A: always 50% | 882 | +0.2831 | [+0.2197, +0.3504] (199) | [+0.2687, +0.2967] (18) |
+| yfinance | B: source base rate − A: always 50% | 894 | +0.0073 | [+0.0040, +0.0105] (256) | [-0.0002, +0.0146] (18) |
+| yfinance | C: series' own rate − A: always 50% | 894 | +0.0363 | [+0.0235, +0.0496] (256) | [+0.0260, +0.0459] (18) |
+| yfinance | C: series' own rate − B: source base rate | 894 | +0.0290 | [+0.0165, +0.0418] (256) | [+0.0186, +0.0397] (18) |
+| yfinance | B: source base rate − Naive | 894 | +0.0067 | [+0.0033, +0.0100] (256) | [-0.0007, +0.0139] (18) |
+| yfinance | C: series' own rate − Naive | 894 | +0.0356 | [+0.0226, +0.0492] (256) | [+0.0248, +0.0459] (18) |
+| yfinance | Naive − A: always 50% | 894 | +0.0007 | [-0.0007, +0.0020] (256) | [-0.0006, +0.0018] (18) |
+| yfinance | D: series arm − B: source base rate | 894 | +0.0032 | [-0.0010, +0.0077] (256) | [-0.0019, +0.0087] (18) |
+| yfinance | D: series arm − A: always 50% | 894 | +0.0105 | [+0.0054, +0.0158] (256) | [+0.0036, +0.0170] (18) |
+| yfinance | D: series arm − Naive | 894 | +0.0099 | [+0.0047, +0.0151] (256) | [+0.0028, +0.0167] (18) |
+
+The named entries on their own instances (Brier, then the paired differences):
+
+| Entry | Kind | Set | n | Entry | A | B | C | Naive |
+|---|---|---|---|---|---|---|---|---|
+| Anonymous 24 "model-4" | leader | 2026-08-30 | 485 | 0.1547 | 0.2500 | 0.2015 | 0.1996 | 0.3038 |
+| NeuroFusion "hybrid ensemble 1" | leader | 2026-09-27 | 492 | 0.1289 | 0.2500 | 0.2318 | 0.2370 | 0.2971 |
+| Anonymous 39 "stat-v1 (calibrated market anchor + dataset base rates)" | no model | 2026-09-27 | 492 | 0.1739 | 0.2500 | 0.2318 | 0.2370 | 0.2971 |
+| Anonymous 23 "undertow-mix (statbase x gpt-5.6-sol)" | mixed | 2026-08-16 | 735 | 0.1440 | 0.2500 | 0.2284 | 0.2337 | 0.2597 |
+
+| Group | Difference | n | Mean | By series | By date |
+|---|---|---|---|---|---|
+| model-4 | model-4 − A: always 50% | 485 | -0.0953 | [-0.1156, -0.0743] (246) | [-0.0964, -0.0942] (2) † |
+| model-4 | model-4 − B: source base rate | 485 | -0.0468 | [-0.0674, -0.0276] (246) | [-0.0609, -0.0327] (2) † |
+| model-4 | model-4 − C: series' own rate | 485 | -0.0449 | [-0.0654, -0.0247] (246) | [-0.0652, -0.0246] (2) † |
+| model-4 | model-4 − Naive | 485 | -0.1492 | [-0.1901, -0.1104] (246) | [-0.1519, -0.1464] (2) † |
+| hybrid ensemble 1 | hybrid ensemble 1 − A: always 50% | 492 | -0.1211 | [-0.1365, -0.1058] (248) | [-0.1213, -0.1208] (2) † |
+| hybrid ensemble 1 | hybrid ensemble 1 − B: source base rate | 492 | -0.1029 | [-0.1271, -0.0794] (248) | [-0.1069, -0.0989] (2) † |
+| hybrid ensemble 1 | hybrid ensemble 1 − C: series' own rate | 492 | -0.1081 | [-0.1328, -0.0837] (248) | [-0.1234, -0.0928] (2) † |
+| hybrid ensemble 1 | hybrid ensemble 1 − Naive | 492 | -0.1682 | [-0.2085, -0.1303] (248) | [-0.1774, -0.1589] (2) † |
+| stat-v1 | stat-v1 − A: always 50% | 492 | -0.0761 | [-0.0944, -0.0571] (248) | [-0.0888, -0.0633] (2) † |
+| stat-v1 | stat-v1 − B: source base rate | 492 | -0.0579 | [-0.0817, -0.0335] (248) | [-0.0749, -0.0409] (2) † |
+| stat-v1 | stat-v1 − C: series' own rate | 492 | -0.0631 | [-0.0845, -0.0415] (248) | [-0.0914, -0.0348] (2) † |
+| stat-v1 | stat-v1 − Naive | 492 | -0.1232 | [-0.1623, -0.0858] (248) | [-0.1270, -0.1194] (2) † |
+| undertow-mix | undertow-mix − A: always 50% | 735 | -0.1060 | [-0.1244, -0.0873] (247) | [-0.1112, -0.0956] (3) † |
+| undertow-mix | undertow-mix − B: source base rate | 735 | -0.0844 | [-0.1078, -0.0617] (247) | [-0.0947, -0.0744] (3) † |
+| undertow-mix | undertow-mix − C: series' own rate | 735 | -0.0897 | [-0.1170, -0.0627] (247) | [-0.1154, -0.0731] (3) † |
+| undertow-mix | undertow-mix − Naive | 735 | -0.1157 | [-0.1529, -0.0817] (247) | [-0.1233, -0.1066] (3) † |
+| stat-v1 | B: source base rate − stat-v1 | 492 | +0.0579 | [+0.0335, +0.0817] (248) | [+0.0409, +0.0749] (2) † |
+
+† Fewer than 8 clusters: one set has two or three resolution dates, so a date-clustered interval for one entry's set is printed but carries no weight.
+
+By source, each entry beside the arms on the same instances (Brier):
+
+| Entry | Source | n | Entry | A | B | C |
+|---|---|---|---|---|---|---|
+| model-4 | acled | 100 | 0.0934 | 0.2500 | 0.1381 | 0.1193 |
+| model-4 | dbnomics | 91 | 0.1963 | 0.2500 | 0.2268 | 0.2692 |
+| model-4 | fred | 96 | 0.2119 | 0.2500 | 0.2392 | 0.2334 |
+| model-4 | wikipedia | 98 | 0.0252 | 0.2500 | 0.1415 | 0.0953 |
+| model-4 | yfinance | 100 | 0.2500 | 0.2500 | 0.2644 | 0.2865 |
+| hybrid ensemble 1 | acled | 100 | 0.0469 | 0.2500 | 0.1061 | 0.1119 |
+| hybrid ensemble 1 | dbnomics | 98 | 0.1479 | 0.2500 | 0.4013 | 0.4240 |
+| hybrid ensemble 1 | fred | 96 | 0.2003 | 0.2500 | 0.2355 | 0.2844 |
+| hybrid ensemble 1 | wikipedia | 98 | 0.0002 | 0.2500 | 0.1627 | 0.0797 |
+| hybrid ensemble 1 | yfinance | 100 | 0.2500 | 0.2500 | 0.2555 | 0.2875 |
+| stat-v1 | acled | 100 | 0.0735 | 0.2500 | 0.1061 | 0.1119 |
+| stat-v1 | dbnomics | 98 | 0.1963 | 0.2500 | 0.4013 | 0.4240 |
+| stat-v1 | fred | 96 | 0.2688 | 0.2500 | 0.2355 | 0.2844 |
+| stat-v1 | wikipedia | 98 | 0.0766 | 0.2500 | 0.1627 | 0.0797 |
+| stat-v1 | yfinance | 100 | 0.2567 | 0.2500 | 0.2555 | 0.2875 |
+| undertow-mix | acled | 150 | 0.0955 | 0.2500 | 0.1060 | 0.1045 |
+| undertow-mix | dbnomics | 140 | 0.1246 | 0.2500 | 0.4046 | 0.4906 |
+| undertow-mix | fred | 148 | 0.2251 | 0.2500 | 0.2420 | 0.2337 |
+| undertow-mix | wikipedia | 147 | 0.0176 | 0.2500 | 0.1272 | 0.0484 |
+| undertow-mix | yfinance | 150 | 0.2545 | 0.2500 | 0.2722 | 0.3048 |
+
+| # | Reading | Verdict |
+|---|---|---|
+| P52 | B − A -0.02999, by series [-0.04163, -0.01861] | **failed** |
+| P53 | B − Naive -0.05945, by series [-0.08099, -0.03858] | **held** |
+| P54 | B − A interval width by date 0.0167 against by series 0.0230 (0.73x) | **failed** |
+| P55 | on yfinance B − D -0.00319 (D − B +0.00319, by series [-0.00099, +0.00766]) | **held** |
+| P56 | model-4 − B -0.04681 on 485; hybrid ensemble 1 − B -0.10287 on 492 | **held** |
+| P57 | C − B +0.00064, by series [-0.00799, +0.00876] | **failed** |
+
+Follow-up (item 11): **does not open**: P52 and P53 did not both hold; B is worse than stat-v1 (upper end at or above +0.01); B − stat-v1 +0.05788, by series [+0.03354, +0.08168] on 492.
+<!-- augur:end fbdataset -->
+
+### What it says
+
+- **The base rate clears 50% and the Naive Forecaster, but only just
+  misses the registered margin.** Pooled over 4,398 instances, B is
+  0.2200 against 0.25, a gain of 0.02999, which misses P52's "at most
+  −0.03" by 0.00001, and it is scored as written: **failed**. B beats Naive
+  Forecaster by 0.059 (P53 held). Naive is worse than 50% here (0.2795),
+  almost all of it on Wikipedia (0.533).
+- **Where the distance to the leaders is, by source.** On `yfinance` no
+  one beats a coin, the leaders included: model-4 and hybrid ensemble 1
+  both score 0.2500 there, and every arm here is slightly worse (B 0.257,
+  D 0.261). The series arm adds nothing over the base rate (D − B +0.003,
+  interval [−0.001, +0.008]; P55 held as worded, since it predicted a gain
+  under 0.005). On ACLED, B (0.106) does most of the work. On Wikipedia
+  the series' own history is worth a lot (C 0.073 against B 0.158), and
+  the leaders are near 0 (0.0002 and 0.025). On DBnomics, all daily
+  station temperatures, both walk-forward rates are *worse than 50%* (B
+  0.343, C 0.401): a rate built over spring and summer, when the
+  temperature rises, points the wrong way in autumn. That is where the
+  leaders gain most (hybrid ensemble 1 0.148, stat-v1 0.196 against B
+  0.401 on the same 98 instances). Seasonality, which no arm here models,
+  is the largest single gap.
+- **The series' own rate does not help pooled** (C − B +0.0006, P57
+  failed): its gains on Wikipedia (−0.085) and ACLED (−0.004) are undone
+  on DBnomics (+0.058), where a station's own history repeats the
+  seasonal mistake more confidently.
+- **Clustering by date did not widen the interval** (0.73x the
+  series-clustered width; P54 failed). Pooled over five sources whose
+  outcomes do not move together, 18 resolution dates are not the
+  dominant source of variance. A single entry's set has two or three
+  dates, so its date-clustered interval is marked and carries no weight.
+- **The leaders beat B by 0.047 and 0.103** (P56 held), and the no-model
+  entry stat-v1 beats it by 0.058 [+0.034, +0.082] on its 492 instances,
+  so the follow-up (the one-third Augur blend on these questions) **does
+  not open**: P52 failed, and B is worse than stat-v1.
+- **The leaderboard's own Brier columns are not raw Brier.** The instance
+  counts match exactly (485, 492, 735), but the leaderboard lists model-4
+  at 0.103 and hybrid ensemble 1 at 0.12 on dataset questions where their
+  raw Brier on the same instances is 0.155 and 0.129 here. I take the
+  difference to be ForecastBench's difficulty adjustment; it is not
+  re-derived here, which is one more reason this row is not a Brier Index.
 
 ## M14: what two shadow rounds can say about Q1, registered before the first opens
 
