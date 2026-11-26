@@ -233,9 +233,9 @@ Paired differences, first − second (negative: the first is better), 95% bootst
 | yfinance | B: source base rate − Naive | 894 | +0.0067 | [+0.0033, +0.0100] (256) | [-0.0007, +0.0139] (18) |
 | yfinance | C: series' own rate − Naive | 894 | +0.0356 | [+0.0226, +0.0492] (256) | [+0.0248, +0.0459] (18) |
 | yfinance | Naive − A: always 50% | 894 | +0.0007 | [-0.0007, +0.0020] (256) | [-0.0006, +0.0018] (18) |
-| yfinance | D: series arm − B: source base rate | 894 | +0.0032 | [-0.0010, +0.0077] (256) | [-0.0019, +0.0087] (18) |
-| yfinance | D: series arm − A: always 50% | 894 | +0.0105 | [+0.0054, +0.0158] (256) | [+0.0036, +0.0170] (18) |
-| yfinance | D: series arm − Naive | 894 | +0.0099 | [+0.0047, +0.0151] (256) | [+0.0028, +0.0167] (18) |
+| yfinance | D: series arm − B: source base rate | 894 | +0.0032 | [-0.0010, +0.0076] (256) | [-0.0020, +0.0087] (18) |
+| yfinance | D: series arm − A: always 50% | 894 | +0.0105 | [+0.0053, +0.0158] (256) | [+0.0036, +0.0170] (18) |
+| yfinance | D: series arm − Naive | 894 | +0.0098 | [+0.0047, +0.0151] (256) | [+0.0027, +0.0166] (18) |
 
 The named entries on their own instances (Brier, then the paired differences):
 
@@ -298,7 +298,7 @@ By source, each entry beside the arms on the same instances (Brier):
 | P52 | B − A -0.02999, by series [-0.04163, -0.01861] | **failed** |
 | P53 | B − Naive -0.05945, by series [-0.08099, -0.03858] | **held** |
 | P54 | B − A interval width by date 0.0167 against by series 0.0230 (0.73x) | **failed** |
-| P55 | on yfinance B − D -0.00319 (D − B +0.00319, by series [-0.00099, +0.00766]) | **held** |
+| P55 | on yfinance B − D -0.00316 (D − B +0.00316, by series [-0.00103, +0.00764]) | **held** |
 | P56 | model-4 − B -0.04681 on 485; hybrid ensemble 1 − B -0.10287 on 492 | **held** |
 | P57 | C − B +0.00064, by series [-0.00799, +0.00876] | **failed** |
 
@@ -320,13 +320,15 @@ Follow-up (item 11): **does not open**: P52 and P53 did not both hold; B is wors
   interval [−0.001, +0.008]; P55 held as worded, since it predicted a gain
   under 0.005). On ACLED, B (0.106) does most of the work. On Wikipedia
   the series' own history is worth a lot (C 0.073 against B 0.158), and
-  the leaders are near 0 (0.0002 and 0.025). On DBnomics, all daily
-  station temperatures, both walk-forward rates are *worse than 50%* (B
-  0.343, C 0.401): a rate built over spring and summer, when the
-  temperature rises, points the wrong way in autumn. That is where the
-  leaders gain most (hybrid ensemble 1 0.148, stat-v1 0.196 against B
-  0.401 on the same 98 instances). Seasonality, which no arm here models,
-  is the largest single gap.
+  the leaders are near 0 (0.0002 and 0.025). On DBnomics, where 799 of
+  the 849 instances are Météo-France daily station temperatures, both
+  walk-forward rates are *worse than 50%* (B 0.343, C 0.401): a rate built
+  over spring and summer, when the temperature rises, points the wrong
+  way in autumn. That is where hybrid ensemble 1 and stat-v1 gain most
+  (0.148 and 0.196 against B 0.401 on the same 98 instances); model-4's
+  gain is mostly on Wikipedia (0.0252 against B 0.1415 on 98) and only
+  0.1963 against 0.2268 on DBnomics. Seasonality, which no arm here
+  models, is the largest single gap for two of the three.
 - **The series' own rate does not help pooled** (C − B +0.0006, P57
   failed): its gains on Wikipedia (−0.085) and ACLED (−0.004) are undone
   on DBnomics (+0.058), where a station's own history repeats the

@@ -96,18 +96,25 @@ def test_arm_c_shrinks_toward_b() -> None:
 # -- arm D -------------------------------------------------------------------------------
 
 
+FREEZE_DAY = date(2026, 7, 1)
+
+
 def _daily(n: int, value: Any) -> list[tuple[date, float]]:
     start = date(2025, 1, 1)
     return [(start + timedelta(days=i), float(value(i))) for i in range(n)]
 
 
 def test_share_up_increasing_series() -> None:
-    share = share_up(_daily(200, lambda i: i), date(2026, 7, 5), date(2026, 7, 12))
+    share = share_up(
+        _daily(200, lambda i: i), date(2026, 7, 5), date(2026, 7, 12), freeze=FREEZE_DAY
+    )
     assert share == SeriesShare(1.0, 7, 193)
 
 
 def test_share_up_flat_series_is_not_higher() -> None:
-    share = share_up(_daily(200, lambda i: 5.0), date(2026, 7, 5), date(2026, 7, 12))
+    share = share_up(
+        _daily(200, lambda i: 5.0), date(2026, 7, 5), date(2026, 7, 12), freeze=FREEZE_DAY
+    )
     assert share is not None
     assert share.p_up == 0.0
     assert share.h == 7
@@ -115,21 +122,23 @@ def test_share_up_flat_series_is_not_higher() -> None:
 
 def test_share_up_needs_one_hundred_changes() -> None:
     due, res = date(2026, 7, 5), date(2026, 7, 12)
-    assert share_up(_daily(106, lambda i: i), due, res) is None  # 99 changes
-    got = share_up(_daily(107, lambda i: i), due, res)  # 100 changes
+    assert share_up(_daily(106, lambda i: i), due, res, freeze=FREEZE_DAY) is None  # 99 changes
+    got = share_up(_daily(107, lambda i: i), due, res, freeze=FREEZE_DAY)  # 100 changes
     assert got is not None
     assert got.changes == 100
-    assert share_up([], due, res) is None
+    assert share_up([], due, res, freeze=FREEZE_DAY) is None
 
 
 def test_share_up_horizon_follows_observation_rate() -> None:
     weekly = [(date(2024, 1, 1) + timedelta(days=7 * i), float(i)) for i in range(110)]
     # one observation every 7 days: a 14-day horizon is 2 observations
-    got = share_up(weekly, date(2026, 7, 5), date(2026, 7, 19))
+    got = share_up(weekly, date(2026, 7, 5), date(2026, 7, 19), freeze=date(2026, 2, 16))
     assert got is not None
     assert got.h == 2
     # a very short horizon never drops below one observation
-    short = share_up(_daily(200, lambda i: i), date(2026, 7, 5), date(2026, 7, 5))
+    short = share_up(
+        _daily(200, lambda i: i), date(2026, 7, 5), date(2026, 7, 5), freeze=FREEZE_DAY
+    )
     assert short is not None
     assert short.h == 1
 
@@ -480,3 +489,13 @@ def test_a_mean_that_rounds_to_the_threshold_is_not_at_the_threshold() -> None:
     cs = _holding()
     cs[0]["mean"] = -0.029989229767720307
     assert _verdicts(cs)[0]["P52"] == "failed"
+
+
+def test_share_up_window_is_the_730_days_before_the_freeze() -> None:
+    # Closes every day up to the day before the freeze: the one 730 days before
+    # the freeze is in the window and the one 731 days before is not.
+    freeze = date(2026, 7, 1)
+    closes = [(freeze - timedelta(days=k), float(1000 - k)) for k in range(800, 0, -1)]
+    got = share_up(closes, date(2026, 7, 5), date(2026, 7, 6), freeze=freeze)
+    assert got is not None
+    assert got.changes == 730 - got.h

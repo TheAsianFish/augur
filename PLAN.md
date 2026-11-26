@@ -1992,11 +1992,13 @@ P53 **held** (−0.059), P54 **failed** (the date-clustered interval is
 0.73x the series-clustered width, not twice it), P55 **held** (D − B
 +0.003: the series arm adds nothing), P56 **held** (−0.047, −0.103), P57
 **failed** (C − B +0.0006). The follow-up does **not** open: P52 failed
-and B is worse than stat-v1 by +0.058 [+0.034, +0.082]. Most of the
-distance to the leaders is on DBnomics, daily temperatures where a
-walk-forward rate built over spring points the wrong way in autumn (B
-0.401 against hybrid ensemble 1's 0.148 on the same 98 instances), and
-on Wikipedia; on yfinance no forecaster, leader or arm, beats 0.25.
+and B is worse than stat-v1 by +0.058 [+0.034, +0.082]. The distance to
+the leaders is on Wikipedia and, for hybrid ensemble 1 and stat-v1,
+mostly on DBnomics, nearly all daily temperatures, where a walk-forward
+rate built over spring points the wrong way in autumn (B 0.401 against
+hybrid ensemble 1's 0.148 on the same 98 instances); arm D's lookback
+was re-anchored on the freeze instant on review, as registered (D − B
++0.00319 before, +0.00316 after); on yfinance no forecaster, leader or arm, beats 0.25.
 
 ### M16: is a newer free model a better reader on the same questions?
 

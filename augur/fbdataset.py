@@ -304,18 +304,19 @@ def observations_per_day(closes: Sequence[tuple[date, float]]) -> float:
 
 
 def share_up(
-    closes: Sequence[tuple[date, float]], due: date, resolution: date
+    closes: Sequence[tuple[date, float]], due: date, resolution: date, *, freeze: date
 ) -> SeriesShare | None:
     """The share of past ``h``-observation changes above 0, or ``None`` (item 6).
 
     ``closes`` are the admitted closes, oldest first; ``h`` is the calendar
     days from the due date to the resolution date times the observation rate.
+    The window is the :data:`LOOKBACK_DAYS` before ``freeze`` (the freeze
+    instant's day), as registered, not before the last close.
     """
     if not closes:
         return None
     h = max(1, round((resolution - due).days * observations_per_day(closes)))
-    last = closes[-1][0]
-    values = [v for d, v in closes if (last - d).days <= LOOKBACK_DAYS]
+    values = [v for d, v in closes if (freeze - d).days <= LOOKBACK_DAYS]
     n = len(values) - h
     if n < MIN_CHANGES:
         return None
@@ -551,7 +552,9 @@ def forecast_all(
         d: float | None = None
         if q.source == "yfinance":
             got = closes.get(q.question_id)
-            share = share_up(got, q.due, inst.resolution_date) if got else None
+            share = (
+                share_up(got, q.due, inst.resolution_date, freeze=q.freeze.date()) if got else None
+            )
             d = arm_d(share, b)
         out.append(
             Forecasts(
