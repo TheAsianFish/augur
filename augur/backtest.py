@@ -25,7 +25,7 @@ from augur.agents.researcher import Researcher, ResearchResult
 from augur.clock import Clock, ensure_utc
 from augur.config import Settings
 from augur.errors import AugurError, LeakageError
-from augur.forecastbench import FBQuestion
+from augur.forecastbench import FBMarketQuestion, FBQuestion
 from augur.leakage import RunMode, admit_model, admit_source
 from augur.ledger import Ledger
 from augur.llm.endpoints import Route
@@ -115,7 +115,7 @@ def release_gate(router: Router, opened: dict[int, datetime]) -> Callable[[Route
     return gate
 
 
-def sample(questions: Sequence[FBQuestion], n: int | None) -> list[FBQuestion]:
+def sample[Q: FBMarketQuestion](questions: Sequence[Q], n: int | None) -> list[Q]:
     """The first ``n`` questions in question-id order: a fixed pseudo-random sample.
 
     The id is a hash of the source and the ForecastBench id, so the order is
@@ -155,9 +155,9 @@ def nothing_added(ledger: Ledger, tournament: str) -> set[int]:
     return {int(q) for (q,) in rows}
 
 
-async def run_forecastbench(
+async def run_forecastbench[Q: FBMarketQuestion](
     *,
-    questions: Sequence[FBQuestion],
+    questions: Sequence[Q],
     tournament: str,
     settings: Settings,
     router: Router,
@@ -165,7 +165,7 @@ async def run_forecastbench(
     clock: PinnedClock,
     code_version: str,
     out: Callable[[str], None] = print,
-    research_for: Callable[[FBQuestion], ResearchResult | None] | None = None,
+    research_for: Callable[[Q], ResearchResult | None] | None = None,
     extra_settings: dict[str, object] | None = None,
     retrieval: Retrieval | None = None,
     wall_clock: Clock | None = None,
@@ -179,7 +179,9 @@ async def run_forecastbench(
     research for is skipped. With ``retrieval``, the bot's researcher runs
     on each question (one pass or the loop) as of its open instant, or, for
     Q2's leaky arm, as of the wall clock (``wall_clock``) in an
-    ``unrestricted`` run.
+    ``unrestricted`` run. Questions loaded before their resolutions exist
+    (:func:`augur.forecastbench.load_open_set`, M16) are forecast the same
+    way and scored once ``augur resolve --forecastbench`` records outcomes.
     """
     if retrieval is not None and research_for is not None:
         raise AugurError("internal: give recorded research or a retrieval, not both")
@@ -355,15 +357,16 @@ async def run_forecastbench(
             + (f", {len(research.steps)} loop step(s)" if research.steps else "")
         )
         _outcome(ledger, run_id, fb, "forecast", f"forecast with {how}", started)
+        known = f"outcome={fb.outcome} " if isinstance(fb, FBQuestion) else ""
         out(
             f"[{i}/{len(todo)}] {fb.source}:{fb.fb_id} p={prediction.probability:.2f} "
-            f"outcome={fb.outcome} ({time.monotonic() - started:.0f} s)"
+            f"{known}({time.monotonic() - started:.0f} s)"
         )
     return BacktestResult(run_id, forecast, len(done), skipped, failed)
 
 
 def _outcome(
-    ledger: Ledger, run_id: str, fb: FBQuestion, status: str, reason: str, started: float
+    ledger: Ledger, run_id: str, fb: FBMarketQuestion, status: str, reason: str, started: float
 ) -> None:
     ledger.record_outcome(
         run_id=run_id,

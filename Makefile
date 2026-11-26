@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker backtest-reader resolve-reader reader
 
 UV ?= uv
 
@@ -136,3 +136,20 @@ calibration: ## Q4: the calibrators, walk-forward and learning curve (data/calib
 q6: ## Q6: disagreement against error, shrink and skip policies, the live half's counts (data/q6/)
 	$(UV) run augur q6
 	$(UV) run augur report
+
+READER_CURRENT = openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+READER_NEWER = openrouter:nvidia/nemotron-3.5-super-vl:free
+READER_SETS = 2026-11-08 2026-11-22
+READER_LEDGER_CURRENT = data/ledgers/m16-reader-current.sqlite
+READER_LEDGER_NEWER = data/ledgers/m16-reader-newer.sqlite
+
+backtest-reader: ## M16: both free routes, one draw, no retrieval, on the sets frozen after 2026-10-15 (before resolution; resumable; about 3 h)
+	for s in $(READER_SETS); do \
+		for r in current newer; do \
+			if [ $$r = current ]; then m=$(READER_CURRENT); else m=$(READER_NEWER); fi; \
+			AUGUR_FORECAST_MODELS=$$m AUGUR_RESEARCH_MODELS=$$m AUGUR_FORECASTERS=1 \
+			$(UV) run augur backtest forecastbench --questions data/forecastbench/$$s-llm.open.json \
+			--ledger data/ledgers/m16-reader-$$r.sqlite > data/reader/run-$$r-$$s.txt 2>&1 & \
+		done; \
+	done; \
+	wait

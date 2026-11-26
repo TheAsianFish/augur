@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -44,8 +44,13 @@ SITE = "https://www.forecastbench.org"
 LICENCE = "ForecastBench datasets, Forecasting Research Institute, CC BY-SA 4.0"
 
 
-class FBQuestion(BaseModel):
-    """One eligible ForecastBench market question with its outcome."""
+class FBMarketQuestion(BaseModel):
+    """One eligible ForecastBench market question as it was posed (no outcome).
+
+    A set whose resolutions are not yet published loads as these
+    (:func:`load_open_set`), so it can be forecast before anyone knows the
+    answers; :class:`FBQuestion` adds the outcome once they are.
+    """
 
     model_config = ConfigDict(frozen=True)
 
@@ -60,8 +65,6 @@ class FBQuestion(BaseModel):
     freeze_value: float | None
     market_open: datetime | None
     market_close: datetime | None
-    resolution_date: date
-    outcome: int
 
     @property
     def question_id(self) -> int:
@@ -88,6 +91,13 @@ class FBQuestion(BaseModel):
             description=description,
             resolution_criteria=self.resolution_criteria,
         )
+
+
+class FBQuestion(FBMarketQuestion):
+    """One eligible ForecastBench market question with its outcome."""
+
+    resolution_date: date
+    outcome: int
 
 
 @dataclass
@@ -131,6 +141,94 @@ def _instant(value: Any) -> datetime | None:
         return None
 
 
+NOT_MARKET = "not a market question (dataset questions are M6's)"
+
+
+def _is_market(raw: dict[str, Any]) -> bool:
+    return str(raw.get("source")) in MARKET_SOURCES and isinstance(raw.get("id"), str)
+
+
+def _posed(
+    raw: dict[str, Any], released: date, remove: Callable[[str], None]
+) -> FBMarketQuestion | None:
+    """The question as posed, or ``None`` (with the reason removed) if a rule drops it."""
+    freeze = _instant(raw.get("freeze_datetime"))
+    if freeze is None:
+        remove("no freeze date")
+        return None
+    if freeze.date() <= released:
+        remove("posed on or before the model's release")
+        return None
+    market_close = _instant(raw.get("market_info_close_datetime"))
+    if market_close is None:
+        # The fallback would be the resolution date, which is after the fact
+        # and hints at the outcome ("by" markets that resolve early are Yes).
+        remove("no market close date")
+        return None
+    return FBMarketQuestion(
+        fb_id=raw["id"],
+        source=str(raw.get("source")),
+        question=_text(raw.get("question")),
+        resolution_criteria=_text(raw.get("resolution_criteria")),
+        background=_text(raw.get("background")),
+        source_intro=_text(raw.get("source_intro")),
+        url=_text(raw.get("url")) or SITE,
+        freeze_datetime=freeze,
+        freeze_value=_float(raw.get("freeze_datetime_value")),
+        market_open=_instant(raw.get("market_info_open_datetime")),
+        market_close=market_close,
+    )
+
+
+@dataclass
+class OpenLoadReport:
+    """A question set loaded before its resolutions exist (M16's prospective backtest)."""
+
+    question_set: str
+    forecast_due_date: str
+    total: int = 0
+    removed: dict[str, int] = field(default_factory=dict)
+    kept: list[FBMarketQuestion] = field(default_factory=list)
+
+    def remove(self, reason: str) -> None:
+        self.removed[reason] = self.removed.get(reason, 0) + 1
+
+    def lines(self) -> list[str]:
+        out = [f"{self.question_set}: {self.total} questions (no resolution set: forecast only)"]
+        out.extend(f"  removed {n:>4}: {reason}" for reason, n in self.removed.items())
+        out.append(f"  kept    {len(self.kept):>4}")
+        return out
+
+
+def load_open_set(question_set: Path, *, released: date) -> OpenLoadReport:
+    """Read a question set whose resolutions are not published; keep what a backtest may forecast.
+
+    The same rules as :func:`load_set` except the outcome: market questions,
+    frozen after the model's release, with a market close date. Which of
+    them resolve to 0 or 1 is known only later, from the resolution set, so
+    a prospective run forecasts all of them and is scored on those that do.
+    """
+    qs = json.loads(question_set.read_text(encoding="utf-8"))
+    report = OpenLoadReport(str(qs.get("question_set")), str(qs.get("forecast_due_date")))
+    for raw in qs.get("questions", []):
+        report.total += 1
+        if not _is_market(raw):
+            report.remove(NOT_MARKET)
+            continue
+        posed = _posed(raw, released, report.remove)
+        if posed is not None:
+            report.kept.append(posed)
+    return report
+
+
+def open_subset(report: OpenLoadReport, question_set: Path) -> dict[str, Any]:
+    """The question set cut down to the kept questions, every field as published."""
+    keep = {(q.source, q.fb_id) for q in report.kept}
+    qs = json.loads(question_set.read_text(encoding="utf-8"))
+    qs["questions"] = [q for q in qs["questions"] if (str(q.get("source")), q.get("id")) in keep]
+    return dict(qs)
+
+
 def load_set(
     question_set: Path, resolution_set: Path, *, released: date, limit: int | None = None
 ) -> LoadReport:
@@ -153,40 +251,19 @@ def load_set(
     report = LoadReport(str(qs.get("question_set")), str(qs.get("forecast_due_date")))
     for raw in qs.get("questions", []):
         report.total += 1
-        source = str(raw.get("source"))
-        if source not in MARKET_SOURCES or not isinstance(raw.get("id"), str):
-            report.remove("not a market question (dataset questions are M6's)")
+        if not _is_market(raw):
+            report.remove(NOT_MARKET)
             continue
-        r = outcomes.get((source, raw["id"]))
+        r = outcomes.get((str(raw.get("source")), raw["id"]))
         if r is None or not r.get("resolved") or r.get("resolved_to") not in (0, 1, 0.0, 1.0):
             report.remove("not resolved to 0 or 1 in the resolution set")
             continue
-        freeze = _instant(raw.get("freeze_datetime"))
-        if freeze is None:
-            report.remove("no freeze date")
-            continue
-        if freeze.date() <= released:
-            report.remove("posed on or before the model's release")
-            continue
-        market_close = _instant(raw.get("market_info_close_datetime"))
-        if market_close is None:
-            # The fallback would be the resolution date, which is after the fact
-            # and hints at the outcome ("by" markets that resolve early are Yes).
-            report.remove("no market close date")
+        posed = _posed(raw, released, report.remove)
+        if posed is None:
             continue
         report.kept.append(
             FBQuestion(
-                fb_id=raw["id"],
-                source=source,
-                question=_text(raw.get("question")),
-                resolution_criteria=_text(raw.get("resolution_criteria")),
-                background=_text(raw.get("background")),
-                source_intro=_text(raw.get("source_intro")),
-                url=_text(raw.get("url")) or SITE,
-                freeze_datetime=freeze,
-                freeze_value=_float(raw.get("freeze_datetime_value")),
-                market_open=_instant(raw.get("market_info_open_datetime")),
-                market_close=market_close,
+                **posed.model_dump(),
                 resolution_date=date.fromisoformat(str(r["resolution_date"])),
                 outcome=int(float(r["resolved_to"])),
             )
