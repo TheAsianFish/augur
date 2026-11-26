@@ -134,28 +134,29 @@ Routes: current `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free`, newer `open
 
 | Route | Forecast 2026-11-08 | Forecast 2026-11-22 | Not forecast | Calls | Errors | Median latency | Mean latency | Median output tokens |
 |---|---|---|---|---|---|---|---|---|
-| current | 146 | 145 | 0 | 295 | 3 | 40.1 s | 48.7 s | 890 |
-| newer | 145 | 146 | 0 | 301 | 9 | 19.3 s | 21.7 s | 1600 |
+| current | 146 | 145 | 1 | 295 | 3 | 40.1 s | 48.7 s | 890 |
+| newer | 145 | 146 | 1 | 301 | 9 | 19.3 s | 21.7 s | 1600 |
 
 Brier(newer) − Brier(current) on the questions both routes forecast that have resolved yes or no (negative favours the newer route; 95% paired bootstrap):
 
 | Set | Forecast before its resolution file? | Paired | Yes share | Brier newer | Brier current | Market price (same questions) | Newer − current |
 |---|---|---|---|---|---|---|---|
-| 2026-11-08 | no (file unread; item 3) | 0 | — | — | — | — | — |
+| 2026-11-08 | no (file unread; item 3) | 15 | 0.80 | 0.464 | 0.431 | 0.279 (n = 15) | +0.033 [-0.073, +0.147] (n = 15, detectable 0.158) |
 | 2026-11-22 | yes | 0 | — | — | — | — | — |
 
-Resolution files read: none published yet. Left out of the pairs: 245 not resolved to 0 or 1.
+Resolution files read: 2026-11-08 fetched 2026-11-26 17:01 UTC (upstream commit 2026-11-25 17:20 UTC, SHA-256 `cba8eff2bd7e…`). Left out of the pairs: 275 not resolved to 0 or 1, 2 one route only.
 
-- Backtest, both sets: —.
+- Backtest, both sets: +0.033 [-0.073, +0.147] (n = 15, detectable 0.158).
 - Live arm: no reading yet (from the 2026-12-14 round; To measure).
-- Pooled (the rule's quantity): —.
+- Pooled (the rule's quantity): +0.033 [-0.073, +0.147] (n = 15, detectable 0.158).
+- Questions needed at the measured spread (80% power, two-sided 5%): 3,767 for 0.01, 942 for 0.02.
 
-**Verdict (registration item 6, progress reading): not decidable: no question has resolved.**
+**Verdict (registration item 6, progress reading of 2026-11-26): not decidable at this n (progress reading: the rule binds only on 2027-01-11).**
 
 Predictions registered before any call (PLAN.md, m16-registration):
 
-- P58: not yet readable: no question of the set resolved.
-- P59: not yet readable: no question of the set resolved.
+- P58: held: half width 0.1100, interval [-0.0730, +0.1470] on 15 questions.
+- P59: failed: +0.0329.
 - P60: held: median 19.3 s against 40.1 s.
 - P61: not yet readable: the live arm starts with the 2026-12-14 round.
 <!-- augur:end readers -->
@@ -2756,8 +2757,8 @@ missed, and why).
 | `m1-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 7 | 1 | 1 | 0 | 0 |
 | `m13-c2-news.sqlite` | 3 (backtest 3) | 64 | 274 | 54 | 0 | 0 | 0 |
 | `m15-dataset-closes.sqlite` | 1 (backtest 1) | 348 | 0 | 0 | 0 | 0 | 0 |
-| `m16-reader-current.sqlite` | 5 (backtest 5) | 245 | 295 | 291 | 0 | 0 | 0 |
-| `m16-reader-newer.sqlite` | 5 (backtest 5) | 245 | 301 | 291 | 0 | 0 | 0 |
+| `m16-reader-current.sqlite` | 5 (backtest 5) | 245 | 295 | 291 | 0 | 15 | 15 |
+| `m16-reader-newer.sqlite` | 5 (backtest 5) | 245 | 301 | 291 | 0 | 15 | 15 |
 | `m2-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 16 | 2 | 2 | 0 | 0 |
 | `m2-probe.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 0 |
 | `m3-dryrun-minibench-2.sqlite` | 1 (dry_run 1) | 1 | 6 | 1 | 0 | 0 | 0 |

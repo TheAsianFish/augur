@@ -1,0 +1,1086 @@
+{
+ "forecast_due_date": "2026-11-08",
+ "question_set": "2026-11-08-llm.json",
+ "resolutions": [
+  {
+   "direction": null,
+   "id": "1385",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.1,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "15134",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.2,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "15492",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.29,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "28395",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.845,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "36478",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.78,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "38950",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.51,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "38955",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.59,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "38957",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.525,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "39159",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.05,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40289",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.2,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40543",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.1,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40767",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.1,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40969",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.06,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "40976",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.8300000000000001,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "41130",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.49,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "41193",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.07,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "41365",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.23,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "41526",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.21,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "42666",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.05,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43119",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.053612715000000005,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43274",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.79,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43281",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.4,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43315",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.42,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43316",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.11,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43839",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.5,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "43980",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.15,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44176",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.06,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44191",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.12,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44364",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.18,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "44883",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.55,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45008",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.08,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45421",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.1,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45423",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.05,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45426",
+   "resolution_date": "2026-11-16",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45736",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.7000000000000001,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45806",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.001,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45855",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.11,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45856",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.05,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "45876",
+   "resolution_date": "2026-11-18",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "7819",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.13,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "8602",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.54,
+   "source": "metaculus"
+  },
+  {
+   "direction": null,
+   "id": "0x03fde736996d0923c485c3307e23bfd31c5ac0c8a769b237847a4656b64b7747",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.093,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0803a58234321c233638a03d046447ed6915a5b94ca2e5ff01b215fd2ada868b",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.035500000000000004,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0b1d8001d3e23c14fc9e1cdac19583ab7591c628217dcfea48d7b5b0014f37d7",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.43,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0cb3e19a3baf42592749dbe8c570c4b0eb9547bbf4d6ed3e3aff6f985e154b42",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.68,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0dcece9d5296b453ca602fa2fb10b8df4a7b5f0899342c071caf277e8a660497",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.42,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0ec936a190325c3ec970f9836e6c3712a5bc1164b2c32e70b7ce7202b3920a9d",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.78,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0ed81a5cff079ade379c350e5cb0f7ab3f1457194e20005fc2c32b85e80fbe9f",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.435,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x0fcfcfc35d71424c0693c717d2e3bc9b8992910835d124d80cd2f01498f1d3dc",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.11,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x19383006e0698d09c73ce34cd933f10a4ac4fb51555d23b220969d1590828365",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.9555,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x1d64e87444a527dc7363c4c4f9b1ba3d4096944d4e15f98ebb0c6ec065efc63b",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.9465,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x1df0c79014bbf9b9f4e5bc35b07f053a1eb84a4bbf06b8e69299bcdd26de88f2",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.13,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2464652e9f2b4b0dd5f228aae58d17222f1102d6d3cea1a7f898a8e0880e5a8e",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.85,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x26e3f6d2038e20d271dd65b88c53cf0d2d6478ac66af3e59982b4367f0b9297c",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.295,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2bfd658e7b304060c39d6739dd394427fadaddb51c0b0b0503bd1e2659bbf262",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.975,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2d024a1edcf89324c11b8bca7c368c0c6d196d2599358b95369bbd340d3fe816",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.395,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2d858f0a25a61dfde6485f3d8e75aed397bed616c3e458b66e10e642fb2f9759",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0195,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2dcbc71a3f8108936e768b503d565fbda7a644b2a0bd9ed45f74982a2bb11fba",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.925,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x2e0dfa54cabf126a876d11530463ca033b6b4d3a7ad6164c908c4bd89802204a",
+   "resolution_date": "2026-11-16",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x326df6a10a6cdd74bdc1ef77906037e90b1f1d6dd1fdcbf6580aea62de094a96",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.899,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x32ce78136d1617c5e669a971da7f6e57b514094cc52c1332a40f76527a4cd968",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0645,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x3377edf8e5a1c9bf41b2a3e88e3c0576f0e2972808cc027c87d5344a57b9ba81",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.030500000000000003,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x357319ded51afc8843eb0ddcf345c2de1f7613e97357f7942e1e228961f4e723",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.17500000000000002,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x3e20908c1d9d1cb796851cbd0261a76b45f9838c4e30e124a1488adf9a119a65",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.9705,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x43a4dad7ff30bfa8b131013e8b11d12f619a1c3ce37661beab3d9147c6eab203",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.755,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x43a87ef0ce0c339295df9c392b9af6666cf700aea17e05d1f500031b714a77b5",
+   "resolution_date": "2026-11-13",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4544aa7ad41414e793201c30eee6896699f2f6e5ce8db59dd8d7a2fee7109268",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.465,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4aa32bf54db5a3b4297e8c3ad46d9c56f14cd2efdf828812a69f5fb2e64fa396",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.71,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4d68a4d422c2b79cdba8ed95d228fa90c706265d0d38f4b6db39fbd858b4a99a",
+   "resolution_date": "2026-11-19",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4dc5c13eb9646b10da7d5f079f77ef2480ec5466861ce1cfbc910fabed3d7d0d",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.085,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x4de07f3b6b1220c2406e5807d30588fc6cbd5b938310835524106d05d20a9b4a",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.855,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x50642b28be893e8752649e9ae6d687558fc5dcfeeecd10713cf59ef6ea0edce4",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.525,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x51012857e11520778029ec2d8f20d2c60b657f4c311ce756762cb01626c22f65",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.26,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x55a5a4b50b7947482e95af8f638fa0b8d9a46740c5cd04c6799443e83565176a",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.876,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x5851bae96eeb26f343fa3c39602ce4d63f58629afdbc58bf409d565425f23443",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.615,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x598c99fbef3a7d4fb2c3a5af62e67e4ef5f5f7447e966569aee6c917bff12a25",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.585,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x5d9a8fca2dc1741336a1c8159ffb8e64b5226c686909cad2848a5e463fdecbc7",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.365,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x60b8efcdc90f3e209a0c325d5bff56145d83aed9e064714aa941aa2c4552644a",
+   "resolution_date": "2026-11-22",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x617291b57122421aa1e468a11fe03c9726a1d5ff5213b15cb7ac3c6cd8d6e9da",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.6000000000000001,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x637ff14bf5b7e81ac906d7488d34492dc39586671e00d064ece47cdd845aa722",
+   "resolution_date": "2026-11-18",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x654a72888c510cea03e517f65e199003d322294d3669c902cb31d59433dc5b89",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.09,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x6693ebfeb4a1476a79f7c1581b59da9186ff138f6664a4f5b9817e0974839733",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.125,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x69f7294fab44b1a63575fcdff9b683d3c48a7f92a160aa274af8e2837a356e63",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.9605,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x6c783a56758368cb7ebdd383a368ab39728d3475d36a561626176657faaeb564",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.055,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x6d4ce755aea297d7a5ce8e17612d852363e3aec79e360c4676b49f3c57e3f230",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.89,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x6d7203b2161a636a6ad554a986400e29411aecfdb51f91416a0ef9f7b6685e3b",
+   "resolution_date": "2026-11-13",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x6dc48af20a509575041a8bc3694c1f259f6054dc6835a9dcd73abf879b416459",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.095,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x6f626526b2d0b10ea3e89425d6a044565a2ae4e9944331c84f1ca9e6fc1b9c5d",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.8300000000000001,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x714988b77945315b0b29e777fee5fca6649009a35c6a4f653666fdb439536ddd",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.675,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x719da011baed5f543e28d07c9ce08dc8d0ea946b64f9a4609176b1c969bd4a45",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.2,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x723822eb2b143cee54c0bd7c1efba322b21f0051984c266df8879c394f1011c0",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0405,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x7263b71ab53522cf98045ea0745a6f61ebd36430ffd1b3ba95630cb25489d61b",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.133,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x76c1a69f2b0a7fcfa97b56ddbeaad1981a8cb3d8f24c1adce62ffa2d010ebbe0",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.085,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x779e9022514a2c7fd96cc7238e3cee653346c0ebc8597a76e34be8945b7a960e",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.5365,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x790a5b94de6bf8cce035db2b32c892bf45fdb225fbf964bb8ff2d8d11e720b16",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.295,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x7d542d01581ab32518a4131ef852dbc5167697c8dd9600f3fb0c24df2a417ce1",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0165,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x7f4b4b3a2f029fb382f0d715960f7e9d41ae3ea6d1d78a40b297a7f8f9b5387f",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0115,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x7feed8b54455649edb84e97b80cc1f3ac65bee7eed317f3ef393463d58b8102a",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.845,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x885eda75b1174a0d10c01d5f7b3b0275dd9bbd7afa0994433985b26e6cd74ebd",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.42250000000000004,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x8a4196617dcb703e49d9bb36d3847bf6a75fd364dbd19f8d408ac944bf1a03d8",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.935,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x8acd130bd0984649518109f04e39ba032331e2092f5fb49fffc86115d0b990d2",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.030500000000000003,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x8bcbc39541f2d12c9e4ec1ac4d181d6aada34852301c38d64cf5db3929b7c327",
+   "resolution_date": "2026-11-11",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x8df013727b9e69b8f7ff9d3d8c56581fa2a3a498b6a67cc8b871411ff32b86f5",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.715,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x924150d8e5d4a19e390312a34f703b7898f117ede3e8832d7b245084fa53c3ee",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.59,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x938e6a0a011f9534ffd2d86c65dde3aeb7c66ad06cee29ead70b832179c3b6de",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.969,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x946ed795f363c024e5ae1076b3aaf7f95510799b9d0929fe3cc18d078bd5d2e7",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.7000000000000001,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x990d1d3e4d9b120eafce967dc06753b79aa0a6c6f4a92b528fb31fbb7bdb99be",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.97,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0x9cf87b067740fc6c9cd1394bda541a3a05f2cc39b047df924923bce92505354c",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0745,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xa01d48a973e40770719dab42faf1aeae5da4376d9eca46e77265c7551d1be0f7",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.105,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xa157fcc18df3d9ca0655349b496c2bda2f13756f69c94d1dbca487863b01486c",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.795,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xa2739ba4bc05fe9791b3a3e437104254625ed5a8e9b43f96aef4255e1757e618",
+   "resolution_date": "2026-11-18",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xa9104f56e519ebd4b67445d3f1d848c731246d164667c16076ccf5cd3c2cbae7",
+   "resolution_date": "2026-11-18",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xa9aa873b222923b2ef53f9a2525fd953590572d8d6331277c7cbbc9d52367f53",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0545,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xafefe6fc14ffb9bd92f2ad0578696345ed3484a566d393c16e717ccdc67c68ec",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.578,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xb3262c65463482cf51b081fb909ccc1c7ebd158260825e6566b09a052c418156",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.845,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xbdab12a222060b29a0238cbfff86c5108a31ee492ee67be3f292f8697eea7d31",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.32,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc085dc154aab7f1c3607311487bc8247ed81d668850b33affe52c2be73e437bc",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.9585,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc0f076bc4d90a44df34a729277e9d1f294f0cb60d2c3b1b3800908b1e15b923b",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.765,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc57bc9d0d9890815aa31d498d57af5d2d6e8d5245fd5ab104dfd7aed8c7b7081",
+   "resolution_date": "2026-11-18",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xc73321f9828303361b4e18b842c207d84864f6017f09ac50d145fd5fa8c9be2b",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.29,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xca1e85ca4d0aef640f05810e7b4adf20c9d4a4fe6b9ea24f4f4d087c72ce7bf3",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.036000000000000004,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xca394e0db041f91ac2d69f3ea06efdfc8643acb0d2751283bd594e7b8bd581f9",
+   "resolution_date": "2026-11-16",
+   "resolved": true,
+   "resolved_to": 1.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xd0a4cdae9e1bf187195863b172242ec3c4a9f0332b43cad2fb008753e560593d",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.30000000000000004,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xda7d0fff095ba30a8d8ab398386ee90f2788abc020f8b329e3ba307e4b684ee7",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.0125,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xdcae9573d5680a2c958cca4676ed28df7a06861572124f3396cc60ab6b92b9c2",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.075,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xe1a717cca1d898e96a2216d4b3c4a4820779896928addfdab74dd861648a6382",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.018000000000000002,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xe67f4d31f0eba1b009b49d7a7739b2a5f53a2d7d979a0902b465a510492c33bb",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.9375,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xe96dbaceb816e80063bec945a76ac915cba4341bdf1ef704f722bfc9054aad09",
+   "resolution_date": "2026-11-20",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xea3b1d0099085f43a3098b3e1fbcbe62284ce1bda99384b3d46b82ff202ac016",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.23600000000000002,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xf036481613a53faafdc7638824e5dfab03b4dda5b9bf13fbdfa2075e2d4a8bea",
+   "resolution_date": "2026-11-16",
+   "resolved": true,
+   "resolved_to": 0.0,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xf2fa8de02e9e5b88231ad78a9a9f50480d220c94694d932af294280b0758d768",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.25,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xf6e7c89ec4b5d3c887ed9b70dfbcac9392e287367783ce475d32e8c16ed9f61c",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.445,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xfc98aa62bdcc0568c31fb97c6ef36f17e8675276dc42828194738b2273612328",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.1,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xfcc06c62976788d674df65604c5d140968f4df651c9d818393e809fa93baeb7f",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.63,
+   "source": "polymarket"
+  },
+  {
+   "direction": null,
+   "id": "0xfe8817808c965cc4f9e933de52048784a04a8a54a63c3ff4851892d92d04f0c2",
+   "resolution_date": "2026-11-24",
+   "resolved": false,
+   "resolved_to": 0.77,
+   "source": "polymarket"
+  }
+ ]
+}
