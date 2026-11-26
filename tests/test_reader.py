@@ -13,7 +13,7 @@ import json
 import sqlite3
 import sys
 from contextlib import closing
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -131,9 +131,11 @@ async def _read(
     *,
     shadow: Path | None = None,
     allowance: int = 1000,
+    minutes_left: float | None = None,
 ) -> ReaderResult:
     clock.advance(60)
     router = Router.single(NEWER, provider, free_catalog(NEWER), clock)
+    deadline = None if minutes_left is None else clock.now() + timedelta(minutes=minutes_left)
     with Ledger.open(path, clock) as ledger:
         return await run_reader(
             ledger=ledger,
@@ -144,6 +146,7 @@ async def _read(
             settings=_settings(path),
             clock=clock,
             allowance=allowance,
+            deadline=deadline,
         )
 
 
@@ -244,6 +247,20 @@ async def test_room_for_one_question_draws_exactly_one(tmp_path: Path) -> None:
     assert len(_reader_calls(path)) == DRAWS
     assert sum(READER in _references(path, q) for q in QUESTIONS) == 1
     assert calls_used([path], T0.date()) == used + DRAWS
+
+
+async def test_no_question_is_started_with_too_little_time_left(tmp_path: Path) -> None:
+    clock = FixedClock(T0)
+    path = await _tick(tmp_path, clock)
+    before = _count(path, "llm_calls")
+    provider = ScriptedProvider()
+    result = await _read(path, clock, provider, minutes_left=1.0)
+    assert provider.requests == []
+    assert _count(path, "llm_calls") == before
+    assert result.recorded == 0
+    assert result.failed == 0
+    assert result.skipped == len(QUESTIONS)
+    assert all(READER not in _references(path, q) for q in QUESTIONS)
 
 
 async def test_calls_in_the_shadow_ledger_count_once(tmp_path: Path) -> None:

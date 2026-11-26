@@ -307,6 +307,18 @@ async def run_reader(
             bound.warning("reader_refused", error=str(exc))
             result.add(f"post {q.post_id}: refused, no call made: {exc}")
             continue
+        left = (q.scheduled_close_time - margin - clock.now()).total_seconds()
+        if deadline is not None:
+            left = min(left, (deadline - clock.now()).total_seconds())
+        if left < settings.min_forecast_minutes * 60:
+            # As the runner does: a question too close to its close or to the run's
+            # deadline is not started, so no draw is cut off after spending a call.
+            result.skipped += 1
+            result.add(
+                f"post {q.post_id}: skipped, {max(left, 0.0) / 60:.1f} min left "
+                f"(under the {settings.min_forecast_minutes:g} a forecast needs); no call"
+            )
+            continue
         used = calls_used((shadow_path, ledger_path), clock.now().date(), template_calls)
         if used + DRAWS > allowance:
             spent = True
