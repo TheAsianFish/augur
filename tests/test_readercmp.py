@@ -64,7 +64,23 @@ def _open_set(tmp_path: Path) -> Path:
     return qs
 
 
-async def _forecast(path: Path, route: Route, catalog: Catalog, percent: float, qs: Path) -> int:
+def _resolutions(tmp_path: Path, question_set: str, rows: list[dict[str, object]]) -> Path:
+    path = tmp_path / f"{question_set}-res.json"
+    path.write_text(
+        json.dumps({"question_set": f"{question_set}-llm.json", "resolutions": rows}),
+        encoding="utf-8",
+    )
+    return path
+
+
+async def _forecast(
+    path: Path,
+    route: Route,
+    catalog: Catalog,
+    percent: float,
+    qs: Path,
+    question_set: str = "2026-11-08",
+) -> int:
     report = load_open_set(qs, released=date(2024, 1, 1))
     clock = PinnedClock(datetime(2026, 11, 26, tzinfo=UTC))
     provider = ScriptedProvider((percent,))
@@ -74,7 +90,7 @@ async def _forecast(path: Path, route: Route, catalog: Catalog, percent: float, 
     with Ledger.open(path, clock) as ledger:
         await run_forecastbench(
             questions=report.kept,
-            tournament="forecastbench:2026-11-08-llm.json",
+            tournament=f"forecastbench:{question_set}-llm.json",
             settings=settings,
             router=router,
             ledger=ledger,
@@ -152,9 +168,9 @@ def test_paired_scoring_on_two_route_ledgers_matches_a_hand_computation(tmp_path
     catalog = _catalog({NEWER.model: date(2024, 1, 1), CURRENT.model: date(2024, 1, 1)})
     asyncio.run(_forecast(root / readercmp.LEDGERS["newer"], NEWER, catalog, 30, qs))
     asyncio.run(_forecast(root / readercmp.LEDGERS["current"], CURRENT, catalog, 60, qs))
-    _, rs = write_pair(
+    rs = _resolutions(
         tmp_path,
-        [],
+        "2026-11-08",
         [
             raw_resolution("a", 1.0),
             raw_resolution("b", 0.0, source="polymarket"),
@@ -219,3 +235,38 @@ def test_registration_hashes_match_the_plan() -> None:
     plan = (REPO / "PLAN.md").read_text(encoding="utf-8")
     for sha in REGISTERED_SHA.values():
         assert f"`{sha[:8]}…{sha[-6:]}`" in plan or f"`{sha[:8]}…{sha[-5:]}`" in plan
+
+
+def test_a_question_posed_in_both_sets_is_paired_per_set_and_resampled_once(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "root"
+    (root / "data" / "ledgers").mkdir(parents=True)
+    qs = _open_set(tmp_path)
+    catalog = _catalog({NEWER.model: date(2024, 1, 1), CURRENT.model: date(2024, 1, 1)})
+    for day, (newer, current) in (("2026-11-08", (30, 60)), ("2026-11-22", (90, 20))):
+        asyncio.run(_forecast(root / readercmp.LEDGERS["newer"], NEWER, catalog, newer, qs, day))
+        asyncio.run(
+            _forecast(root / readercmp.LEDGERS["current"], CURRENT, catalog, current, qs, day)
+        )
+    # Only the 2026-11-08 file exists: the 2026-11-22 rows of the same questions stay open.
+    rs = _resolutions(tmp_path, "2026-11-08", [raw_resolution("a", 1.0)])
+    for name in ("newer", "current"):
+        with Ledger.open(root / readercmp.LEDGERS[name], FixedClock(datetime.now(UTC))) as led:
+            resolve_forecastbench(led, rs)
+    ps, left = readercmp.pairs(root)
+    assert [(p.question_set, round(p.p_newer, 2), round(p.p_current, 2)) for p in ps] == [
+        ("2026-11-08", 0.3, 0.6)
+    ]
+    assert left["not resolved to 0 or 1"] == 5  # b and c in the first set, all three in the second
+    # Now the second set's file: question a twice, one cluster.
+    rs2 = _resolutions(tmp_path, "2026-11-22", [raw_resolution("a", 1.0)])
+    for name in ("newer", "current"):
+        with Ledger.open(root / readercmp.LEDGERS[name], FixedClock(datetime.now(UTC))) as led:
+            resolve_forecastbench(led, rs2)
+    snap = readercmp.snapshot(root)
+    assert snap["sets"]["2026-11-22"]["paired"] == 1
+    assert snap["backtest"]["n"] == 2
+    # One cluster: the interval collapses to the mean of a's two rows.
+    assert snap["backtest"]["low"] == snap["backtest"]["high"] == snap["backtest"]["mean"]
+    assert snap["usage"]["newer"]["forecast"] == {"2026-11-08": 3, "2026-11-22": 3}

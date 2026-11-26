@@ -28,9 +28,10 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sqlite3
 import statistics
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import date
@@ -90,9 +91,18 @@ def _set_of(tournament: str) -> str:
     return tournament.removeprefix("forecastbench:").removesuffix("-llm.json")
 
 
-def aggregates(path: Path) -> dict[int, tuple[str, float]]:
-    """``question_id -> (set, probability)`` for every aggregate in a backtest ledger."""
-    out: dict[int, tuple[str, float]] = {}
+Key = tuple[str, int]
+"""``(set, question_id)``: a question posed in both sets (47 Metaculus questions are,
+frozen on different days) has one id in both runs of a ledger, so everything is
+keyed by the set as well."""
+
+_EVIDENCE = re.compile(r"^(?P<set>\d{4}-\d{2}-\d{2})-llm\.json resolution set: ")
+_PRICE = re.compile(r"^ForecastBench (?P<set>\d{4}-\d{2}-\d{2})-llm\.json freeze_datetime_value$")
+
+
+def aggregates(path: Path) -> dict[Key, float]:
+    """``(set, question_id) -> probability`` for every aggregate in a backtest ledger."""
+    out: dict[Key, float] = {}
     if not path.exists():
         return out
     with closing(_connect(path)) as conn:
@@ -102,40 +112,49 @@ def aggregates(path: Path) -> dict[int, tuple[str, float]]:
             "AND r.mode = 'backtest' ORDER BY f.recorded_at"
         ).fetchall()
     for qid, tournament, p in rows:
-        out.setdefault(int(qid), (_set_of(str(tournament)), float(p)))
+        out.setdefault((_set_of(str(tournament)), int(qid)), float(p))
     return out
 
 
-def resolutions(path: Path) -> dict[int, int]:
-    """``question_id -> 1 or 0`` from each question's latest resolution row."""
-    out: dict[int, int] = {}
+def resolutions(path: Path) -> dict[Key, int]:
+    """``(set, question_id) -> 1 or 0``, each set read only from its own resolution file.
+
+    ``augur resolve --forecastbench`` names the file in each row's evidence; the
+    latest row for a (set, question) counts.
+    """
+    out: dict[Key, int] = {}
     if not path.exists():
         return out
     with closing(_connect(path)) as conn:
         rows = conn.execute(
-            "SELECT question_id, status, value FROM resolutions ORDER BY recorded_at, rowid"
+            "SELECT question_id, status, value, evidence FROM resolutions "
+            "ORDER BY recorded_at, rowid"
         ).fetchall()
-    latest: dict[int, tuple[str, str | None]] = {}
-    for qid, status, value in rows:
-        latest[int(qid)] = (str(status), value)
-    for qid, (status, value) in latest.items():
+    latest: dict[Key, tuple[str, str | None]] = {}
+    for qid, status, value, evidence in rows:
+        m = _EVIDENCE.match(str(evidence))
+        if m is not None:
+            latest[(m.group("set"), int(qid))] = (str(status), value)
+    for key, (status, value) in latest.items():
         if status == "resolved" and value in ("yes", "no"):
-            out[qid] = 1 if value == "yes" else 0
+            out[key] = 1 if value == "yes" else 0
     return out
 
 
-def market_prices(path: Path) -> dict[int, float]:
+def market_prices(path: Path) -> dict[Key, float]:
     """The freeze price ``augur resolve`` records as a ``market`` reference (never shown)."""
-    out: dict[int, float] = {}
+    out: dict[Key, float] = {}
     if not path.exists():
         return out
     with closing(_connect(path)) as conn:
         rows = conn.execute(
-            "SELECT question_id, probability FROM reference_forecasts "
+            "SELECT question_id, probability, source FROM reference_forecasts "
             "WHERE forecaster = 'market' AND probability IS NOT NULL ORDER BY recorded_at"
         ).fetchall()
-    for qid, p in rows:
-        out.setdefault(int(qid), float(p))
+    for qid, p, source in rows:
+        m = _PRICE.match(str(source))
+        if m is not None:
+            out.setdefault((m.group("set"), int(qid)), float(p))
     return out
 
 
@@ -176,12 +195,14 @@ def route_usage(path: Path) -> RouteUsage:
             "JOIN runs r ON r.run_id = f.run_id WHERE f.kind = 'aggregate' GROUP BY r.tournament"
         ):
             forecast[_set_of(str(qset))] = int(n)
-        # A question counts as failed only if it never got an aggregate (a resume retries it).
+        # Not forecast: recorded in a run of the set with no aggregate in any run of that set
+        # (a resume retries a failed question, so a later success clears it).
         for qset, n in conn.execute(
-            "SELECT r.tournament, COUNT(DISTINCT o.question_id) FROM question_outcomes o "
-            "JOIN runs r ON r.run_id = o.run_id WHERE o.status = 'failed' AND NOT EXISTS "
-            "(SELECT 1 FROM forecasts f WHERE f.question_id = o.question_id "
-            "AND f.kind = 'aggregate') GROUP BY r.tournament"
+            "SELECT r.tournament, COUNT(DISTINCT q.question_id) FROM questions q "
+            "JOIN runs r ON r.run_id = q.run_id WHERE r.mode = 'backtest' AND NOT EXISTS "
+            "(SELECT 1 FROM forecasts f JOIN runs r2 ON r2.run_id = f.run_id "
+            "WHERE f.question_id = q.question_id AND f.kind = 'aggregate' "
+            "AND r2.tournament = r.tournament) GROUP BY r.tournament"
         ):
             failed[_set_of(str(qset))] = int(n)
         rows = conn.execute(
@@ -209,21 +230,26 @@ def pairs(root: Path) -> tuple[list[Paired], dict[str, int]]:
     prices = market_prices(root / LEDGERS["current"])
     left = {"one route only": 0, "not resolved to 0 or 1": 0, "resolutions disagree": 0}
     out: list[Paired] = []
-    for qid in sorted(set(newer) | set(current)):
-        if qid not in newer or qid not in current:
+    for key in sorted(set(newer) | set(current)):
+        if key not in newer or key not in current:
             left["one route only"] += 1
             continue
-        y = outcomes.get(qid)
-        if y is None or outcomes_newer.get(qid) != y:
-            key = "not resolved to 0 or 1" if y is None else "resolutions disagree"
-            left[key] += 1
+        y = outcomes.get(key)
+        if y is None or outcomes_newer.get(key) != y:
+            left["not resolved to 0 or 1" if y is None else "resolutions disagree"] += 1
             continue
-        out.append(Paired(qid, current[qid][0], newer[qid][1], current[qid][1], y, prices.get(qid)))
+        out.append(Paired(key[1], key[0], newer[key], current[key], y, prices.get(key)))
     return out, left
 
 
-def _est(values: Sequence[float]) -> Estimate | None:
-    return clustered_bootstrap(values) if values else None
+def _est(values: Sequence[float], clusters: Sequence[Hashable] | None = None) -> Estimate | None:
+    """The mean with item 5's interval; ``clusters`` names the question each value is on,
+    so a question posed in both sets is resampled once, with both its rows."""
+    return clustered_bootstrap(values, clusters) if values else None
+
+
+def _diffs(ps: Sequence[Paired]) -> tuple[list[float], list[Hashable]]:
+    return [p.diff for p in ps], [("fb", p.question_id) for p in ps]
 
 
 def _est_json(e: Estimate | None) -> dict[str, Any] | None:
@@ -384,23 +410,30 @@ def snapshot(root: Path, live: Path | None = None) -> dict[str, Any]:
     latency = {k: u.median_latency_ms for k, u in usage.items()}
     ps, left = pairs(root)
     by_set = {s: [p for p in ps if p.question_set == s] for s in SETS}
-    backtest = _est([p.diff for p in ps])
+    backtest = _est(*_diffs(ps))
     live_part: dict[str, Any] | None = None
     live_binary: list[float] = []
+    live_ids: list[Hashable] = []
     if live is not None:
         rows = live_rows(live)
         live_binary = [r[3] for r in rows if not math.isnan(r[3])]
+        live_ids = [("live", r[0]) for r in rows if not math.isnan(r[3])]
         live_part = {
             "questions": len(rows),
             "head_to_head": _est_json(_est([r[2] for r in rows])),
             "brier_diff": _est_json(_est(live_binary)),
         }
-    pooled = _est([p.diff for p in ps] + live_binary)
+    values, ids = _diffs(ps)
+    pooled = _est(values + live_binary, ids + live_ids)
     files = resolution_files(root)
     fetched = max((date.fromisoformat(f["fetched"][:10]) for f in files), default=None)
     reading = reading_kind(fetched)
-    sd = None if pooled is None or pooled.n < 2 else pooled.se * math.sqrt(pooled.n)
-    first = _est([p.diff for p in by_set[FIRST_SET]])
+    sd = (
+        None
+        if pooled is None or pooled.n < 2 or math.isnan(pooled.se)
+        else pooled.se * math.sqrt(pooled.n)
+    )
+    first = _est(*_diffs(by_set[FIRST_SET]))
     sets: dict[str, Any] = {}
     for s in SETS:
         sub = by_set[s]
@@ -415,13 +448,14 @@ def snapshot(root: Path, live: Path | None = None) -> dict[str, Any]:
             else None,
             "brier_market": _market_brier(sub),
             "yes_share": round(statistics.fmean(p.outcome for p in sub), 4) if sub else None,
-            "diff": _est_json(_est([p.diff for p in sub])),
+            "diff": _est_json(_est(*_diffs(sub))),
         }
     return {
         "routes": {"current": CURRENT, "newer": NEWER},
         "method": {
-            "statistic": "Brier(newer) - Brier(current) per question, 95% paired bootstrap "
-            "resampling questions, 10,000 resamples, seed 20261119",
+            "statistic": "Brier(newer) - Brier(current) per question and set, 95% paired "
+            "bootstrap resampling questions (a question posed in both sets is one), 10,000 "
+            "resamples, seed 20261119",
             "analysis_date": str(ANALYSIS_DATE),
         },
         "usage": {k: u.to_json() for k, u in usage.items()},
