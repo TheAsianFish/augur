@@ -1,0 +1,322 @@
+{
+ "fetched_at": "2026-11-25",
+ "source": "https://api.github.com/repos/TheAsianFish/augur/actions/workflows/tournament.yml/runs?per_page=100",
+ "total_count": 35,
+ "workflow_runs": [
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-25T16:30:17Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45654570333,
+   "name": "Tournament",
+   "run_started_at": "2026-11-25T16:30:17Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-25T14:42:43Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45637029533,
+   "name": "Tournament",
+   "run_started_at": "2026-11-25T14:42:43Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-25T03:53:00Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45542992237,
+   "name": "Tournament",
+   "run_started_at": "2026-11-25T03:53:00Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-25T03:05:42Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45537546750,
+   "name": "Tournament",
+   "run_started_at": "2026-11-25T03:05:42Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-24T19:49:12Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45474230512,
+   "name": "Tournament",
+   "run_started_at": "2026-11-24T19:49:12Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-24T18:58:56Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45465310503,
+   "name": "Tournament",
+   "run_started_at": "2026-11-24T18:58:56Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-24T07:40:25Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45349805164,
+   "name": "Tournament",
+   "run_started_at": "2026-11-24T07:40:25Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-24T06:11:21Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45338588756,
+   "name": "Tournament",
+   "run_started_at": "2026-11-24T06:11:21Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-23T23:05:53Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45285762732,
+   "name": "Tournament",
+   "run_started_at": "2026-11-23T23:05:53Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-23T22:07:30Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45276568291,
+   "name": "Tournament",
+   "run_started_at": "2026-11-23T22:07:30Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-23T11:31:34Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45165995398,
+   "name": "Tournament",
+   "run_started_at": "2026-11-23T11:31:34Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-23T09:18:43Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45145862642,
+   "name": "Tournament",
+   "run_started_at": "2026-11-23T09:18:43Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-23T01:15:41Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45093554208,
+   "name": "Tournament",
+   "run_started_at": "2026-11-23T01:15:41Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-23T00:23:24Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45088485552,
+   "name": "Tournament",
+   "run_started_at": "2026-11-23T00:23:24Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-22T18:51:12Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45057413127,
+   "name": "Tournament",
+   "run_started_at": "2026-11-22T18:51:12Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-22T17:56:21Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45052218590,
+   "name": "Tournament",
+   "run_started_at": "2026-11-22T17:56:21Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-22T10:31:55Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45012893229,
+   "name": "Tournament",
+   "run_started_at": "2026-11-22T10:31:55Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-22T08:19:18Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 45002253206,
+   "name": "Tournament",
+   "run_started_at": "2026-11-22T08:19:18Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-22T00:48:17Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44968397496,
+   "name": "Tournament",
+   "run_started_at": "2026-11-22T00:48:17Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T23:51:23Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44963802695,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T23:51:23Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T20:43:04Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44947750338,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T20:43:04Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T17:41:06Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44931389050,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T17:41:06Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T13:55:06Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44911235829,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T13:55:06Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T08:26:45Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44884915591,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T08:26:45Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T04:52:02Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44868151329,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T04:52:02Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-21T00:53:19Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44846761034,
+   "name": "Tournament",
+   "run_started_at": "2026-11-21T00:53:19Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-20T22:03:38Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44825702544,
+   "name": "Tournament",
+   "run_started_at": "2026-11-20T22:03:38Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-20T18:41:03Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44795078457,
+   "name": "Tournament",
+   "run_started_at": "2026-11-20T18:41:03Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-20T14:38:23Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44755389062,
+   "name": "Tournament",
+   "run_started_at": "2026-11-20T14:38:23Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-20T08:44:33Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44704958958,
+   "name": "Tournament",
+   "run_started_at": "2026-11-20T08:44:33Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-20T04:56:33Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44677711060,
+   "name": "Tournament",
+   "run_started_at": "2026-11-20T04:56:33Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-19T23:08:04Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44634971624,
+   "name": "Tournament",
+   "run_started_at": "2026-11-19T23:08:04Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-19T22:32:19Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44629559794,
+   "name": "Tournament",
+   "run_started_at": "2026-11-19T22:32:19Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-19T14:56:01Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44549112749,
+   "name": "Tournament",
+   "run_started_at": "2026-11-19T14:56:01Z"
+  },
+  {
+   "conclusion": "success",
+   "created_at": "2026-11-19T13:38:40Z",
+   "event": "schedule",
+   "head_branch": "main",
+   "id": 44535505128,
+   "name": "Tournament",
+   "run_started_at": "2026-11-19T13:38:40Z"
+  }
+ ]
+}

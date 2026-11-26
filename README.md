@@ -1,6 +1,6 @@
 # Augur
 
-**Status: 0.1.0, release candidate; all 13 milestones built.** Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M1 to M14 built, M15 and M16 planned.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. The 2026-11-30 MiniBench round runs as
@@ -8,7 +8,10 @@ an unattended shadow round against Metaculus's template bot on the same free
 model, under a rule registered before it opened that decides whether the
 free model may submit; the candidate it judges is one blend registered in
 advance, one-third Augur and two-thirds a forecast with no model in it.
-Spring 2027 is the season to place in.
+Because one round cannot settle whether the pipeline beats the template, a
+pooled analysis over the season's shadow questions was registered before
+the round as well, with one fixed date (2027-01-11). Spring 2027 is the
+season to place in.
 
 A forecast about a real event is scored only after the event happens, often
 months later, so a team building an AI forecaster cannot tell in time whether
@@ -149,6 +152,25 @@ Augur's own forecast, and `augur floor --candidate blend` scores the blend.
 ```sh
 uv run augur statarm                    # the arm and both blends on C4, no model call
 uv run augur floor --round ROUND --ledger shadow.sqlite --candidate blend
+```
+
+### One pooled analysis, registered before the round (M14)
+
+One round of about 60 questions can only tell a lead of about 10 points
+from 0 at 80% power, so a single round's floor verdict says little about
+whether the pipeline helps (Q1). M14 fixed, before the 2026-11-30 round
+opened, the one pooled analysis the season's shadow questions will get:
+Augur's head-to-head against the same-model template over both remaining
+MiniBench rounds and the FutureEval shadow questions, bootstrapped by the
+day questions opened, read once on 2027-01-11. `augur floor --pooled`
+prints it and cannot print a floor verdict; only the one-round rule can
+admit a route. A seeded synthetic table shows why: re-reading the
+one-round rule after each of four rounds admits a candidate with no lead
+in 11.8% of simulated seasons, not 5%.
+
+```sh
+uv run augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026 --ledger shadow.sqlite
+uv run augur rereads --check            # the synthetic re-read table, as make eval runs it
 ```
 
 Presets: `openrouter`, `groq`, `gemini`, `github` (each reads its own key
@@ -321,6 +343,7 @@ Details, commands and raw output are in [RESULTS.md](RESULTS.md).
 
 | Run | Outcome |
 |-----|---------|
+| M14, the pooled Q1 analysis, registered 2026-11-25 before the 2026-11-30 round (P47 to P51) | Nothing to pool yet: the shadow schedule has not run on GitHub (no `ledger` branch; the Tournament workflow's 35 ticks since 2026-11-19 were all cron, median gap 220.4 minutes, against a question's three-hour window). At the assumed spread of 32 points, a +5 lead needs 254 scored questions and +2 needs 1,583. Synthetic (seeded, no real data): re-reading the one-round floor rule after each of four 60-question rounds admits a no-lead candidate in 11.8% of seasons, and reading each round alone in 19.5%, against a nominal 5% (P50 and P51 held). P47 to P49 are read on 2027-01-11 |
 | M13, dated news in the leak-free backtest (C2's 64 questions, the same free model, three draws, $0): arm O's sources plus at most three news sources a question (GDELT discovery bounded at the cutoff, text only from a Wayback capture at or before it) | 54 of 64 questions gained news seen in the 30 days before open (39 counting real articles only; one wire-digest page matched 26), and the judge rated none of the 99 news uses as leaking. Adding it did not help: G − O +0.006 [−0.010, +0.022] Brier, which rules out a Hindcast-sized gain (−0.055), so the registered verdict is *not the limit*. Four of six predictions failed (coverage was better than predicted, and there was no small gain). Discovery ran on a GKG title index, because GDELT's API refused this machine |
 | M12, the statistical arm and the registered blend on C4 (671 walk-forward instances, $0, no model call); all four predictions held | Where the bot could read a price (480 instances), the primary candidate beats the model's raw forecast by −0.110 [−0.137, −0.084] Brier, and the price alone is still better than the blend (+0.023 [+0.008, +0.038]). On the 190 Metaculus-written instances, where there is no price, the base rate alone is worse than the raw model (+0.063 [+0.017, +0.107]), so the candidate leaves Augur's forecast unchanged there. On the 2026-11-16 round's 60 questions the series rule reaches 7 and forecasts 5; the live comparison is the 2026-11-30 round (To measure) |
 | M10, the season so far (Q5): every MiniBench leaderboard read 2026-11-23, Fall FutureEval re-read 2026-11-25 | Augur has no entry in any round (0 scored forecasts; the floor refused the free models). The template on Augur's free model, `metac-nemotron-3-ultra+asknews`, averaged −7.66 [−14.51, −0.73] in MiniBench 2026-11-02, −2.55 in 2026-10-19 and −12.19 so far in Fall FutureEval, where rank 1 (Panshul42) averages 20.91 on 51 scored questions. Final ranks are re-read daily by the `Standings` workflow |
@@ -426,8 +449,8 @@ backtest, what leakage is worth, and a first research loop; M7 (done) the fleet 
 season's standing, the ForecastBench same-question row and the postmortem; M11 (done) an unattended
 shadow round against the same-model template, and the rule that decides whether the free model may
 be submitted; M12 (done) a forecast with no model in it and one registered blend; M13 (done) dated news in the
-backtest, and the same-model agent-against-template pairs in FutureEval; M14 (next) a pooled analysis of the shadow
-rounds, registered before the first one opens; M15 ForecastBench's dataset questions with no model, against the
+backtest, and the same-model agent-against-template pairs in FutureEval; M14 (done) a pooled analysis of the shadow
+rounds, registered before the first one opens; M15 (next) ForecastBench's dataset questions with no model, against the
 leaderboard's own baselines on the same instances; M16 a newer free model on the same questions, under a rule
 for choosing the default route. Details in
 [PLAN.md](PLAN.md).

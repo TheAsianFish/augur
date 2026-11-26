@@ -1,0 +1,42 @@
+{
+ "label": "synthetic",
+ "method": "no-lead normal draws, S = 0, rule lower end = mean - z*SD/sqrt(m); share of seasons admitted at least once in the first k rounds",
+ "nominal": 0.05,
+ "rounds": 4,
+ "seasons": 20000,
+ "seed": 20261125,
+ "spread": 32.0,
+ "tables": [
+  {
+   "cumulative": [
+    0.0549,
+    0.0862,
+    0.1086,
+    0.1247
+   ],
+   "n": 30,
+   "separate": [
+    0.0549,
+    0.1073,
+    0.1563,
+    0.2047
+   ]
+  },
+  {
+   "cumulative": [
+    0.0519,
+    0.0813,
+    0.1021,
+    0.118
+   ],
+   "n": 60,
+   "separate": [
+    0.0519,
+    0.0999,
+    0.1479,
+    0.1952
+   ]
+  }
+ ],
+ "z": 1.644854
+}
