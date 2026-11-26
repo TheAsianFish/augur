@@ -1889,6 +1889,100 @@ entries beat arm 2 by at least 0.02. Per-source rows are descriptive.
 worse than "stat-v1" on the sources it reaches.** The one-third Augur
 blend on a fixed sample of these questions.
 
+**M15's registration, committed 2026-11-26 before any M15 code, before
+any close is fetched and before any arm is scored.** What had been seen
+when it was written: the sets' question lists and resolution dates, which
+series repeat across sets (ids only), the leaderboard's published Brier
+scores, the evolve stage's yes shares by source on 2026-08-30, and two
+probes of the vintage endpoints (below). No arm's Brier score had been
+computed. RESULTS.md carries the block byte for byte.
+
+<!-- m15-registration:begin -->
+**M15's registration (2026-11-26).** No model is called anywhere in M15.
+
+1. *The corpus.* The question sets `2026-07-05-llm.json` to
+   `2026-09-27-llm.json` (seven sets, every two weeks) of
+   `forecastingresearch/forecastbench-datasets` and their resolution
+   sets, as fetched on 2026-11-26 (SHA-256 recorded). An *instance* is
+   (set, source, id, resolution date) for a question whose source is
+   `acled`, `dbnomics`, `fred`, `wikipedia` or `yfinance`, whose id is one
+   string (a list of ids is a pair question), and whose row in the
+   resolution set at that date is resolved to 0 or 1. Pair questions, any
+   other dataset source (`serpapi`) and dated rows that are not resolved
+   to 0 or 1 are counted by reason and left out. Market questions belong
+   to M10 and are not counted here.
+2. *The history.* The same rule applied to every 2026 set from
+   `2026-01-04` on, the corpus sets included, gives the outcomes the base
+   rates read; the sets before `2026-07-05` are never scored. An outcome
+   dated by its resolution date D is known to a question frozen at instant
+   F only if D + 14 days is on or before F's date. This is stricter than
+   "before the due date": ACLED, FRED and DBnomics publish with a lag this
+   repository cannot date, and 14 days is a bound, not a proof.
+3. *Arm A, always 50%.*
+4. *Arm B, the source's walk-forward base rate:* (yes + 1) / (n + 2) over
+   the outcomes of the question's source known at F (every horizon), and
+   0.5 while n < 20.
+5. *Arm C, the series' own walk-forward rate* (added by this
+   registration; a reported arm with its own prediction, never a
+   replacement for B in P52 to P56): (yes_s + 4·B) / (n_s + 4) over the
+   known outcomes of the same (source, id), every horizon; B itself when
+   n_s = 0.
+6. *Arm D, the series arm, `yfinance` only.* Daily closes from Yahoo
+   Finance's chart endpoint (keyless, M12's dating rule: the close of
+   trading day D is dated 00:00 UTC of D + 1 and admitted only at or
+   before F), written to a backtest ledger as one dated source per
+   question and admitted through the leakage gate before anything reads
+   them. h = max(1, round(calendar days from the due date to the
+   resolution date × the series' observations per day over its last 365
+   days)). p_series is the share of the overlapping h-observation changes
+   among the admitted closes of the last 730 days before F that are above
+   0 (a tie is not "higher"), and D = 0.5·p_series + 0.5·B. With fewer
+   than 100 changes, or no admitted close, D is B and the question is
+   counted as not reached. Yahoo's history is split-adjusted after the
+   fact; a ratio of two closes is not changed by a split.
+7. *The other sources get no series arm.* FRED's keyless
+   `fredgraph.csv` ignores `vintage_date` (it returned today's revised
+   values on 2026-11-26) and ALFRED's API needs a key; DBnomics' API
+   serves the latest revision. ACLED needs an account, and Wikipedia's
+   rankings are not one series. RESULTS.md states this as coverage.
+8. *Comparators*, from ForecastBench's processed forecast sets (the
+   archive fetched 2026-11-26, SHA-256 recorded), on the same instances:
+   Naive Forecaster (the primary comparator), Imputed Forecaster and
+   Always 0.5 on every set; the two leaderboard leaders, Anonymous 24
+   "model-4" (2026-08-30) and NeuroFusion "hybrid ensemble 1"
+   (2026-09-27); Anonymous 39 "stat-v1 (calibrated market anchor +
+   dataset base rates)" (2026-09-27) and Anonymous 23 "undertow-mix
+   (statbase x gpt-5.6-sol)" (2026-08-16). Forecasts as published,
+   unclipped; an external entry's imputed forecasts are left out of its
+   comparison; the baselines' flag is ignored, as in M10.
+9. *The statistic.* Brier (p − y)² per instance; every difference is
+   Brier(first) − Brier(second), paired by instance, with a 95% bootstrap
+   interval (10,000 resamples, seed 20261119) resampling clusters, once
+   by series (source, id) and once by resolution date, both printed with
+   their cluster counts. "The interval excludes 0" means the
+   series-clustered interval. Pooled means every instance of the corpus;
+   per-source rows are descriptive.
+10. *The predictions.*
+    - **P52.** Pooled, B − A is at most −0.03 and its interval is below 0.
+    - **P53.** Pooled, B − Naive Forecaster is at most −0.02 and its
+      interval is below 0.
+    - **P54.** For B − A pooled, the date-clustered interval is at least
+      twice as wide as the series-clustered one.
+    - **P55.** On `yfinance`, B − D is below +0.005: the series arm adds
+      less than 0.005 over the base rate.
+    - **P56.** Each leader beats B by at least 0.02 on its own instances:
+      entry − B is at most −0.02 for both.
+    - **P57.** Pooled, C − B is at most −0.01 and its interval is below 0.
+11. *The follow-up* (the one-third Augur blend on a fixed sample of these
+    questions, registered in its own milestone) opens if P52 and P53 hold,
+    or if B is no worse than "stat-v1" on its instances: the upper end of
+    B − stat-v1's interval is below +0.01. M15 records which, and runs no
+    blend.
+12. *The label.* A backtest row in raw Brier on matched instances, never a
+    Brier Index: ForecastBench's index rescales against its baselines and
+    imputes missing forecasts, neither of which happens here.
+<!-- m15-registration:end -->
+
 ### M16: is a newer free model a better reader on the same questions?
 
 **Question.** On identical questions and, live, identical briefs, does
