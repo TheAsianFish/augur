@@ -1,0 +1,490 @@
+# act 0.2.98, event schedule, ref refs/heads/main (0df4891), started 2026-11-27T08:30:14Z
+# repository variables: none; extra: -s METACULUS_TOKEN -s OPENROUTER_API_KEY
+time="2026-11-27T08:30:14Z" level=info msg="Using docker host 'unix:///var/run/docker.sock', and daemon socket 'unix:///var/run/docker.sock'"
+[Tournament/poll] ⭐ Run Set up job
+[Tournament/poll] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/poll]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Tournament/poll] using DockerAuthConfig authentication for docker pull
+[Tournament/poll]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/poll]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/poll]   ✅  Success - Set up job
+[Tournament/poll] ⭐ Run Main actions/checkout@v4
+[Tournament/poll]   🐳  docker cp src=/tmp/m17act/repo/. dst=/tmp/m17act/repo
+[Tournament/poll]   ✅  Success - Main actions/checkout@v4 [224.522487ms]
+[Tournament/poll] ⭐ Run Main Decide this run's mode
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/mode] user= workdir=
+[Tournament/poll]   | no AUGUR_SUBMIT: a shadow tick, the default (nothing is posted)
+[Tournament/poll]   | schedule minibench (AUGUR_SCHEDULE unset: the default)
+[Tournament/poll]   | the next run is chained after 30 minutes (the shadow default)
+[Tournament/poll]   | mode=shadow schedule=minibench chain_minutes=30
+[Tournament/poll]   ✅  Success - Main Decide this run's mode [78.676339ms]
+[Tournament/poll]   ⚙  ::set-output:: mode=shadow
+[Tournament/poll]   ⚙  ::set-output:: schedule=minibench
+[Tournament/poll]   ⚙  ::set-output:: chain_minutes=30
+[Tournament/poll] ⭐ Run Main Read the shadow ledger from the ledger branch
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Tournament/poll]   | no ledger branch yet: the shadow ledger is empty
+[Tournament/poll]   ✅  Success - Main Read the shadow ledger from the ledger branch [59.257062ms]
+[Tournament/poll] ⭐ Run Main Poll for open questions not yet forecast
+[Tournament/poll]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/poll] user= workdir=
+[Tournament/poll]   | shadow ledger: 0 export(s), 0 question(s) held, 0 with a template forecast; today about 0 of 1000 free calls used (23.0 a question)
+[Tournament/poll]   | bot-testing-area: 6 open, 6 not in the shadow ledger, closes soonest 2026-12-31T00:00Z
+[Tournament/poll]   | has_work=true tournaments=bot-testing-area
+[Tournament/poll]   ✅  Success - Main Poll for open questions not yet forecast [450.873702ms]
+[Tournament/poll]   ⚙  ::set-output:: has_work=true
+[Tournament/poll]   ⚙  ::set-output:: tournaments=bot-testing-area
+[Tournament/poll] ⭐ Run Complete job
+[Tournament/poll] Cleaning up container for job poll
+[Tournament/poll]   ✅  Success - Complete job
+[Tournament/poll] 🏁  Job succeeded
+[Tournament/shadow  ] ⭐ Run Set up job
+[Tournament/shadow  ] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/shadow  ]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Tournament/shadow  ] using DockerAuthConfig authentication for docker pull
+[Tournament/shadow  ]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/shadow  ]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/shadow  ]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/shadow  ]   ✅  Success - Set up job
+[Tournament/shadow  ]   ☁  git clone 'https://github.com/astral-sh/setup-uv' # ref=v10.3.0
+[Tournament/shadow  ] ⭐ Run Main actions/checkout@v4
+[Tournament/shadow  ]   🐳  docker cp src=/tmp/m17act/repo/. dst=/tmp/m17act/repo
+[Tournament/shadow  ]   ✅  Success - Main actions/checkout@v4 [231.620262ms]
+[Tournament/shadow  ] ⭐ Run Main astral-sh/setup-uv@v10.3.0
+[Tournament/shadow  ]   🐳  docker cp src=/home/runner/.cache/act/astral-sh-setup-uv@v10.3.0/ dst=/var/run/act/actions/astral-sh-setup-uv@v10.3.0/
+[Tournament/shadow  ]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/setup/index.cjs] user= workdir=
+[Tournament/shadow  ]   | Trying to find version for uv in: /tmp/m17act/repo/uv.toml
+[Tournament/shadow  ]   | Could not find file: /tmp/m17act/repo/uv.toml
+[Tournament/shadow  ]   | Trying to find version for uv in: /tmp/m17act/repo/pyproject.toml
+[Tournament/shadow  ]   | Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+[Tournament/shadow  ]   | Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+[Tournament/shadow  ]   | Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.13.10/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+[Tournament/shadow  ]   | [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /tmp/982ca757-56aa-41ca-bddd-5728e0631f2e -f /tmp/a14ef214-37a4-45eb-a417-25061797ec65
+[Tournament/shadow  ]   | Added /root/.local/bin to the path
+[Tournament/shadow  ]   | Added /opt/hostedtoolcache/uv/0.13.10/x86_64 to the path
+[Tournament/shadow  ]   | Set UV_PYTHON_INSTALL_DIR to /root/.local/share/uv/python
+[Tournament/shadow  ]   | Added /root/.local/share/uv/python to the path
+[Tournament/shadow  ]   ❓ add-matcher /run/act/actions/astral-sh-setup-uv@v10.3.0/.github/python.json
+[Tournament/shadow  ]   | Set UV_CACHE_DIR to /root/.cache/uv
+[Tournament/shadow  ]   | Successfully installed uv version 0.13.10
+[Tournament/shadow  ]   | Searching files using cache dependency glob: /tmp/m17act/repo/uv.lock
+[Tournament/shadow  ]   | /tmp/m17act/repo/uv.lock
+[Tournament/shadow  ]   | Found 1 files to hash.
+[Tournament/shadow  ]   | Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   | No GitHub Actions cache found for key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   ✅  Success - Main astral-sh/setup-uv@v10.3.0 [1.299867215s]
+[Tournament/shadow  ]   ⚙  ::set-env:: UV_PYTHON_INSTALL_DIR=/root/.local/share/uv/python
+[Tournament/shadow  ]   ⚙  ::set-env:: UV_CACHE_DIR=/root/.cache/uv
+[Tournament/shadow  ]   ⚙  ::set-output:: uvx-path=/opt/hostedtoolcache/uv/0.13.10/x86_64/uvx
+[Tournament/shadow  ]   ⚙  ::set-output:: uv-version=0.13.10
+[Tournament/shadow  ]   ⚙  ::set-output:: python-version=unknown
+[Tournament/shadow  ]   ⚙  ::set-output:: python-runtime-id=
+[Tournament/shadow  ]   ⚙  ::set-output:: cache-key=setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   ⚙  ::set-output:: cache-hit=false
+[Tournament/shadow  ]   ⚙  ::set-output:: python-cache-hit=false
+[Tournament/shadow  ]   ⚙  ::set-output:: uv-path=/opt/hostedtoolcache/uv/0.13.10/x86_64/uv
+[Tournament/shadow  ]   ⚙  ::add-path:: /root/.local/bin
+[Tournament/shadow  ]   ⚙  ::add-path:: /opt/hostedtoolcache/uv/0.13.10/x86_64
+[Tournament/shadow  ]   ⚙  ::add-path:: /root/.local/share/uv/python
+[Tournament/shadow  ] ⭐ Run Main Install, with the template bot
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/2] user= workdir=
+[Tournament/shadow  ]   | Downloading cpython-3.12.16-linux-x86_64-gnu (download) (33.1MiB)
+[Tournament/shadow  ]   |  Downloaded cpython-3.12.16-linux-x86_64-gnu (download)
+[Tournament/shadow  ]   | Using CPython 3.12.16
+[Tournament/shadow  ]   | Creating virtual environment at: .venv
+[Tournament/shadow  ]   | Resolved 99 packages in 0.77ms
+[Tournament/shadow  ]   |    Building augur-forecast @ file:///tmp/m17act/repo
+[Tournament/shadow  ]   | Downloading numpy (15.0MiB)
+[Tournament/shadow  ]   | Downloading pydantic-core (2.2MiB)
+[Tournament/shadow  ]   | Downloading hf-xet (4.1MiB)
+[Tournament/shadow  ]   | Downloading aiohttp (1.8MiB)
+[Tournament/shadow  ]   | Downloading botocore (15.8MiB)
+[Tournament/shadow  ]   | Downloading openai (2.3MiB)
+[Tournament/shadow  ]   | Downloading pillow (6.8MiB)
+[Tournament/shadow  ]   | Downloading cryptography (4.5MiB)
+[Tournament/shadow  ]   | Downloading tokenizers (3.2MiB)
+[Tournament/shadow  ]   | Downloading tiktoken (1.1MiB)
+[Tournament/shadow  ]   | Downloading litellm (41.8MiB)
+[Tournament/shadow  ]   | Downloading forecasting-tools (1.8MiB)
+[Tournament/shadow  ]   |  Downloaded tiktoken
+[Tournament/shadow  ]   |  Downloaded forecasting-tools
+[Tournament/shadow  ]   |  Downloaded aiohttp
+[Tournament/shadow  ]   |    Building crontab==1.0.5
+[Tournament/shadow  ]   |  Downloaded pydantic-core
+[Tournament/shadow  ]   |  Downloaded tokenizers
+[Tournament/shadow  ]   |  Downloaded hf-xet
+[Tournament/shadow  ]   |  Downloaded cryptography
+[Tournament/shadow  ]   |  Downloaded openai
+[Tournament/shadow  ]   |  Downloaded pillow
+[Tournament/shadow  ]   |  Downloaded numpy
+[Tournament/shadow  ]   |  Downloaded botocore
+[Tournament/shadow  ]   |  Downloaded litellm
+[Tournament/shadow  ]   |       Built augur-forecast @ file:///tmp/m17act/repo
+[Tournament/shadow  ]   |       Built crontab==1.0.5
+[Tournament/shadow  ]   | Prepared 84 packages in 2.19s
+[Tournament/shadow  ]   | warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+[Tournament/shadow  ]   |          If the cache and target directories are on different filesystems, hardlinking may not be supported.
+[Tournament/shadow  ]   |          If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+[Tournament/shadow  ]   | Installed 84 packages in 3.22s
+[Tournament/shadow  ]   |  + aiofiles==25.1.0
+[Tournament/shadow  ]   |  + aiohappyeyeballs==2.7.1
+[Tournament/shadow  ]   |  + aiohttp==3.14.5
+[Tournament/shadow  ]   |  + aiolimiter==1.3.0
+[Tournament/shadow  ]   |  + aiosignal==1.4.0
+[Tournament/shadow  ]   |  + annotated-types==0.8.0
+[Tournament/shadow  ]   |  + anyio==4.16.0
+[Tournament/shadow  ]   |  + asgiref==3.13.0
+[Tournament/shadow  ]   |  + asknews==0.14.10
+[Tournament/shadow  ]   |  + asyncio==4.0.0
+[Tournament/shadow  ]   |  + attrs==26.1.0
+[Tournament/shadow  ]   |  + augur-forecast==0.1.0 (from file:///tmp/m17act/repo)
+[Tournament/shadow  ]   |  + boto3==1.44.6
+[Tournament/shadow  ]   |  + botocore==1.44.6
+[Tournament/shadow  ]   |  + certifi==2026.10.23
+[Tournament/shadow  ]   |  + cffi==2.1.1
+[Tournament/shadow  ]   |  + charset-normalizer==3.5.2
+[Tournament/shadow  ]   |  + click==8.5.1
+[Tournament/shadow  ]   |  + crontab==1.0.5
+[Tournament/shadow  ]   |  + cryptography==49.0.0
+[Tournament/shadow  ]   |  + dnspython==2.9.2
+[Tournament/shadow  ]   |  + email-validator==2.4.0
+[Tournament/shadow  ]   |  + exceptiongroup==1.3.1
+[Tournament/shadow  ]   |  + fastuuid==0.14.0
+[Tournament/shadow  ]   |  + filelock==4.2.12
+[Tournament/shadow  ]   |  + forecasting-tools==0.3.7
+[Tournament/shadow  ]   |  + frozenlist==1.8.0
+[Tournament/shadow  ]   |  + fsspec==2026.9.0
+[Tournament/shadow  ]   |  + h11==0.16.0
+[Tournament/shadow  ]   |  + h2==4.4.1
+[Tournament/shadow  ]   |  + hf-xet==1.8.0
+[Tournament/shadow  ]   |  + hpack==4.2.0
+[Tournament/shadow  ]   |  + httpcore==1.0.9
+[Tournament/shadow  ]   |  + httpcore2==2.16.2
+[Tournament/shadow  ]   |  + httpx==0.28.1
+[Tournament/shadow  ]   |  + httpx2==2.16.2
+[Tournament/shadow  ]   |  + huggingface-hub==2.4.0
+[Tournament/shadow  ]   |  + hyperframe==6.1.0
+[Tournament/shadow  ]   |  + idna==3.20
+[Tournament/shadow  ]   |  + importlib-metadata==8.9.0
+[Tournament/shadow  ]   |  + jinja2==3.1.6
+[Tournament/shadow  ]   |  + jiter==0.19.0
+[Tournament/shadow  ]   |  + jmespath==1.1.0
+[Tournament/shadow  ]   |  + jsonschema==4.26.0
+[Tournament/shadow  ]   |  + jsonschema-specifications==2025.9.1
+[Tournament/shadow  ]   |  + litellm==1.110.1
+[Tournament/shadow  ]   |  + markupsafe==3.0.4
+[Tournament/shadow  ]   |  + multidict==7.2.1
+[Tournament/shadow  ]   |  + nest-asyncio==1.6.0
+[Tournament/shadow  ]   |  + numpy==2.5.5
+[Tournament/shadow  ]   |  + openai==3.55.1
+[Tournament/shadow  ]   |  + orjson==3.13.0
+[Tournament/shadow  ]   |  + packaging==26.3
+[Tournament/shadow  ]   |  + pendulum==3.3.0
+[Tournament/shadow  ]   |  + pillow==13.0.0
+[Tournament/shadow  ]   |  + propcache==0.5.4
+[Tournament/shadow  ]   |  + pycparser==3.12
+[Tournament/shadow  ]   |  + pydantic==2.14.3
+[Tournament/shadow  ]   |  + pydantic-core==2.50.4
+[Tournament/shadow  ]   |  + pydantic-settings==2.16.3
+[Tournament/shadow  ]   |  + python-dateutil==2.9.0.post0
+[Tournament/shadow  ]   |  + python-dotenv==1.2.4
+[Tournament/shadow  ]   |  + pyyaml==6.0.3
+[Tournament/shadow  ]   |  + referencing==0.37.0
+[Tournament/shadow  ]   |  + regex==2026.11.19
+[Tournament/shadow  ]   |  + requests==2.34.2
+[Tournament/shadow  ]   |  + rpds-py==2026.9.1
+[Tournament/shadow  ]   |  + s3transfer==0.19.3
+[Tournament/shadow  ]   |  + six==1.17.0
+[Tournament/shadow  ]   |  + sniffio==1.3.1
+[Tournament/shadow  ]   |  + structlog==26.1.0
+[Tournament/shadow  ]   |  + tenacity==9.2.1
+[Tournament/shadow  ]   |  + tiktoken==0.14.0
+[Tournament/shadow  ]   |  + tokenizers==0.23.3
+[Tournament/shadow  ]   |  + tqdm==4.70.1
+[Tournament/shadow  ]   |  + truststore==0.10.5
+[Tournament/shadow  ]   |  + typeguard==4.6.0
+[Tournament/shadow  ]   |  + typing-extensions==4.16.0
+[Tournament/shadow  ]   |  + typing-inspection==0.4.5
+[Tournament/shadow  ]   |  + tzdata==2026.6
+[Tournament/shadow  ]   |  + unidecode==1.4.0
+[Tournament/shadow  ]   |  + urllib3==2.8.0
+[Tournament/shadow  ]   |  + yarl==1.25.1
+[Tournament/shadow  ]   |  + zipp==4.1.2
+[Tournament/shadow  ]   ✅  Success - Main Install, with the template bot [6.384329532s]
+[Tournament/shadow  ] ⭐ Run Main Name this tick
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/3] user= workdir=
+[Tournament/shadow  ]   ✅  Success - Main Name this tick [79.013078ms]
+[Tournament/shadow  ]   ⚙  ::set-env:: SHADOW_NAME=20261127T083046Z-1-1
+[Tournament/shadow  ] ⭐ Run Main Rebuild the shadow ledger from the ledger branch
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/4] user= workdir=
+[Tournament/shadow  ]   | no ledger branch yet: the shadow ledger is empty
+[Tournament/shadow  ]   | no shadow exports yet: nothing is held
+[Tournament/shadow  ]   ✅  Success - Main Rebuild the shadow ledger from the ledger branch [83.285289ms]
+[Tournament/shadow  ] ⭐ Run Main Forecast (shadow, never submitted)
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/forecast] user= workdir=
+[Tournament/shadow  ]   | == augur forecast --tournament bot-testing-area --shadow-ledger shadow.sqlite
+[Tournament/shadow  ]   | {"event": "asknews skipped", "level": "info", "reason": "no ASKNEWS_CLIENT_ID/ASKNEWS_CLIENT_SECRET", "timestamp": "2026-11-27T08:30:47.999938Z"}
+[Tournament/shadow  ]   | {"event": "run started", "level": "info", "mode": "dry_run", "run_id": "run_ba801b28d7544ab3b7e1", "source": "metaculus:bot-testing-area", "timestamp": "2026-11-27T08:30:48.519043Z"}
+[Tournament/shadow  ]   | shadow tick: 0 question(s) already held in shadow.sqlite
+[Tournament/shadow  ]   | run run_ba801b28d7544ab3b7e1 (dry_run) on metaculus:bot-testing-area
+[Tournament/shadow  ]   | models: forecast: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free; research: openrouter:nvidia/nemotron-3-ultra-550b-a55b:free
+[Tournament/shadow  ]   | fleet: one research pass; 5 forecasters (5 base); 1 question at a time
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 46451, "reason": "over the cap of 4 questions per run", "run_id": "run_ba801b28d7544ab3b7e1", "timestamp": "2026-11-27T08:30:53.852070Z"}
+[Tournament/shadow  ]   | {"event": "question skipped", "level": "info", "question_id": 46450, "reason": "over the cap of 4 questions per run", "run_id": "run_ba801b28d7544ab3b7e1", "timestamp": "2026-11-27T08:30:53.852226Z"}
+[Tournament/shadow  ]   | {"event": "probe: route answered", "latency_ms": 1823, "level": "info", "route": "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free", "run_id": "run_ba801b28d7544ab3b7e1", "timestamp": "2026-11-27T08:30:55.676244Z"}
+[Tournament/shadow  ]   | probe:
+[Tournament/shadow  ]   |   openrouter:nvidia/nemotron-3-ultra-550b-a55b:free answered       1823 ms  $0/$0 per M            listed 2026-06-04  below tier  [research+forecast]
+[Tournament/shadow  ]   | estimated worst case $0.0000 a question, $0.0000 for 4 (caps $0.50 a question, $0.00 a run)
+[Tournament/shadow  ]   | 
+[Tournament/shadow  ]   | == What will be Donald Trump's net approval on December 31, 2026?
+[Tournament/shadow  ]   |    https://www.metaculus.com/questions/43323/ (numeric)
+[Tournament/shadow  ]   |    sources: 6 admitted, 0 rejected; members: median -24.0% (80% between -34.0 and -10.0) | median -21.5% (80% between -32.0 and -14.0) | median -20.0% (80% between -28.0 and -13.0) | median -20.0% (80% between -30.0 and -9) | median -23.5% (80% between -33.0 and -14.0)
+[Tournament/shadow  ]   |    combined: median -21.6% (80% between -31.7 and -12.1)
+[Tournament/shadow  ]   |    would POST /api/questions/forecast/ (dry run, not sent):
+[Tournament/shadow  ]   |    [{"question": 43325, "source": "api", "probability_yes": null, "probability_yes_per_category": null, "continuous_cdf": [0.0463595347, 0.0484386261, 0.0506102272, 0.0528784751, 0.055247692, 0.0577223933, 0.0603057274, 0.0629750874, 0.0657242235, 0.0685567035, 0.0714762546, 0.0744867707, 0.0775860174, 0.0807487843, 0.0839742621, 0.0872652553, 0.0906246938, 0.0940556385, 0.0975472046, 0.1010778893, 0 …
+[Tournament/shadow  ]   |    would POST /api/comments/create/ as a private comment (dry run):
+[Tournament/shadow  ]   |    | **Forecast: median -21.6% (80% between -31.7 and -12.1)**, the average of the CDFs of 5 independent forecasts by nvidia/nemotron-3-ultra-550b-a55b:free.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Research** (only sources dated at or before 2026-11-27 08:30 UTC):
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | Based on the provided sources, the following facts bear on the question of Donald Trump’s net approval on December 31, 2026: **Current polling trend:** As of the Wikipedia summary dated November 26, 2026, nationwide aggregate polls show Trump’s approval rating has “steadily declined to an average of 35 to 36%” throughout 2025–2026. In August 2026, he was recorded as the second most unpopular president at this stage of a presidency since the 1940s (trailing only Richard Nixon near resignation) [S1]. The article includes aggregate tables for November 2026 and prior months, though specific net‑approval figures are not reproduced in the excerpt. **Recent political event:** The 2026 midterm elections have already occurred. According to the summary of Trump’s second presidency, the Democratic Party won control of both the House and Senate, ending the Republican trifecta [S5]. This shift in congressional power is a significant development that could influence public approval in the remaining weeks of December. **Resolution source:** The question resolves using the Silver Bulletin’s net‑approval estimate for December 31, 2026 (or the latest December day available). None of the provided sources quote the Silver Bulletin directly; the Wikipedia polling summary [S1] aggregates multiple pollsters but does not specify the Silver Bulletin’s current estimate. **Data gaps:** The sources do not provide the Silver Bulletin’s most recent net‑approval number, nor do they detail any scheduled events between November 27 and December 31, 2026, that would systematically affect the rating. If the Silver Bulletin ceases publishing, the question will be annulled per the resolution criteria.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Each forecaster's reasoning**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | 1. (median -24.0% (80% between -34.0 and -10.0)) (a) 34 days remain until resolution on December 31, 2026. (b) Current trend: Wikipedia aggregates show approval at 35–36% as of late November 2026, implying net approval roughly –25% to –30%. The decline has been steady through 2025–26; the recent midterm loss (Democrats taking both chambers) may add modest further erosion, but the short window limits large moves. (c) No direct Silver Bulletin figure is available in sources; other aggregates (FiveThirtyEight, RCP) historically track within a few points of Silver’s model. Markets/experts not quoted. (d) Low scenario: Post-midterm backlash or a crisis pushes net approval to –35% or below (Nixon-like). High scenario: A rally-around-the-flag …
+[Tournament/shadow  ]   |    | 2. (median -21.5% (80% between -32.0 and -14.0)) The resolution is 34 days away. Trump's approval has averaged 35–36% through 2025–26, implying net approval around –20 to –25. The midterms (Democratic sweep) are in the rearview mirror; the holiday period typically produces minimal movement absent a crisis. Silver Bulletin’s model tends to track other aggregates closely but with tighter uncertainty. The downside tail includes a health scare, major scandal, or economic shock; the upside tail includes a rally-around-the-flag event or polling house-effects correction.
+[Tournament/shadow  ]   |    | 3. (median -20.0% (80% between -28.0 and -13.0)) The question resolves in 34 days (Dec 31, 2026). Trump’s net approval has declined steadily through 2025–26; Wikipedia notes approval averaging 35–36% as of late November 2026, implying a net approval in the low‑to‑mid ‑20s. The 2026 midterms (Democrats took both chambers) are past, removing a near‑term catalyst for a sharp move. Silver Bulletin’s model smooths polls, so the estimate should be stable absent a major event. Historical range (first term ‑10 to ‑20; second term started positive, fell to high‑teens negative by Dec 2025) and the current downtrend support a center near ‑20. Tail risks: a scandal/crisis could push net approval below ‑30 (10th %ile); a rally or economic upside could …
+[Tournament/shadow  ]   |    | 4. (median -20.0% (80% between -30.0 and -9)) (a) Only 34 days remain until resolution. The Silver Bulletin updates regularly, so the final reading will reflect late-December polling. (b) The current trend shows approval at 35–36% (implying net approval roughly –20 to –25). Post-midterm slumps often persist into December, so a modest further decline is the baseline. (c) No public Silver Bulletin forecast exists for Dec 31, but aggregate trackers (FiveThirtyEight, RCP) show net approval in the low- to mid-–20s. (d) Low scenario: a market crash or foreign-policy crisis pushes net approval toward –35. High scenario: a year-end rally or methodological quirk lifts it to near –5.
+[Tournament/shadow  ]   |    | 5. (median -23.5% (80% between -33.0 and -14.0)) (a) 34 days remain until resolution on December 31, 2026. (b) Current trend shows approval at 35–36% (implying net approval roughly –25% to –27%). The recent midterm loss (Democrats taking both chambers) typically produces a short‑term approval dip, but with only five weeks left, a dramatic further slide is unlikely absent a major crisis. (c) No public Silver Bulletin estimate is available in the sources; prediction markets are not referenced. Historical analogs (second‑term presidents after midterm defeats) suggest net approval stabilizes in the low‑to‑mid‑20s negative. (d) Low scenario: A government shutdown, major scandal, or economic shock drives net approval to –30 or below. High …
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Sources**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | - [S1] [Opinion polling on the second Trump presidency](https://en.wikipedia.org/w/index.php?oldid=1388017643) (wikipedia, revision of 2026-11-26)
+[Tournament/shadow  ]   |    | - [S2] [Donald Trump](https://en.wikipedia.org/w/index.php?oldid=1388149996) (wikipedia, revision of 2026-11-26)
+[Tournament/shadow  ]   |    | - [S3] [United States presidential approval rating](https://en.wikipedia.org/w/index.php?oldid=1382477262) (wikipedia, revision of 2026-10-28)
+[Tournament/shadow  ]   |    | - [S4] [2024 United States presidential election](https://en.wikipedia.org/w/index.php?oldid=1387678558) (wikipedia, revision of 2026-11-25)
+[Tournament/shadow  ]   |    | - [S5] [Second presidency of Donald Trump](https://en.wikipedia.org/w/index.php?oldid=1388157787) (wikipedia, revision of 2026-11-26)
+[Tournament/shadow  ]   |    | - [S6] [List of heads of the executive by approval rating](https://en.wikipedia.org/w/index.php?oldid=1387624459) (wikipedia, revision of 2026-11-24)
+[Tournament/shadow  ]   |    stat arm (abstains): the series rule does not reach this title; blend: Augur unchanged (the series rule does not reach this title)
+[Tournament/shadow  ]   | 
+[Tournament/shadow  ]   | == Will any of Belgium, France, Italy, Luxembourg, Netherlands, and/or Germany leave the EU before 2027?
+[Tournament/shadow  ]   |    https://www.metaculus.com/questions/43327/ (binary)
+[Tournament/shadow  ]   |    sources: 4 admitted, 0 rejected; members: 1% | 1% | 1% | 1% | 1%
+[Tournament/shadow  ]   |    combined: 1%
+[Tournament/shadow  ]   |    would POST /api/questions/forecast/ (dry run, not sent):
+[Tournament/shadow  ]   |    [{"question": 43332, "source": "api", "probability_yes": 0.01, "probability_yes_per_category": null, "continuous_cdf": null}]
+[Tournament/shadow  ]   |    would POST /api/comments/create/ as a private comment (dry run):
+[Tournament/shadow  ]   |    | **Forecast: 1%**, the median of 5 independent forecasts (1%, 1%, 1%, 1%, 1%) by nvidia/nemotron-3-ultra-550b-a55b:free.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Research** (only sources dated at or before 2026-11-27 08:32 UTC):
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Factual Brief: EU Founding Member Exit Before 2027** **Current State of Affairs** The European Union comprises 27 member states, including all six founding members of the European Communities: Belgium, France, Italy, Luxembourg, the Netherlands, and Germany (formerly West Germany) [S2]. As of the latest source date (2026-11-17), no founding member has triggered Article 50 or announced an intention to leave. The only withdrawal in EU history is the United Kingdom, which invoked Article 50 on 29 March 2017 and left on 31 January 2020 [S2, S3]. **Relevant Base Rates** - **Article 50 invocations:** 1 in 67 years (UK, 2017) [S3]. - **Founding-member exits:** 0 in 67 years. - **Suspensions/withdrawals of any member:** None besides the UK [S2]. - **Enlargement focus:** The EU is actively negotiating with nine candidate countries; no source mentions exit proceedings for any member [S4]. **Scheduled Events Before Resolution (2026-12-31)** The sources list no scheduled referendums, parliamentary votes, or government announcements in any of the six countries that would trigger Article 50 before the 35-day window closes. The EU’s near-term agenda centers on enlargement (e.g., Montenegro targeting 2028 accession) [S4], not contraction. **Conclusion from Sources** Available data show no concrete steps, political mandates, or scheduled events indicating that any founding member will notify the European Council of withdrawal before 1 January 2027. The historical base rate for such an event among founding members is zero.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Each forecaster's reasoning**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | 1. (1%) (a) Only 35 days remain until the 2026-12-31 deadline. (b) Status quo: all six founding members remain in the EU with no exit proceedings underway; the only Article 50 trigger in history was the UK (2017). (c) Base rate: 0 founding-member exits in 67 years; 1 total Article 50 invocation (UK) in 67 years. (d) Research confirms no scheduled referendums, parliamentary votes, or government announcements in any of the six countries; EU agenda is enlargement, not contraction. Procedurally, triggering Article 50 requires domestic legislative action that cannot be completed in 35 days without prior preparation—none exists. (e) Yes scenario: a snap decision by a founding-member government to notify …
+[Tournament/shadow  ]   |    | 2. (1%) (a) **Time left:** 35 days until 2026-12-31. (b) **Status quo:** All six founding members remain in the EU; none has triggered Article 50, called a referendum, or announced exit intentions. The only precedent (UK) took years of political buildup before notification. (c) **Base rate:** 0 founding-member exits in 67 years; 1 total Article 50 invocation (UK, 2017) after a multi-year referendum process. (d) **Research update:** No scheduled elections, referendums, or parliamentary votes in the next 35 days that could produce an exit notification. EU agenda is enlargement (Montenegro 2028 target), not contraction. Anti-EU parties exist but lack governing mandates for immediate Article 50 …
+[Tournament/shadow  ]   |    | 3. (1%) The resolution window is only 35 days. Historically, zero of the six founding members have ever triggered Article 50 (the UK, a non-founder, is the sole case in 67 years). No source identifies any scheduled referendum, parliamentary vote, or government announcement in Belgium, France, Italy, Luxembourg, the Netherlands, or Germany that could lead to an Article 50 notification before 31 December 2026. The EU’s immediate agenda is enlargement, not contraction. Triggering Article 50 requires a formal governmental decision and notification—steps that would be publicly visible well in advance. With no detectable momentum toward exit in any founding member and the extreme brevity of the remaining …
+[Tournament/shadow  ]   |    | 4. (1%) (a) Only 35 days remain until the resolution deadline (2026-12-31). (b) Status quo: No founding member has triggered Article 50, nor announced a referendum or parliamentary vote to do so. The EU’s agenda is enlargement, not contraction. (c) Base rate: In 67 years, zero founding members have left; only the UK (a non-founder) has invoked Article 50 (1/67 years). (d) Research confirms no concrete steps, mandates, or scheduled events in any of the six countries before year-end. Institutional inertia and the short window make a sudden exit virtually impossible. (e) **Yes scenario**: An unforeseen political crisis (e.g., government collapse + snap election + immediate Article 50 notification) in …
+[Tournament/shadow  ]   |    | 5. (1%) (a) **Time left:** 35 days (until 2026-12-31). Triggering Article 50 requires a formal sovereign decision—typically a parliamentary vote or referendum—preceded by months of debate. No such process can start and conclude in this window. (b) **Status quo:** All six founding members are treaty-bound EU participants with no active withdrawal proceedings. Current governments (including the Netherlands’ Wilders-led coalition and Italy’s Meloni administration) have explicitly deprioritized or ruled out exit. The EU’s institutional focus is enlargement, not dissolution. (c) **Base rate:** Founding-member exits: 0 in 67 years. Any-member Article 50 invocations: 1 in 67 years (UK, 2017). The annual …
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Sources**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | - [S1] [Member states of NATO](https://en.wikipedia.org/w/index.php?oldid=1383947570) (wikipedia, revision of 2026-11-05)
+[Tournament/shadow  ]   |    | - [S2] [Member state of the European Union](https://en.wikipedia.org/w/index.php?oldid=1386331027) (wikipedia, revision of 2026-11-17)
+[Tournament/shadow  ]   |    | - [S3] [United Kingdom invocation of Article 50 of the Treaty on European Union](https://en.wikipedia.org/w/index.php?oldid=1382205195) (wikipedia, revision of 2026-10-27)
+[Tournament/shadow  ]   |    | - [S4] [Potential enlargement of the European Union](https://en.wikipedia.org/w/index.php?oldid=1387139713) (wikipedia, revision of 2026-11-22)
+[Tournament/shadow  ]   |    stat arm (base-rate): metaculus base rate, 51 of 255 resolved yes; blend: Augur unchanged (the arm has only a base-rate)
+[Tournament/shadow  ]   | {"event": "model switch", "from_route": "openrouter:nvidia/nemotron-3-ultra-550b-a55b:free", "level": "warning", "member": 0, "outcome": "exhausted", "question_id": 43322, "reason": "empty", "role": "forecaster", "run_id": "run_ba801b28d7544ab3b7e1", "timestamp": "2026-11-27T08:37:44.335576Z", "to_route": null}
+[Tournament/shadow  ]   | {"error": "no model in the forecast chain could answer: nvidia/nemotron-3-ultra-550b-a55b:free on openrouter returned no text (finish_reason 'length'); a reasoning model may need more max_tokens; add models to AUGUR_FORECAST_MODELS or retry later", "event": "forecaster failed", "level": "warning", "member": 0, "question_id": 43322, "run_id": "run_ba801b28d7544ab3b7e1", "timestamp": "2026-11-27T08:37:44.336232Z"}
+[Tournament/shadow  ]   | 
+[Tournament/shadow  ]   | == How many of these 15 top US executive branch officials will be out before 2027?
+[Tournament/shadow  ]   |    https://www.metaculus.com/questions/43321/ (discrete)
+[Tournament/shadow  ]   |    sources: 6 admitted, 0 rejected; members: median 1 Officials (80% between 0 and 3) | median 0 Officials (80% between 0 and 2) | median 0 Officials (80% between 0 and 2) | median 1 Officials (80% between 0 and 2)
+[Tournament/shadow  ]   |    combined: median 0 Officials (80% between 0 and 2)
+[Tournament/shadow  ]   |    would POST /api/questions/forecast/ (dry run, not sent):
+[Tournament/shadow  ]   |    [{"question": 43322, "source": "api", "probability_yes": null, "probability_yes_per_category": null, "continuous_cdf": [0.0, 0.5943597988, 0.7681793403, 0.9152587346, 0.9648547706, 0.983038295, 0.9898945576, 0.9927978814, 0.9942759793, 0.9952336877, 0.9960004863, 0.9966971251, 0.9973679631, 0.9980293108, 0.9986871676, 0.99934374, 1.0]}]
+[Tournament/shadow  ]   |    would POST /api/comments/create/ as a private comment (dry run):
+[Tournament/shadow  ]   |    | **Forecast: median 0 Officials (80% between 0 and 2)**, the average of the CDFs of 4 independent forecasts by nvidia/nemotron-3-ultra-550b-a55b:free; 1 of 5 draws failed.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Research** (only sources dated at or before 2026-11-27 08:34 UTC):
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | The provided sources contain minimal information directly relevant to the current status of the 15 specified officials as of November 2026. [S1] and [S5] confirm Donald Trump began his second term on January 20, 2025, and note Robert F. Kennedy Jr. serves as HHS Secretary overseeing a "Make America Healthy Again" agenda [S5]. [S5] also mentions the 2026 midterms flipped Congress to Democratic control. However, neither source provides updates on the tenure or departure plans for the other 14 officials (Rubio, Bessent, Hegseth, Bondi, Lutnick, Noem, Gabbard, Ratcliffe, Vought, Wiles, Patel, Homan, Navarro, Miller). [S2] documents only first-term (2017–2021) turnover. [S3] covers an FAA ground stop in November 2026. [S4] notes Taylor Budowich resigned as deputy chief of staff in September 2025—a role not on the list. [S6] discusses tariff policy. No source indicates any of the 15 incumbents have left, announced departure, or had their agency announce a departure as of the source dates (late November 2026). The background references to December 2025 and July 2025 resignation calls for Hegseth, Bondi, and Patel are not substantiated in the provided sources. With 35 days until resolution, the sources offer no evidence of impending departures.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Each forecaster's reasoning**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | 2. (median 1 Officials (80% between 0 and 3)) With only 35 days until resolution and no current evidence of impending departures among the 15 officials, the probability of turnover is low. Trump's first-term turnover was historically high (92%), but second-term dynamics differ, and the window is extremely short. The Democratic Congress takes office January 3, 2027, reducing immediate pressure. White House staff (Wiles, Navarro, Miller) have slightly higher departure probability than Senate-confirmed cabinet secretaries, but 35 days is insufficient for typical transition processes. Scandals from 2025 (Hegseth, Bondi, Patel) did not result in departures, suggesting resilience. An unexpected mass-resignation scenario (e.g., major scandal) …
+[Tournament/shadow  ]   |    | 3. (median 0 Officials (80% between 0 and 2)) (a) Only 35 days remain until resolution (Jan 1, 2027). (b) Current trends show zero departures among the 15 officials as of late Nov 2026; second-term turnover is typically lower than first-term. (c) No prediction markets or expert forecasts are cited, but the very short window and absence of public departure signals imply a strong consensus near zero. (d) Low scenario: a sudden scandal or health event forces 1–2 exits (e.g., Hegseth, Bondi, or Patel). High scenario: post-midterm pressure triggers a cascade of 3+ resignations, though 35 days makes this unlikely.
+[Tournament/shadow  ]   |    | 4. (median 0 Officials (80% between 0 and 2)) (from the model's reasoning trace) We are asked to forecast how many of the 15 top US executive branch officials will be out before 2027 (i.e., before January 1, 2027). Today is 2026-11-27, 35 days until resolution. We have a list of 15 officials. The background mentions Trump's first term had high turnover (92% total turnover over 4 years). However, this is the second term, and we are only 22 months into the term (since Jan 20, 2025). The question is about departures before Jan 1, 2027, which is about 23 months into the term. We have no evidence from the provided sources that any of these 15 have left or announced departure as of late November 2026. The background mentions calls for …
+[Tournament/shadow  ]   |    | 5. (median 1 Officials (80% between 0 and 2)) With only 35 days until resolution and no public indications of imminent departures among the 15 officials, the base case is zero turnover. However, Trump’s first term showed unusually high volatility (92% cumulative senior turnover), and the new Democratic Congress may intensify oversight pressure on controversial figures like Hegseth, Bondi, and Patel. Turnover in such a short window is a low-probability, fat-tailed event: most likely none leave, but a single scandal or purge could trigger 1–3 exits, with cascading resignations possible but unlikely. Historical Year-2 turnover (~31% over 12 months) implies ~3% monthly risk per official, but cabinet-level roles are stickier. The …
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Sources**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | - [S1] [Donald Trump](https://en.wikipedia.org/w/index.php?oldid=1388149996) (wikipedia, revision of 2026-11-26)
+[Tournament/shadow  ]   |    | - [S2] [List of dismissals and resignations in the first Trump administration](https://en.wikipedia.org/w/index.php?oldid=1387320122) (wikipedia, revision of 2026-11-23)
+[Tournament/shadow  ]   |    | - [S3] [2026 FAA nationwide ground stop](https://en.wikipedia.org/w/index.php?oldid=1387703402) (wikipedia, revision of 2026-11-25)
+[Tournament/shadow  ]   |    | - [S4] [Taylor Budowich](https://en.wikipedia.org/w/index.php?oldid=1386829456) (wikipedia, revision of 2026-11-20)
+[Tournament/shadow  ]   |    | - [S5] [Second presidency of Donald Trump](https://en.wikipedia.org/w/index.php?oldid=1388157787) (wikipedia, revision of 2026-11-26)
+[Tournament/shadow  ]   |    | - [S6] [Tariffs in the second Trump administration](https://en.wikipedia.org/w/index.php?oldid=1388056080) (wikipedia, revision of 2026-11-26)
+[Tournament/shadow  ]   |    stat arm (abstains): the series rule does not reach this title; blend: Augur unchanged (the series rule does not reach this title)
+[Tournament/shadow  ]   | 
+[Tournament/shadow  ]   | == What will the average new forecasters per day be on this question before this question closes?
+[Tournament/shadow  ]   |    https://www.metaculus.com/questions/45517/ (discrete)
+[Tournament/shadow  ]   |    sources: 3 admitted, 0 rejected; members: median 0.28 forecasters (80% between 0.1 and 0.78) | median 0.19 forecasters (80% between 0.1 and 0.5) | median 0.27 forecasters (80% between 0.1 and 0.62) | median 0.2 forecasters (80% between 0.1 and 0.7) | median 0.21 forecasters (80% between 0.1 and 0.6)
+[Tournament/shadow  ]   |    combined: median 0.22 forecasters (80% between 0.1 and 0.64)
+[Tournament/shadow  ]   |    would POST /api/questions/forecast/ (dry run, not sent):
+[Tournament/shadow  ]   |    [{"question": 45708, "source": "api", "probability_yes": null, "probability_yes_per_category": null, "continuous_cdf": [0.1696499381, 0.1978333333, 0.2283888889, 0.2591666667, 0.2899444445, 0.3207222222, 0.3490238095, 0.3737380952, 0.3973412698, 0.4209444445, 0.4445476191, 0.4672619048, 0.4890873016, 0.5093162393, 0.527948718, 0.5465811966, 0.5633247863, 0.5781794872, 0.593034188, 0.6078888889, 0. …
+[Tournament/shadow  ]   |    would POST /api/comments/create/ as a private comment (dry run):
+[Tournament/shadow  ]   |    | **Forecast: median 0.22 forecasters (80% between 0.1 and 0.64)**, the average of the CDFs of 5 independent forecasts by nvidia/nemotron-3-ultra-550b-a55b:free.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Research** (only sources dated at or before 2026-11-27 08:37 UTC):
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | The provided sources do not contain information relevant to forecasting activity on the specific Metaculus question. [S1] is a general Wikipedia article on prediction markets, describing their history and mechanics but not Metaculus or any particular question. [S2] covers Bending Spoons, an Italian technology conglomerate, its IPO, and acquisitions. [S3] details Meta Platforms’ corporate history and IPO. None of the sources mention Metaculus, the number of forecasters on any question, base rates for forecaster participation, or scheduled events related to the question’s open/close dates. Consequently, there is no factual basis in these sources to estimate the average new forecasters per day before the question closes on 2028-09-05.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Each forecaster's reasoning**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | 1. (median 0.28 forecasters (80% between 0.1 and 0.78)) (a) The question closes in 648 days (2028-09-05). The metric is total unique forecasters at close divided by the fixed number of days the question is open. (b) Without current forecaster data, we rely on base rates: typical Metaculus questions attract 50–300 forecasters over 1–2 years. This self-referential “bot-awareness” question may draw extra bot traffic but limited human interest. (c) No dedicated prediction market exists for this metric; Metaculus community expectations are unknown. (d) Low scenario: minimal participation (≈30 forecasters) → ~0.05/day. High scenario: becomes a popular bot benchmark (≈800 forecasters) → ~1.2/day. Given large uncertainty, intervals are set wide.
+[Tournament/shadow  ]   |    | 2. (median 0.19 forecasters (80% between 0.1 and 0.5)) This is a self-referential Metaculus question asking for its own average daily forecaster count over 648 days. Participation on meta-questions tends to be modest: most Metaculus questions attract 50–200 forecasters total over their lifetime, yielding 0.08–0.31 forecasters/day. This question’s novelty may draw some bot operators and curiosity forecasters, but it lacks broad appeal. I expect a right-skewed distribution with a median near 0.18/day, a long tail if it gets featured or discussed, and a non-trivial chance of very low participation.
+[Tournament/shadow  ]   |    | 3. (median 0.27 forecasters (80% between 0.1 and 0.62)) This is a meta-question forecasting participation on itself. With 648 days until close (2026-11-27 to 2028-09-05), accumulation will be slow initially. Metaculus questions vary widely: niche questions attract 50–150 forecasters total, popular ones 300+. This self-referential question may draw moderate bot/human curiosity but lacks external drivers. Base rate: typical meta-questions see ~100–250 forecasters over 1–2 years. At 100 forecasters: 0.15/day; at 200: 0.31/day; at 300: 0.46/day. Uncertainty is high—low outcome if bots ignore it and humans find it trivial; high outcome if it becomes a benchmark for bot calibration. Wide intervals reflect unknown unknowns.
+[Tournament/shadow  ]   |    | 4. (median 0.2 forecasters (80% between 0.1 and 0.7)) (a) The question closes in 648 days (2028-09-05). (b) With no current forecaster data, we cannot extrapolate a trend. Metaculus questions typically see an early surge then a slow trickle; a moderate total of 100–200 forecasters would yield 0.15–0.31 per day. (c) No expert forecasts or markets exist for this metric; the provided sources are irrelevant. (d) Low scenario: the question stays obscure, attracting <50 forecasters (avg <0.08). High scenario: it becomes a bot‑benchmarking target, drawing >500 forecasters (avg >0.77). Given the wide uncertainty, intervals are set broadly.
+[Tournament/shadow  ]   |    | 5. (median 0.21 forecasters (80% between 0.1 and 0.6)) This meta-question asks for the average daily forecaster count on itself over 648 days. Meta-questions on Metaculus typically attract modest interest—perhaps 50–400 total forecasters over two years—yielding daily averages of 0.08–0.62. Self-referential dynamics and bot participation could nudge totals higher, but long horizons dilute daily rates. Low participation (≈45 forecasters) gives ~0.07/day; high participation (≈400) gives ~0.62/day. The distribution is right-skewed with a long tail for viral attention.
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | **Sources**
+[Tournament/shadow  ]   |    | 
+[Tournament/shadow  ]   |    | - [S1] [Prediction market](https://en.wikipedia.org/w/index.php?oldid=1385984306) (wikipedia, revision of 2026-11-16)
+[Tournament/shadow  ]   |    | - [S2] [Bending Spoons](https://en.wikipedia.org/w/index.php?oldid=1387356714) (wikipedia, revision of 2026-11-23)
+[Tournament/shadow  ]   |    | - [S3] [Meta Platforms](https://en.wikipedia.org/w/index.php?oldid=1388197616) (wikipedia, revision of 2026-11-27)
+[Tournament/shadow  ]   |    stat arm (abstains): the series rule does not reach this title; blend: Augur unchanged (the series rule does not reach this title)
+[Tournament/shadow  ]   | {"cost_usd": 0.0, "event": "run finished", "failed": 0, "forecast": 4, "level": "info", "missed": 0, "run_id": "run_ba801b28d7544ab3b7e1", "skipped": 2, "timestamp": "2026-11-27T08:40:16.635056Z"}
+[Tournament/shadow  ]   | coverage: 6 listed; 4 forecast in time (0 submitted), 0 missed, 2 skipped, 0 failed; estimated cost $0.0000
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/46224/ over the cap of 4 questions per run
+[Tournament/shadow  ]   |   skipped: https://www.metaculus.com/questions/46223/ over the cap of 4 questions per run
+[Tournament/shadow  ]   | ledger: run.sqlite (run run_ba801b28d7544ab3b7e1)
+[Tournament/shadow  ]   ✅  Success - Main Forecast (shadow, never submitted) [9m29.727505193s]
+[Tournament/shadow  ] ⭐ Run Main Push Augur's forecasts to the ledger branch
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/6] user= workdir=
+[Tournament/shadow  ]   | no ledger branch on origin yet; starting one
+[Tournament/shadow  ]   | exported 236 rows to /tmp/tmp.8OHvoeeta0/ledger/shadow/2026-11-27/20261127T083046Z-1-1.jsonl (runs 1, questions 4, sources 17, source_uses 19, llm_calls 28, call_sources 114, forecasts 23, submissions 8, model_probes 1, model_switches 1, question_outcomes 6, reference_forecasts 5, schema_migrations 9)
+[Tournament/shadow  ]   | pushed shadow/2026-11-27/20261127T083046Z-1-1.jsonl to the ledger branch
+[Tournament/shadow  ]   ✅  Success - Main Push Augur's forecasts to the ledger branch [743.969495ms]
+[Tournament/shadow  ] ⭐ Run Main Template bot on the same questions (unpublished)
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/template] user= workdir=
+[Tournament/shadow  ]   | == augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite
+[Tournament/shadow  ]   | Warning: Model openrouter/anthropic/claude-haiku-5.5 does not support cost tracking.
+[Tournament/shadow  ]   | Warning: Model openrouter/nvidia/nemotron-3-ultra-550b-a55b:free does not support cost tracking.
+[Tournament/shadow  ]   | Warning: Model openrouter/anthropic/claude-opus-5.5 does not support cost tracking.
+[Tournament/shadow  ]   | Warning: Model openrouter/perplexity/sonar-pro does not support cost tracking.
+[Tournament/shadow  ]   | {"event": "baseline_recorded", "level": "info", "post_id": 43323, "question_id": 43325, "question_type": "numeric", "timestamp": "2026-11-27T08:41:44.634942Z"}
+[Tournament/shadow  ]   | {"event": "baseline_recorded", "level": "info", "post_id": 43327, "question_id": 43332, "question_type": "binary", "timestamp": "2026-11-27T08:43:11.686175Z"}
+[Tournament/shadow  ]   | {"event": "baseline_recorded", "level": "info", "post_id": 43321, "question_id": 43322, "question_type": "discrete", "timestamp": "2026-11-27T08:44:55.825877Z"}
+[Tournament/shadow  ]   | Encountered errors while predicting: ["ValidationError: 1 validation error for NumericDistribution\n  Value error, Some declared percentiles are far exceeding the bounds of the question. Lower bound: 0.095, upper bound: 0.805. Percentiles: [Percentile(percentile=0.9, value=3.0)] [type=value_error, input_value={'declared_percentiles': ...': 72, 'is_date': False}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"]
+[Tournament/shadow  ]   | {"event": "baseline_recorded", "level": "info", "post_id": 45517, "question_id": 45708, "question_type": "discrete", "timestamp": "2026-11-27T08:45:47.107176Z"}
+[Tournament/shadow  ]   | shadow template on 4 question(s)
+[Tournament/shadow  ]   | post 43323 (numeric): template CDF of 201 points; p10=-32.08, p20=-26.14, p40=-19.06, p60=-13.99, p80=-7.907, p90=-2.922
+[Tournament/shadow  ]   | post 43327 (binary): template 1.0%
+[Tournament/shadow  ]   | post 43321 (discrete): template CDF of 17 points; p10=-0.2965, p20=-0.09291, p40=0.3142, p60=1.051, p80=2.252, p90=4.492
+[Tournament/shadow  ]   | post 45517 (discrete): template CDF of 72 points; p10=0.095, p20=0.1217, p40=0.2816, p60=0.5014, p80=0.7503, p90=0.805
+[Tournament/shadow  ]   | ledger: run.sqlite: 4 recorded, 0 skipped, 0 failed
+[Tournament/shadow  ]   ✅  Success - Main Template bot on the same questions (unpublished) [5m30.691823332s]
+[Tournament/shadow  ] ⭐ Run Main Push the template's forecasts to the ledger branch
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/8] user= workdir=
+[Tournament/shadow  ]   | exported 240 rows to /tmp/tmp.R5b677kBil/ledger/shadow/2026-11-27/20261127T083046Z-1-1.jsonl (runs 1, questions 4, sources 17, source_uses 19, llm_calls 28, call_sources 114, forecasts 23, submissions 8, model_probes 1, model_switches 1, question_outcomes 6, reference_forecasts 9, schema_migrations 9)
+[Tournament/shadow  ]   | pushed shadow/2026-11-27/20261127T083046Z-1-1.jsonl to the ledger branch
+[Tournament/shadow  ]   ✅  Success - Main Push the template's forecasts to the ledger branch [282.886411ms]
+[Tournament/shadow  ] ⭐ Run Main Summary
+[Tournament/shadow  ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/11] user= workdir=
+[Tournament/shadow  ]   ✅  Success - Main Summary [72.620572ms]
+[Tournament/shadow  ]   ⚙  Summary - ### Shadow tick (schedule, forecast success, template success, reader skipped)
+```
+   | 5. (median 1 Officials (80% between 0 and 2)) With only 35 days until resolution and no public indications of imminent departures among the 15 officials, the base case is zero turnover. However, Trump’s first term showed unusually high volatility (92% cumulative senior turnover), and the new Democratic Congress may intensify oversight pressure on controversial figures like Hegseth, Bondi, and Patel. Turnover in such a short window is a low-probability, fat-tailed event: most likely none leave, but a single scandal or purge could trigger 1–3 exits, with cascading resignations possible but unlikely. Historical Year-2 turnover (~31% over 12 months) implies ~3% monthly risk per official, but cabinet-level roles are stickier. The …
+   | 
+   | **Sources**
+   | 
+   | - [S1] [Donald Trump](https://en.wikipedia.org/w/index.php?oldid=1388149996) (wikipedia, revision of 2026-11-26)
+   | - [S2] [List of dismissals and resignations in the first Trump administration](https://en.wikipedia.org/w/index.php?oldid=1387320122) (wikipedia, revision of 2026-11-23)
+   | - [S3] [2026 FAA nationwide ground stop](https://en.wikipedia.org/w/index.php?oldid=1387703402) (wikipedia, revision of 2026-11-25)
+   | - [S4] [Taylor Budowich](https://en.wikipedia.org/w/index.php?oldid=1386829456) (wikipedia, revision of 2026-11-20)
+   | - [S5] [Second presidency of Donald Trump](https://en.wikipedia.org/w/index.php?oldid=1388157787) (wikipedia, revision of 2026-11-26)
+   | - [S6] [Tariffs in the second Trump administration](https://en.wikipedia.org/w/index.php?oldid=1388056080) (wikipedia, revision of 2026-11-26)
+   stat arm (abstains): the series rule does not reach this title; blend: Augur unchanged (the series rule does not reach this title)
+
+== What will the average new forecasters per day be on this question before this question closes?
+   https://www.metaculus.com/questions/45517/ (discrete)
+   sources: 3 admitted, 0 rejected; members: median 0.28 forecasters (80% between 0.1 and 0.78) | median 0.19 forecasters (80% between 0.1 and 0.5) | median 0.27 forecasters (80% between 0.1 and 0.62) | median 0.2 forecasters (80% between 0.1 and 0.7) | median 0.21 forecasters (80% between 0.1 and 0.6)
+   combined: median 0.22 forecasters (80% between 0.1 and 0.64)
+   would POST /api/questions/forecast/ (dry run, not sent):
+   [{"question": 45708, "source": "api", "probability_yes": null, "probability_yes_per_category": null, "continuous_cdf": [0.1696499381, 0.1978333333, 0.2283888889, 0.2591666667, 0.2899444445, 0.3207222222, 0.3490238095, 0.3737380952, 0.3973412698, 0.4209444445, 0.4445476191, 0.4672619048, 0.4890873016, 0.5093162393, 0.527948718, 0.5465811966, 0.5633247863, 0.5781794872, 0.593034188, 0.6078888889, 0. …
+   would POST /api/comments/create/ as a private comment (dry run):
+   | **Forecast: median 0.22 forecasters (80% between 0.1 and 0.64)**, the average of the CDFs of 5 independent forecasts by nvidia/nemotron-3-ultra-550b-a55b:free.
+   | 
+   | **Research** (only sources dated at or before 2026-11-27 08:37 UTC):
+   | 
+   | The provided sources do not contain information relevant to forecasting activity on the specific Metaculus question. [S1] is a general Wikipedia article on prediction markets, describing their history and mechanics but not Metaculus or any particular question. [S2] covers Bending Spoons, an Italian technology conglomerate, its IPO, and acquisitions. [S3] details Meta Platforms’ corporate history and IPO. None of the sources mention Metaculus, the number of forecasters on any question, base rates for forecaster participation, or scheduled events related to the question’s open/close dates. Consequently, there is no factual basis in these sources to estimate the average new forecasters per day before the question closes on 2028-09-05.
+   | 
+   | **Each forecaster's reasoning**
+   | 
+   | 1. (median 0.28 forecasters (80% between 0.1 and 0.78)) (a) The question closes in 648 days (2028-09-05). The metric is total unique forecasters at close divided by the fixed number of days the question is open. (b) Without current forecaster data, we rely on base rates: typical Metaculus questions attract 50–300 forecasters over 1–2 years. This self-referential “bot-awareness” question may draw extra bot traffic but limited human interest. (c) No dedicated prediction market exists for this metric; Metaculus community expectations are unknown. (d) Low scenario: minimal participation (≈30 forecasters) → ~0.05/day. High scenario: becomes a popular bot benchmark (≈800 forecasters) → ~1.2/day. Given large uncertainty, intervals are set wide.
+   | 2. (median 0.19 forecasters (80% between 0.1 and 0.5)) This is a self-referential Metaculus question asking for its own average daily forecaster count over 648 days. Participation on meta-questions tends to be modest: most Metaculus questions attract 50–200 forecasters total over their lifetime, yielding 0.08–0.31 forecasters/day. This question’s novelty may draw some bot operators and curiosity forecasters, but it lacks broad appeal. I expect a right-skewed distribution with a median near 0.18/day, a long tail if it gets featured or discussed, and a non-trivial chance of very low participation.
+   | 3. (median 0.27 forecasters (80% between 0.1 and 0.62)) This is a meta-question forecasting participation on itself. With 648 days until close (2026-11-27 to 2028-09-05), accumulation will be slow initially. Metaculus questions vary widely: niche questions attract 50–150 forecasters total, popular ones 300+. This self-referential question may draw moderate bot/human curiosity but lacks external drivers. Base rate: typical meta-questions see ~100–250 forecasters over 1–2 years. At 100 forecasters: 0.15/day; at 200: 0.31/day; at 300: 0.46/day. Uncertainty is high—low outcome if bots ignore it and humans find it trivial; high outcome if it becomes a benchmark for bot calibration. Wide intervals reflect unknown unknowns.
+   | 4. (median 0.2 forecasters (80% between 0.1 and 0.7)) (a) The question closes in 648 days (2028-09-05). (b) With no current forecaster data, we cannot extrapolate a trend. Metaculus questions typically see an early surge then a slow trickle; a moderate total of 100–200 forecasters would yield 0.15–0.31 per day. (c) No expert forecasts or markets exist for this metric; the provided sources are irrelevant. (d) Low scenario: the question stays obscure, attracting <50 forecasters (avg <0.08). High scenario: it becomes a bot‑benchmarking target, drawing >500 forecasters (avg >0.77). Given the wide uncertainty, intervals are set broadly.
+   | 5. (median 0.21 forecasters (80% between 0.1 and 0.6)) This meta-question asks for the average daily forecaster count on itself over 648 days. Meta-questions on Metaculus typically attract modest interest—perhaps 50–400 total forecasters over two years—yielding daily averages of 0.08–0.62. Self-referential dynamics and bot participation could nudge totals higher, but long horizons dilute daily rates. Low participation (≈45 forecasters) gives ~0.07/day; high participation (≈400) gives ~0.62/day. The distribution is right-skewed with a long tail for viral attention.
+   | 
+   | **Sources**
+   | 
+   | - [S1] [Prediction market](https://en.wikipedia.org/w/index.php?oldid=1385984306) (wikipedia, revision of 2026-11-16)
+   | - [S2] [Bending Spoons](https://en.wikipedia.org/w/index.php?oldid=1387356714) (wikipedia, revision of 2026-11-23)
+   | - [S3] [Meta Platforms](https://en.wikipedia.org/w/index.php?oldid=1388197616) (wikipedia, revision of 2026-11-27)
+   stat arm (abstains): the series rule does not reach this title; blend: Augur unchanged (the series rule does not reach this title)
+{"cost_usd": 0.0, "event": "run finished", "failed": 0, "forecast": 4, "level": "info", "missed": 0, "run_id": "run_ba801b28d7544ab3b7e1", "skipped": 2, "timestamp": "2026-11-27T08:40:16.635056Z"}
+coverage: 6 listed; 4 forecast in time (0 submitted), 0 missed, 2 skipped, 0 failed; estimated cost $0.0000
+  skipped: https://www.metaculus.com/questions/46224/ over the cap of 4 questions per run
+  skipped: https://www.metaculus.com/questions/46223/ over the cap of 4 questions per run
+ledger: run.sqlite (run run_ba801b28d7544ab3b7e1)
+== augur baseline --ledger run.sqlite --shadow-ledger shadow.sqlite
+Warning: Model openrouter/anthropic/claude-haiku-5.5 does not support cost tracking.
+Warning: Model openrouter/nvidia/nemotron-3-ultra-550b-a55b:free does not support cost tracking.
+Warning: Model openrouter/anthropic/claude-opus-5.5 does not support cost tracking.
+Warning: Model openrouter/perplexity/sonar-pro does not support cost tracking.
+{"event": "baseline_recorded", "level": "info", "post_id": 43323, "question_id": 43325, "question_type": "numeric", "timestamp": "2026-11-27T08:41:44.634942Z"}
+{"event": "baseline_recorded", "level": "info", "post_id": 43327, "question_id": 43332, "question_type": "binary", "timestamp": "2026-11-27T08:43:11.686175Z"}
+{"event": "baseline_recorded", "level": "info", "post_id": 43321, "question_id": 43322, "question_type": "discrete", "timestamp": "2026-11-27T08:44:55.825877Z"}
+Encountered errors while predicting: ["ValidationError: 1 validation error for NumericDistribution\n  Value error, Some declared percentiles are far exceeding the bounds of the question. Lower bound: 0.095, upper bound: 0.805. Percentiles: [Percentile(percentile=0.9, value=3.0)] [type=value_error, input_value={'declared_percentiles': ...': 72, 'is_date': False}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.14/v/value_error"]
+{"event": "baseline_recorded", "level": "info", "post_id": 45517, "question_id": 45708, "question_type": "discrete", "timestamp": "2026-11-27T08:45:47.107176Z"}
+shadow template on 4 question(s)
+post 43323 (numeric): template CDF of 201 points; p10=-32.08, p20=-26.14, p40=-19.06, p60=-13.99, p80=-7.907, p90=-2.922
+post 43327 (binary): template 1.0%
+post 43321 (discrete): template CDF of 17 points; p10=-0.2965, p20=-0.09291, p40=0.3142, p60=1.051, p80=2.252, p90=4.492
+post 45517 (discrete): template CDF of 72 points; p10=0.095, p20=0.1217, p40=0.2816, p60=0.5014, p80=0.7503, p90=0.805
+ledger: run.sqlite: 4 recorded, 0 skipped, 0 failed
+```
+[Tournament/shadow  ] ⭐ Run Post astral-sh/setup-uv@v10.3.0
+[Tournament/shadow  ]   🐳  docker exec cmd=[/opt/acttoolcache/node/24.22.3/x64/bin/node /var/run/act/actions/astral-sh-setup-uv@v10.3.0/dist/save-cache/index.cjs] user= workdir=
+[Tournament/shadow  ]   | UV_CACHE_DIR is already set to /root/.cache/uv
+[Tournament/shadow  ]   | UV_PYTHON_INSTALL_DIR is already set to /root/.local/share/uv/python
+[Tournament/shadow  ]   | Including uv cache path: /root/.cache/uv
+[Tournament/shadow  ]   | [command]/usr/bin/tar --posix -cf cache.tzst --exclude cache.tzst -P -C /tmp/m17act/repo --files-from manifest.txt --use-compress-program zstdmt
+[Tournament/shadow  ]   | Cache Size: ~102 MB (106699207 B)
+[Tournament/shadow  ]   | Cache saved successfully
+[Tournament/shadow  ]   | uv cache saved with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-26.04-unknown-ae0dacfdadf6e1ea7e058e06b1584dd3ad40480ed51775161dd020485ddb5053
+[Tournament/shadow  ]   ✅  Success - Post astral-sh/setup-uv@v10.3.0 [1.601530421s]
+[Tournament/shadow  ] ⭐ Run Complete job
+[Tournament/shadow  ] Cleaning up container for job shadow
+[Tournament/shadow  ]   ✅  Success - Complete job
+[Tournament/shadow  ] 🏁  Job succeeded
+[Tournament/chain   ] ⭐ Run Set up job
+[Tournament/chain   ] 🚀  Start image=catthehacker/ubuntu:act-latest
+[Tournament/chain   ]   🐳  docker pull image=catthehacker/ubuntu:act-latest platform= username= forcePull=true
+[Tournament/chain   ] using DockerAuthConfig authentication for docker pull
+[Tournament/chain   ]   🐳  docker create image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/chain   ]   🐳  docker run image=catthehacker/ubuntu:act-latest platform= entrypoint=["tail" "-f" "/dev/null"] cmd=[] network="host"
+[Tournament/chain   ]   🐳  docker exec cmd=[node --no-warnings -e console.log(process.execPath)] user= workdir=
+[Tournament/chain   ]   ✅  Success - Set up job
+[Tournament/chain   ] ⭐ Run Main Wait, then dispatch the next run unless one is already waiting
+[Tournament/chain   ]   🐳  docker exec cmd=[bash -e /var/run/act/workflow/0] user= workdir=
+[Tournament/chain   ]   | under act: would wait 30 minutes, then dispatch the next run
+[Tournament/chain   ]   ✅  Success - Main Wait, then dispatch the next run unless one is already waiting [52.132948ms]
+[Tournament/chain   ] ⭐ Run Complete job
+[Tournament/chain   ] Cleaning up container for job chain
+[Tournament/chain   ]   ✅  Success - Complete job
+[Tournament/chain   ] 🏁  Job succeeded
+# act exit 0 after 942 s

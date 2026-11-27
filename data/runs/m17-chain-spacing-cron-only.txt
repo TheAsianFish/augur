@@ -1,0 +1,4 @@
+runs: 12; gaps: 11
+median gap 118.9 min; largest 649.7 min; smallest 47.3 min
+within 10 min of the 30-minute target: 0 of 11
+gaps (min): 47.3, 649.7, 107.6, 483.0, 47.5, 502.6, 118.9, 481.0, 59.8, 400.3, 58.4
