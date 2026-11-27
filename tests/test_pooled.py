@@ -297,3 +297,13 @@ def test_an_unregistered_round_gets_a_note(tmp_path: Path) -> None:
     ledger = _ledger(tmp_path / "l.sqlite", [Q(1, 0.8, 0.6)])
     report = pooled.pool([_snapshot([1], "bot-testing-area")], [ledger], clock=BEFORE)
     assert any("bot-testing-area is not one of the registered rounds" in x for x in report.lines())
+
+
+def test_a_futureeval_round_with_no_augur_forecast_says_why(tmp_path: Path) -> None:
+    ledger = _ledger(tmp_path / "l.sqlite", [Q(1, 0.8, 0.6)])
+    snaps = [_snapshot([1], "minibench-2026-11-30"), _snapshot([7, 8], "fall-futureeval-2026")]
+    lines = pooled.pool(snaps, [ledger], clock=BEFORE).lines()
+    notes = [x for x in lines if "holds no Augur forecast" in x]
+    assert len(notes) == 1
+    assert notes[0].startswith("  note: fall-futureeval-2026 ")
+    assert "polls MiniBench only" in notes[0]
