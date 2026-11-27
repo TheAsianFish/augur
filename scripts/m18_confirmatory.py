@@ -90,6 +90,42 @@ def build(raw: Path, extract: Path, fetched: str) -> dict[str, Any]:
     }
 
 
+GATE_SET = "2026-09-27"
+SOURCES = frozenset({"acled", "dbnomics", "fred", "wikipedia", "yfinance"})
+
+
+def gate(raw: Path, extract: Path) -> dict[str, Any]:
+    """P65's instances: the 2026-09-27 set's single-series ones resolving in the window."""
+    path = extract / f"{GATE_SET}.json"
+    held = {
+        (str(q["source"]), str(q["id"]))
+        for q in json.loads(path.read_text(encoding="utf-8"))["questions"]
+    }
+    qpath = raw / f"{GATE_SET}-llm.json"
+    doc = json.loads(qpath.read_text(encoding="utf-8"))
+    rows: list[dict[str, Any]] = []
+    left: list[dict[str, Any]] = []
+    for q in doc.get("questions", []):
+        src, qid = q.get("source"), q.get("id")
+        if src not in SOURCES or not isinstance(qid, str):
+            continue
+        for r in q.get("resolution_dates") or []:
+            day = str(r)[:10]
+            if FIRST_DAY <= day <= LAST_DAY:
+                row = {"source": src, "id": qid, "resolution_date": day}
+                (rows if (src, qid) in held else left).append(row)
+    key = lambda d: (d["source"], d["id"], d["resolution_date"])  # noqa: E731
+    return {
+        "question_set": GATE_SET,
+        "window": [FIRST_DAY, LAST_DAY],
+        "rule": "P65: the 2026-09-27 set's single-series instances of M15's sources resolving "
+        "in the window, on a question M15's committed extract holds; the rest left out",
+        "question_set_sha256": hashlib.sha256(qpath.read_bytes()).hexdigest(),
+        "instances": sorted(rows, key=key),
+        "left_out": sorted(left, key=key),
+    }
+
+
 def dumps(doc: dict[str, Any]) -> str:
     lines = ["{"]
     keys = sorted(doc)
@@ -115,7 +151,12 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("out", type=Path)
     parser.add_argument("--fetched", required=True)
     parser.add_argument("--extract", type=Path, default=Path("data/forecastbench/dataset"))
+    parser.add_argument("--gate", type=Path, help="also write P65's instance list here")
     args = parser.parse_args(argv)
+    if args.gate is not None:
+        g = gate(args.raw, args.extract)
+        args.gate.write_text(dumps(g), encoding="utf-8")
+        print(f"P65: {len(g['instances'])} instances, {len(g['left_out'])} left out")
     doc = build(args.raw, args.extract, args.fetched)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(dumps(doc), encoding="utf-8")
