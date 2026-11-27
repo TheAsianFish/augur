@@ -4,7 +4,9 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M16 sets the newer free model
+committed file differs from a fresh render. M17 makes the shadow round
+the scheduled workflow's default, with no repository variable to set and
+no path that can post. M16 sets the newer free model
 (`nemotron-3.5-super-vl`) against the current route on the same
 ForecastBench questions, forecast before their outcomes were published,
 under a route rule registered before any call. M15 forecasts ForecastBench's
@@ -37,6 +39,76 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M17: the shadow round on by default (2026-11-27, $0)
+
+Before M17 the shadow round (M11) ran only once a person set three
+repository variables, and nobody did: read from outside on 2026-11-25 and
+again on 2026-11-27, origin has no `ledger` branch and no dispatched run.
+M17 makes the shadow tick the default. One step at the start of the poll
+job (`scripts/run_mode.py`) decides the run's mode (`shadow`, `forecast` or
+`off`), the schedule the poll lists and the chain's minutes, and every
+later job reads those outputs. With no variable set, a scheduled or
+chained run on `main` is a MiniBench shadow tick chained every 30 minutes.
+A missing `METACULUS_TOKEN` or `OPENROUTER_API_KEY` is named, and the run
+exits 0 with no chained run after it. `AUGUR_SCHEDULE=off` or
+`AUGUR_SHADOW=false` turns the default off. The forecast job, the only
+place `--submit` appears, still needs both the `forecast` mode and its own
+`AUGUR_SUBMIT == 'true'` check. The test that enumerates every combination
+of event, branch and variable values (`tests/test_run_mode.py`, 1,120 runs
+against the workflow's own conditions, pinned to its text) finds no
+unattended run that posts unless `AUGUR_SUBMIT` is `true`. The fake-server
+test (`tests/test_shadow.py`) runs the default end to end: the mode step,
+the poll, a tick that posts nothing, then the poll and a second tick that
+skip everything the first one exported. No prediction is attached to this
+milestone; the floor rule, `m14-registration` and `m16-registration` are
+unchanged.
+
+### The workflow under `act`, no repository variable set
+
+`act` 0.2.98 (image `catthehacker/ubuntu:act-latest`) ran the real
+`tournament.yml` as a `schedule` event in a scratch clone on a branch named
+`main`, with no repository variable. A local bare repository stood in for
+the `ledger` branch's remote (`AUGUR_LEDGER_REMOTE`), and the two secrets
+came from the environment (`-s`). Under `act` the chain job prints what it
+would do instead of waiting 30 minutes, because there is no token to
+dispatch with. MiniBench had 0 open questions on 2026-11-27. So ticks B1
+to B3 ran from a scratch commit (`0df4891`, never pushed) that changes one
+line of `scripts/poll.py`, the tournament the default polls, to the
+bot-testing-area. Nothing else differs from the branch.
+
+| Tick (UTC start) | Setting | Mode step | Poll | Shadow job | Chain | Run |
+|------------------|---------|-----------|------|------------|-------|-----|
+| A1 (08:29) | none | shadow, minibench, chain 30 | 0 open | skipped (no work) | "would wait 30 minutes" | exit 0, 4 s |
+| A2 (08:30) | none | the same | 0 open | skipped | the same | exit 0, 3 s |
+| C (08:30) | none; `OPENROUTER_API_KEY` missing | off: "secret OPENROUTER_API_KEY missing" | not run | not run | not run (nothing dispatched) | exit 0, 1 s |
+| B1 (08:30) | none (bot-testing-area) | shadow, chain 30 | 6 open, 0 held | Augur forecast 4 (2 over the cap of 4), pushed; template recorded 4, pushed again | "would wait 30 minutes" | exit 0, 942 s (Augur 9 min 30 s, template 5 min 31 s) |
+| B2 (08:46) | none (bot-testing-area) | shadow, chain 30 | 6 open, 2 not held; about 88 free calls used today | skipped the 4 held as "already in the shadow ledger", forecast 2; template recorded 2 | "would wait 30 minutes" | exit 0, 562 s (4 min 45 s, 4 min 20 s) |
+| B3 (08:55) | none (bot-testing-area) | shadow, chain 30 | 6 open, 0 not held | skipped (no work) | "would wait 30 minutes" | exit 0, 3 s |
+| D (08:55) | `AUGUR_SHADOW=false` | off | not run | not run | not run | exit 0, 2 s |
+
+Rebuilt from the bare branch (`augur ledger import`), the shadow ledger
+holds 6 questions, each with Augur's aggregate, a template row and a
+`blend` row (1 with a `stat` row). Its 12 `submissions` rows are all
+`dry_run`, the payloads a post would have sent, and none was sent.
+`augur ledger check` finds 0 violations. Raw output:
+`data/runs/m17-act-{a1,a2,c-missing-secret,b1,b2,b3,d-shadow-false}.txt`.
+
+### The schedule on GitHub, read 2026-11-27 (no token, $0)
+
+Origin still has no `ledger` branch, and every one of the Tournament
+workflow's 43 runs (2026-11-19T13:38Z to 2026-11-27T04:21Z) is a `schedule`
+event, so the chain has never fired. On cron alone since 2026-11-25:
+`python3 scripts/chain_spacing.py data/runs/m17-tournament-runs-2026-11-27.json
+--since 2026-11-25T00:00:00Z --target 30` gives 11 gaps with a median of
+118.9 minutes, a largest of 649.7 and a smallest of 47.3, and 0 of 11
+within 10 minutes of the 30-minute target
+(`data/runs/m17-chain-spacing-cron-only.txt`). The first two ticks on
+GitHub, the chain's spacing, the round's coverage by day (`augur floor
+--by-day`, new in M17) and the `--candidate blend` reading do not exist
+yet. They are under To measure with their commands, read from the public
+`ledger` branch only. If the round is missed, its cause and count go
+there too.
 
 ## M16: a newer free reader on the same questions
 
@@ -3168,15 +3240,16 @@ works against the real API; they say nothing yet about accuracy.
 | What | Why not yet | Command |
 |------|-------------|---------|
 | M16's registered reading (route rule, P58 to P60 on the full sets) | Registered for 2027-01-11; on 2026-11-26 only 15 of the 2026-11-08 set's questions had resolved and the 2026-11-22 file did not exist | `make resolve-reader` whenever ForecastBench publishes or updates either file (it re-fetches, records the SHA-256 and upstream commit time, resolves both ledgers, re-renders); on 2027-01-11 the same, then `augur readers --live L` with the live ledger below, and the verdict in the block is the registered one |
-| M16's live arm on the 2026-12-14 round (P61) | The arm is off until the maintainer sets the repository variable, and the round opens about 2026-12-14 | Maintainer: set `AUGUR_SHADOW_READER=true` (with the shadow variables from M11; never `AUGUR_SUBMIT`). After the round resolves: `scripts/shadow_fetch.sh branch && augur ledger import branch/shadow --out data/ledgers/m16-live.sqlite`, `augur resolve --ledger data/ledgers/m16-live.sqlite` (or `--manual-file`), `augur readers --live data/ledgers/m16-live.sqlite`, and `augur score data/ledgers/m16-live.sqlite --mode dry_run --cluster week` (the `reader` and `reader-base` rows beside the others); P61's count: `sqlite3 data/ledgers/m16-live.sqlite "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'reader'"` against the floor's scored n |
+| M16's live arm on the 2026-12-14 round (P61) | The arm is off until the maintainer sets the repository variable, and the round opens about 2026-12-14 | Maintainer: set `AUGUR_SHADOW_READER=true` (the shadow ticks themselves need no variable since M17; never `AUGUR_SUBMIT`). After the round resolves: `scripts/shadow_fetch.sh branch && augur ledger import branch/shadow --out data/ledgers/m16-live.sqlite`, `augur resolve --ledger data/ledgers/m16-live.sqlite` (or `--manual-file`), `augur readers --live data/ledgers/m16-live.sqlite`, and `augur score data/ledgers/m16-live.sqlite --mode dry_run --cluster week` (the `reader` and `reader-base` rows beside the others); P61's count: `sqlite3 data/ledgers/m16-live.sqlite "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'reader'"` against the floor's scored n |
 | GitHub's push time of M16's registration (`5a6850f`) | No GitHub credentials on the build machine | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.ref == "refs/heads/dev/m16") \| [.timestamp, .after]'` (the earliest push containing the commit) |
 | GitHub's push time of M14's registration (`7469604`), against the 2026-11-30 round's first question | No GitHub credentials on the build machine (`git push` refused); the branch is published with the pull request | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.after == "7469604e7ef4d8295f36d6454ad7d10251fe16e9" or .ref == "refs/heads/dev/m14") \| [.timestamp, .activity_type, .ref, .after]'` (the earliest push containing the commit), and the round's first `open_time`: `augur standings --round minibench --out /tmp/mb.json` once the round is listed, then `python3 -c "import json; print(min(q['open_time'] for q in json.load(open('/tmp/mb.json'))['questions'] if q.get('open_time')))"` or the question pages; the registration counts only if the push is earlier |
 | M14's pooled Q1 analysis (P47 to P49) | Registered for 2027-01-11, after the 2026-12-14 round's last scheduled resolution; no shadow question exists yet | On 2027-01-11 (UTC): `scripts/shadow_fetch.sh branch && augur ledger import branch --out data/ledgers/m14-shadow-pooled.sqlite`; `augur standings --round R --out data/standings/R.json` for both rounds and `fall-futureeval-2026`; `augur resolve --ledger data/ledgers/m14-shadow-pooled.sqlite` (or `--manual-file`); then `augur floor --pooled --round R1 --round R2 --round fall-futureeval-2026 --ledger data/ledgers/m14-shadow-pooled.sqlite --json data/runs/m14-pooled.json`, beside `augur floor --round R --ledger data/ledgers/m14-shadow-pooled.sqlite --candidate blend` per round and `augur score data/ledgers/m14-shadow-pooled.sqlite --mode live --cluster week`; label it an unsubmitted shadow comparison on a below-floor model |
-| The first two-tick check on GitHub and the measured chain spacing (M14) | The shadow schedule is off and the chain has never fired (read 2026-11-25: no `ledger` branch, 0 dispatched runs) | Maintainer: set `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30` (never `AUGUR_SUBMIT`), then `gh workflow run tournament.yml -f shadow=true -f tournament=bot-testing-area -f max_questions=2` twice, the second after the first finishes. Then `scripts/shadow_fetch.sh /tmp/shadow` (the second tick's export lists none of the first tick's questions), and after a day of chained ticks `curl -s "https://api.github.com/repos/TheAsianFish/augur/actions/workflows/tournament.yml/runs?per_page=100" > runs.json && python3 scripts/chain_spacing.py runs.json --since START --target 30`; if most gaps are not within 10 minutes of 30, fix the chain before the round |
+| The 2026-11-30 round's coverage by day, and the registered candidate's floor reading (M17) | The round opens about 2026-11-30, after this milestone; no shadow tick exists on GitHub yet | From the public branch only, after each round day and again once the round closes: `bash scripts/shadow_fetch.sh branch && augur ledger import branch/shadow --out data/ledgers/m17-shadow-2026-11-30.sqlite`, `augur standings --round ROUND --out data/standings/ROUND.json` (snapshots written since M17 carry each question's `opens_at`), then `augur floor --round ROUND --ledger data/ledgers/m17-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json --by-day` (per UTC day: questions opened, and how many hold Augur, template, `stat` and `blend` rows). After resolution (`augur resolve --ledger L`, or `--manual-file` where the token is blind): `augur floor --round ROUND --ledger L --standings data/standings/ROUND.json --candidate blend`. If the round is missed, record the cause and the count of questions opened against held |
+| The first two-tick check on GitHub and the measured chain spacing (M14, M17) | Before M17 the shadow schedule waited on repository variables nobody set (read 2026-11-25 and 2026-11-27: no `ledger` branch, 0 dispatched runs); from M17's merge it is the default | Once M17 is on `main`, the next scheduled tick starts the chain (or `gh workflow run tournament.yml --ref main -f chained=true`). From the public branch only: `bash scripts/shadow_fetch.sh /tmp/shadow && ls /tmp/shadow/shadow/*/` (the first two ticks' exports; the second lists none of the first's questions), and after a day `curl -s "https://api.github.com/repos/TheAsianFish/augur/actions/workflows/tournament.yml/runs?per_page=100" > runs.json && python3 scripts/chain_spacing.py runs.json --since MERGE_TIME --target 30`; if most gaps are not within 10 minutes of 30, fix the chain before the 2026-12-14 round |
 | M12's live comparison: the primary candidate (`blend`) and the arm (`stat`) against Augur and the template on the 2026-11-30 round, P38's second half, P39 and P40 | The round opens about 2026-11-30; every shadow tick from M12's merge writes the `stat` and `blend` rows (on by default with `--shadow-ledger`) | After the round resolves, with the round's ledger and snapshot built as in the M11 row below: `augur floor --round ROUND --ledger L --standings data/standings/ROUND.json --candidate blend` (the registered candidate, if M12 merged before the round's first question opened; otherwise without `--candidate`, as M11 registered); `augur floor ... --candidate augur` beside it (reported); the `--candidate blend` run also prints P39 (the blend against Augur alone, the same 90% bootstrap); `augur score L --mode dry_run --cluster week` prints Augur against `stat`, `blend` and `template` at 95%; P38's count: `sqlite3 L "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'stat' AND detail LIKE 'series:%'"` |
 | Arm G through GDELT's DOC 2.0 API (full-text search, 90 days) rather than the local GKG title index | The API answered every request from the build machine with 429, a timeout or a dropped connection on 2026-11-23, -24 and -25 (one 200 in about 15 tries); the run used registration item 7's fallback | From an address GDELT does not refuse, with a fresh cache directory so no index answer is reused: `augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --sample 64 --retrieval open --searchers gdelt --add-to data/ledgers/m6-c2-open.sqlite --queries data/backtest/m6-c2-queries.json --gdelt-cache data/backtest/gdelt-cache-api --ledger data/ledgers/m13-c2-news-api.sqlite` (move the GKG index aside so the searcher cannot fall back), then the judge as in `make backtest-q2-news`; about 4 minutes of API pacing for 192 queries |
 | The series rule's five forecasts on the 2026-11-16 round, scored | Those questions resolve on 2026-11-26 and 2026-11-27; nothing was forecast or written for them (a coverage run, not a tick) | After 2026-11-27: read each close from the question page and score the committed percentiles in `data/statarm/m12-coverage-minibench-2026-11-16.json` (or re-run the arm in a dry-run ledger and `augur resolve --manual POST VALUE --evidence URL`); five questions, so a reading, not a test |
-| The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; the schedule runs it once the maintainer sets the repository variables (PR M11) | Unattended: `AUGUR_SCHEDULE=minibench`, `AUGUR_SHADOW=true`, `AUGUR_CHAIN_MINUTES=30`. After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur standings --round ROUND --out data/standings/ROUND.json`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
+| The 2026-11-30 shadow round, its resolution and the floor verdict (Q1, M11) | The round opens about 2026-11-30; since M17 the schedule runs it with no repository variable | Unattended once M17 is on `main` (never set `AUGUR_SUBMIT`). After the round resolves: `git fetch origin ledger && git archive FETCH_HEAD shadow \| tar -x -C branch && augur ledger import branch/shadow --out data/ledgers/m11-shadow-2026-11-30.sqlite`; `augur standings --round ROUND --out data/standings/ROUND.json`; `augur resolve --ledger data/ledgers/m11-shadow-2026-11-30.sqlite` (or `--manual-file round.csv --standings data/standings/ROUND.json` where the token is blind); `augur floor --round ROUND --ledger data/ledgers/m11-shadow-2026-11-30.sqlite --standings data/standings/ROUND.json`; `augur score data/ledgers/m11-shadow-2026-11-30.sqlite --mode dry_run --cluster week` |
 | The season's final ranks and any prize (Q5) | Fall FutureEval and the last MiniBench rounds are still open on 2026-11-23, and Augur has no scored forecast in any of them | Nothing to run by hand: the `Standings` workflow re-reads them daily onto the `ledger` branch; to render one here, `augur standings --round SLUG --out data/standings/SLUG.json && make results` |
 | Publishing 0.1.0 to PyPI and the first real run of the publish job | Publishing is the maintainer's step (trusted publisher, `pypi` environment) | RELEASE.md, "Releasing 0.1.0": `gh workflow run release.yml -f dry_run=true`, then `git tag v0.1.0 && git push origin v0.1.0` |
 | The release and standings workflows on GitHub itself | No GitHub credentials here; both ran under `act` or step by step locally (`data/runs/m10-standings-step.txt`) | `gh workflow run release.yml -f dry_run=true`; `gh workflow run standings.yml` and check `standings/` on the `ledger` branch |
@@ -3192,7 +3265,7 @@ works against the real API; they say nothing yet about accuracy.
 | Augur against the same-model shadow template and the community prediction on resolved live questions (Q1) | No live MiniBench forecast yet (the floor), and a bot token sees no resolution on scored tournaments | After each forecast run: `uv sync --extra baseline && augur baseline --ledger L` (same model as Augur, AskNews keys set so the template searches as it does on the leaderboard); after resolution: `augur resolve --ledger L` (or `--manual POST VALUE --evidence URL` read from the question page), then `augur score L data/ledgers/m4-shadow-template.sqlite --mode live --cluster week` |
 | Augur's score beside Metaculus's own for one resolved question of each type | The API hides resolutions and scores from this bot account (0 of 80) | `augur resolve` records `my_forecasts.score_data` whenever the API returns it, and `augur score` prints each `check` line; with a personal (non-bot) token, `python3 scripts/resolution_visibility.py` first shows whether that account sees them |
 | The ForecastBench number with five draws, as the pipeline runs live | About 15 hours of CPU on 4 cores (five times the measured 3.1 h) | `AUGUR_FORECASTERS=5 make backtest FB_LEDGER=data/ledgers/m4-forecastbench-qwen-5.sqlite`, then `make results` after adding the ledger to the report |
-| The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token | `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f push_ledger=true`, then check the `ledger` branch; set `AUGUR_CHAIN_MINUTES=60` once public and check that consecutive runs are about 60 min apart |
+| The ledger-branch push and the dispatch chain on GitHub | Need the repository's own token; since M17 the chain runs by default in shadow mode (30 minutes) | Read from outside, as in the M14/M17 row above: `scripts/shadow_fetch.sh` for the branch and `scripts/chain_spacing.py` for the spacing |
 | The replay evaluation (arms b and d on C2) on the frontier model the floor requires live | Nothing paid without the maintainer's say-so; C2 ran on the free model that answered live in M3 | `AUGUR_FORECAST_MODELS=openrouter:openai/gpt-5.4@high AUGUR_FORECASTERS=3 augur backtest forecastbench --questions data/forecastbench/2026-06-21-llm.subset.json --resolutions data/forecastbench/2026-06-21_resolution_set.subset.json --ledger data/ledgers/m5-replay-c2-gpt54.sqlite`, then the same with `--prices data/ledgers/m5-replay-c2-prices.sqlite` (into a copy of that ledger). C2's free run used 430,222 input and 727,642 output tokens over 717 draws: about $12 at GPT-5.4's listed $2.50/$15 per million, more at high effort. The listing date (2026-03) is before the 2026-06-11 freeze, so the gate admits it |
 | Research depth, and the similar-market (search) half of the markets searcher, on replayed live research (C3) | No live question with an Augur forecast has resolved (C3 = 0); C1 and C2 have no retrieval, and their price is exact by construction | Once live questions resolve: `augur resolve --ledger L` (or `--manual`), then the replay arms on the ledger's recorded sources (M7's harness) |
 | The judge against labels made by hand (P9 as planned) | The 40 labels in `data/judge/m6-reference-labels.json` are a second, blind model rating; no one has yet scored them by hand | `uv run python scripts/judge_sample.py --per-arm 20 --sheet sheet.md --out /tmp/labels.json` (the same 40 sources, in the same order), score each by hand on the rubric in `augur/judge.py` by filling `score` in `/tmp/labels.json` (the sheet shows neither the judge's scores nor the provisional rating), then `uv run python scripts/apply_hand_labels.py /tmp/labels.json --rater NAME` (refuses a different sample or a missing or out-of-range score; sets `by_hand`, which is what lets P9 read held or failed) and `make results`; free; about half an hour. A model cannot stand in: its scores are another model's rating, which P9 does not test |

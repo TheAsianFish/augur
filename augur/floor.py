@@ -419,10 +419,18 @@ def add_parser(subparsers: Any) -> None:
         help="whose forecast faces the template: Augur's aggregate (M11's item 1, the "
         "default) or blend, M12's registered primary candidate (the ledger's blend rows)",
     )
+    p.add_argument(
+        "--by-day",
+        action="store_true",
+        help="M17: the round's questions by the UTC day they opened, against the questions "
+        "the ledgers hold Augur, template, stat and blend rows for; a count, never a verdict",
+    )
     p.add_argument("--json", type=Path, metavar="OUT", help="also write the numbers as JSON")
 
 
 def main(args: argparse.Namespace) -> int:
+    if args.pooled and getattr(args, "by_day", False):
+        raise AugurError("--by-day reads one round; give it without --pooled")
     if args.pooled:
         from augur import pooled
 
@@ -442,6 +450,12 @@ def main(args: argparse.Namespace) -> int:
             f"{path} is the snapshot of {snapshot.round.slug}, not {slug}; give the "
             "round's own snapshot with --standings"
         )
+    if getattr(args, "by_day", False):
+        from augur import roundcov
+
+        for line in roundcov.lines(snapshot, args.ledger):
+            print(line)
+        return 0
     result = decide(snapshot, args.ledger, args.candidate)
     for line in result.lines():
         print(line)

@@ -1,6 +1,6 @@
 # Augur
 
-**Status: 0.1.0, release candidate; M1 to M16 built.** Fall 2026 was the shakedown season: the bot
+**Status: 0.1.0, release candidate; M1 to M17 built.** Fall 2026 was the shakedown season: the bot
 posted no scored forecast, because the submit floor admits only frontier-tier models and
 no billed model was called (the key's spend was never approved), and the [postmortem](docs/postmortem-fall-2026.md) says
 what the backtests found instead. The 2026-11-30 MiniBench round runs as
@@ -116,8 +116,13 @@ same free model can be measured without posting anything. A shadow tick
 forecasts every open question unpublished, runs the real template bot on
 the same questions with the same route, and pushes the tick's ledger to
 the `ledger` branch after each; the next tick skips what that branch
-already holds. `AUGUR_SHADOW=true` puts the scheduled workflow in this mode,
-and no path in it can pass `--submit`.
+already holds. Since M17 this is the scheduled workflow's default: with no
+repository variable set, every scheduled or chained tick on `main` is a
+MiniBench shadow tick, chained every 30 minutes, decided once per run by
+`scripts/run_mode.py`. A missing secret is named and stops the run and the
+chain; `AUGUR_SCHEDULE=off` or `AUGUR_SHADOW=false` turns it off. No path in
+shadow mode can pass `--submit`, and only `AUGUR_SUBMIT=true`, which must
+not be set while the floor stands, makes a scheduled run post.
 
 ```sh
 uv sync --extra baseline                                 # the template bot (forecasting-tools)
@@ -360,7 +365,7 @@ way, every apparent gain disappeared into its control.
 | Aggregation | Binary: median of 5 draws. Multiple choice: per-option median, renormalised. Numeric and discrete: the mean of the members' CDFs | Mean; median of each percentile | The median is robust to one wild draw. A mixture of valid CDFs is valid by construction and keeps the members' disagreement as spread instead of inventing a confident consensus. M7 measured the alternatives on nine draws: trimmed mean and mean of log-odds tie with the median, extremizing loses 0.027 Brier, so the median stays. |
 | Percentiles to a CDF | Linear between six stated percentiles in Metaculus's unscaled space, exponential tails, isotonic repair of a non-monotone answer, then the least uniform mixing that clears the server's minimum step | Asking the model for 201 numbers; a parametric fit | The server's rules are hard constraints (minimum and maximum step, exact or open ends); building to them, and checking against an independent transliteration in the fake server, means no live forecast is rejected. |
 | Deadlines | Each question stops at its close less 5 minutes (never past the run's own deadline); draws still running are cancelled and charged the worst case; the finished ones are posted | One timeout for the whole run | A MiniBench question is open for 3 hours; a forecast posted after close scores nothing, and a cancelled request may still be billed. |
-| Schedule | Cron every 90 min on two offset lines, plus a self-dispatch chain (`AUGUR_CHAIN_MINUTES`) once public | Cron every 20 to 30 min, as many bots use | Measured: GitHub dropped about 95% of short-interval ticks on public bot repositories, and every 30 min would bill more than the shared allowance while private. A `workflow_dispatch` from the job's own token is not subject to the scheduler. |
+| Schedule | Cron every 90 min on two offset lines, plus a self-dispatch chain (30 minutes by default in shadow mode, `AUGUR_CHAIN_MINUTES` to change it) on a public repository | Cron every 20 to 30 min, as many bots use | Measured: GitHub dropped about 95% of short-interval ticks on public bot repositories, and every 30 min would bill more than the shared allowance while private. A `workflow_dispatch` from the job's own token is not subject to the scheduler. |
 | Market prices | The market's own API as of the cutoff (Manifold's last bet, Polymarket's last history point, Kalshi's last candle), filtered client-side too; dated by that trade or point | ForecastBench's published freeze value; today's price | A price is a source like any other and must pass the leakage gate. ForecastBench's own value sometimes matches a price from hours after the freeze (M5). |
 | Using a price | Shown to the model as a source; blended (⅓ Augur, ⅔ price in log-odds, a weight fixed in advance) only with the question's own community prediction | Blending any similar market; fitting the weight | A searched market may ask something different. A fitted weight on 101 questions would be tuned to them. Both turned on only because rules stated before the run held. |
 | Live record | Each scheduled run pushes its ledger as JSONL to a `ledger` branch, one new file per run | Actions artifacts | Artifacts expire; M5's replay evaluation needs every live source forever. |
@@ -493,7 +498,7 @@ be submitted; M12 (done) a forecast with no model in it and one registered blend
 backtest, and the same-model agent-against-template pairs in FutureEval; M14 (done) a pooled analysis of the shadow
 rounds, registered before the first one opens; M15 (done) ForecastBench's dataset questions with no model, against the
 leaderboard's own baselines on the same instances; M16 (done) a newer free model on the same questions, under a rule
-for choosing the default route (its registered reading is 2027-01-11); M17 the shadow round on by
+for choosing the default route (its registered reading is 2027-01-11); M17 (done) the shadow round on by
 default, with no repository variable to set; M18 a day-of-year arm for temperature series, judged on
 outcomes that do not exist yet; M19 what a reading taken from the first questions to resolve costs.
 Details in [PLAN.md](PLAN.md).

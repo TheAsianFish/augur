@@ -27,9 +27,9 @@ permissions:
 
 jobs:
   standings:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      vars.AUGUR_SCHEDULE == 'minibench' || vars.AUGUR_SCHEDULE == 'all'
+    # On by default like the shadow schedule (M17): the floor rule reads these
+    # snapshots. AUGUR_SCHEDULE=off stops it.
+    if: github.event_name == 'workflow_dispatch' || vars.AUGUR_SCHEDULE != 'off'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

@@ -1,19 +1,27 @@
 name: Tournament
 
-# A cheap standard-library poll first; the forecast job (install, models,
-# Metaculus) runs only when an open question has not been forecast yet.
-# Repository variables: AUGUR_SCHEDULE (off | minibench | all; unset = off),
-# AUGUR_SUBMIT ('true' to post from scheduled runs; scheduled and chained runs
-# forecast only when it is set, since a dry run posts nothing, so every later
-# tick would forecast the same questions again; dry runs are manual dispatches),
-# AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS, AUGUR_MAX_QUESTIONS_PER_RUN,
-# AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the fallback trigger below; unset = off),
-# AUGUR_FUTUREEVAL (the FutureEval project id; default 33121, Fall 2026),
-# AUGUR_SHADOW ('true': scheduled ticks run the shadow job below instead of the
-# forecast job), AUGUR_SHADOW_MODELS (the shadow route; default the free nemotron),
-# AUGUR_SHADOW_DAILY_CALLS (the free calls a day the poll budgets; default 1000),
-# AUGUR_SHADOW_MAX_QUESTIONS (questions a shadow tick takes; default 4),
-# AUGUR_SHADOW_READER ('true': M16's newer free reader runs last in each shadow tick).
+# One decision per run (M17): the poll job's first step (scripts/run_mode.py)
+# computes the run's mode, shadow, forecast or off, and every later job reads
+# that output instead of re-reading repository variables.
+#
+# The default needs no repository variable: a scheduled or chained run on main is
+# a MiniBench shadow tick whenever the METACULUS_TOKEN and OPENROUTER_API_KEY
+# secrets exist and AUGUR_SUBMIT is not 'true', chained every 30 minutes on a
+# public repository. A missing secret is named in the poll's log, the run exits 0
+# and no chained run follows. Never set AUGUR_SUBMIT unless the submit floor is met.
+#
+# Repository variables, all optional: AUGUR_SCHEDULE (off | minibench | all;
+# unset = minibench; off is the kill switch), AUGUR_SHADOW ('false' turns the
+# shadow default off; 'true' keeps shadow mode even beside AUGUR_SUBMIT),
+# AUGUR_SUBMIT ('true' to post from scheduled runs: the forecast job instead of
+# the shadow job), AUGUR_FORECAST_MODELS, AUGUR_RESEARCH_MODELS,
+# AUGUR_MAX_QUESTIONS_PER_RUN, AUGUR_MAX_COST_PER_RUN, AUGUR_CHAIN_MINUTES (the
+# fallback trigger below; unset = 30 in shadow mode, off otherwise), AUGUR_FUTUREEVAL
+# (the FutureEval project id; default 33121, Fall 2026), AUGUR_SHADOW_MODELS (the
+# shadow route; default the free nemotron), AUGUR_SHADOW_DAILY_CALLS (the free
+# calls a day the poll budgets; default 1000), AUGUR_SHADOW_MAX_QUESTIONS
+# (questions a shadow tick takes; default 4), AUGUR_SHADOW_READER ('true': M16's
+# newer free reader runs last in each shadow tick; off unless set).
 #
 # Shadow mode (M11): Augur and Metaculus's template bot forecast the same open
 # questions on the same free model, and nothing is posted: no step of the shadow
@@ -24,13 +32,11 @@ name: Tournament
 # after the template's (and after the reader's, when it runs), so a timeout loses neither.
 #
 # Cadence (RESULTS.md M3): every 90 minutes on two offset lines, which caught
-# 99.25% of 3-hour MiniBench windows in simulation against the measured delays,
-# for about 979 billed minutes a month while the repository is private. GitHub's
-# scheduler was measured to drop most ticks on public bot repositories (median
-# 6 h between scheduled runs), so the cron cannot be the only trigger: with
-# AUGUR_CHAIN_MINUTES set, each run on main dispatches the next one itself after
-# that many minutes. Turn it on once the repository is public (its minutes are
-# then free); the cron restarts the chain if it ever breaks.
+# 99.25% of 3-hour MiniBench windows in simulation against the measured delays.
+# GitHub's scheduler was measured to drop most ticks on public bot repositories
+# (median 6 h between scheduled runs; M14: 220 min), so the cron cannot be the
+# only trigger: each run on main that the mode allows dispatches the next one
+# itself after the chain's minutes. The cron restarts the chain if it ever breaks.
 
 on:
   schedule:
@@ -76,32 +82,48 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      chain_minutes: ${{ steps.mode.outputs.chain_minutes }}
       has_work: ${{ steps.poll.outputs.has_work }}
       tournaments: ${{ steps.poll.outputs.tournaments }}
-      shadow: ${{ env.AUGUR_SHADOW }}
-    env:
-      # A manual run is a shadow tick when asked; scheduled and chained runs follow the variable.
-      AUGUR_SHADOW: ${{ ((github.event_name == 'workflow_dispatch' && !inputs.chained) && inputs.shadow || (!(github.event_name == 'workflow_dispatch' && !inputs.chained) && vars.AUGUR_SHADOW == 'true')) && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: |
             scripts/poll.py
+            scripts/run_mode.py
             scripts/shadow_fetch.sh
           sparse-checkout-cone-mode: false
+      - name: Decide this run's mode
+        id: mode
+        env:
+          EVENT: ${{ github.event_name }}
+          CHAINED: ${{ inputs.chained }}
+          INPUT_SHADOW: ${{ inputs.shadow }}
+          REF: ${{ github.ref }}
+          REPO_PRIVATE: ${{ github.event.repository.private }}
+          AUGUR_SCHEDULE: ${{ vars.AUGUR_SCHEDULE }}
+          AUGUR_SHADOW: ${{ vars.AUGUR_SHADOW }}
+          AUGUR_SUBMIT: ${{ vars.AUGUR_SUBMIT }}
+          AUGUR_CHAIN_MINUTES: ${{ vars.AUGUR_CHAIN_MINUTES }}
+          # Read for presence only; run_mode.py never prints a value.
+          METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python3 scripts/run_mode.py
       - name: Read the shadow ledger from the ledger branch
-        if: env.AUGUR_SHADOW == 'true'
+        if: steps.mode.outputs.mode == 'shadow'
         run: bash scripts/shadow_fetch.sh shadow-ledger
       - name: Poll for open questions not yet forecast
         id: poll
+        if: steps.mode.outputs.mode != 'off'
         env:
+          AUGUR_SHADOW: ${{ steps.mode.outputs.mode == 'shadow' }}
           AUGUR_SHADOW_LEDGER: shadow-ledger/shadow
           AUGUR_SHADOW_DAILY_CALLS: ${{ vars.AUGUR_SHADOW_DAILY_CALLS }}
-          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained && inputs.max_questions) || (env.AUGUR_SHADOW == 'true' && (vars.AUGUR_SHADOW_MAX_QUESTIONS || '4')) || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
+          AUGUR_MAX_QUESTIONS_PER_RUN: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained && inputs.max_questions) || (steps.mode.outputs.mode == 'shadow' && (vars.AUGUR_SHADOW_MAX_QUESTIONS || '4')) || vars.AUGUR_MAX_QUESTIONS_PER_RUN || '6' }}
           METACULUS_TOKEN: ${{ secrets.METACULUS_TOKEN }}
-          # Scheduled runs obey the variable (unset or 'off' is the kill switch);
-          # a manual run polls the tournament it was asked for.
-          AUGUR_SCHEDULE: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && 'all' || vars.AUGUR_SCHEDULE || 'off' }}
+          # The mode step resolved the schedule: a manual run polls the tournament it was asked for.
+          AUGUR_SCHEDULE: ${{ steps.mode.outputs.schedule }}
           AUGUR_POLL_TOURNAMENTS: ${{ (github.event_name == 'workflow_dispatch' && !inputs.chained) && (inputs.tournament == 'futureeval' && (vars.AUGUR_FUTUREEVAL || '33121') || inputs.tournament) || '' }}
           # The FutureEval project 'all' polls: 33121 is Fall 2026; set the Spring 2027 id.
           AUGUR_FUTUREEVAL: ${{ vars.AUGUR_FUTUREEVAL }}
@@ -112,10 +134,11 @@ jobs:
     # A scheduled dry run would never leave a forecast on Metaculus, so the
     # poll would find the same questions on every tick and bill a forecast job
     # each time: scheduled and chained runs forecast only when they post.
-    # Shadow mode is checked twice: the poll's output, and for scheduled and chained
-    # runs the variable itself, so an empty output can never fall through to posting.
+    # Two conditions stand between the default and a post: the poll's mode must be
+    # 'forecast' (an empty or unexpected output matches nothing), and a scheduled or
+    # chained run must also see AUGUR_SUBMIT itself, independently of the mode step.
     if: >-
-      needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow == 'false' &&
+      needs.poll.outputs.has_work == 'true' && needs.poll.outputs.mode == 'forecast' &&
       ((github.event_name == 'workflow_dispatch' && !inputs.chained && !inputs.shadow) ||
        (vars.AUGUR_SUBMIT == 'true' && vars.AUGUR_SHADOW != 'true'))
     runs-on: ubuntu-latest
@@ -196,7 +219,7 @@ jobs:
   # AUGUR_SHADOW_READER variable) comes last and stops starting questions at 8.
   shadow:
     needs: poll
-    if: needs.poll.outputs.has_work == 'true' && needs.poll.outputs.shadow == 'true'
+    if: needs.poll.outputs.has_work == 'true' && needs.poll.outputs.mode == 'shadow'
     runs-on: ubuntu-latest
     timeout-minutes: 56
     permissions:
@@ -311,16 +334,18 @@ jobs:
           echo "the forecast or template step failed; its output is in the step summary"
           exit 1
 
-  # The fallback trigger: GitHub's scheduler drops most ticks (RESULTS.md M3),
+  # The fallback trigger: GitHub's scheduler drops most ticks (RESULTS.md M3, M14),
   # but a workflow_dispatch sent with the job's own token always starts a run.
-  # At most one chain: nothing is dispatched while another run is queued.
-  # Never on a private repository, where the wait would bill all day.
+  # The poll's mode step sets the minutes (30 in shadow mode unless
+  # AUGUR_CHAIN_MINUTES says otherwise) and leaves them empty on an off schedule, a
+  # missing secret, a manual run, a branch other than main or a private repository,
+  # so no chained run follows those. At most one chain: nothing is dispatched while
+  # another run is queued.
   chain:
     needs: [poll, forecast, shadow]
     if: >-
-      always() && vars.AUGUR_CHAIN_MINUTES != '' &&
-      github.event.repository.private == false &&
-      (vars.AUGUR_SCHEDULE == 'minibench' || vars.AUGUR_SCHEDULE == 'all') &&
+      always() && needs.poll.outputs.chain_minutes != '' &&
+      github.event.repository.private != true &&
       github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.chained)
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -328,12 +353,21 @@ jobs:
       actions: write
     env:
       GH_TOKEN: ${{ github.token }}
-      MINUTES: ${{ vars.AUGUR_CHAIN_MINUTES }}
+      MINUTES: ${{ needs.poll.outputs.chain_minutes }}
     steps:
       - name: Wait, then dispatch the next run unless one is already waiting
         run: |
           case "$MINUTES" in ''|*[!0-9]*) echo "AUGUR_CHAIN_MINUTES must be whole minutes"; exit 1 ;; esac
           if [ "$MINUTES" -lt 10 ] || [ "$MINUTES" -gt 110 ]; then echo "AUGUR_CHAIN_MINUTES must be 10 to 110"; exit 1; fi
+          if [ "${ACT:-}" = "true" ]; then
+            # Local rehearsal (nektos/act): no token can dispatch, and nobody waits.
+            echo "under act: would wait $MINUTES minutes, then dispatch the next run"
+            exit 0
+          fi
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" != "false" ]; then
+            echo "the repository is not public (or its visibility is unknown): no chained run"
+            exit 0
+          fi
           sleep $((MINUTES * 60))
           # A run held by the concurrency group is "pending"; one not yet started is "queued".
           for status in queued pending waiting; do

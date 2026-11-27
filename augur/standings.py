@@ -113,6 +113,7 @@ class RoundQuestion(Model):
     status: str
     type: str | None = None
     closes_at: str | None = None
+    opens_at: str | None = None
 
 
 class RoundInfo(Model):
@@ -161,6 +162,7 @@ def questions_from_posts(posts: Iterable[dict[str, Any]]) -> list[RoundQuestion]
                 status=str(post.get("status") or ""),
                 type=q.get("type") if isinstance(q.get("type"), str) else None,
                 closes_at=post.get("scheduled_close_time") or q.get("scheduled_close_time"),
+                opens_at=post.get("open_time") or q.get("open_time"),
             )
         )
     return sorted(out, key=lambda r: r.post_id)

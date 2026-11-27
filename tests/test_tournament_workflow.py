@@ -34,10 +34,42 @@ def test_the_shadow_job_never_passes_submit_or_reads_the_submit_switch() -> None
 
 def test_shadow_and_forecast_jobs_never_both_run() -> None:
     jobs = _jobs()
-    assert "needs.poll.outputs.shadow == 'false'" in jobs["forecast"]
+    assert "needs.poll.outputs.mode == 'forecast'" in jobs["forecast"]
     assert "vars.AUGUR_SHADOW != 'true'" in jobs["forecast"]
+    assert "vars.AUGUR_SUBMIT == 'true'" in jobs["forecast"]
     assert "!inputs.shadow" in jobs["forecast"]
-    assert "needs.poll.outputs.shadow == 'true'" in jobs["shadow"]
+    assert "needs.poll.outputs.mode == 'shadow'" in jobs["shadow"]
+
+
+def test_the_mode_is_decided_once_in_the_poll_job_and_read_by_every_later_job() -> None:
+    jobs = _jobs()
+    poll = jobs["poll"]
+    steps = re.split(r"^      - ", poll, flags=re.M)
+    names = [s.split("\n", 1)[0] for s in steps]
+    mode = next(i for i, n in enumerate(names) if n == "name: Decide this run's mode")
+    fetch = next(i for i, n in enumerate(names) if "shadow ledger" in n)
+    polled = next(i for i, n in enumerate(names) if n.startswith("name: Poll"))
+    assert mode < fetch < polled
+    assert "python3 scripts/run_mode.py" in steps[mode]
+    assert "if: steps.mode.outputs.mode == 'shadow'" in steps[fetch]
+    assert "if: steps.mode.outputs.mode != 'off'" in steps[polled]
+    assert "mode: ${{ steps.mode.outputs.mode }}" in poll
+    assert "chain_minutes: ${{ steps.mode.outputs.chain_minutes }}" in poll
+    # Only the mode step reads the switches that pick a job; no later job re-derives the mode.
+    for name in ("shadow", "chain"):
+        assert "vars.AUGUR_SHADOW " not in jobs[name]
+        assert "vars.AUGUR_SCHEDULE" not in jobs[name]
+    assert "vars.AUGUR_CHAIN_MINUTES" not in jobs["chain"]
+
+
+def test_the_chain_follows_only_a_poll_that_set_its_minutes() -> None:
+    chain = _jobs()["chain"]
+    assert "needs.poll.outputs.chain_minutes != ''" in chain
+    assert "MINUTES: ${{ needs.poll.outputs.chain_minutes }}" in chain
+    assert "github.ref == 'refs/heads/main'" in chain
+    assert "github.event.repository.private != true" in chain
+    # The visibility is checked again from the API before the wait, then the dispatch.
+    assert chain.index("--jq .private") < chain.index("sleep") < chain.index("gh workflow run")
 
 
 def test_the_shadow_job_pushes_after_each_contestant_whatever_happened() -> None:
@@ -91,8 +123,8 @@ def test_the_shadow_job_installs_the_template_and_uses_the_free_route() -> None:
 def test_the_poll_reads_the_shadow_ledger_only_in_shadow_mode() -> None:
     poll = _jobs()["poll"]
     assert "scripts/shadow_fetch.sh" in poll
-    assert "if: env.AUGUR_SHADOW == 'true'" in poll
-    assert "vars.AUGUR_SHADOW == 'true'" in poll
+    assert "AUGUR_SHADOW: ${{ steps.mode.outputs.mode == 'shadow' }}" in poll
+    assert "AUGUR_SCHEDULE: ${{ steps.mode.outputs.schedule }}" in poll
 
 
 def test_every_job_has_a_timeout() -> None:

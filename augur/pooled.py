@@ -208,6 +208,13 @@ class PooledReport:
             for r in self.rounds
             if not registered_round(r.round)
         )
+        out.extend(
+            f"  note: {r.round} holds no Augur forecast: the default shadow schedule (M17) "
+            "polls MiniBench only, so this round adds zero questions unless "
+            "AUGUR_SCHEDULE=all"
+            for r in self.rounds
+            if r.round in REGISTERED_ROUNDS and r.augur == 0
+        )
         if self.duplicates:
             out.append(f"  {self.duplicates} posts appear in more than one snapshot; counted once")
         for arm, role in ((self.primary, "primary"), (self.secondary, "secondary")):
