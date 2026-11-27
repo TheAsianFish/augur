@@ -2195,6 +2195,255 @@ skip.
 - *M15.* The follow-up also opens if the arm is no worse than "stat-v1"
   on the sources it reaches, as the direction states.
 
+## Evolution round 3
+
+Written 2026-11-27, after M16. Nothing here is implemented yet; each
+milestone commits its numbered predictions and decision rule before its
+first run. The floor rule (M11), the pooled Q1 registration (M14) and the
+route rule (M16) are not changed by anything below.
+
+### Where the project stands (commands run on 2026-11-27)
+
+| Command | Result |
+|---------|--------|
+| `make check` | 1494 passed, 2 xfailed, 5 deselected; 2 min 18 s |
+| `make eval` | exit 0, every snapshot and RESULTS.md equal to a fresh run; 2 min 59 s |
+| `git ls-remote --heads origin` | `main` and `dev/plan` only: still no `ledger` branch, so no shadow tick has ever run on GitHub, three days before the 2026-11-30 round |
+| `grep` over `.github/workflows/tournament.yml` | the shadow job runs only when the repository variables `AUGUR_SCHEDULE` and `AUGUR_SHADOW` are set, and the chain only with `AUGUR_CHAIN_MINUTES`; the three are read in three separate places (the poll's mode, the poll's schedule, the chain's condition) |
+| ForecastBench question sets 2026-09-13 to 2026-11-22 (GitHub raw, standard library) | DBnomics questions by set: 09-13 50 temperature; 09-27 25 temperature, 25 ECB; 10-11 50 ECB (26 exchange rates, 16 yield-curve points, 8 others); 10-25 25 ECB; 11-08 25 ECB; 11-22 none. **No temperature question is asked after the 2026-09-27 set** |
+| The committed dataset extract (`data/forecastbench/dataset/`), counted by due date and horizon | 313 Meteo-France instances of earlier sets resolve between 2026-11-28 and 2027-01-11 and are in no committed file: the 90-day horizons of the 08-30, 09-13 and 09-27 sets (47, 49, 25), the 180-day horizons of 06-07, 06-21 and 07-05 (46, 48, 49) and the 365-day horizon of 01-04 (49), over at most 53 stations |
+| DBnomics' v22 API, `meteofrance/TEMPERATURE/celsius.07005.D?observations=1` | 200; 5,442 daily values from 2012-01-01 |
+| A scratch script outside the repository: the day-of-year pairs estimator below, earlier years only, on the 799 Meteo-France corpus instances | Brier 0.1740 against 0.25 for a coin and 0.343 for the source base rate; the freeze-value variant 0.2509. By horizon: 7 days 0.258 (n = 307, worse than a coin), 30 days 0.170 (304), 90 days 0.045 (188) |
+
+What sixteen milestones add up to:
+
+- **Still no scored forecast, and the cause is a switch nobody flipped.**
+  The shadow schedule was built at M11 and has waited on three repository
+  variables since. A shadow tick posts nothing and uses free calls and a
+  public repository's free minutes, so there is no reason for it to be
+  opt-in. Every live reading already registered (the floor rule, P38 to
+  P40, M14's pooled analysis, M16's live arm) needs rows from the
+  2026-11-30 and 2026-12-14 rounds.
+- **M15 found where the no-model frontier is and stopped.** On DBnomics the
+  base rate scores 0.343, worse than a coin, where "stat-v1" scores 0.196
+  and "hybrid ensemble 1" 0.148 on the same 98 instances. A page of
+  day-of-year arithmetic recovers about half of that on data already
+  seen. Seen data cannot confirm it, and the sets named for a hold-out
+  (2026-10-11 and 2026-10-25) turn out to hold no temperature question at
+  all. The long horizons of earlier sets do: 313 instances whose outcomes
+  do not exist yet.
+- **Every reading before 2027-01-11 is taken from the questions that
+  resolve first.** M16's first 15 resolved questions were 12 yes, because
+  "by date" markets resolve early when the event happens. Nobody has
+  measured how far such a subset sits from its final value, or whether
+  its interval covers it. C4 has 671 resolved instances with the time
+  each outcome became public, so the replay costs nothing.
+
+### M17: the shadow round runs without anyone setting a variable
+
+**Question.** Does an unattended, never-posting tick run on GitHub from a
+fresh repository state, and how many of a round's questions does the
+schedule actually reach?
+
+**Why now.** It is the only like-for-like outside comparison available at
+$0, and the season has two rounds left. This is plumbing under existing
+registrations: it adds no prediction and changes no rule.
+
+**Design.**
+
+- *One decision, made once.* The poll job computes the run's mode
+  (`shadow`, `forecast` or `off`) in a step and exposes it as an output;
+  the shadow job, the forecast job and the chain all read that output.
+  Today a variable flipped in one place and not another gives both jobs
+  or neither. The forecast job keeps its own independent check of
+  `AUGUR_SUBMIT`, so two conditions still stand between a default and a
+  post.
+- *The default.* On scheduled and chained ticks on `main`: shadow mode
+  for MiniBench when `METACULUS_TOKEN` and `OPENROUTER_API_KEY` are
+  present and `AUGUR_SUBMIT` is not `true`. `AUGUR_SHADOW=false` or
+  `AUGUR_SCHEDULE=off` turns it off; `AUGUR_SCHEDULE=all` adds the
+  FutureEval project as before. Secrets cannot be read in a job
+  condition, so the check is a step: a missing secret logs which one and
+  the run exits 0.
+- *The chain.* 30 minutes by default in shadow mode, on a public
+  repository only. It must not dispatch itself forever when a secret is
+  missing or the schedule is off: no chained run follows a poll that
+  reported either.
+- *Unchanged.* Every refusal of `--submit` in shadow mode (CLI, runner,
+  workflow); `AUGUR_SHADOW_READER` stays opt-in (three more calls a
+  question lower the day's ceiling from 45 questions to 40).
+- *What M14 pooled.* The registration pools the FutureEval shadow
+  questions too. The default is MiniBench only, as directed; with the
+  default, the pooled report counts the FutureEval questions as zero and
+  says so. The registration is not edited.
+
+**Predictions.** None. The measured outputs are counts: ticks, chain
+gaps, and per day of the round the questions opened against the
+questions holding Augur, template, `stat` and `blend` rows. If the round
+is missed anyway, RESULTS.md says so with the cause and the count.
+
+### M18: is the dataset gap on temperatures just the calendar?
+
+**Question.** On ForecastBench's daily temperature series, how much of the
+distance from the base rate to the leaderboard's no-model entry is a
+day-of-year frequency computed from the station's own earlier years, and
+does it hold on outcomes that do not exist yet?
+
+**Why now.** M15's P52 failed and its follow-up did not open; this is a new
+milestone, not that follow-up. The frontier's no-model edge on this source
+is published (BLF, appendix G.1: Brier Index 59.1 against 50.0), and the
+confirmatory instances start resolving on 2026-11-28: a registration
+pushed after a resolution is fetched is not a registration.
+
+**Design (the exact text is M18's first commit).**
+
+- *Arm S.* For a question with freeze day f and resolution day r: over
+  each earlier year y, compare the station's mean value within 3 days of
+  r shifted to y against its mean within 3 days of f shifted to y; the
+  forecast is the Laplace-smoothed share of years in which the first is
+  higher. *Arm S′* (BLF's form, reported): the smoothed share of past
+  observations within 10 days of r's day-of-year that exceed the freeze
+  value. Other sources keep B or C as registered in M15.
+- *Why past years are admissible when today's values were not.* Round 2
+  refused series arms "from today's values" because a revised value
+  cannot be dated at the freeze instant. S compares windows in earlier
+  years only (so every value it reads is about a year or more older
+  than the freeze), each observation dated a day after its period,
+  refused unless that date is at or before the freeze instant, and
+  written to the ledger through the leakage gate before use. The
+  remaining risk, a later correction to an old station reading, is
+  stated, and the committed ledger pins the values used.
+- *The control.* Arm K: the sign of the station-pooled climatological
+  change between the two days of the year, as a fixed 0.9 or 0.1. A
+  seasonal arm that only knows December is colder than September should
+  not be credited for it. **S − K is the primary difference on the
+  confirmatory set.**
+- *Replication, not test.* The 799 corpus instances have been looked at
+  (0.174 in the scratch run, reproduced by an independent script in this
+  plan's review: 0.1740, S′ 0.2509). The repository's number is recorded beside
+  it and labelled a replication of a seen result; no hypothesis is marked
+  held or failed on it.
+- *Confirmatory set.* The 313 instances listed above (on the questions
+  the committed extract already holds; the raw sets list 325, the other
+  12 on questions with no resolved date yet, which are counted and kept
+  out), extracted with `scripts/extract_dataset_questions.py` at a later
+  fetch day, read once on 2027-01-11 (earlier: a progress reading).
+  Instances whose resolution is not published by then are counted and
+  left out, and the reading states the fraction it covers. About 264 of them cross
+  from summer or autumn into winter and are nearly decided by the
+  calendar; the 49 one-year instances compare two winter days ten days
+  apart and are the only hard stratum. Each stratum is reported alone.
+- *Clustering.* Stations share weather, so the interval is clustered by
+  (set, horizon): seven clusters. Below eight the question-level interval
+  is printed beside it and labelled optimistic, as M14 does.
+- *The 2026-10-11 and 2026-10-25 sets.* Named as the hold-out before
+  anyone had opened them; they hold ECB series only. They are extracted
+  and scored with M15's arms as registered (a hold-out for B against the
+  Naive Forecaster on dataset questions that were never scored), and the
+  absence of temperature questions is recorded.
+
+**Hypotheses (ranges; the registration fixes the numbers).**
+
+- On the confirmatory set S is at most 0.12 Brier, and S − B is below
+  −0.15 with its interval below 0.
+- S − K is within ±0.02 on the 90- and 180-day strata: there the calendar
+  is the whole forecast.
+- On the one-year stratum S is within 0.03 of a coin, and S′, which sees
+  how unusual the freeze day was, beats S.
+- The gate the direction names: pooled B-with-S (S on Meteo-France, B
+  as registered elsewhere) is no worse than "stat-v1" by more than
+  +0.01 Brier on the instances where "stat-v1" published a forecast.
+  "stat-v1" is in the 2026-09-27 set only, so the gate is read on that
+  set's instances that resolve after 2026-11-27 (every source; its 25
+  temperature instances, one cluster, reported alone), with n stated;
+  the same quantity on the set's seen instances is reported as a
+  replication. Only if the gate holds does M15's follow-up (the
+  one-third Augur blend on dataset questions) open.
+
+**Not included.** A persistence term for the 7-day horizon, where S loses
+to a coin: it would be tuned to a loss already seen, and no unresolved
+7-day temperature question exists to test it on. It is reported as an
+open problem with the stratum's number.
+
+### M19: how wrong is a reading taken from the questions that resolve first?
+
+**Question.** When a comparison is read while only part of a question set
+has resolved, how far is the reading from its final value, and does its
+own interval cover the final value as often as it claims?
+
+**Why now.** M14 and M16 are both read on 2027-01-11 from partial
+resolutions, and every progress reading before then is weaker still. This
+is the project's own problem statement (a forecaster's score arrives
+late) measured from the other side: what does reading early cost?
+
+**Design.** No model call. On C4's walk-forward instances
+(`data/calibration/m8-resolution-times.json` dates 536 of 541 markets),
+order each set's questions by when the outcome became public. At 10%,
+25%, 50% and 75% resolved, recompute the yes share, Augur's Brier and the
+paired difference of Augur against the walk-forward base rate with its
+bootstrap interval, and compare each with the same quantity on the full
+set. `augur earlyread [--check]`, written to
+`data/earlyread/m19-c4.json` and re-run by `make eval`. Markets without a
+resolution time are counted and left out.
+
+**Hypotheses (committed before the first run; nothing on C4 has been
+computed in this order).**
+
+- At 25% resolved the yes share is at least 1.5 times the set's final
+  share, pooled over the eight sets.
+- The early paired difference misses the final value by more than its own
+  90% half-width in at least 3 of 8 sets at 25% resolved: the interval is
+  honest about noise and silent about selection.
+- By 75% resolved the miss rate is back to what a 90% interval implies
+  (at most 1 of 8).
+
+**What it changes.** No registration. RESULTS.md's progress readings get
+one sentence each with the measured early-read gap for their fraction
+resolved, and the 2027-01-11 readings state the fraction they were read
+at.
+
+### Changes on review (2026-11-27)
+
+- M18's leakage rule matches the direction: an observation is admitted
+  if it is dated at or before the freeze instant and S pairs windows from
+  earlier years; the draft's "years before the freeze year" would have
+  dropped admissible data and no longer matched the scratch result it is
+  to replicate.
+- M18's gate against "stat-v1" is the direction's quantity, pooled
+  B-with-S within +0.01, read where "stat-v1" published forecasts (the
+  2026-09-27 set only); the draft's "S alone where stat-v1 published" did
+  not say that it rests on one set.
+- M18's confirmatory set states its selection: 313 instances on
+  questions the extract holds (325 in the raw sets), and instances not
+  resolved in a published file by 2027-01-11 are counted and left out.
+
+### Considered and not chosen
+
+- *Scoring forecasts against the freeze price instead of the outcome, to
+  judge a change before anything resolves.* The expected Brier under a
+  price q is (p − q)² plus a constant, so it measures distance to the
+  price: the registered blend, two-thirds price, wins by construction and
+  a forecaster that beats the market is penalised. It is also an early
+  look at comparisons registered for 2027-01-11. Only its descriptive
+  half survives, as M19.
+- *A first numeric backtest on templated closing-price questions (25
+  tickers, 12 windows).* Tickers on the same windows move together, so
+  the effective n is about 12, too few to judge an 80% interval's
+  coverage; the series rule reached 7 of a real round's 60 questions; and
+  300 free calls would come out of the shadow round's daily allowance.
+  Revisit after 2026-12-14 with resolved numeric shadow rows.
+- *Re-deriving ForecastBench's difficulty-adjusted Brier so the rows sit
+  on the leaderboard's scale.* A two-way fixed-effects fit over every
+  entrant, from a 141 MB archive, whose done-when is "matches two
+  published figures": broad, and Augur's few sets would make its own
+  adjusted figure mostly imputation. The rows stay labelled raw Brier.
+- *A structural arm for the ECB series (legacy-currency rates that never
+  move forecast at 0.03).* A quirk of one question set with one or two
+  earlier freeze values to detect it from; scope M18 does not need.
+- *The prompt-stance ablation still under To measure, or any further
+  reader experiment.* M7's power curve says 40 questions cannot resolve
+  it, and M16's reading is fixed for 2027-01-11.
+
 ## Milestones
 
 **Plan changes, 2026-11-23 (M10, decided while building it).**
@@ -2238,6 +2487,9 @@ skip.
 - [x] M14: The pooled Q1 analysis, registered before the round opens — the registration committed in this file before the 2026-11-30 round's first question: one primary quantity (Augur's aggregate against the shadow template, pooled over the 2026-11-30 and 2026-12-14 rounds and the FutureEval shadow questions), the registered blend as secondary, one fixed analysis date, clustering by opening day with the cluster count printed and the question-level interval beside it below eight clusters, the selection of scored questions stated, and the n for +2 and +5 points at the assumed 32-point spread, recomputed once from the measured one; `augur floor --pooled` over several rounds' snapshots, which prints the pooled head-to-head, its interval, n, clusters, spread and per-round coverage and can never print a floor verdict; a seeded, labelled synthetic table of how often the one-round rule admits a no-lead candidate when re-read after one to four rounds, cumulatively and round by round; the first two-tick check on GitHub and the measured chain spacing read from the `ledger` branch if it exists, with the chain fixed first if it does not hold its spacing; the pooled report printed beside each round's `augur floor --candidate blend` line, `augur score L --mode live --cluster week`, the public nemotron template's score and the outside agent-minus-template gaps, labelled an unsubmitted shadow comparison on a below-floor model. Done when the registration was pushed to the public `origin` before the round's first question opened (GitHub's push time recorded) and the floor rule's block is byte-identical; a test proves the pooled report cannot emit an admission and that its clustering matches a hand-computed case; RESULTS.md holds the registration, the sample-size table, the synthetic table (re-checked by `make eval`) and each hypothesis marked held, failed or not yet readable; and the pooled result, the GitHub check and the chain spacing are recorded when they exist, or under To measure with the exact commands.
 - [x] M15: ForecastBench's dataset half with no model — predictions committed first; a loader for dataset questions (single-series form, sets 2026-07-05 to 2026-09-27, resolved horizons, everything else counted as out of scope); the arms always 50%, the source's walk-forward base rate (outcomes dated before the due date only, 50% until 20 exist) and, on yfinance, the series arm (the share of the ticker's past same-horizon changes that were positive, closes dated at or before the freeze instant and written to the ledger first, shrunk toward the base rate with a registered weight); DBnomics, FRED, Wikipedia and ACLED on the base rate only unless a keyless endpoint with vintages verifies; `scripts/extract_forecast_sets.py` extended to the dataset instances with a small committed extract; `augur fbcompare` scoring each arm on the same instances as Naive Forecaster (primary), Imputed Forecaster, the top two entries and, where present, "stat-v1" and "undertow-mix". Done when RESULTS.md holds, from `make eval` with no model call, Brier by source and pooled for every arm and comparator, paired differences with intervals clustered by series and by resolution date and both cluster counts, coverage by source, each hypothesis marked held or failed, and the row labelled a backtest, not a Brier Index; `tests/test_leakage.py` passes on the new ledger and a fake-server test proves a close dated after the freeze instant is refused.
 - [x] M16: A newer free reader on the same questions — the route rule and predictions committed before any call (the newer route becomes the Spring 2027 default only if the pooled paired interval excludes 0 in its favour, or its Brier difference's upper end is below +0.01 and its median latency is no higher; otherwise the default stays); `make backtest-reader`: `nvidia/nemotron-3.5-super-vl:free` and the current route, one draw, no retrieval, on the market questions of the ForecastBench sets that froze after 2026-10-15 (2026-11-08 and 2026-11-22; the 2026-10-25 set froze on 2026-10-09 and is excluded), forecast before their resolution sets are published, resumable, scored per set as its resolutions appear and analysed once on the registered date; a reported live arm from the 2026-12-14 round, three draws on the newer route from the brief and sources Augur's draws saw in the tick, written as a reference row after Augur, the template, `stat` and `blend`, only within what the day's free calls leave, behind its own repository variable and never the floor's candidate. Done when a fake-server test proves the arm is served last, makes no call once the day's budget is spent, reuses the tick's brief byte for byte and cannot become the floor's candidate; the release gate refuses either model on a set posed before its listing; both routes' forecasts on both qualifying sets are in a committed ledger dated before the set's resolution file was published; RESULTS.md holds the paired Brier difference on every qualifying set resolved by the merge with its interval, n and detectable effect (or states that none had resolved), calls and latency per route, the verdict under the registered rule (switched, kept or not decidable with the n needed), and the remaining sets and the live comparison under To measure with their commands; the pull request names the repository variable.
+- [ ] M17: The shadow round on by default (Q1) — the tournament workflow computes one mode per run (`shadow`, `forecast` or `off`) in the poll job and every later job reads it; on scheduled and chained ticks on `main` the mode is `shadow` for MiniBench whenever `METACULUS_TOKEN` and `OPENROUTER_API_KEY` are present and `AUGUR_SUBMIT` is not `true` (`AUGUR_SHADOW=false` or `AUGUR_SCHEDULE=off` turn it off; a missing secret is checked in a step, logs which one and exits 0); the 30-minute chain on by default in shadow mode on a public repository, never following a poll that reported a missing secret or an off schedule; every refusal of `--submit` in shadow mode kept, the forecast job's own `AUGUR_SUBMIT` check kept, `AUGUR_SHADOW_READER` still opt-in; the floor rule's block, `m14-registration` and `m16-registration` byte-identical. Done when the fake-server test covers the new default (with every variable unset no path can post, and a second tick skips what the shadow ledger holds); the workflow runs two consecutive default ticks under `act` with no variable set, and one with a secret missing that exits 0 and dispatches nothing; the pull request is merged before the 2026-11-30 round's first question and states that no repository variable is needed (and that `AUGUR_SUBMIT` must never be set); and RESULTS.md records, from the public `ledger` branch only (`scripts/shadow_fetch.sh`), the first two ticks on GitHub, the chain spacing (`python3 scripts/chain_spacing.py`), per day of the round the questions opened against the questions holding Augur, template, `stat` and `blend` rows, and after resolution `augur floor --round R --ledger L --candidate blend`, each when it exists and until then under To measure with its exact command; if the round is missed, the cause and the count.
+- [ ] M18: A day-of-year arm for temperature series, judged on outcomes that do not exist yet — the registration committed and pushed before any resolution dated after 2026-11-27 is fetched: arm S (the Laplace-smoothed share of earlier years in which the station's value within 3 days of the resolution day-of-year exceeded its value within 3 days of the freeze day-of-year), arm S′ (the share of past observations within 10 days of the resolution day-of-year above the freeze value), the control K (the sign of the station-pooled climatological change, as 0.9 or 0.1), S − K as the primary difference, the confirmatory set (the Meteo-France instances of the 2026 sets resolving from 2026-11-28 to 2027-01-11, read once on 2027-01-11, unpublished resolutions counted and left out), its strata and its clustering by (set, horizon) with the question-level interval beside it below eight clusters; a DBnomics series source for backtests (keyless v22 API; S and S′ read windows in earlier years only, every observation dated a day after its period, refused unless that date is at or before the freeze instant, and admitted through the leakage gate into a committed ledger; resumable); the extract extended to the 2026-10-11 and 2026-10-25 sets (ECB series only: M15's arms as registered, out-of-scope forms counted) and to the confirmatory instances as they resolve; S, S′ and K in `augur fbcompare` beside A, B, the Naive Forecaster, "stat-v1", "hybrid ensemble 1" and "model-4" on the same instances, pooled and DBnomics alone, with BLF's 59.1 against 50.0 quoted as a different sample and metric. Done when RESULTS.md holds, from `make eval` with no model call, the corpus row labelled a replication of a seen result (799 instances, by horizon, the 7-day stratum's loss to a coin stated), the two later sets' row, every confirmatory instance resolved by the merge as a progress reading with each hypothesis marked held, failed or not yet readable, and the 2027-01-11 reading under To measure with its command; `tests/test_leakage.py` passes on the new ledger and a fake-server test proves an observation dated after the freeze instant is refused; the pooled B-with-S gate against "stat-v1" is stated with its n and marked.
+- [ ] M19: What reading early costs — predictions committed first; `augur earlyread [--check]`: on C4's walk-forward instances, each set's questions ordered by when the outcome became public (`data/calibration/m8-resolution-times.json`; undated markets counted and left out), and at 10%, 25%, 50% and 75% resolved the yes share, Augur's Brier and the paired difference against the walk-forward base rate with its bootstrap interval, each against the full set's value; written to `data/earlyread/m19-c4.json`, rendered by `make results` and re-run by `make eval`; no model call. Done when RESULTS.md holds the table by fraction resolved, per set and pooled, how often the early interval covers the final value beside its nominal 90%, each hypothesis marked held or failed, and one sentence on every progress reading (M16's, and M14's and M18's when they exist) giving the fraction resolved it was read at and the measured early-read gap at that fraction; no registration block changes.
 
 **Plan changes, 2026-11-22 (M8, decided while building it).**
 
