@@ -3,8 +3,13 @@ and shadow mode can never submit."""
 
 from __future__ import annotations
 
+import importlib.util
 import io
+import sys
+from collections.abc import Mapping
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 
 import httpx
 import pytest
@@ -282,3 +287,69 @@ def test_held_questions_ignore_member_rows(tmp_path: Path) -> None:
     with Ledger.open(path, clock):
         pass
     assert held_questions(path) == frozenset()
+
+
+def _script(name: str) -> ModuleType:
+    path = Path(__file__).resolve().parent.parent / "scripts" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"augur_{name}_script_for_shadow", path)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+async def test_the_default_with_no_variable_set_shadows_minibench_and_never_posts(
+    tmp_path: Path,
+) -> None:
+    """M17: a scheduled tick with every repository variable unset, end to end on the fake
+    server: the mode step picks a MiniBench shadow tick, the poll finds work, the tick
+    posts nothing, and after its export the poll and the second tick skip what it holds."""
+    run_mode, poll = _script("run_mode"), _script("poll")
+    secrets = {"METACULUS_TOKEN": FAKE_TOKEN, "OPENROUTER_API_KEY": "sk-or-v1-fake"}
+    decision = run_mode.decide(
+        {"EVENT": "schedule", "REF": "refs/heads/main", "REPO_PRIVATE": "false", **secrets}
+    )
+    assert (decision.mode, decision.schedule, decision.chain_minutes) == (
+        "shadow",
+        "minibench",
+        "30",
+    )
+    server = _server()
+    branch = tmp_path / "branch"
+
+    def fetch(url: str, headers: Mapping[str, str]) -> Any:
+        return server.handle(httpx.Request("GET", url, headers=dict(headers))).json()
+
+    def polled() -> tuple[bool, list[str], list[str]]:
+        env = {
+            "AUGUR_SCHEDULE": decision.schedule,
+            "AUGUR_SHADOW": "true" if decision.mode == "shadow" else "false",
+            "AUGUR_SHADOW_LEDGER": str(branch / "shadow"),
+            **secrets,
+        }
+        result: tuple[bool, list[str], list[str]] = poll.poll(
+            env, fetch, sleep=lambda _s: None, now=T0
+        )
+        return result
+
+    assert polled()[:2] == (True, ["minibench"])
+    async with server.client() as http:
+        _, run1 = await _tick(
+            tmp_path / "tick1",
+            http,
+            ScriptedProvider(),
+            tmp_path / "none.sqlite",
+            CountingTemplate(),
+        )
+        shadow = _publish(run1, branch, "tick1")
+        has_work, _, lines = polled()
+        assert not has_work, lines
+        model = ScriptedProvider()
+        second, _ = await _tick(tmp_path / "tick2", http, model, shadow, CountingTemplate())
+    assert second.count("forecast") == 0
+    assert model.requests == []
+    assert [r for r in server.requests if r.method != "GET"] == [], "nothing was posted"
+    assert server.forecasts == []
+    assert server.comments == []
