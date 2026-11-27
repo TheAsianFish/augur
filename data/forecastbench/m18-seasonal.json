@@ -3485,6 +3485,7 @@
   "strata": [
    {
     "brier": {},
+    "brier_exact": {},
     "clusters": 7,
     "planned": 313,
     "published": 0,
@@ -3492,6 +3493,7 @@
    },
    {
     "brier": {},
+    "brier_exact": {},
     "clusters": 3,
     "planned": 121,
     "published": 0,
@@ -3499,6 +3501,7 @@
    },
    {
     "brier": {},
+    "brier_exact": {},
     "clusters": 3,
     "planned": 143,
     "published": 0,
@@ -3506,6 +3509,7 @@
    },
    {
     "brier": {},
+    "brier_exact": {},
     "clusters": 1,
     "planned": 49,
     "published": 0,

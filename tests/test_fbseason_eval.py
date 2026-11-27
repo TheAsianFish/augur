@@ -33,7 +33,14 @@ def _strata(**published: int) -> list[dict[str, Any]]:
     out = []
     for g in ("all", "90d", "180d", "365d"):
         n = published.get(g.replace("d", ""), published.get(g, 0))
-        out.append({"stratum": g, "published": n, "brier": dict(brier) if n else {}})
+        out.append(
+            {
+                "stratum": g,
+                "published": n,
+                "brier": dict(brier) if n else {},
+                "brier_exact": dict(brier) if n else {},
+            }
+        )
     return out
 
 
@@ -74,6 +81,7 @@ def test_every_hypothesis_waits_for_the_reading_day() -> None:
 def test_on_the_reading_day_each_is_held_or_failed() -> None:
     strata = _strata(all=313, **{"90": 121, "180": 143, "365": 49})
     strata[3]["brier"] = {"A": 0.25, "B": 0.3, "S": 0.26, "S′": 0.24, "K": 0.5}
+    strata[3]["brier_exact"] = dict(strata[3]["brier"])
     gate = {
         "scored": 200,
         "planned": 248,
@@ -221,3 +229,25 @@ def test_the_committed_rows_match_the_registration(committed: dict[str, Any]) ->
     assert all(0.0 < f["S"] < 1.0 and f["K"] in (0.1, 0.9, 0.5) for f in conf["forecasts"])
     assert conf["gate"]["planned"] == 248
     assert committed["holdout"]["temperature_questions"] == 0
+
+
+def test_verdicts_read_unrounded_brier_scores() -> None:
+    """A Brier of 0.120049 displays as 0.1200 but misses P62's 0.12; a 0.00003 lead still counts."""
+    strata = _strata(all=313, **{"90": 121, "180": 143, "365": 49})
+    strata[0]["brier"]["S"] = 0.12
+    strata[0]["brier_exact"]["S"] = 0.120049
+    strata[3]["brier"] = {"A": 0.25, "B": 0.3, "S": 0.2503, "S′": 0.2503, "K": 0.5}
+    strata[3]["brier_exact"] = {"A": 0.25, "B": 0.3, "S": 0.25034, "S′": 0.25031, "K": 0.5}
+    got = {
+        h["id"]: h["verdict"]
+        for h in fbseason_eval.hypotheses(strata, _diffs(), NO_GATE, "2027-01-11")
+    }
+    assert got["P62"] == "failed"
+    assert got["P64"] == "held"
+
+
+def test_a_re_cut_after_the_reading_day_is_a_late_reading() -> None:
+    assert fbseason_eval._kind(None) == "progress reading"
+    assert fbseason_eval._kind("2027-01-10") == "progress reading"
+    assert fbseason_eval._kind("2027-01-11") == "registered reading"
+    assert fbseason_eval._kind("2027-01-12") == "late reading"

@@ -153,8 +153,12 @@ def _with(items: Sequence[Item], *names: str) -> list[Item]:
     return [i for i in items if all(n in i.values for n in names)]
 
 
+def _briers_exact(items: Sequence[Item], names: Sequence[str]) -> dict[str, float]:
+    return {n: statistics.fmean(brier(i.values[n], i.y) for i in items) for n in names}
+
+
 def _briers(items: Sequence[Item], names: Sequence[str]) -> dict[str, float]:
-    return {n: _r(statistics.fmean(brier(i.values[n], i.y) for i in items)) for n in names}
+    return {n: _r(b) for n, b in _briers_exact(items, names).items()}
 
 
 def _diffs(
@@ -460,6 +464,18 @@ def _readable(as_of: str | None) -> bool:
     return as_of is not None and date.fromisoformat(as_of) >= fbseason.READING_DAY
 
 
+def _kind(as_of: str | None) -> str:
+    """Item 8: one reading, on the reading day; a later re-cut may hold later outcomes."""
+    if not _readable(as_of):
+        return "progress reading"
+    assert as_of is not None
+    return (
+        "registered reading"
+        if date.fromisoformat(as_of) == fbseason.READING_DAY
+        else "late reading"
+    )
+
+
 def confirmatory(
     root: Path, loaded: fbdataset.Loaded, obs: Mapping[int, Mapping[date, float]]
 ) -> dict[str, Any]:
@@ -517,6 +533,8 @@ def confirmatory(
                 "published": len(sub),
                 "clusters": len({f"{p.question_set}/{p.horizon}" for p in planned}),
                 "brier": _briers(sub, ["A", "B", "S", "S′", "K"]) if sub else {},
+                # Verdicts read these, never the rounded display values.
+                "brier_exact": _briers_exact(sub, ["A", "B", "S", "S′", "K"]) if sub else {},
             }
         )
         for first, second in (("S", "K"), ("S", "B"), ("S′", "S"), ("S", "A")):
@@ -529,7 +547,7 @@ def confirmatory(
         "window": [d.isoformat() for d in manifest.window],
         "reading_day": fbseason.READING_DAY.isoformat(),
         "outcomes_as_of": as_of,
-        "kind": "registered reading" if _readable(as_of) else "progress reading",
+        "kind": _kind(as_of),
         "k_up": sum(1 for f in forecasts if f["K"] == fbseason.K_UP),
         "s_not_reached": sum(1 for f in forecasts if f["shifts"] == 0),
         "strata": strata,
@@ -618,7 +636,7 @@ def hypotheses(
     s_all = by["all"]
     if s_all["published"]:
         sb = _find(diffs, "all", "S", "B")
-        ok = s_all["brier"]["S"] <= 0.12 and sb["mean"] <= -0.15 and _ci(sb)[1] < 0
+        ok = s_all["brier_exact"]["S"] <= 0.12 and sb["mean"] <= -0.15 and _ci(sb)[1] < 0
         reading = f"Brier(S) {s_all['brier']['S']:.4f}; S − B {sb['mean']:+.4f} on {sb['n']}"
     else:
         ok, reading = False, "no confirmatory outcome published"
@@ -641,7 +659,8 @@ def hypotheses(
     )
     one = by["365d"]
     if one["published"]:
-        ok = abs(one["brier"]["S"] - 0.25) <= 0.03 and one["brier"]["S′"] < one["brier"]["S"]
+        exact = one["brier_exact"]
+        ok = abs(exact["S"] - 0.25) <= 0.03 and exact["S′"] < exact["S"]
         reading = f"Brier(S) {one['brier']['S']:.4f}, Brier(S′) {one['brier']['S′']:.4f}"
     else:
         ok, reading = False, "none published"
