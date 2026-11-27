@@ -493,8 +493,10 @@ be submitted; M12 (done) a forecast with no model in it and one registered blend
 backtest, and the same-model agent-against-template pairs in FutureEval; M14 (done) a pooled analysis of the shadow
 rounds, registered before the first one opens; M15 (done) ForecastBench's dataset questions with no model, against the
 leaderboard's own baselines on the same instances; M16 (done) a newer free model on the same questions, under a rule
-for choosing the default route (its registered reading is 2027-01-11). Details in
-[PLAN.md](PLAN.md).
+for choosing the default route (its registered reading is 2027-01-11); M17 the shadow round on by
+default, with no repository variable to set; M18 a day-of-year arm for temperature series, judged on
+outcomes that do not exist yet; M19 what a reading taken from the first questions to resolve costs.
+Details in [PLAN.md](PLAN.md).
 
 ## Development
 
