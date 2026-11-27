@@ -55,36 +55,44 @@ PY
    `augur models probe`, and `augur forecast --tournament minibench --submit`
    during an open round (M3 adds the schedule that does this unattended).
 
-## Turning on the schedule (when M3 merges)
+## The schedule (M17: on by default, never posting)
 
-The scheduled workflow (`.github/workflows/tournament.yml`) does nothing
-until the variables below are set: unset `AUGUR_SCHEDULE` is the kill switch.
+The scheduled workflow (`.github/workflows/tournament.yml`) needs **no
+repository variable**. Once the M17 pull request is on `main`, every
+scheduled or chained tick is a MiniBench shadow tick: Augur and the
+template forecast the same open questions on the free route, nothing is
+posted, and each tick's export goes to the `ledger` branch. A tick
+dispatches the next one after 30 minutes on a public repository, since
+GitHub's scheduler drops most cron ticks (RESULTS.md M3 and M14).
 
-1. Merge the M3 pull request with CI green. Only `main` ever posts.
-2. Repository variables (Settings → Secrets and variables → Actions →
-   Variables):
-   - `AUGUR_FORECAST_MODELS`: a frontier-tier model first, e.g.
-     `openrouter:openai/gpt-5.4@high,openrouter:anthropic/claude-opus-5`
-     (the tier is `frontier-2026-11b`; `augur models list` shows it).
-   - `AUGUR_RESEARCH_MODELS`: a cheap or free chain, e.g.
-     `openrouter:nvidia/nemotron-3-ultra-550b-a55b:free,openrouter:inclusionai/ling-3.2-flash:free`.
-   - `AUGUR_MAX_COST_PER_RUN`: `1.00` to start (a question costs at most
-     about $0.35 at GPT-5.4's listed price).
-   - `AUGUR_SCHEDULE=minibench`. While `AUGUR_SUBMIT` is unset, scheduled
-     runs only poll: a dry run posts nothing, so every tick would forecast
-     the same questions again. For a dry run, dispatch one by hand:
-     `gh workflow run tournament.yml --ref main -f tournament=minibench`.
-3. Check one manual run first:
-   `gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f submit=true`;
-   it posts only in the practice area, and its export appears on the
-   `ledger` branch.
-4. Then set `AUGUR_SUBMIT=true` before the round opens (about 2026-11-30).
-5. Once the repository is public, set `AUGUR_CHAIN_MINUTES=60`: GitHub's
-   scheduler was measured to drop most ticks (RESULTS.md M3), and the chain
-   dispatches each next run itself. While private, its waiting would bill
-   about 43,000 minutes a month (a 60-minute job, 24 times a day), so leave
-   it unset (the workflow also refuses to chain on a private repository).
-6. Kill switch: set `AUGUR_SCHEDULE=off`.
+1. Secrets (Settings → Secrets and variables → Actions → Secrets):
+   `METACULUS_TOKEN` and `OPENROUTER_API_KEY` must both exist. If either
+   is missing, the poll job's "Decide this run's mode" step names it, the
+   run exits 0 and no chained run follows; the cron tries again later.
+   `ASKNEWS_CLIENT_ID` and `ASKNEWS_CLIENT_SECRET` are optional (news).
+2. **Never set `AUGUR_SUBMIT`.** It is the only switch that lets a
+   scheduled run post, and the free route is below the submit floor
+   until `augur floor` admits it (PLAN.md, the floor rule). Setting it
+   turns the shadow tick into the posting forecast job.
+3. To start the first tick without waiting for the cron:
+   `gh workflow run tournament.yml --ref main -f chained=true` (it takes
+   the same default as a scheduled run and starts the chain).
+4. Watch it from outside: `bash scripts/shadow_fetch.sh shadow-tree`
+   copies the ticks' exports from the public `ledger` branch, and
+   `python3 scripts/chain_spacing.py RUNS.json --since T --target 30`
+   reads the spacing (CONTRIBUTING.md).
+5. Optional variables: `AUGUR_SCHEDULE=all` adds the FutureEval project
+   with the day's leftover free calls; `AUGUR_SHADOW_READER=true` adds
+   M16's newer free reader (three more calls a question);
+   `AUGUR_CHAIN_MINUTES` changes the 30-minute chain (10 to 110).
+6. Off switches: `AUGUR_SCHEDULE=off` (everything, standings included) or
+   `AUGUR_SHADOW=false` (the shadow default only).
+
+Posting from the schedule, if the floor rule ever admits a model, is a
+separate decision recorded in PLAN.md first: a frontier-tier model first
+in `AUGUR_FORECAST_MODELS`, a manual check in the bot-testing-area
+(`gh workflow run tournament.yml --ref main -f tournament=bot-testing-area -f submit=true`),
+then `AUGUR_SUBMIT=true` with `AUGUR_SHADOW` unset.
 
 ## Releasing 0.1.0
 
