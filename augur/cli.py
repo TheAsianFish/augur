@@ -19,6 +19,7 @@ from augur import (
     fbcompare,
     fbdataset,
     fbdataset_eval,
+    fbseason,
     floor,
     livecal,
     q4,
@@ -85,6 +86,7 @@ from augur.replay import (
     recorded_prices,
 )
 from augur.research.asknews import AskNewsSearcher
+from augur.research.dbnomics import DBnomicsFetcher
 from augur.research.gdelt import GdeltSearcher, ResponseCache, gdelt_query
 from augur.research.gkg import GkgIndex, build_index
 from augur.research.markets import MarketsSearcher
@@ -349,6 +351,22 @@ def _parser() -> argparse.ArgumentParser:
     )
     dc.add_argument(
         "--ledger", type=Path, default=fbdataset.LEDGER, help=f"default {fbdataset.LEDGER}"
+    )
+    ds = bt_sub.add_parser(
+        "dbnomics-series",
+        help="record each M18 Meteo-France question's earlier-year observations from DBnomics",
+        description=(
+            "For every Meteo-France question M18's arms read (M15's corpus sets and the "
+            "confirmatory manifest, data/forecastbench/m18/confirmatory.json), fetch the "
+            "station's daily series once from DBnomics' keyless v22 API, keep only the "
+            "observations dated at or before the question's freeze instant (day D's is dated "
+            "00:00 UTC of D + 1) on the earlier-year days arms S, S' and K read, and write "
+            "them to the ledger as one dated source, admitted through the leakage gate. No "
+            "model is called. Resumable: questions the ledger holds are skipped. Free."
+        ),
+    )
+    ds.add_argument(
+        "--ledger", type=Path, default=fbseason.LEDGER, help=f"default {fbseason.LEDGER}"
     )
     bp = bt_sub.add_parser(
         "prices",
@@ -813,9 +831,35 @@ async def _backtest_dataset_closes(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _backtest_dbnomics_series(args: argparse.Namespace) -> int:
+    root = Path.cwd()
+    loaded = fbdataset.load(root)
+    manifest = fbseason.load_manifest(root)
+    held = fbseason.recorded_ids(args.ledger)
+    every = fbseason.wanted(loaded.questions, manifest, fbdataset.CORPUS_SETS)
+    todo = [(q, d) for q, d in every if q.question_id not in held]
+    print(
+        f"{len(todo)} Meteo-France questions to record ({len(every) - len(todo)} already in "
+        f"{args.ledger})"
+    )
+    if not todo:
+        return 0
+    clock = SystemClock()
+    async with default_http_client() as http:
+        fetcher = DBnomicsFetcher(http, clock)
+        with Ledger.open(args.ledger, clock) as ledger:
+            report = await fbseason.record_observations(
+                todo=todo, fetcher=fetcher, ledger=ledger, code_version=code_version()
+            )
+    print(f"ledger: {args.ledger} {report.line()}")
+    return 0
+
+
 async def _backtest(args: argparse.Namespace, settings: Settings) -> int:
     if args.backtest_command == "dataset-closes":
         return await _backtest_dataset_closes(args)
+    if args.backtest_command == "dbnomics-series":
+        return await _backtest_dbnomics_series(args)
     if args.backtest_command == "prices":
         return await _backtest_prices(args, settings)
     if args.backtest_command == "gkg-index":
