@@ -1,4 +1,4 @@
-.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker backtest-reader resolve-reader
+.PHONY: check fmt lint types test test-integration forecast results eval backtest backtest-q2 backtest-q2-news backtest-q3 power backtest-q4 calibration q6 install-check docker backtest-reader resolve-reader resolve-seasonal
 
 UV ?= uv
 
@@ -165,4 +165,29 @@ resolve-reader: ## M16: fetch each set's resolution file (only after both routes
 		else echo "$$s: no resolution file yet"; fi; \
 	done
 	$(UV) run augur readers
+	$(UV) run augur report
+
+SEASONAL_SETS ?= 2026-01-04 2026-06-07 2026-06-21 2026-07-05 2026-08-30 2026-09-13 2026-09-27
+SEASONAL_RAW ?= /tmp/augur-m18-raw
+SEASONAL_DAY ?= $(shell date -u +%F)
+FB_RAW = https://raw.githubusercontent.com/forecastingresearch/forecastbench-datasets/main/datasets
+FB_ARCHIVE = https://www.forecastbench.org/assets/data/processed-forecast-sets/processed_forecast_sets.tar.gz
+
+resolve-seasonal: ## M18: re-cut the confirmatory sets' published resolutions and P65's forecasts, then re-score (a progress reading before 2027-01-11)
+	mkdir -p $(SEASONAL_RAW)/sets $(SEASONAL_RAW)/archive
+	for s in $(SEASONAL_SETS); do \
+		curl -fsS -o $(SEASONAL_RAW)/sets/$$s-llm.json $(FB_RAW)/question_sets/$$s-llm.json && \
+		curl -fsS -o $(SEASONAL_RAW)/sets/$$s-res.json $(FB_RAW)/resolution_sets/$${s}_resolution_set.json || exit 1; \
+	done
+	python3 -I scripts/extract_dataset_questions.py $(SEASONAL_RAW)/sets data/forecastbench/m18/later \
+		--fetched $(SEASONAL_DAY) --sets $$(echo $(SEASONAL_SETS) | tr ' ' ',') --role later
+	curl -fsS -D $(SEASONAL_RAW)/archive/headers -o $(SEASONAL_RAW)/archive/pfs.tar.gz $(FB_ARCHIVE)
+	tar -xzf $(SEASONAL_RAW)/archive/pfs.tar.gz -C $(SEASONAL_RAW)/archive
+	python3 -I scripts/extract_forecast_sets.py \
+		$(SEASONAL_RAW)/archive/forecastbench-processed-forecast-sets $(SEASONAL_RAW)/archive/pfs.tar.gz \
+		$(SEASONAL_RAW)/unused --fetched $(SEASONAL_DAY) \
+		--last-modified "$$(grep -i '^last-modified:' $(SEASONAL_RAW)/archive/headers | cut -d' ' -f2- | tr -d '\r')" \
+		--dataset data/forecastbench/m18/later --dataset-out data/forecastbench/m18/later-forecasts \
+		--dataset-role later --dataset-only
+	$(UV) run augur fbcompare
 	$(UV) run augur report

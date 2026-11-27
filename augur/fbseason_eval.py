@@ -301,6 +301,10 @@ def replication(root: Path, obs: Mapping[int, Mapping[date, float]]) -> dict[str
     gate_temp = [i for i in gate_seen if i.meteo]
     wants.append(("gate seen", "B+S", "stat-v1", gate_seen))
     wants.append(("gate seen, temperatures", "B+S", "stat-v1", gate_temp))
+    for src in fbdataset.SOURCES:
+        sub = [i for i in gate_seen if i.key[1] == src and not i.meteo]
+        label = "ECB series" if src == "dbnomics" else src
+        wants.append((f"gate seen, {label}", "B+S", "stat-v1", sub))
     diffs = _diffs(_nonempty(wants), by="series")
     not_reached = {
         "S": sum(1 for a in arms.values() if a.shifts == 0),

@@ -3478,7 +3478,7 @@
   "k_up": 0,
   "kind": "progress reading",
   "left_out": 12,
-  "outcomes_as_of": null,
+  "outcomes_as_of": "2026-11-27",
   "planned": 313,
   "reading_day": "2027-01-11",
   "s_not_reached": 0,
@@ -4346,6 +4346,56 @@
     "low": -0.01727184214922411,
     "mean": -0.00023834466561660026,
     "n": 48,
+    "second": "stat-v1"
+   },
+   {
+    "clusters": 50,
+    "first": "B+S",
+    "group": "gate seen, acled",
+    "high": 0.07420394939627165,
+    "low": -0.003879581370186029,
+    "mean": 0.03254427348749422,
+    "n": 100,
+    "second": "stat-v1"
+   },
+   {
+    "clusters": 25,
+    "first": "B+S",
+    "group": "gate seen, ECB series",
+    "high": 0.18644384188117172,
+    "low": 0.08036757838391552,
+    "mean": 0.13464890739126037,
+    "n": 50,
+    "second": "stat-v1"
+   },
+   {
+    "clusters": 49,
+    "first": "B+S",
+    "group": "gate seen, fred",
+    "high": -0.0001251627706381017,
+    "low": -0.06772090466195213,
+    "mean": -0.0333615740339152,
+    "n": 96,
+    "second": "stat-v1"
+   },
+   {
+    "clusters": 49,
+    "first": "B+S",
+    "group": "gate seen, wikipedia",
+    "high": 0.1727987683063053,
+    "low": 0.000416661683446136,
+    "mean": 0.08614879647609987,
+    "n": 98,
+    "second": "stat-v1"
+   },
+   {
+    "clusters": 50,
+    "first": "B+S",
+    "group": "gate seen, yfinance",
+    "high": -0.00016984867210110082,
+    "low": -0.0019906698005524694,
+    "mean": -0.0011438574756225048,
+    "n": 100,
     "second": "stat-v1"
    }
   ],

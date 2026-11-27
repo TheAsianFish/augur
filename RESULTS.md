@@ -4,7 +4,9 @@ Every number here comes from a command in this repository, with the model,
 date, cost and raw output recorded. Blocks between `augur:begin` and
 `augur:end` comment markers are rendered by `augur report` (`make
 results`) from the committed ledgers and snapshots, and a test fails if the
-committed file differs from a fresh render. M17 makes the shadow round
+committed file differs from a fresh render. M18 adds a day-of-year arm
+for ForecastBench's temperature questions with no model in it, registered
+before any of the 313 outcomes it is judged on exists. M17 makes the shadow round
 the scheduled workflow's default, with no repository variable to set and
 no path that can post. M16 sets the newer free model
 (`nemotron-3.5-super-vl`) against the current route on the same
@@ -39,6 +41,332 @@ backtest (Q2) and tries an iterative research loop; M5 sets the bot
 against the market price on resolved ForecastBench questions (the price
 alone wins); M4 has the first scored number and the scoring it rests on;
 the first live score waits on a scored round (see Q1 and Q5 below).
+
+## M18: a day-of-year arm for temperature series (2026-11-27, $0)
+
+M15 found that its base rate loses to a coin on ForecastBench's daily
+temperature questions (B 0.343 on DBnomics), where the leaderboard's
+no-model entry and its leaders gain most. M18 asks how much of that is the
+calendar, computed from each station's own earlier years, and judges it on
+outcomes that did not exist when it was registered. The registration below
+was committed (`e182539`, 2026-11-27 19:30 UTC) before any DBnomics value
+was read into the repository, before the hold-out sets' resolution files
+were fetched, and before the first confirmatory instance resolves
+(2026-11-28). It was not pushed from the build machine, which has no
+GitHub credentials; GitHub's push time is recorded when the branch is
+pushed.
+
+<!-- augur:begin m18-registration -->
+**M18's registration (2026-11-27).** No model is called anywhere in M18.
+
+1. *Instances.* A Meteo-France instance is (set, id, resolution date r) of a
+   `dbnomics` question whose id starts `meteofrance_TEMPERATURE_`, with the
+   set's due date d, the question's freeze instant F and its freeze value v
+   from the question set. Everything else keeps M15's arms as registered.
+2. *The series source.* DBnomics' keyless v22 API
+   (`api.db.nomics.world/v22/series/meteofrance/TEMPERATURE/<code>?observations=1`),
+   fetched once per station on 2026-11-27, before any confirmatory outcome
+   exists. The observation for day D is dated 00:00 UTC of D + 1 and is
+   refused unless that instant is at or before F; `NA` values are dropped.
+   For each question, the admitted observations that items 4 to 6 read are
+   written to `data/ledgers/m18-dbnomics.sqlite` as one dated source and
+   admitted through the leakage gate with F as the cutoff before any arm
+   reads them. The values are DBnomics' current revision: a later correction
+   to an old station reading is a stated risk, and the ledger pins the
+   values used.
+3. *Earlier years.* Day t shifted back k ≥ 1 years is t with its year less
+   k (29 February becomes 28 February). W(t, w, k) is the days within w of
+   t shifted back k years. A shift k is usable for an instance if every day
+   of W(r, 3, k) and W(d, 3, k) is admitted at F and each window holds at
+   least 4 of its 7 days.
+4. *Arm S.* m_r(k) and m_d(k) are the means of the observations in W(r, 3, k)
+   and W(d, 3, k); over the usable shifts, S = (wins + 1) / (n + 2), where n
+   is their number and wins the number with m_r(k) > m_d(k). With n = 0, S
+   is M15's arm B, and the instance is counted as not reached.
+5. *Arm S′ (BLF's form).* Over every admitted observation x in W(r, 10, k)
+   for k ≥ 1: S′ = (#{x > v} + 1) / (N + 2). With N = 0 or no freeze value,
+   S′ is B (counted).
+6. *The control K.* For each (set, r): each station of the set with a usable
+   shift has the change c = mean over its usable shifts of m_r(k) − m_d(k);
+   the station-pooled change is the mean of c over those stations; K is 0.9
+   if it is above 0, 0.1 if below, 0.5 if exactly 0 or no station has a
+   usable shift. K is the same for every station of a (set, r): it knows
+   the calendar and nothing about the station.
+7. *The confirmatory set.* The 313 instances listed in
+   `data/forecastbench/m18/confirmatory.json`, committed with this
+   registration by `scripts/m18_confirmatory.py`: every Meteo-France
+   instance of a 2026 question set with r from 2026-11-28 to 2027-01-11 on
+   a question M15's committed extract holds; the 12 on questions it does not
+   hold are listed there and left out. Strata by horizon: 90 days (sets
+   2026-08-30, 2026-09-13, 2026-09-27; 121 instances), 180 days
+   (2026-06-07, 2026-06-21, 2026-07-05; 143), 365 days (2026-01-04; 49).
+   Outcomes are ForecastBench's resolution sets, cut by
+   `scripts/extract_dataset_questions.py` at a later fetch day into
+   `data/forecastbench/m18/later/`; an instance not resolved to 0 or 1 in a
+   file published by the reading date is counted as unpublished and left
+   out, and each reading states the fraction it covers.
+8. *The reading.* Once, on 2027-01-11. Before that date every reading is a
+   progress reading and P62 to P65 are marked "not yet readable"; on it,
+   each is held or failed on the published instances, or "not yet readable"
+   if its stratum has none.
+9. *The statistic.* Brier (p − y)²; differences are Brier(first) −
+   Brier(second), paired by instance, with a 95% bootstrap interval (10,000
+   resamples, seed 20261119). On the confirmatory set the interval
+   resamples (set, horizon) clusters, seven in all; with fewer than eight
+   the question-level interval is printed beside it, labelled optimistic,
+   and with one cluster only the question-level interval exists and is used.
+   Elsewhere clusters are series, as in M15. "Below 0" means the upper end
+   of the interval is below 0.
+10. *The primary difference* is S − K on the confirmatory set, pooled and
+    by stratum.
+11. *B-with-S* is S on Meteo-France instances and M15's arm B on every
+    other instance.
+12. *The predictions.*
+    - **P62.** On the confirmatory set, Brier(S) ≤ 0.12, and S − B ≤ −0.15
+      with its interval below 0.
+    - **P63.** On the 90-day stratum and, separately, on the 180-day
+      stratum, S − K lies within [−0.02, +0.02].
+    - **P64.** On the 365-day stratum, |Brier(S) − 0.25| ≤ 0.03, and
+      Brier(S′) < Brier(S).
+    - **P65 (the gate).** On the 2026-09-27 set's instances of every
+      source with r from 2026-11-28 to 2027-01-11 on which "stat-v1"
+      published a forecast that is not imputed, the upper end of the
+      series-clustered interval of B-with-S − "stat-v1" is below +0.01. Its
+      25 temperature instances (one cluster) are reported alone, and the
+      same quantity on the set's instances resolved by 2026-11-26 is
+      reported as a replication. Only if P65 holds does M15's follow-up
+      (the one-third Augur blend on dataset questions) open.
+    - **P66 (the later sets).** On the instances of the 2026-10-11 and
+      2026-10-25 sets in M15's form (single series; `acled`, `dbnomics`,
+      all ECB series, and `fred`; their `yfinance` questions now compare
+      two tickers' returns and `serpapi` is not an M15 source, both counted
+      as out of scope) resolved in the files fetched for this milestone,
+      B − Naive Forecaster ≤ −0.02 with its series-clustered interval below
+      0. Read at the merge: these outcomes exist and nobody in this
+      repository has scored them.
+13. *The replication.* On M15's 799 Meteo-France corpus instances, which
+    have been looked at, S, S′, K, B and always 50% by horizon (7, 30 and
+    90 days) beside the published entries on the same instances, labelled
+    a replication of a seen result; no prediction is read on them.
+14. *The label.* A backtest row in raw Brier on matched instances, never a
+    Brier Index. BLF's 59.1 against 50.0 on DBnomics (appendix G.1) is a
+    different sample and metric and is quoted, not compared.
+<!-- augur:end m18-registration -->
+
+### The observations
+
+`augur backtest dbnomics-series` fetched each of 53 Meteo-France stations
+once from DBnomics' keyless v22 API on 2026-11-27 and wrote, for each of
+458 questions (M15's seven corpus sets and the confirmatory sets), only the
+earlier-year days the arms read to `data/ledgers/m18-dbnomics.sqlite` as
+one dated source, admitted through the leakage gate with the question's
+freeze instant as the cutoff. 68,153 points the server returned were dated
+after the freeze of the question they were read for, and were refused
+before anything stored them. `augur ledger check` reports 0 violations,
+and `tests/test_leakage.py` scans the ledger with every other. The fake
+server in `tests/test_dbnomics.py` returns a value dated the day after the
+freeze and one on the resolution day itself, and proves both are refused
+and absent from the ledger.
+
+### Results
+
+<!-- augur:begin fbseason -->
+**Label: a backtest row in raw Brier on matched instances, not a Brier Index; BLF's 59.1 against 50.0 on DBnomics (arXiv 2604.18576v5, appendix G.1) is a different sample and metric, quoted and not compared.** No model call, $0. Observations: `data/ledgers/m18-dbnomics.sqlite` (53 stations, each question's earlier-year windows admitted through the leakage gate).
+
+**The corpus replication (a replication of a seen result: the 799 corpus instances had been looked at (0.1740 in the plan's scratch run); no prediction is read on them).** 799 Meteo-France instances on 52 stations; usable year shifts per instance: median 14, from 3 to 14; S not reached on 0, S′ on 0.
+
+| Horizon | n | Yes share | A: 50% | B: source rate | S | S′ | K |
+|---|---|---|---|---|---|---|---|
+| all | 799 | 0.383 | 0.2500 | 0.3402 | 0.1771 | 0.2509 | 0.2653 |
+| 7 days | 307 | 0.505 | 0.2500 | 0.2904 | 0.2458 | 0.3705 | 0.3175 |
+| 30 days | 304 | 0.378 | 0.2500 | 0.3421 | 0.1876 | 0.2535 | 0.2758 |
+| 90 days | 188 | 0.192 | 0.2500 | 0.4185 | 0.0479 | 0.0515 | 0.1632 |
+
+Paired differences, first − second (negative: the first is better), 95% bootstrap intervals clustered by series (cluster counts in parentheses):
+
+| Group | Difference | n | Mean | Interval |
+|---|---|---|---|---|
+| meteo | S: day-of-year pairs − B: source rate | 799 | -0.1631 | [-0.1903, -0.1342] (52) |
+| meteo | S: day-of-year pairs − A: 50% | 799 | -0.0729 | [-0.0859, -0.0587] (52) |
+| meteo | S: day-of-year pairs − K: calendar sign | 799 | -0.0882 | [-0.1217, -0.0581] (52) |
+| meteo | S′: exceedance of the freeze value − S: day-of-year pairs | 799 | +0.0738 | [+0.0539, +0.0945] (52) |
+| meteo | S′: exceedance of the freeze value − A: 50% | 799 | +0.0009 | [-0.0233, +0.0259] (52) |
+| meteo 7d | S: day-of-year pairs − B: source rate | 307 | -0.0447 | [-0.0687, -0.0207] (52) |
+| meteo 7d | S: day-of-year pairs − A: 50% | 307 | -0.0042 | [-0.0181, +0.0100] (52) |
+| meteo 7d | S: day-of-year pairs − K: calendar sign | 307 | -0.0717 | [-0.1093, -0.0350] (52) |
+| meteo 7d | S′: exceedance of the freeze value − S: day-of-year pairs | 307 | +0.1247 | [+0.0883, +0.1626] (52) |
+| meteo 7d | S′: exceedance of the freeze value − A: 50% | 307 | +0.1205 | [+0.0819, +0.1613] (52) |
+| meteo 30d | S: day-of-year pairs − B: source rate | 304 | -0.1544 | [-0.1945, -0.1132] (52) |
+| meteo 30d | S: day-of-year pairs − A: 50% | 304 | -0.0624 | [-0.0863, -0.0379] (52) |
+| meteo 30d | S: day-of-year pairs − K: calendar sign | 304 | -0.0882 | [-0.1286, -0.0534] (52) |
+| meteo 30d | S′: exceedance of the freeze value − S: day-of-year pairs | 304 | +0.0659 | [+0.0392, +0.0931] (52) |
+| meteo 30d | S′: exceedance of the freeze value − A: 50% | 304 | +0.0035 | [-0.0347, +0.0411] (52) |
+| meteo 90d | S: day-of-year pairs − B: source rate | 188 | -0.3706 | [-0.4247, -0.3096] (52) |
+| meteo 90d | S: day-of-year pairs − A: 50% | 188 | -0.2021 | [-0.2271, -0.1727] (52) |
+| meteo 90d | S: day-of-year pairs − K: calendar sign | 188 | -0.1153 | [-0.1849, -0.0553] (52) |
+| meteo 90d | S′: exceedance of the freeze value − S: day-of-year pairs | 188 | +0.0036 | [-0.0193, +0.0241] (52) |
+| meteo 90d | S′: exceedance of the freeze value − A: 50% | 188 | -0.1985 | [-0.2261, -0.1658] (52) |
+| meteo | S: day-of-year pairs − Naive | 799 | -0.0435 | [-0.0614, -0.0263] (52) |
+| meteo | S′: exceedance of the freeze value − Naive | 799 | +0.0303 | [+0.0049, +0.0565] (52) |
+
+The published entries on the Meteo-France instances they forecast (Brier):
+
+| Entry | Sets | n | Entry | A | B | S | S′ | K |
+|---|---|---|---|---|---|---|---|---|
+| Naive | 2026-07-05, 2026-07-19, 2026-08-02, 2026-08-16, 2026-08-30, 2026-09-13, 2026-09-27 | 799 | 0.2206 | 0.2500 | 0.3402 | 0.1771 | 0.2509 | 0.2653 |
+| "stat-v1" | 2026-09-27 | 48 | 0.1411 | 0.2500 | 0.4195 | 0.1408 | 0.1802 | 0.1267 |
+| "hybrid ensemble 1" | 2026-09-27 | 48 | 0.0687 | 0.2500 | 0.4195 | 0.1408 | 0.1802 | 0.1267 |
+| "model-4" | 2026-08-30 | 91 | 0.1963 | 0.2500 | 0.2268 | 0.2924 | 0.5337 | 0.5375 |
+
+| Group | Difference | n | Mean | Interval |
+|---|---|---|---|---|
+| meteo | S: day-of-year pairs − "stat-v1" | 48 | -0.0002 | [-0.0173, +0.0163] (25) |
+| meteo | S′: exceedance of the freeze value − "stat-v1" | 48 | +0.0391 | [-0.0149, +0.1001] (25) |
+| meteo | S: day-of-year pairs − "hybrid ensemble 1" | 48 | +0.0721 | [+0.0169, +0.1293] (25) |
+| meteo | S′: exceedance of the freeze value − "hybrid ensemble 1" | 48 | +0.1115 | [+0.0280, +0.2116] (25) |
+| meteo | S: day-of-year pairs − "model-4" | 91 | +0.0961 | [+0.0245, +0.1625] (47) |
+| meteo | S′: exceedance of the freeze value − "model-4" | 91 | +0.3374 | [+0.2052, +0.4605] (47) |
+
+Pooled over every corpus instance and DBnomics alone (Meteo-France and ECB), B with S (S on Meteo-France instances, B elsewhere):
+
+| Group | n | A: 50% | B | B with S | Naive |
+|---|---|---|---|---|---|
+| pooled | 4398 | 0.2500 | 0.2200 | 0.1904 | 0.2795 |
+| dbnomics | 849 | 0.2500 | 0.3428 | 0.1893 | 0.2309 |
+
+| Group | Difference | n | Mean | Interval |
+|---|---|---|---|---|
+| pooled | B with S − B: source rate | 4398 | -0.0296 | [-0.0387, -0.0210] (1016) |
+| pooled | B with S − A: 50% | 4398 | -0.0596 | [-0.0689, -0.0499] (1016) |
+| pooled | B with S − Naive | 4398 | -0.0891 | [-0.1078, -0.0710] (1016) |
+| pooled | B with S − "stat-v1" | 492 | +0.0307 | [+0.0085, +0.0515] (248) |
+| pooled | B with S − "hybrid ensemble 1" | 492 | +0.0757 | [+0.0547, +0.0969] (248) |
+| pooled | B with S − "model-4" | 485 | +0.0591 | [+0.0391, +0.0801] (246) |
+| dbnomics | B with S − B: source rate | 849 | -0.1535 | [-0.1803, -0.1255] (77) |
+| dbnomics | B with S − A: 50% | 849 | -0.0607 | [-0.0743, -0.0453] (77) |
+| dbnomics | B with S − Naive | 849 | -0.0416 | [-0.0594, -0.0238] (77) |
+| dbnomics | B with S − "stat-v1" | 98 | +0.0686 | [+0.0351, +0.1025] (50) |
+| dbnomics | B with S − "hybrid ensemble 1" | 98 | +0.1170 | [+0.0708, +0.1628] (50) |
+| dbnomics | B with S − "model-4" | 91 | +0.0961 | [+0.0245, +0.1625] (47) |
+| gate seen | B with S − "stat-v1" | 492 | +0.0307 | [+0.0085, +0.0515] (248) |
+| gate seen, temperatures | B with S − "stat-v1" | 48 | -0.0002 | [-0.0173, +0.0163] (25) |
+| gate seen, acled | B with S − "stat-v1" | 100 | +0.0325 | [-0.0039, +0.0742] (50) |
+| gate seen, ECB series | B with S − "stat-v1" | 50 | +0.1346 | [+0.0804, +0.1864] (25) |
+| gate seen, fred | B with S − "stat-v1" | 96 | -0.0334 | [-0.0677, -0.0001] (49) |
+| gate seen, wikipedia | B with S − "stat-v1" | 98 | +0.0861 | [+0.0004, +0.1728] (49) |
+| gate seen, yfinance | B with S − "stat-v1" | 100 | -0.0011 | [-0.0020, -0.0002] (50) |
+
+**The later sets (2026-10-11, 2026-10-25).** 393 instances on 236 series in M15's form; temperature questions: 0. Left out: 2026-10-11: 50 a listed past resolution date with no row resolved to 0 or 1, 450 a listed resolution date after the fetch day, 50 a two-ticker return question (the form from 2026-10-11), 50 another dataset source (serpapi); 2026-10-25: 100 a listed past resolution date with no row resolved to 0 or 1, 375 a listed resolution date after the fetch day, 25 a question with no resolved date, 50 a two-ticker return question (the form from 2026-10-11), 75 another dataset source (serpapi). None of the named entries forecast these sets under the same names, so the comparators are ForecastBench's baselines.
+
+| Group | n | Yes share | A: 50% | B | C | Naive | Imputed |
+|---|---|---|---|---|---|---|---|
+| pooled | 393 | 0.410 | 0.2500 | 0.2916 | 0.3031 | 0.2709 | 0.2500 |
+| acled | 150 | 0.380 | 0.2500 | 0.3146 | 0.2852 | 0.2997 | 0.2500 |
+| dbnomics | 50 | 0.260 | 0.2500 | 0.3619 | 0.3619 | 0.2663 | 0.2500 |
+| fred | 193 | 0.471 | 0.2500 | 0.2554 | 0.3019 | 0.2496 | 0.2500 |
+| 2026-10-11 | 247 | 0.381 | 0.2500 | 0.3057 | 0.3073 | 0.2671 | 0.2500 |
+| 2026-10-25 | 146 | 0.459 | 0.2500 | 0.2676 | 0.2961 | 0.2772 | 0.2500 |
+
+| Group | Difference | n | Mean | Interval |
+|---|---|---|---|---|
+| pooled | B: source rate − A: 50% | 393 | +0.0416 | [+0.0114, +0.0735] (236) |
+| pooled | B: source rate − Naive | 393 | +0.0207 | [-0.0171, +0.0602] (236) |
+| pooled | C: series' rate − B: source rate | 393 | +0.0116 | [-0.0098, +0.0332] (236) |
+| pooled | Naive − A: 50% | 393 | +0.0209 | [-0.0010, +0.0436] (236) |
+| acled | B: source rate − A: 50% | 150 | +0.0646 | [-0.0134, +0.1444] (97) |
+| acled | B: source rate − Naive | 150 | +0.0149 | [-0.0775, +0.1104] (97) |
+| acled | C: series' rate − B: source rate | 150 | -0.0295 | [-0.0568, -0.0076] (97) |
+| acled | Naive − A: 50% | 150 | +0.0497 | [-0.0016, +0.1042] (97) |
+| dbnomics | B: source rate − A: 50% | 50 | +0.1119 | [+0.0707, +0.1531] (50) |
+| dbnomics | B: source rate − Naive | 50 | +0.0955 | [-0.0017, +0.1867] (50) |
+| dbnomics | C: series' rate − B: source rate | 50 | +0.0000 | [+0.0000, +0.0000] (50) |
+| dbnomics | Naive − A: 50% | 50 | +0.0163 | [-0.0571, +0.0954] (50) |
+| fred | B: source rate − A: 50% | 193 | +0.0054 | [-0.0037, +0.0144] (89) |
+| fred | B: source rate − Naive | 193 | +0.0059 | [-0.0037, +0.0153] (89) |
+| fred | C: series' rate − B: source rate | 193 | +0.0464 | [+0.0078, +0.0854] (89) |
+| fred | Naive − A: 50% | 193 | -0.0004 | [-0.0028, +0.0020] (89) |
+| 2026-10-11 | B: source rate − A: 50% | 247 | +0.0557 | [+0.0155, +0.0995] (150) |
+| 2026-10-11 | B: source rate − Naive | 247 | +0.0386 | [-0.0125, +0.0919] (150) |
+| 2026-10-11 | C: series' rate − B: source rate | 247 | +0.0016 | [-0.0241, +0.0259] (150) |
+| 2026-10-11 | Naive − A: 50% | 247 | +0.0171 | [-0.0136, +0.0474] (150) |
+| 2026-10-25 | B: source rate − A: 50% | 146 | +0.0176 | [-0.0197, +0.0572] (100) |
+| 2026-10-25 | B: source rate − Naive | 146 | -0.0096 | [-0.0563, +0.0360] (100) |
+| 2026-10-25 | C: series' rate − B: source rate | 146 | +0.0284 | [-0.0048, +0.0617] (100) |
+| 2026-10-25 | Naive − A: 50% | 146 | +0.0272 | [+0.0000, +0.0575] (100) |
+
+**P66: failed.** B − Naive +0.02073 [-0.01707, +0.06023] on 393 instances, 236 series.
+
+**The confirmatory set: a progress reading.** 313 instances (12 more left out), resolving 2026-11-28 to 2027-01-11, read once on 2027-01-11. Every arm's forecast on every instance is pinned in the snapshot before any outcome exists; K is 0.9 on 0 of them and 0.1 on the rest; S falls back to B on 0. Outcomes read: the later re-cuts fetched 2026-11-27.
+
+| Stratum | Planned | Published | (set, horizon) clusters | A: 50% | B | S | S′ | K |
+|---|---|---|---|---|---|---|---|---|
+| all | 313 | 0 | 7 | — | — | — | — | — |
+| 90d | 121 | 0 | 3 | — | — | — | — | — |
+| 180d | 143 | 0 | 3 | — | — | — | — | — |
+| 365d | 49 | 0 | 1 | — | — | — | — | — |
+
+P65's instances: 248 of the 2026-09-27 set resolve in the window (2 more on questions the extract lacks); scored so far: 0.
+
+| Prediction | Verdict | Reading |
+|---|---|---|
+| P62 | not yet readable | no confirmatory outcome published |
+| P63 | not yet readable | 90d: none published; 180d: none published |
+| P64 | not yet readable | none published |
+| P65 | not yet readable | 0 of 248 instances scored (no outcome or forecast yet) |
+| P66 | failed | B − Naive +0.02073 [-0.01707, +0.06023] on 393 instances, 236 series |
+<!-- augur:end fbseason -->
+
+### What it says
+
+- **The replication (seen data, no verdict).** On M15's 799 Meteo-France
+  corpus instances S scores 0.1771 against a coin's 0.25, the base rate's
+  0.3402 and the Naive Forecaster's 0.2206; the plan's scratch run gave
+  0.1740 with the freeze day as the anchor, and the registered arm anchors
+  on the due date, so the two are not the same estimator (the ledger holds
+  only the registered windows, so the freeze-day form is not recomputed
+  here). By horizon: 0.2458 at 7 days, 0.1876 at 30, 0.0479 at 90. The
+  7-day stratum is the one the plan expected S to lose to a coin (0.258 in
+  the scratch run); with the due-date anchor it does not lose, but it does
+  not win either (S − A −0.0042 [−0.0181, +0.0100]), while S′ loses badly
+  there (0.3705). S beats the calendar sign K at every horizon (−0.0882
+  pooled), so the station's own history carries information beyond "it
+  gets colder in autumn".
+- **Against the published entries on the same instances.** On the 48
+  temperature instances of the 2026-09-27 set, S equals "stat-v1"
+  (−0.0002 [−0.0173, +0.0163]) and trails "hybrid ensemble 1" by +0.0721;
+  on 91 of the 2026-08-30 set it trails "model-4" by +0.0961. Pooled over
+  all 4,398 corpus instances, B with S (0.1904) beats B (0.2200) by
+  −0.0296, and on DBnomics alone (849 instances, Meteo-France and ECB) it
+  takes the source from 0.3428 to 0.1893. BLF's day-of-year KNN reports a
+  Brier Index of 59.1 against 50.0 for always 0.5 on 40 DBnomics questions
+  (arXiv 2604.18576v5, appendix G.1): a different sample and metric, quoted,
+  not compared.
+- **The gate on seen data.** On the 492 instances of the 2026-09-27 set on
+  which "stat-v1" published, B with S trails it by +0.0307 [+0.0085,
+  +0.0515]. None of it is on temperatures (−0.0002 on those 48); the
+  largest shares are Wikipedia (+0.086 a question on 98) and the ECB series
+  (+0.135 on 50), where B with S is plain B. If the confirmatory gate looks like this, P65 fails and
+  M15's follow-up stays closed.
+- **P66 failed on sets nobody had scored.** On the 393 instances of the
+  2026-10-11 and 2026-10-25 sets in M15's form, the walk-forward base rate
+  is worse than a coin (B − A +0.0416 [+0.0114, +0.0735]) and than the Naive
+  Forecaster (+0.0207 [−0.0171, +0.0602]). M15's P53 held on the corpus
+  (B − Naive −0.059); out of sample it did not replicate. The base rate
+  carries each source's earlier yes share into sets whose mix changed (the
+  DBnomics questions are all ECB series now, yes share 0.26, against a
+  history of temperatures), which is the failure a day-of-year or a
+  series-specific arm exists to avoid.
+- **The confirmatory set is a progress reading with nothing resolved.**
+  The 313 forecasts were pinned on 2026-11-27, before the first outcome
+  (2026-11-28) exists; `make resolve-seasonal` re-cut the published files
+  the same day and found 0 of 313 (the latest resolved date in them is
+  2026-10-27). K is 0.1 on every instance (each set's pooled change runs
+  into winter), while S is above 0.5 on 52 of them. The 36 of those in the
+  90- and 180-day strata are ten stations in the southern hemisphere and
+  the tropics (Kerguelen, Crozet, Europa, Pamandzi, Cayenne and others, by
+  their DBnomics names), where the months ahead are not winter; P63 (S − K
+  within ±0.02 there) is decided by them. P62 to P65 are not yet
+  readable; the registered reading is on 2027-01-11 (To measure).
 
 ## M17: the shadow round on by default (2026-11-27, $0)
 
@@ -3240,6 +3568,9 @@ works against the real API; they say nothing yet about accuracy.
 
 | What | Why not yet | Command |
 |------|-------------|---------|
+| M18's registered reading (P62 to P65 on the 313 confirmatory instances and P65's 248) | Registered for 2027-01-11; on 2026-11-27 none of the outcomes existed (the first resolves 2026-11-28) | On 2027-01-11 (UTC): `make resolve-seasonal` (re-fetches the seven question and resolution sets and the processed forecast sets, re-cuts them into `data/forecastbench/m18/later*`, runs `augur fbcompare` and `augur report`); the block then says "registered reading" and marks each prediction held or failed on the published instances, with the fraction covered. Before that date the same command gives a progress reading |
+| GitHub's push time of M18's registration (`e182539`) | No GitHub credentials on the build machine | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.ref == "refs/heads/dev/m18") \| [.timestamp, .after]'`; the registration counts only if the push is earlier than the first re-cut holding a confirmatory outcome |
+| A persistence term for the 7-day temperature horizon | Out of M18's scope by its plan: no unresolved 7-day temperature question exists to test it on | None until ForecastBench poses temperature questions again (none after the 2026-09-27 set) |
 | M16's registered reading (route rule, P58 to P60 on the full sets) | Registered for 2027-01-11; on 2026-11-26 only 15 of the 2026-11-08 set's questions had resolved and the 2026-11-22 file did not exist | `make resolve-reader` whenever ForecastBench publishes or updates either file (it re-fetches, records the SHA-256 and upstream commit time, resolves both ledgers, re-renders); on 2027-01-11 the same, then `augur readers --live L` with the live ledger below, and the verdict in the block is the registered one |
 | M16's live arm on the 2026-12-14 round (P61) | The arm is off until the maintainer sets the repository variable, and the round opens about 2026-12-14 | Maintainer: set `AUGUR_SHADOW_READER=true` (the shadow ticks themselves need no variable since M17; never `AUGUR_SUBMIT`). After the round resolves: `scripts/shadow_fetch.sh branch && augur ledger import branch/shadow --out data/ledgers/m16-live.sqlite`, `augur resolve --ledger data/ledgers/m16-live.sqlite` (or `--manual-file`), `augur readers --live data/ledgers/m16-live.sqlite`, and `augur score data/ledgers/m16-live.sqlite --mode dry_run --cluster week` (the `reader` and `reader-base` rows beside the others); P61's count: `sqlite3 data/ledgers/m16-live.sqlite "SELECT count(DISTINCT question_id) FROM reference_forecasts WHERE forecaster = 'reader'"` against the floor's scored n |
 | GitHub's push time of M16's registration (`5a6850f`) | No GitHub credentials on the build machine | `gh api repos/TheAsianFish/augur/activity --jq '.[] \| select(.ref == "refs/heads/dev/m16") \| [.timestamp, .after]'` (the earliest push containing the commit) |
