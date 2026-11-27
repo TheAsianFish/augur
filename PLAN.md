@@ -2378,6 +2378,117 @@ to a coin: it would be tuned to a loss already seen, and no unresolved
 7-day temperature question exists to test it on. It is reported as an
 open problem with the stratum's number.
 
+**M18's registration, committed 2026-11-27 before any M18 code, before any
+DBnomics observation is read into the repository and before any resolution
+dated after 2026-11-27 exists.** What had been seen when it was written: the
+plan above (with its scratch figures on the 799 corpus instances), the
+question sets 2026-01-04 to 2026-10-25 (resolution dates and freeze values,
+no outcomes), one DBnomics response for station 07005 (its shape, not its
+values), and which (source, resolution date) rows ForecastBench's processed
+forecast sets of 2026-11-27 hold, without their outcomes. No arm below had
+been computed by this repository. One change from the design above, made
+here: S compares the resolution window with the **due** date's window, not
+the freeze day's, because each question asks whether the value on the
+resolution date is higher than on the forecast due date, and the 2026-11-27
+direction names the due day. RESULTS.md carries the block byte for byte.
+
+<!-- m18-registration:begin -->
+**M18's registration (2026-11-27).** No model is called anywhere in M18.
+
+1. *Instances.* A Meteo-France instance is (set, id, resolution date r) of a
+   `dbnomics` question whose id starts `meteofrance_TEMPERATURE_`, with the
+   set's due date d, the question's freeze instant F and its freeze value v
+   from the question set. Everything else keeps M15's arms as registered.
+2. *The series source.* DBnomics' keyless v22 API
+   (`api.db.nomics.world/v22/series/meteofrance/TEMPERATURE/<code>?observations=1`),
+   fetched once per station on 2026-11-27, before any confirmatory outcome
+   exists. The observation for day D is dated 00:00 UTC of D + 1 and is
+   refused unless that instant is at or before F; `NA` values are dropped.
+   For each question, the admitted observations that items 4 to 6 read are
+   written to `data/ledgers/m18-dbnomics.sqlite` as one dated source and
+   admitted through the leakage gate with F as the cutoff before any arm
+   reads them. The values are DBnomics' current revision: a later correction
+   to an old station reading is a stated risk, and the ledger pins the
+   values used.
+3. *Earlier years.* Day t shifted back k ≥ 1 years is t with its year less
+   k (29 February becomes 28 February). W(t, w, k) is the days within w of
+   t shifted back k years. A shift k is usable for an instance if every day
+   of W(r, 3, k) and W(d, 3, k) is admitted at F and each window holds at
+   least 4 of its 7 days.
+4. *Arm S.* m_r(k) and m_d(k) are the means of the observations in W(r, 3, k)
+   and W(d, 3, k); over the usable shifts, S = (wins + 1) / (n + 2), where n
+   is their number and wins the number with m_r(k) > m_d(k). With n = 0, S
+   is M15's arm B, and the instance is counted as not reached.
+5. *Arm S′ (BLF's form).* Over every admitted observation x in W(r, 10, k)
+   for k ≥ 1: S′ = (#{x > v} + 1) / (N + 2). With N = 0 or no freeze value,
+   S′ is B (counted).
+6. *The control K.* For each (set, r): each station of the set with a usable
+   shift has the change c = mean over its usable shifts of m_r(k) − m_d(k);
+   the station-pooled change is the mean of c over those stations; K is 0.9
+   if it is above 0, 0.1 if below, 0.5 if exactly 0 or no station has a
+   usable shift. K is the same for every station of a (set, r): it knows
+   the calendar and nothing about the station.
+7. *The confirmatory set.* The 313 instances listed in
+   `data/forecastbench/m18/confirmatory.json`, committed with this
+   registration by `scripts/m18_confirmatory.py`: every Meteo-France
+   instance of a 2026 question set with r from 2026-11-28 to 2027-01-11 on
+   a question M15's committed extract holds; the 12 on questions it does not
+   hold are listed there and left out. Strata by horizon: 90 days (sets
+   2026-08-30, 2026-09-13, 2026-09-27; 121 instances), 180 days
+   (2026-06-07, 2026-06-21, 2026-07-05; 143), 365 days (2026-01-04; 49).
+   Outcomes are ForecastBench's resolution sets, cut by
+   `scripts/extract_dataset_questions.py` at a later fetch day into
+   `data/forecastbench/m18/later/`; an instance not resolved to 0 or 1 in a
+   file published by the reading date is counted as unpublished and left
+   out, and each reading states the fraction it covers.
+8. *The reading.* Once, on 2027-01-11. Before that date every reading is a
+   progress reading and P62 to P65 are marked "not yet readable"; on it,
+   each is held or failed on the published instances, or "not yet readable"
+   if its stratum has none.
+9. *The statistic.* Brier (p − y)²; differences are Brier(first) −
+   Brier(second), paired by instance, with a 95% bootstrap interval (10,000
+   resamples, seed 20261119). On the confirmatory set the interval
+   resamples (set, horizon) clusters, seven in all; with fewer than eight
+   the question-level interval is printed beside it, labelled optimistic,
+   and with one cluster only the question-level interval exists and is used.
+   Elsewhere clusters are series, as in M15. "Below 0" means the upper end
+   of the interval is below 0.
+10. *The primary difference* is S − K on the confirmatory set, pooled and
+    by stratum.
+11. *B-with-S* is S on Meteo-France instances and M15's arm B on every
+    other instance.
+12. *The predictions.*
+    - **P62.** On the confirmatory set, Brier(S) ≤ 0.12, and S − B ≤ −0.15
+      with its interval below 0.
+    - **P63.** On the 90-day stratum and, separately, on the 180-day
+      stratum, S − K lies within [−0.02, +0.02].
+    - **P64.** On the 365-day stratum, |Brier(S) − 0.25| ≤ 0.03, and
+      Brier(S′) < Brier(S).
+    - **P65 (the gate).** On the 2026-09-27 set's instances of every
+      source with r from 2026-11-28 to 2027-01-11 on which "stat-v1"
+      published a forecast that is not imputed, the upper end of the
+      series-clustered interval of B-with-S − "stat-v1" is below +0.01. Its
+      25 temperature instances (one cluster) are reported alone, and the
+      same quantity on the set's instances resolved by 2026-11-26 is
+      reported as a replication. Only if P65 holds does M15's follow-up
+      (the one-third Augur blend on dataset questions) open.
+    - **P66 (the later sets).** On the instances of the 2026-10-11 and
+      2026-10-25 sets in M15's form (single series; `acled`, `dbnomics`,
+      all ECB series, and `fred`; their `yfinance` questions now compare
+      two tickers' returns and `serpapi` is not an M15 source, both counted
+      as out of scope) resolved in the files fetched for this milestone,
+      B − Naive Forecaster ≤ −0.02 with its series-clustered interval below
+      0. Read at the merge: these outcomes exist and nobody in this
+      repository has scored them.
+13. *The replication.* On M15's 799 Meteo-France corpus instances, which
+    have been looked at, S, S′, K, B and always 50% by horizon (7, 30 and
+    90 days) beside the published entries on the same instances, labelled
+    a replication of a seen result; no prediction is read on them.
+14. *The label.* A backtest row in raw Brier on matched instances, never a
+    Brier Index. BLF's 59.1 against 50.0 on DBnomics (appendix G.1) is a
+    different sample and metric and is quoted, not compared.
+<!-- m18-registration:end -->
+
 ### M19: how wrong is a reading taken from the questions that resolve first?
 
 **Question.** When a comparison is read while only part of a question set
