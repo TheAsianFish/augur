@@ -332,8 +332,8 @@ P65's instances: 248 of the 2026-09-27 set resolve in the window (2 more on ques
   pooled), so the station's own history carries information beyond "it
   gets colder in autumn".
 - **Against the published entries on the same instances.** On the 48
-  temperature instances of the 2026-09-27 set, S equals "stat-v1"
-  (−0.0002 [−0.0173, +0.0163]) and trails "hybrid ensemble 1" by +0.0721;
+  temperature instances of the 2026-09-27 set, S is level with "stat-v1"
+  (−0.0002 [−0.0173, +0.0163], one set, 25 stations) and trails "hybrid ensemble 1" by +0.0721;
   on 91 of the 2026-08-30 set it trails "model-4" by +0.0961. Pooled over
   all 4,398 corpus instances, B with S (0.1904) beats B (0.2200) by
   −0.0296, and on DBnomics alone (849 instances, Meteo-France and ECB) it

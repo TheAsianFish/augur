@@ -225,7 +225,7 @@ the resolution day was warmer than the week around the due date, from
 DBnomics observations each dated a day after its period, refused if dated
 after the question's freeze and written to a backtest ledger first. A
 control K knows only the calendar's sign. On the 799 corpus instances
-already looked at, S scores 0.177 against a coin's 0.25 and equals the
+already looked at, S scores 0.177 against a coin's 0.25 and is level with the
 no-model entry "stat-v1" on its temperature instances; that is labelled a
 replication. The test is 313 instances that resolve from 2026-11-28 to
 2027-01-11, every arm's forecast pinned before the first outcome exists,
