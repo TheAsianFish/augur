@@ -2874,6 +2874,7 @@ missed, and why).
 | `m15-dataset-closes.sqlite` | 1 (backtest 1) | 348 | 0 | 0 | 0 | 0 | 0 |
 | `m16-reader-current.sqlite` | 5 (backtest 5) | 245 | 295 | 291 | 0 | 15 | 15 |
 | `m16-reader-newer.sqlite` | 5 (backtest 5) | 245 | 301 | 291 | 0 | 15 | 15 |
+| `m18-dbnomics.sqlite` | 1 (backtest 1) | 458 | 0 | 0 | 0 | 0 | 0 |
 | `m2-live-bot-testing-area.sqlite` | 2 (live 2) | 1 | 16 | 2 | 2 | 0 | 0 |
 | `m2-probe.sqlite` | 0 (-) | 0 | 0 | 0 | 0 | 0 | 0 |
 | `m3-dryrun-minibench-2.sqlite` | 1 (dry_run 1) | 1 | 6 | 1 | 0 | 0 | 0 |
