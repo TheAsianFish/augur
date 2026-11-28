@@ -14,6 +14,12 @@ URLs, sizes, SHA-256 and the fetch date. The sets from :data:`CORPUS_FIRST`
 on are the scored corpus; the earlier ones are history only
 (PLAN.md, ``m15-registration``, items 1 and 2).
 
+M18 adds ``--sets`` (cut these due dates, any year range) and ``--role``
+(``holdout`` for the 2026-10-11 and 2026-10-25 sets, ``later`` for a re-cut of
+earlier sets at a later fetch day, read for the confirmatory instances), and
+counts the two-ticker return questions ``yfinance`` asks from 2026-10-11 on as
+out of scope (``m18-registration``, item 12, P66).
+
 The files are untrusted data: read only as JSON, standard library only.
 """
 
@@ -100,6 +106,10 @@ def cut(questions: dict[str, Any], resolutions: dict[str, Any], fetched: str) ->
         if not isinstance(q.get("id"), str):
             remove("a pair question (a list of ids)")
             continue
+        if source == "yfinance" and "rate of return than" in str(q.get("question", "")):
+            remove("a two-ticker return question (the form from 2026-10-11)")
+            resolved.pop((source, str(q["id"])), None)
+            continue
         key = (source, str(q["id"]))
         outcomes = resolved.pop(key, {})
         listed = [str(d)[:10] for d in q.get("resolution_dates") or []]
@@ -161,12 +171,25 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("raw", type=Path)
     parser.add_argument("out", type=Path)
     parser.add_argument("--fetched", required=True, help="the day the files were fetched")
-    args = parser.parse_args(argv)
-    sets = sorted(
-        p.name.removesuffix("-llm.json")
-        for p in args.raw.glob("2026-*-llm.json")
-        if FIRST <= p.name[:10] <= LAST
+    parser.add_argument(
+        "--sets",
+        help="comma-separated due dates to cut instead of every set from FIRST to LAST (M18)",
     )
+    parser.add_argument(
+        "--role", help="the role to write instead of corpus or history (M18: holdout, later)"
+    )
+    args = parser.parse_args(argv)
+    if args.sets:
+        sets = sorted(s.strip() for s in args.sets.split(",") if s.strip())
+        absent = [s for s in sets if not (args.raw / f"{s}-llm.json").exists()]
+        if absent:
+            raise ExtractError(f"no question set {', '.join(absent)} in {args.raw}")
+    else:
+        sets = sorted(
+            p.name.removesuffix("-llm.json")
+            for p in args.raw.glob("2026-*-llm.json")
+            if FIRST <= p.name[:10] <= LAST
+        )
     if not sets:
         raise ExtractError(f"no question set from {FIRST} to {LAST} in {args.raw}")
     args.out.mkdir(parents=True, exist_ok=True)
@@ -181,7 +204,7 @@ def main(argv: Sequence[str]) -> int:
         )
         if doc["forecast_due_date"] != s:
             raise ExtractError(f"{qpath.name} is due {doc['forecast_due_date']}, not {s}")
-        doc["role"] = "corpus" if s >= CORPUS_FIRST else "history"
+        doc["role"] = args.role or ("corpus" if s >= CORPUS_FIRST else "history")
         doc["provenance"] = {
             "licence": LICENCE,
             "fetched": args.fetched,

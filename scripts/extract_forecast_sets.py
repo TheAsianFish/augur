@@ -21,6 +21,8 @@ forecasts of ForecastBench's naive, imputed and always-0.5 baselines and of
 the external entries named in :data:`DATASET_ENTRANTS` (where the set holds
 them) on each (source, id, resolution date) instance, with the outcome as
 the forecast set gives it and each forecast's imputed flag.
+``--dataset-role holdout --dataset-only`` (M18) cuts the extract files of
+another role and skips the market subsets.
 
 The files are untrusted data: read only as JSON, standard library only.
 """
@@ -283,12 +285,20 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("--fetched", required=True)
     parser.add_argument("--dataset", type=Path, help="M15's dataset extract directory")
     parser.add_argument("--dataset-out", type=Path, help="where the dataset cut goes")
+    parser.add_argument(
+        "--dataset-role",
+        default="corpus",
+        help="cut the extract files of this role (M18: holdout, later); default corpus",
+    )
+    parser.add_argument("--dataset-only", action="store_true", help="skip the market subsets (M18)")
     args = parser.parse_args(argv)
     if (args.dataset is None) != (args.dataset_out is None):
         raise ExtractError("--dataset and --dataset-out go together")
     head = provenance(args.tarball, args.last_modified, args.fetched)
-    args.out.mkdir(parents=True, exist_ok=True)
-    for subset in sorted(args.subsets.glob("*-llm.subset.json")):
+    subsets = [] if args.dataset_only else sorted(args.subsets.glob("*-llm.subset.json"))
+    if subsets:
+        args.out.mkdir(parents=True, exist_ok=True)
+    for subset in subsets:
         question_set = subset.name.removesuffix("-llm.subset.json")
         set_dir = args.sets_dir / question_set
         if not set_dir.is_dir():
@@ -301,7 +311,7 @@ def main(argv: Sequence[str]) -> int:
     if args.dataset is not None:
         args.dataset_out.mkdir(parents=True, exist_ok=True)
         for extract in sorted(args.dataset.glob("2026-*.json")):
-            if json.loads(extract.read_text(encoding="utf-8")).get("role") != "corpus":
+            if json.loads(extract.read_text(encoding="utf-8")).get("role") != args.dataset_role:
                 continue
             question_set = extract.stem
             set_dir = args.sets_dir / question_set

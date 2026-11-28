@@ -32,6 +32,8 @@ from augur import (
     fbcompare,
     fbdataset,
     fbdataset_eval,
+    fbseason,
+    fbseason_eval,
     pooled,
     power,
     q2,
@@ -2571,6 +2573,203 @@ def _m16_f(x: float | None) -> str:
     return "—" if x is None else f"{x:.3f}"
 
 
+# -- M18: a day-of-year arm for temperature series --------------------------------------
+
+M18_REGISTRATION = re.compile(
+    r"<!-- m18-registration:begin -->\n(?P<body>.*?)<!-- m18-registration:end -->", re.S
+)
+M18_NAMES = {
+    "A": "A: 50%",
+    "B": "B: source rate",
+    "C": "C: series' rate",
+    "S": "S: day-of-year pairs",
+    "S′": "S′: exceedance of the freeze value",
+    "K": "K: calendar sign",
+    "B+S": "B with S",
+}
+
+
+def render_m18_registration(root: Path) -> str:
+    """M18's registration exactly as PLAN.md committed it (so a drift fails ``make eval``)."""
+    plan = (root / "PLAN.md").read_text(encoding="utf-8")
+    m = M18_REGISTRATION.search(plan)
+    if m is None:
+        raise ReportError("PLAN.md has no m18-registration block")
+    return m.group("body")
+
+
+def _m18_name(name: str) -> str:
+    return M18_NAMES.get(
+        name, f'"{name}"' if name in ("stat-v1", "hybrid ensemble 1", "model-4") else name
+    )
+
+
+def _m18_row(c: dict[str, Any], label: str | None = None) -> str:
+    what = f"{_m18_name(c['first'])} − {_m18_name(c['second'])}"
+    ci = f"[{c['low']:+.4f}, {c['high']:+.4f}] ({c['clusters']})"
+    extra = ""
+    if "question_level" in c:
+        q = c["question_level"]
+        mark = " (optimistic)" if c["clusters"] < fbseason_eval.FEW_CLUSTERS else ""
+        extra = f" | [{q['low']:+.4f}, {q['high']:+.4f}]{mark}"
+    return f"| {label or c['group']} | {what} | {c['n']} | {c['mean']:+.4f} | {ci}{extra} |"
+
+
+def _m18_cell(b: dict[str, float], k: str) -> str:
+    return f"{b[k]:.4f}" if k in b else "—"
+
+
+def render_fbseason(root: Path) -> str:
+    path = root / fbseason_eval.SNAPSHOT
+    if not path.exists():
+        return "M18's rows have not been run (`augur fbcompare`).\n"
+    snap = json.loads(path.read_text(encoding="utf-8"))
+    rep, hold, conf = snap["replication"], snap["holdout"], snap["confirmatory"]
+    out = [
+        f"**Label: {snap['label']}.** No model call, $0. Observations: "
+        f"`{snap['provenance']['observations_ledger']}` ({snap['provenance']['stations']} "
+        "stations, each question's earlier-year windows admitted through the leakage gate).",
+        "",
+        f"**The corpus replication ({rep['label']}).** {rep['instances']} Meteo-France "
+        f"instances on {rep['stations']} stations; usable year shifts per instance: median "
+        f"{rep['shifts']['median']}, from {rep['shifts']['min']} to {rep['shifts']['max']}; "
+        f"S not reached on {rep['not_reached']['S']}, S′ on {rep['not_reached']['S′']}.",
+        "",
+        "| Horizon | n | Yes share | A: 50% | B: source rate | S | S′ | K |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for h in rep["by_horizon"]:
+        b = h["brier"]
+        hz = "all" if h["horizon"] == "all" else f"{h['horizon']} days"
+        out.append(
+            f"| {hz} | {h['n']} | {h['yes_share']:.3f} | "
+            + " | ".join(_m18_cell(b, k) for k in ("A", "B", "S", "S′", "K"))
+            + " |"
+        )
+    out += [
+        "",
+        "Paired differences, first − second (negative: the first is better), 95% bootstrap "
+        "intervals clustered by series (cluster counts in parentheses):",
+        "",
+        "| Group | Difference | n | Mean | Interval |",
+        "|---|---|---|---|---|",
+    ]
+    for c in rep["comparisons"]:
+        if c["group"].startswith("meteo") and c["second"] in ("A", "B", "K", "S", "Naive"):
+            out.append(_m18_row(c))
+    out += [
+        "",
+        "The published entries on the Meteo-France instances they forecast (Brier):",
+        "",
+        "| Entry | Sets | n | Entry | A | B | S | S′ | K |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for e in rep["entrants"]:
+        b = e["brier"]
+        out.append(
+            f"| {_m18_name(e['entrant'])} | {', '.join(e['sets'])} | {e['n']} | "
+            f"{b[e['entrant']]:.4f} | "
+            + " | ".join(_m18_cell(b, k) for k in ("A", "B", "S", "S′", "K"))
+            + " |"
+        )
+    out += ["", "| Group | Difference | n | Mean | Interval |", "|---|---|---|---|---|"]
+    for c in rep["comparisons"]:
+        if c["group"] == "meteo" and c["second"] in ("stat-v1", "hybrid ensemble 1", "model-4"):
+            out.append(_m18_row(c))
+    out += [
+        "",
+        "Pooled over every corpus instance and DBnomics alone (Meteo-France and ECB), B with S "
+        "(S on Meteo-France instances, B elsewhere):",
+        "",
+        "| Group | n | A: 50% | B | B with S | Naive |",
+        "|---|---|---|---|---|---|",
+    ]
+    for g in rep["pooled"]:
+        b = g["brier"]
+        out.append(
+            f"| {g['group']} | {g['n']} | "
+            + " | ".join(_m18_cell(b, k) for k in ("A", "B", "B+S", "Naive"))
+            + " |"
+        )
+    out += ["", "| Group | Difference | n | Mean | Interval |", "|---|---|---|---|---|"]
+    for c in rep["comparisons"]:
+        if c["group"] in ("pooled", "dbnomics") or c["group"].startswith("gate seen"):
+            out.append(_m18_row(c))
+    left = "; ".join(
+        f"{s}: " + ", ".join(f"{n} {why}" for why, n in sorted(r.items()))
+        for s, r in sorted(hold["left_out"].items())
+    )
+    out += [
+        "",
+        f"**The later sets ({', '.join(hold['sets'])}).** {hold['instances']} instances on "
+        f"{hold['series']} series in M15's form; temperature questions: "
+        f"{hold['temperature_questions']}. Left out: {left}. None of the named entries "
+        "forecast these sets under the same names, so the comparators are ForecastBench's "
+        "baselines.",
+        "",
+        "| Group | n | Yes share | A: 50% | B | C | Naive | Imputed |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for g in hold["table"]:
+        b = g["brier"]
+        ys = "—" if g["yes_share"] is None else f"{g['yes_share']:.3f}"
+        out.append(
+            f"| {g['group']} | {g['n']} | {ys} | "
+            + " | ".join(_m18_cell(b, k) for k in ("A", "B", "C", "Naive", "Imputed"))
+            + " |"
+        )
+    out += ["", "| Group | Difference | n | Mean | Interval |", "|---|---|---|---|---|"]
+    for c in hold["comparisons"]:
+        out.append(_m18_row(c))
+    out += [
+        "",
+        f"**P66: {hold['p66']['verdict']}.** {hold['p66']['reading']}.",
+        "",
+        f"**The confirmatory set: a {conf['kind']}.** {conf['planned']} instances "
+        f"({conf['left_out']} more left out), resolving {conf['window'][0]} to "
+        f"{conf['window'][1]}, read once on {conf['reading_day']}. Every arm's forecast on "
+        "every instance is pinned in the snapshot before any outcome exists; K is "
+        f"{fbseason.K_UP} on {conf['k_up']} of them and {fbseason.K_DOWN} on the rest; S "
+        f"falls back to B on {conf['s_not_reached']}. Outcomes read: "
+        + (
+            f"the later re-cuts fetched {conf['outcomes_as_of']}."
+            if conf["outcomes_as_of"]
+            else "none yet (no later re-cut is committed)."
+        ),
+        "",
+        "| Stratum | Planned | Published | (set, horizon) clusters | A: 50% | B | S | S′ | K |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for st in conf["strata"]:
+        b = st["brier"]
+        out.append(
+            f"| {st['stratum']} | {st['planned']} | {st['published']} | {st['clusters']} | "
+            + " | ".join(_m18_cell(b, k) for k in ("A", "B", "S", "S′", "K"))
+            + " |"
+        )
+    if conf["comparisons"]:
+        out += [
+            "",
+            "| Stratum | Difference | n | Mean | Clustered | Question level |",
+            "|---|---|---|---|---|---|",
+        ]
+        out += [_m18_row(c) for c in conf["comparisons"]]
+    gate = conf["gate"]
+    out += [
+        "",
+        f"P65's instances: {gate['planned']} of the {gate['question_set']} set resolve in the "
+        f"window ({gate['left_out']} more on questions the extract lacks); scored so far: "
+        f"{gate['scored']}.",
+        "",
+        "| Prediction | Verdict | Reading |",
+        "|---|---|---|",
+    ]
+    for h in conf["hypotheses"]:
+        out.append(f"| {h['id']} | {h['verdict']} | {h['reading']} |")
+    out.append(f"| P66 | {hold['p66']['verdict']} | {hold['p66']['reading']} |")
+    return "\n".join(out) + "\n"
+
+
 BLOCKS: dict[str, Block] = {
     b.name: b
     for b in (
@@ -2602,6 +2801,8 @@ BLOCKS: dict[str, Block] = {
         Block("fbdataset", render_fbdataset),
         Block("m16-registration", render_m16_registration),
         Block("readers", render_readers),
+        Block("m18-registration", render_m18_registration),
+        Block("fbseason", render_fbseason),
     )
 }
 
